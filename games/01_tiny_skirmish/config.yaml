@@ -1,0 +1,27 @@
+name: Tiny Skirmish
+description: |
+  6x6 map, 2 units per side (knight + archer). Smallest viable game;
+  used to validate engine mechanics and as a smoke test for harness/renderer.
+
+board:
+  width: 6
+  height: 6
+  terrain:
+    - {x: 2, y: 2, type: forest}
+    - {x: 3, y: 3, type: forest}
+  forts:
+    - {x: 0, y: 0, owner: blue}
+    - {x: 5, y: 5, owner: red}
+
+armies:
+  blue:
+    - {class: knight, pos: {x: 0, y: 1}}
+    - {class: archer, pos: {x: 1, y: 0}}
+  red:
+    - {class: knight, pos: {x: 5, y: 4}}
+    - {class: archer, pos: {x: 4, y: 5}}
+
+rules:
+  max_turns: 20
+  fog_of_war: false
+  first_player: blue
