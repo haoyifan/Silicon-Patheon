@@ -1,0 +1,42 @@
+name: Basic Mirror
+description: |
+  12x12 map, 5 units per side (2 knights, 1 archer, 1 cavalry, 1 mage).
+  Mirror-symmetric armies. The main MVP scenario for real agent matches.
+
+board:
+  width: 12
+  height: 12
+  terrain:
+    # central forest belt
+    - {x: 5, y: 5, type: forest}
+    - {x: 6, y: 5, type: forest}
+    - {x: 5, y: 6, type: forest}
+    - {x: 6, y: 6, type: forest}
+    # side forests
+    - {x: 2, y: 6, type: forest}
+    - {x: 9, y: 5, type: forest}
+    # a mountain on each flank
+    - {x: 0, y: 5, type: mountain}
+    - {x: 11, y: 6, type: mountain}
+  forts:
+    - {x: 0, y: 0, owner: blue}
+    - {x: 11, y: 11, owner: red}
+
+armies:
+  blue:
+    - {class: knight, pos: {x: 1, y: 1}}
+    - {class: knight, pos: {x: 2, y: 0}}
+    - {class: archer, pos: {x: 0, y: 2}}
+    - {class: cavalry, pos: {x: 3, y: 1}}
+    - {class: mage, pos: {x: 1, y: 3}}
+  red:
+    - {class: knight, pos: {x: 10, y: 10}}
+    - {class: knight, pos: {x: 9, y: 11}}
+    - {class: archer, pos: {x: 11, y: 9}}
+    - {class: cavalry, pos: {x: 8, y: 10}}
+    - {class: mage, pos: {x: 10, y: 8}}
+
+rules:
+  max_turns: 30
+  fog_of_war: false
+  first_player: blue
