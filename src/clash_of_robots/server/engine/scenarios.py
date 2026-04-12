@@ -64,11 +64,13 @@ def build_state(cfg: dict) -> GameState:
     units: dict[str, Unit] = {}
     for team_name in ("blue", "red"):
         team = Team(team_name)
-        for idx, u in enumerate(cfg["armies"].get(team_name, []), start=1):
+        per_class: dict[str, int] = {}
+        for u in cfg["armies"].get(team_name, []):
             cls = UnitClass(u["class"])
             stats = make_stats(cls)
             pos = Pos(int(u["pos"]["x"]), int(u["pos"]["y"]))
-            uid = f"u_{team.value[0]}_{cls.value}_{idx}"
+            per_class[cls.value] = per_class.get(cls.value, 0) + 1
+            uid = f"u_{team.value[0]}_{cls.value}_{per_class[cls.value]}"
             units[uid] = Unit(
                 id=uid,
                 owner=team,

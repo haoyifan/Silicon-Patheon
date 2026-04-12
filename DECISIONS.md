@@ -65,3 +65,37 @@ isolates the choice. Can swap to direct Anthropic SDK or roll-your-own later.
 has a single source of truth and any future disagreement is easy to spot.
 **Reversal cost:** Low for any individual rule (engine code is small); medium
 if multiple change at once (test suite needs updates).
+
+## 2026-04-12 — Tool layer is callable directly; MCP stdio is a thin wrapper
+**Decision:** The game tools (`get_state`, `move`, `attack`, ...) are plain
+Python functions living in `server/tools/` with a shared tool registry. They
+operate on a `Session` object that bundles `GameState` + coach message queues +
+replay writer. The MCP stdio server (`server/main.py`) is a thin wrapper that
+exposes these same tools over the MCP protocol for remote/future use. For
+phases 3-7 the orchestrator calls the tool registry **directly in-process** —
+no subprocess, no stdio round-trip. This avoids the fundamental stdio-is-1:1
+constraint (two agents cannot share one stdio MCP server) while keeping a real
+MCP server available for Phase 8 remote play.
+**Why:** Stdio MCP only supports one client per server process. Two agents
+playing the same match would require either HTTP/SSE transport (Phase 8 work)
+or running two server instances with synced state (complex, fragile). The
+orchestrator-driven turn model (decision above) already serializes actions, so
+in-process tool calls are sufficient for MVP; the protocol layer becomes
+valuable only when agents are remote.
+**Reversal cost:** Low — because tools live on a registry with a uniform
+interface, swapping "direct call" for "call via MCP client" is localized.
+
+## 2026-04-12 — Tools live together in `server/tools/__init__.py`
+**Decision:** All tool functions in one module file rather than one file per
+tool (as originally sketched in PLAN.md).
+**Why:** Each tool is ~10-30 lines; splitting into 8+ files adds import noise
+and makes cross-tool coordination harder for no real benefit. The registry
+pattern already provides discoverability.
+**Reversal cost:** Trivial — move functions into per-tool files if one ever
+grows large.
+
+## 2026-04-12 — Python 3.13 in practice (pyproject requires ≥3.12)
+**Decision:** uv selected Python 3.13.5 on this machine; pyproject pins ≥3.12.
+No code changes needed; 3.12-only features (match, generic syntax) all work.
+**Why:** ≥3.12 constraint is satisfied by 3.13; uv picks the best available.
+**Reversal cost:** None.
