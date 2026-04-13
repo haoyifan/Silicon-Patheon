@@ -123,6 +123,19 @@ def new_session(
 ) -> Session:
     writer = ReplayWriter(replay_path) if replay_path else None
     thoughts_log = ThoughtsLogWriter(thoughts_log_path) if thoughts_log_path else None
-    return Session(
+    session = Session(
         state=state, replay=writer, scenario=scenario, thoughts_log=thoughts_log
     )
+    # Write a single metadata line at the top of the replay so downstream
+    # tools (interactive replayer, analytics) can reconstruct the match
+    # without any out-of-band knowledge (folder name, CLI flags, etc.).
+    if writer is not None:
+        session.log(
+            "match_start",
+            {
+                "scenario": scenario,
+                "max_turns": state.max_turns,
+                "first_player": state.first_player.value,
+            },
+        )
+    return session
