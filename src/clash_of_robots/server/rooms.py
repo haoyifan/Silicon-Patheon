@@ -1,8 +1,9 @@
 """Room and RoomRegistry: server-authoritative match containers.
 
-Phase 1a shape is intentionally minimal — enough to host one match
-with two slots. 1b extends Room with ready flags, team-assignment
-config, auto-start countdown, and scenario preview.
+A Room holds the configuration for one match (scenario, team
+assignment rules, fog mode, turn time limit) plus the two seats,
+each player's readiness, and the room's lifecycle status. Mutations
+go through RoomRegistry for locking.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from threading import Lock
+from typing import Literal
 
 from clash_of_robots.shared.player_metadata import PlayerMetadata
 
@@ -22,10 +24,34 @@ class Slot(str, Enum):
 
 
 class RoomStatus(str, Enum):
-    WAITING = "waiting"  # seats still open
-    READY = "ready"  # both seats filled, waiting on readiness / game start
+    WAITING_FOR_PLAYERS = "waiting_for_players"  # at least one empty seat
+    WAITING_READY = "waiting_ready"  # both seats filled, not both ready
+    COUNTING_DOWN = "counting_down"  # both ready; auto-start timer running
     IN_GAME = "in_game"
     FINISHED = "finished"
+
+
+TeamAssignment = Literal["fixed", "random"]
+HostTeam = Literal["blue", "red"]
+FogMode = Literal["none", "classic", "line_of_sight"]
+
+
+@dataclass(frozen=True)
+class RoomConfig:
+    """Configuration pinned when a room is created; immutable afterward.
+
+    - team_assignment="fixed":  host gets host_team; joiner gets the other.
+    - team_assignment="random": coin-flipped at game-start time.
+    - fog_of_war / max_turns / turn_time_limit_s drive the engine and
+      filter behavior during the match.
+    """
+
+    scenario: str
+    max_turns: int = 20
+    team_assignment: TeamAssignment = "fixed"
+    host_team: HostTeam = "blue"
+    fog_of_war: FogMode = "classic"
+    turn_time_limit_s: int = 180
 
 
 @dataclass
@@ -40,17 +66,46 @@ class Room:
     """One match container. Mutations go through RoomRegistry for locking."""
 
     id: str
-    scenario: str
+    config: RoomConfig
     host_name: str
     seats: dict[Slot, Seat] = field(default_factory=dict)
-    status: RoomStatus = RoomStatus.WAITING
+    status: RoomStatus = RoomStatus.WAITING_FOR_PLAYERS
     created_at: float = field(default_factory=time.time)
+
+    # Convenience passthrough for legacy callers; remove after full migration.
+    @property
+    def scenario(self) -> str:
+        return self.config.scenario
 
     def occupied_slots(self) -> list[Slot]:
         return [s for s, seat in self.seats.items() if seat.player is not None]
 
     def is_full(self) -> bool:
         return all(seat.player is not None for seat in self.seats.values())
+
+    def all_ready(self) -> bool:
+        return self.is_full() and all(seat.ready for seat in self.seats.values())
+
+    def recompute_status(self) -> None:
+        """Reconcile status based on current occupancy + readiness.
+
+        Leaves IN_GAME / FINISHED alone (terminal from this module's view;
+        only the game runner flips in / out of those). For pre-game
+        states: empty seat -> WAITING_FOR_PLAYERS; full but not all
+        ready -> WAITING_READY; full and all ready -> WAITING_READY
+        (the countdown is set explicitly by the caller, not here).
+        """
+        if self.status in (RoomStatus.IN_GAME, RoomStatus.FINISHED):
+            return
+        if not self.is_full():
+            self.status = RoomStatus.WAITING_FOR_PLAYERS
+        else:
+            # Full but readiness is the caller's business; drop out of
+            # COUNTING_DOWN if we got here via someone unreadying.
+            if self.status == RoomStatus.COUNTING_DOWN and not self.all_ready():
+                self.status = RoomStatus.WAITING_READY
+            elif self.status != RoomStatus.COUNTING_DOWN:
+                self.status = RoomStatus.WAITING_READY
 
 
 class RoomRegistry:
@@ -64,12 +119,17 @@ class RoomRegistry:
     def _new_id() -> str:
         return secrets.token_hex(8)
 
-    def create(self, *, scenario: str, host: PlayerMetadata) -> tuple[Room, Slot]:
+    def create(
+        self,
+        *,
+        config: RoomConfig,
+        host: PlayerMetadata,
+    ) -> tuple[Room, Slot]:
         """Create an empty two-slot room, seat the host in slot A."""
         room_id = self._new_id()
         room = Room(
             id=room_id,
-            scenario=scenario,
+            config=config,
             host_name=host.display_name,
             seats={
                 Slot.A: Seat(slot=Slot.A, player=host),
@@ -99,8 +159,7 @@ class RoomRegistry:
                 seat = room.seats[slot_id]
                 if seat.player is None:
                     seat.player = player
-                    if room.is_full():
-                        room.status = RoomStatus.READY
+                    room.recompute_status()
                     return room, slot_id
             return None
 
@@ -115,9 +174,7 @@ class RoomRegistry:
                 return False
             seat.player = None
             seat.ready = False
-            # Back to waiting if someone left a READY room.
-            if room.status == RoomStatus.READY:
-                room.status = RoomStatus.WAITING
+            room.recompute_status()
             # Drop entirely if now empty and not mid-game.
             if not room.occupied_slots() and room.status != RoomStatus.IN_GAME:
                 self._rooms.pop(room_id, None)

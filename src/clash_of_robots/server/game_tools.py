@@ -23,7 +23,7 @@ from mcp.server.fastmcp import FastMCP
 from clash_of_robots.server.app import App, Connection, _error, _ok
 from clash_of_robots.server.engine.scenarios import load_scenario
 from clash_of_robots.server.engine.state import Team
-from clash_of_robots.server.rooms import Slot
+from clash_of_robots.server.rooms import RoomConfig, Slot
 from clash_of_robots.server.session import new_session
 from clash_of_robots.server.tools import ToolError, call_tool
 from clash_of_robots.shared.protocol import ConnectionState, ErrorCode
@@ -101,7 +101,9 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
             return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
         if app.sessions:
             return _error(ErrorCode.ALREADY_IN_ROOM, "a dev game already exists")
-        room, slot = app.rooms.create(scenario=scenario, host=conn.player)
+        room, slot = app.rooms.create(
+            config=RoomConfig(scenario=scenario), host=conn.player
+        )
         app.conn_to_room[connection_id] = (room.id, slot)
         conn.state = ConnectionState.IN_ROOM
         return _ok({"room_id": room.id, "slot": slot.value})
