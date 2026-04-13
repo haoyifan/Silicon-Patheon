@@ -304,14 +304,20 @@ at the scenario's initial state and updates as you step through actions.
 Agent reasoning appears in a side panel *before* the paired action
 updates the board — you see what the agent thought, then what it did.
 
-**Commands at the prompt:**
+**Controls** (single keypress — no Enter required on an interactive TTY;
+non-TTY/piped stdin falls back to line input):
 
 | Key | Action |
 |---|---|
-| `Enter` | advance one step |
-| `s` + `Enter` | skip forward past thoughts to the next action |
-| `q` + `Enter` | quit |
+| `Enter` or `k` | advance one step |
+| `j` | go back one step |
+| `s` | skip forward to the next action event (past any thoughts) |
+| `q` | quit |
 | `Ctrl-C` | abort |
+
+Backward navigation is O(1): on launch the replayer precomputes a
+`GameState` snapshot for every step, so rewinding is as cheap as
+advancing. Feel free to wander back and forth freely.
 
 ```bash
 uv run clash-play runs/20260412T143022_01_tiny_skirmish
