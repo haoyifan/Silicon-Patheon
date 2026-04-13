@@ -35,10 +35,18 @@ def render_board(state: GameState) -> Text:
             unit = state.unit_at(p)
             if unit is not None:
                 glyph = CLASS_GLYPH.get(unit.class_.value, "?")
-                if unit.owner is Team.BLUE:
-                    cell = Text(f" {glyph}", style="bold cyan")
-                else:
-                    cell = Text(f" {glyph.lower()}", style="bold red")
+                base = "bold cyan" if unit.owner is Team.BLUE else "bold red"
+                # Highlight when a unit is standing on a fort so it's obvious
+                # whose fort it is and whether a seize is imminent. Underline
+                # = own fort, underline+reverse = enemy fort (seize possible
+                # at end_turn).
+                if tile.is_fort:
+                    if tile.fort_owner is unit.owner:
+                        base = f"{base} underline"
+                    else:
+                        base = f"{base} underline reverse"
+                rendered = glyph if unit.owner is Team.BLUE else glyph.lower()
+                cell = Text(f" {rendered}", style=base)
             else:
                 g = TERRAIN_GLYPH[tile.type]
                 style = {

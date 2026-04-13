@@ -296,6 +296,8 @@ def _apply_end_turn(state: GameState) -> dict:
                 "by": active.value,
                 "winner": active.value,
                 "reason": "seize",
+                "seized_at": u.pos.to_dict(),
+                "seized_by_unit": u.id,
             }
 
     # 2. Hand over to opponent.

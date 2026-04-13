@@ -50,6 +50,22 @@ def render_header(state: GameState) -> Text:
     t.append(f"   Status: {state.status.value}")
     if state.winner:
         t.append(f"   WINNER: {state.winner.value}", style="bold green")
+        # If the match ended via a specific condition, append it for clarity
+        # (e.g. seize vs. elimination vs. max_turns).
+        la = state.last_action
+        if isinstance(la, dict) and la.get("type") == "end_turn":
+            reason = la.get("reason")
+            if reason == "seize":
+                at = la.get("seized_at")
+                if isinstance(at, dict):
+                    t.append(
+                        f" (seized fort at ({at.get('x')},{at.get('y')}))",
+                        style="bold green",
+                    )
+                else:
+                    t.append(" (seize)", style="bold green")
+            elif reason:
+                t.append(f" ({reason})", style="bold green")
     return t
 
 
