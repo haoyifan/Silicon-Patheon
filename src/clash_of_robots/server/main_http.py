@@ -21,12 +21,14 @@ from clash_of_robots.server.app import App, build_mcp_server
 
 
 def _configure_server_logging(level: str, log_file: Path | None) -> Path:
-    """Install a stderr + optional file handler on the root logger.
+    """Install stderr + file handlers on the `clash` logger namespace.
 
-    If `log_file` is None, a default path is picked under
-    ~/.clash-of-robots/logs/server-<pid>-<timestamp>.log so every run
-    produces its own file without clobbering the previous one.
-    Returns the chosen file path.
+    Why not the root logger: `mcp.run_streamable_http_async` -> uvicorn
+    calls `logging.basicConfig()` which wipes handlers on root. Earlier
+    runs lost every `clash.lobby` / `clash.game` log line because of
+    this. Attaching to "clash" with propagate=False keeps our
+    instrumentation intact while still letting uvicorn / httpx run
+    their own handlers however they like.
     """
     if log_file is None:
         log_dir = Path.home() / ".clash-of-robots" / "logs"
@@ -37,18 +39,28 @@ def _configure_server_logging(level: str, log_file: Path | None) -> Path:
         log_file.parent.mkdir(parents=True, exist_ok=True)
 
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
-    root = logging.getLogger()
-    root.setLevel(getattr(logging, level))
-
-    # stderr handler — same visual experience as before.
     stream = logging.StreamHandler()
     stream.setFormatter(fmt)
-    root.addHandler(stream)
-
-    # File handler for archived / shareable logs.
     fh = logging.FileHandler(log_file, mode="w", encoding="utf-8")
     fh.setFormatter(fmt)
-    root.addHandler(fh)
+
+    # Attach to the `clash` namespace so everything under clash.*
+    # (clash.lobby, clash.game, clash-serve alias below) gets captured,
+    # survives uvicorn's basicConfig reset, and doesn't double-log via
+    # root.
+    clash_logger = logging.getLogger("clash")
+    clash_logger.setLevel(getattr(logging, level))
+    clash_logger.addHandler(stream)
+    clash_logger.addHandler(fh)
+    clash_logger.propagate = False
+
+    # The existing `clash-serve` and uvicorn/mcp/httpx loggers aren't
+    # under the `clash` prefix, so attach the same handlers directly to
+    # the ones we care about.
+    for name in ("clash-serve", "uvicorn", "uvicorn.error", "mcp"):
+        lg = logging.getLogger(name)
+        lg.setLevel(getattr(logging, level))
+        lg.addHandler(fh)  # file only; stderr handled by uvicorn config
     return log_file
 
 

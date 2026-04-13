@@ -75,16 +75,30 @@ def _configure_client_logging(display_name_hint: str | None) -> Path:
     handler.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
     )
-    root = logging.getLogger()
-    # Avoid duplicate handlers if called twice (pytest reruns, etc.).
+
+    # Attach to the `clash` namespace rather than root — mirrors the
+    # server's logging setup and means any `logging.basicConfig()` call
+    # made by a library (the MCP client, httpx, asyncio) cannot wipe
+    # our handler.
+    clash_logger = logging.getLogger("clash")
     if not any(
-        getattr(h, "baseFilename", None) == str(log_path) for h in root.handlers
+        getattr(h, "baseFilename", None) == str(log_path) for h in clash_logger.handlers
     ):
-        root.addHandler(handler)
-    root.setLevel(logging.INFO)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("mcp").setLevel(logging.INFO)
-    logging.getLogger("clash").info(
+        clash_logger.addHandler(handler)
+    clash_logger.setLevel(logging.INFO)
+    clash_logger.propagate = False
+
+    # Also tee library-level diagnostics into our file so tracebacks from
+    # the MCP client / httpx / asyncio end up alongside our lines.
+    for name in ("mcp", "httpx", "asyncio"):
+        lg = logging.getLogger(name)
+        lg.setLevel(logging.INFO)
+        if not any(
+            getattr(h, "baseFilename", None) == str(log_path) for h in lg.handlers
+        ):
+            lg.addHandler(handler)
+
+    clash_logger.info(
         "---- clash-join session started pid=%d log=%s ----", os.getpid(), log_path
     )
     return log_path

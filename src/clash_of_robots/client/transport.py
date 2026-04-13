@@ -24,18 +24,12 @@ log = logging.getLogger("clash.transport")
 
 CLIENT_HEARTBEAT_INTERVAL_S = 10.0
 
-# Tool calls we log each roundtrip at INFO. Everything else logs at DEBUG
-# so the file doesn't get overwhelmed with per-second heartbeats.
-_VERBOSE_TOOLS = frozenset({
-    "set_player_metadata",
-    "create_room",
-    "join_room",
-    "leave_room",
-    "set_ready",
-    "get_room_state",
-    "concede",
-    "download_replay",
-})
+# Tools that are purely noisy (heartbeat / state polls) are logged at
+# DEBUG so the file stays readable; everything else at INFO.
+# IMPORTANT: keep get_state at INFO — it's how we see agents / screens
+# interact mid-game. We can always tune this down once the stuck-state
+# bug is nailed.
+_QUIET_TOOLS = frozenset({"heartbeat"})
 
 
 class RemoteToolError(RuntimeError):
@@ -77,7 +71,7 @@ class ServerClient:
         automatically so callers can focus on tool-specific args.
         """
         args = {"connection_id": self.connection_id, **kwargs}
-        level = logging.INFO if tool_name in _VERBOSE_TOOLS else logging.DEBUG
+        level = logging.DEBUG if tool_name in _QUIET_TOOLS else logging.INFO
         log.log(level, "call -> %s args=%s", tool_name, {k: v for k, v in kwargs.items()})
         result = await self._session.call_tool(tool_name, args)
         for block in result.content:

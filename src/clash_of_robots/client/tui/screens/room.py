@@ -206,10 +206,13 @@ class RoomScreen(Screen):
         )
         # Did the match just start? Transition to GameScreen.
         if room.get("status") == "in_game":
+            log.info("room status is in_game; transitioning to GameScreen")
             from clash_of_robots.client.tui.screens.game import GameScreen
 
             next_screen = GameScreen(self.app)
+            log.info("calling app.transition(GameScreen)")
             await self.app.transition(next_screen)
+            log.info("app.transition(GameScreen) returned")
             return next_screen
         return None
 

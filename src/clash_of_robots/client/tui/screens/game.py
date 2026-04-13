@@ -20,6 +20,7 @@ Common keys:
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from rich.align import Align
@@ -30,6 +31,8 @@ from rich.text import Text
 
 from clash_of_robots.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 
+log = logging.getLogger("clash.tui.game")
+
 
 class GameScreen(Screen):
     def __init__(self, app: TUIApp):
@@ -38,31 +41,50 @@ class GameScreen(Screen):
         self._state: dict[str, Any] | None = None
 
     async def on_enter(self, app: TUIApp) -> None:
+        log.info("GameScreen.on_enter: starting")
         await self._refresh_state()
-        # Build the agent bridge once we know the scenario (which is
-        # pulled from the room state we observed before transitioning).
+        log.info("GameScreen.on_enter: initial refresh done")
         if app.state.agent is None:
             await self._maybe_build_agent(app)
+        log.info(
+            "GameScreen.on_enter: finished agent=%s",
+            "set" if app.state.agent is not None else "none",
+        )
 
     async def on_exit(self, app: TUIApp) -> None:
-        # Cancel any in-flight agent turn when leaving the screen.
+        log.info("GameScreen.on_exit")
         if app.state.agent_task is not None and not app.state.agent_task.done():
             app.state.agent_task.cancel()
         app.state.agent_task = None
 
     async def _maybe_build_agent(self, app: TUIApp) -> None:
         """Construct a NetworkedAgent if the login declared an LLM."""
+        log.info(
+            "maybe_build_agent: kind=%s provider=%s model=%s",
+            app.state.kind,
+            app.state.provider,
+            app.state.model,
+        )
         if app.state.kind not in ("ai", "hybrid"):
+            log.info("maybe_build_agent: skipping, kind not ai/hybrid")
             return
         if app.state.provider != "anthropic" or not app.state.model:
-            return  # only claude is wired up today
+            log.info("maybe_build_agent: skipping, provider not anthropic or no model")
+            return
         if app.client is None:
+            log.warning("maybe_build_agent: skipping, app.client is None")
             return
         scenario = (app.state.last_room_state or {}).get("scenario") or ""
         if not scenario:
+            log.warning(
+                "maybe_build_agent: skipping, no scenario (last_room_state=%s)",
+                app.state.last_room_state,
+            )
             return
+        log.info("maybe_build_agent: importing NetworkedAgent")
 
         from clash_of_robots.client.agent_bridge import NetworkedAgent
+        log.info("maybe_build_agent: NetworkedAgent imported")
 
         async def on_thought(text: str) -> None:
             collapsed = " ".join(text.split())
@@ -76,6 +98,7 @@ class GameScreen(Screen):
             strategy=app.state.strategy_text,
             thoughts_callback=on_thought,
         )
+        log.info("maybe_build_agent: NetworkedAgent constructed")
 
     def render(self) -> RenderableType:
         gs = self._state or {}
@@ -295,7 +318,14 @@ class GameScreen(Screen):
         my_team = (gs.get("you") or {}).get("team")
         active = gs.get("active_player")
         if not my_team or active != my_team:
+            log.debug(
+                "agent not triggered: my_team=%s active=%s status=%s",
+                my_team,
+                active,
+                gs.get("status"),
+            )
             return
+        log.info("triggering agent.play_turn for team=%s turn=%s", my_team, gs.get("turn"))
 
         from clash_of_robots.server.engine.state import Team
 
@@ -308,10 +338,13 @@ class GameScreen(Screen):
 
         async def _run() -> None:
             try:
+                log.info("agent.play_turn: starting")
                 await self.app.state.agent.play_turn(viewer, max_turns=max_turns)
+                log.info("agent.play_turn: finished")
             except asyncio.CancelledError:
-                pass
+                log.info("agent.play_turn: cancelled")
             except Exception as e:
+                log.exception("agent.play_turn raised: %s", e)
                 self.app.state.error_message = f"agent error: {e}"
 
         self.app.state.agent_task = asyncio.create_task(_run())
