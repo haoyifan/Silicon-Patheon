@@ -16,6 +16,7 @@ single transform that every game tool output passes through.
 
 from __future__ import annotations
 
+import random
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -23,10 +24,49 @@ from mcp.server.fastmcp import FastMCP
 from clash_of_robots.server.app import App, Connection, _error, _ok
 from clash_of_robots.server.engine.scenarios import load_scenario
 from clash_of_robots.server.engine.state import Team
-from clash_of_robots.server.rooms import RoomConfig, Slot
+from clash_of_robots.server.rooms import RoomConfig, RoomStatus, Slot
 from clash_of_robots.server.session import new_session
 from clash_of_robots.server.tools import ToolError, call_tool
 from clash_of_robots.shared.protocol import ConnectionState, ErrorCode
+
+
+def start_game_for_room(app: App, room_id: str) -> None:
+    """Promote a room from COUNTING_DOWN to IN_GAME.
+
+    Builds the engine Session from the room's scenario, pins the
+    slot->team mapping (deterministic for fixed-assignment rooms,
+    coin-flipped for random), and flips every connection seated in
+    the room into state IN_GAME. Idempotent if the room has already
+    started.
+    """
+    room = app.rooms.get(room_id)
+    if room is None:
+        return
+    if room.status == RoomStatus.IN_GAME:
+        return
+    if not room.all_ready():
+        return
+    state = load_scenario(room.config.scenario)
+    state.max_turns = room.config.max_turns
+    session = new_session(state, scenario=room.config.scenario)
+    app.sessions[room_id] = session
+    if room.config.team_assignment == "fixed":
+        host_team = Team.BLUE if room.config.host_team == "blue" else Team.RED
+        other = Team.RED if host_team is Team.BLUE else Team.BLUE
+        app.slot_to_team[room_id] = {Slot.A: host_team, Slot.B: other}
+    else:  # "random"
+        coin = random.random() < 0.5
+        app.slot_to_team[room_id] = (
+            {Slot.A: Team.BLUE, Slot.B: Team.RED}
+            if coin
+            else {Slot.A: Team.RED, Slot.B: Team.BLUE}
+        )
+    room.status = RoomStatus.IN_GAME
+    for cid, (rid, _slot) in app.conn_to_room.items():
+        if rid == room_id:
+            c = app.get_connection(cid)
+            if c is not None:
+                c.state = ConnectionState.IN_GAME
 
 
 def _viewer_for(conn: Connection, app: App) -> tuple[Any, Team] | None:

@@ -19,7 +19,9 @@ is a middleware-only change that does not touch tool handlers.
 
 from __future__ import annotations
 
+import asyncio
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from threading import Lock
 
@@ -60,6 +62,12 @@ class App:
         # Populated by lobby / dev-game tools; read by game tools to
         # resolve the viewer for an incoming call.
         self.conn_to_room: dict[str, tuple[str, Slot]] = {}
+        # Autostart countdown state per room.
+        self.autostart_tasks: dict[str, asyncio.Task] = {}
+        self.autostart_deadlines: dict[str, float] = {}
+        # Hook fired by the lobby when a countdown completes; the
+        # game_tools layer installs its "promote room to IN_GAME" callback.
+        self.on_countdown_complete: Callable[[str], None] | None = None
         self._connections: dict[str, Connection] = {}
         self._conn_lock = Lock()
 
@@ -166,10 +174,20 @@ def build_mcp_server(app: App, *, name: str = "clash-server") -> FastMCP:
             }
         )
 
-    # Attach the 13 game tools + dev-game helpers. Imported locally to
-    # avoid a circular import with game_tools which depends on this module.
-    from clash_of_robots.server.game_tools import register_game_tools
+    # Attach the lobby tool set, then the 13 game tools. Imported locally
+    # to avoid circular imports with modules that depend on this one.
+    from clash_of_robots.server.game_tools import (
+        register_game_tools,
+        start_game_for_room,
+    )
+    from clash_of_robots.server.lobby_tools import register_lobby_tools
 
+    register_lobby_tools(mcp, app)
     register_game_tools(mcp, app)
+
+    # Install the hook the countdown fires on expiry. `start_game_for_room`
+    # builds the engine Session, pins slot->team, and flips connections
+    # into IN_GAME.
+    app.on_countdown_complete = lambda room_id: start_game_for_room(app, room_id)
 
     return mcp
