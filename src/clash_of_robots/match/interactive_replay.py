@@ -20,6 +20,7 @@ Commands at the prompt:
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import sys
 from pathlib import Path
@@ -190,6 +191,30 @@ def _read_command() -> str:
         return "q"
 
 
+def _build_snapshots(
+    initial_state: GameState,
+    timeline: list[ReplayEvent],
+    console: Console,
+) -> list[GameState]:
+    """Precompute per-step GameState snapshots.
+
+    `snapshots[0]` is the initial state (before any event). `snapshots[i]`
+    for i>=1 is the state AFTER event timeline[i-1] has been applied.
+    Non-action events don't mutate state, so their snapshot equals the
+    previous one (cheap deepcopy either way; we do ~100-300 per match).
+
+    Building all snapshots upfront makes backward navigation (j key) O(1)
+    instead of having to re-replay from the start each time.
+    """
+    snapshots: list[GameState] = [copy.deepcopy(initial_state)]
+    state = copy.deepcopy(initial_state)
+    for ev in timeline:
+        if ev.kind == "action":
+            _apply_action_event(state, ev, console)
+        snapshots.append(copy.deepcopy(state))
+    return snapshots
+
+
 def interactive_replay(replay_path: Path) -> int:
     events = _load_events(replay_path)
     if not events:
@@ -206,12 +231,12 @@ def interactive_replay(replay_path: Path) -> int:
         return 2
 
     try:
-        state = load_scenario(meta.scenario)
+        initial_state = load_scenario(meta.scenario)
     except Exception as e:
         print(f"failed to load scenario {meta.scenario!r}: {e}", file=sys.stderr)
         return 2
     if meta.max_turns:
-        state.max_turns = meta.max_turns
+        initial_state.max_turns = meta.max_turns
 
     # Skip the match_start event itself; the user has already "seen" it
     # implicitly via the initial state.
@@ -220,48 +245,57 @@ def interactive_replay(replay_path: Path) -> int:
 
     console = Console()
 
-    def _render(step: int, ev: ReplayEvent | None) -> None:
+    # Precompute snapshots so the user can jump backward and forward.
+    snapshots = _build_snapshots(initial_state, timeline, console)
+
+    def _render(step: int) -> None:
+        """Render the state after `step` events have been applied.
+
+        step==0 is the pre-match initial board; step>=1 is the state AFTER
+        timeline[step-1]. The event shown in the step panel is the one
+        that produced this state (None for step 0).
+        """
+        state = snapshots[step]
+        ev = timeline[step - 1] if step >= 1 else None
         console.clear()
         console.print(_frame(state, ev, step, total))
         console.print(
             Text(
-                "[Enter] next   [s] skip to next action   [q] quit",
+                "[Enter/k] next   [j] previous   [s] skip to next action   [q] quit",
                 style="dim",
             )
         )
 
-    # Initial frame: state at t=0, no event yet.
-    _render(0, None)
+    step = 0
+    _render(step)
 
-    i = 0
-    while i < total:
+    while True:
         cmd = _read_command()
         if cmd == "q":
             break
-        ev = timeline[i]
-        # For action events we mutate state BEFORE rendering so the board
-        # shows the effect of the action alongside its description.
-        if ev.kind == "action":
-            _apply_action_event(state, ev, console)
-        _render(i + 1, ev)
-        # `s` advances through thoughts/coach/errors until we land on an
-        # action (which was just applied above if ev was itself an action).
-        if cmd == "s":
-            i += 1
-            while i < total and timeline[i].kind != "action":
-                ev = timeline[i]
-                _render(i + 1, ev)
-                i += 1
-            # apply the action we paused on, if any
-            if i < total:
-                ev = timeline[i]
-                _apply_action_event(state, ev, console)
-                _render(i + 1, ev)
-                i += 1
+        if cmd in ("", "k"):
+            # Advance one step (or stay put at the end).
+            if step < total:
+                step += 1
+            _render(step)
             continue
-        i += 1
+        if cmd == "j":
+            # Go back one step (or stay put at the start).
+            if step > 0:
+                step -= 1
+            _render(step)
+            continue
+        if cmd == "s":
+            # Skip forward until the new `step` lands on an action event.
+            next_step = step + 1
+            while next_step <= total and timeline[next_step - 1].kind != "action":
+                next_step += 1
+            step = min(next_step, total)
+            _render(step)
+            continue
+        # Unknown command — redraw without changing position.
+        _render(step)
 
-    # Final frame with a hint that playback is done.
     console.print(Text("\n(end of replay)", style="bold green"))
     return 0
 

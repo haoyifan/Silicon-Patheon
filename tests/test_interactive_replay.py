@@ -74,11 +74,35 @@ def test_interactive_replay_main_flow_with_stubbed_input(
 ) -> None:
     replay = _play_match(tmp_path)
 
-    # Stub input() to press Enter forever; the loop terminates on its own
-    # once we reach the end of the timeline.
-    monkeypatch.setattr("builtins.input", lambda *_a, **_k: "")
-    # Also silence the console.clear() side effect for test environments
-    # that aren't a TTY by letting rich handle it normally.
+    # Walk all the way forward, then quit. Match timelines stay well under
+    # 500 events, so Enter * 500 drives us to the end; then "q" exits.
+    inputs = iter([""] * 500 + ["q"])
+    monkeypatch.setattr("builtins.input", lambda *_a, **_k: next(inputs))
+    rc = interactive_replay(replay)
+    assert rc == 0
+
+
+def test_interactive_replay_supports_backward_navigation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """k advances, j goes back — forward-3, back-2, forward-1 round-trips."""
+    replay = _play_match(tmp_path)
+
+    # 3 forwards, 2 backs, 1 forward, quit. Should not raise.
+    inputs = iter(["k", "k", "k", "j", "j", "k", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_a, **_k: next(inputs))
+    rc = interactive_replay(replay)
+    assert rc == 0
+
+
+def test_interactive_replay_skip_then_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`s` skips to next action, `j` still rewinds one step from there."""
+    replay = _play_match(tmp_path)
+
+    inputs = iter(["s", "j", "q"])
+    monkeypatch.setattr("builtins.input", lambda *_a, **_k: next(inputs))
     rc = interactive_replay(replay)
     assert rc == 0
 
