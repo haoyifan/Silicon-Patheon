@@ -102,10 +102,11 @@ class SharedState:
     agent: "NetworkedAgent | None" = None
     agent_task: asyncio.Task | None = None
     # Live reasoning stream from the agent (newest last). Each entry is
-    # (timestamp_iso_local, text) so the panel can render a colored
-    # clock prefix; helpful for correlating reasoning with server-side
-    # turn boundaries at a glance.
-    thoughts: deque[tuple[str, str]] = field(
+    # (timestamp_iso_local, team, text). Team is the player the thought
+    # belongs to ('blue' / 'red') so the panel can color the timestamp
+    # prefix with the team color — helps when reviewing alternating
+    # halves in a shared scrollback.
+    thoughts: deque[tuple[str, str, str]] = field(
         default_factory=lambda: deque(maxlen=THOUGHTS_BUFFER_SIZE)
     )
 

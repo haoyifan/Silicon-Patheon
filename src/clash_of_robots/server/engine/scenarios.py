@@ -62,8 +62,21 @@ def build_state(cfg: dict) -> GameState:
     board = Board(width=width, height=height, tiles=tiles)
 
     units: dict[str, Unit] = {}
+    rules = cfg.get("rules", {})
+    max_turns = int(rules.get("max_turns", 30))
+    first_player = Team(rules.get("first_player", "blue"))
+
     for team_name in ("blue", "red"):
         team = Team(team_name)
+        # Non-first-player units start DONE so the table's
+        # ready/moved/done column consistently means "can this unit act
+        # right now?". The first player's next end_turn resets them to
+        # READY as the normal turn-transition rule. Without this, both
+        # teams look interchangeable at turn 0 even though only one
+        # actually has agency.
+        initial_status = (
+            UnitStatus.READY if team is first_player else UnitStatus.DONE
+        )
         per_class: dict[str, int] = {}
         for u in cfg["armies"].get(team_name, []):
             cls = UnitClass(u["class"])
@@ -77,13 +90,9 @@ def build_state(cfg: dict) -> GameState:
                 class_=cls,
                 pos=pos,
                 hp=stats.hp_max,
-                status=UnitStatus.READY,
+                status=initial_status,
                 stats=stats,
             )
-
-    rules = cfg.get("rules", {})
-    max_turns = int(rules.get("max_turns", 30))
-    first_player = Team(rules.get("first_player", "blue"))
 
     return GameState(
         game_id=f"g_{uuid.uuid4().hex[:8]}",

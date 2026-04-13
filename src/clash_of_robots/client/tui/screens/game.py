@@ -115,7 +115,13 @@ class GameScreen(Screen):
                 from datetime import datetime
 
                 ts = datetime.now().strftime("%H:%M:%S")
-                app.state.thoughts.append((ts, collapsed))
+                # Stamp the emitting team. Each TUI only runs its own
+                # player's agent, so the team is whatever the latest
+                # get_state told us is 'you'. Defaults to 'blue' during
+                # the (very brief) window before the first get_state
+                # response lands.
+                team = (app.state.last_game_state or {}).get("you") or "blue"
+                app.state.thoughts.append((ts, team, collapsed))
 
         app.state.agent = NetworkedAgent(
             client=app.client,
@@ -261,19 +267,20 @@ class GameScreen(Screen):
         # Walk thoughts from newest to oldest, starting `offset` back.
         end = total - self._reasoning_offset
         for i in range(end - 1, -1, -1):
-            ts, t = thoughts[i]
+            ts, team, t = thoughts[i]
             est_rows = max(
                 1, (len(ts) + 3 + len(t) + approx_cols - 1) // approx_cols
             )
             if rows_used + est_rows > inner_rows and window:
                 break
-            window.append((ts, t))
+            window.append((ts, team, t))
             rows_used += est_rows
         window.reverse()
 
         body = Text(no_wrap=False, overflow="fold")
-        for i, (ts, t) in enumerate(window):
-            body.append(f"[{ts}] ", style="cyan")
+        for i, (ts, team, t) in enumerate(window):
+            team_style = "cyan" if team == "blue" else "red"
+            body.append(f"[{ts}] ", style=team_style)
             body.append(t)
             if i != len(window) - 1:
                 body.append("\n")
