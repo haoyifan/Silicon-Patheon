@@ -53,9 +53,13 @@ def _run_tui(
     kind: str,
     provider: str | None,
     model: str | None,
+    strategy: str | None,
 ) -> int:
+    from pathlib import Path
+
     from clash_of_robots.client.tui.app import TUIApp
     from clash_of_robots.client.tui.screens.login import LoginScreen
+    from clash_of_robots.harness.prompts import load_strategy
 
     app = TUIApp(initial_screen_factory=LoginScreen)
     if url:
@@ -68,6 +72,10 @@ def _run_tui(
         app.state.provider = provider
     if model:
         app.state.model = model
+    if strategy:
+        path = Path(strategy)
+        app.state.strategy_path = path
+        app.state.strategy_text = load_strategy(path)
     return asyncio.run(app.run())
 
 
@@ -84,6 +92,11 @@ def main() -> int:
     p.add_argument("--kind", default="ai", choices=("ai", "human", "hybrid"))
     p.add_argument("--provider", default=None)
     p.add_argument("--model", default=None)
+    p.add_argument(
+        "--strategy",
+        default=None,
+        help="path to a STRATEGY.md playbook injected into the agent's system prompt",
+    )
     p.add_argument(
         "--smoke",
         action="store_true",
@@ -118,6 +131,7 @@ def main() -> int:
             kind=args.kind,
             provider=args.provider,
             model=args.model,
+            strategy=args.strategy,
         )
     except (KeyboardInterrupt, SystemExit):
         return 130
