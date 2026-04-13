@@ -1,0 +1,144 @@
+"""Tests for replay-event parsing and action reconstruction."""
+
+from __future__ import annotations
+
+import pytest
+
+from clash_of_robots.match.replay_schema import (
+    AgentThought,
+    CoachMessage,
+    ErrorPayload,
+    ForcedEndTurn,
+    MatchStart,
+    UnreconstructibleAction,
+    action_from_payload,
+    parse_event,
+)
+from clash_of_robots.server.engine.rules import (
+    AttackAction,
+    EndTurnAction,
+    HealAction,
+    MoveAction,
+    WaitAction,
+)
+
+
+def test_parse_match_start() -> None:
+    ev = parse_event(
+        {
+            "kind": "match_start",
+            "turn": 1,
+            "payload": {
+                "scenario": "01_tiny_skirmish",
+                "max_turns": 20,
+                "first_player": "blue",
+            },
+        }
+    )
+    assert ev.kind == "match_start"
+    assert isinstance(ev.data, MatchStart)
+    assert ev.data.scenario == "01_tiny_skirmish"
+    assert ev.data.max_turns == 20
+    assert ev.data.first_player == "blue"
+
+
+def test_parse_agent_thought() -> None:
+    ev = parse_event(
+        {
+            "kind": "agent_thought",
+            "turn": 3,
+            "payload": {"team": "red", "text": "rush the mage", "turn": 3},
+        }
+    )
+    assert isinstance(ev.data, AgentThought)
+    assert ev.data.team == "red"
+    assert ev.data.text == "rush the mage"
+    assert ev.turn == 3
+
+
+def test_parse_action_keeps_raw_dict() -> None:
+    ev = parse_event(
+        {
+            "kind": "action",
+            "turn": 2,
+            "payload": {"type": "move", "unit_id": "u_b_archer_1", "dest": {"x": 2, "y": 1}},
+        }
+    )
+    assert ev.kind == "action"
+    assert isinstance(ev.data, dict)
+    assert ev.data["type"] == "move"
+
+
+def test_parse_coach_message() -> None:
+    ev = parse_event(
+        {
+            "kind": "coach_message",
+            "turn": 1,
+            "payload": {"to": "blue", "text": "hold"},
+        }
+    )
+    assert isinstance(ev.data, CoachMessage)
+    assert ev.data.to == "blue"
+
+
+def test_parse_forced_end_turn() -> None:
+    ev = parse_event({"kind": "forced_end_turn", "turn": 5, "payload": {"team": "red"}})
+    assert isinstance(ev.data, ForcedEndTurn)
+
+
+def test_parse_error_variants() -> None:
+    for kind in ("agent_error", "summarize_error", "lessons_load_error"):
+        ev = parse_event(
+            {"kind": kind, "turn": 1, "payload": {"team": "blue", "error": "boom"}}
+        )
+        assert isinstance(ev.data, ErrorPayload)
+        assert ev.data.error == "boom"
+
+
+def test_parse_unknown_kind_returns_raw() -> None:
+    ev = parse_event({"kind": "some_future_thing", "turn": 0, "payload": {"x": 1}})
+    assert ev.kind == "some_future_thing"
+    assert ev.data == {"x": 1}
+
+
+def test_parse_missing_payload_is_safe() -> None:
+    ev = parse_event({"kind": "forced_end_turn", "turn": 1})
+    assert isinstance(ev.data, ForcedEndTurn)
+    assert ev.data.team == ""
+
+
+def test_action_from_payload_move() -> None:
+    a = action_from_payload(
+        {"type": "move", "unit_id": "u_b_archer_1", "dest": {"x": 2, "y": 1}}
+    )
+    assert isinstance(a, MoveAction)
+    assert a.unit_id == "u_b_archer_1"
+    assert a.dest.x == 2 and a.dest.y == 1
+
+
+def test_action_from_payload_attack() -> None:
+    a = action_from_payload(
+        {"type": "attack", "unit_id": "u_b_knight_1", "target_id": "u_r_archer_1"}
+    )
+    assert isinstance(a, AttackAction)
+
+
+def test_action_from_payload_heal() -> None:
+    a = action_from_payload(
+        {"type": "heal", "healer_id": "u_b_mage_1", "target_id": "u_b_knight_1"}
+    )
+    assert isinstance(a, HealAction)
+    assert a.healer_id == "u_b_mage_1"
+
+
+def test_action_from_payload_wait_and_end_turn() -> None:
+    assert isinstance(
+        action_from_payload({"type": "wait", "unit_id": "u_r_cavalry_1"}),
+        WaitAction,
+    )
+    assert isinstance(action_from_payload({"type": "end_turn"}), EndTurnAction)
+
+
+def test_action_from_payload_rejects_unknown() -> None:
+    with pytest.raises(UnreconstructibleAction):
+        action_from_payload({"type": "teleport", "unit_id": "x"})
