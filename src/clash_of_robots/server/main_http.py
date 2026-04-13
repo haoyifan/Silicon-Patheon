@@ -12,9 +12,44 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import logging
+import os
+from pathlib import Path
 
 from clash_of_robots.server.app import App, build_mcp_server
+
+
+def _configure_server_logging(level: str, log_file: Path | None) -> Path:
+    """Install a stderr + optional file handler on the root logger.
+
+    If `log_file` is None, a default path is picked under
+    ~/.clash-of-robots/logs/server-<pid>-<timestamp>.log so every run
+    produces its own file without clobbering the previous one.
+    Returns the chosen file path.
+    """
+    if log_file is None:
+        log_dir = Path.home() / ".clash-of-robots" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        ts = _dt.datetime.now().strftime("%Y%m%dT%H%M%S")
+        log_file = log_dir / f"server-{os.getpid()}-{ts}.log"
+    else:
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    root = logging.getLogger()
+    root.setLevel(getattr(logging, level))
+
+    # stderr handler — same visual experience as before.
+    stream = logging.StreamHandler()
+    stream.setFormatter(fmt)
+    root.addHandler(stream)
+
+    # File handler for archived / shareable logs.
+    fh = logging.FileHandler(log_file, mode="w", encoding="utf-8")
+    fh.setFormatter(fmt)
+    root.addHandler(fh)
+    return log_file
 
 
 def main() -> int:
@@ -27,13 +62,22 @@ def main() -> int:
         choices=("DEBUG", "INFO", "WARNING", "ERROR"),
         help="server log level",
     )
+    p.add_argument(
+        "--log-file",
+        type=Path,
+        default=None,
+        help=(
+            "path for the server log file. Defaults to "
+            "~/.clash-of-robots/logs/server-<pid>-<timestamp>.log"
+        ),
+    )
     args = p.parse_args()
 
-    logging.basicConfig(
-        level=getattr(logging, args.log_level),
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
+    log_file = _configure_server_logging(args.log_level, args.log_file)
     log = logging.getLogger("clash-serve")
+    log.info("server log file: %s", log_file)
+    # Keep a single stderr line identical to the old UX for quick discovery.
+    print(f"server log: {log_file}", flush=True)
 
     app = App()
     mcp = build_mcp_server(app)

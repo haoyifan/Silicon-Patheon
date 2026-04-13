@@ -47,29 +47,47 @@ async def _smoke(
     return 0
 
 
-def _configure_client_logging() -> None:
+def _configure_client_logging(display_name_hint: str | None) -> Path:
     """TUI takes over the terminal (screen=True), so logs must go to a
-    file instead of stderr or they'd be invisible. Caller does not
-    need to care about this — we always open the same path in append
-    mode and every module's logger inherits it via the root logger."""
+    file instead of stderr or they'd be invisible.
+
+    Each clash-join process gets its own file so two concurrent clients
+    never interleave their output. Filename is
+      client-<slug>-<pid>-<YYYYMMDDTHHMMSS>.log
+    where <slug> comes from the --name flag (if provided) or "anon".
+    Returns the chosen path so the caller can print it before the TUI
+    takes over the terminal.
+    """
+    import datetime as _dt
     import logging
+    import os
+    import re
     from pathlib import Path
 
-    log_path = Path.home() / ".clash-of-robots" / "client.log"
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
+    log_dir = Path.home() / ".clash-of-robots" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    slug_src = (display_name_hint or "anon").strip().lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug_src).strip("-") or "anon"
+    ts = _dt.datetime.now().strftime("%Y%m%dT%H%M%S")
+    log_path = log_dir / f"client-{slug}-{os.getpid()}-{ts}.log"
+
+    handler = logging.FileHandler(log_path, mode="w", encoding="utf-8")
     handler.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
     )
     root = logging.getLogger()
     # Avoid duplicate handlers if called twice (pytest reruns, etc.).
-    if not any(getattr(h, "baseFilename", None) == str(log_path) for h in root.handlers):
+    if not any(
+        getattr(h, "baseFilename", None) == str(log_path) for h in root.handlers
+    ):
         root.addHandler(handler)
     root.setLevel(logging.INFO)
-    # Quieter-third-party spam.
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("mcp").setLevel(logging.INFO)
-    logging.getLogger("clash").info("---- clash-join session started (log=%s) ----", log_path)
+    logging.getLogger("clash").info(
+        "---- clash-join session started pid=%d log=%s ----", os.getpid(), log_path
+    )
+    return log_path
 
 
 def _run_tui(
@@ -86,7 +104,9 @@ def _run_tui(
     from clash_of_robots.client.tui.screens.login import LoginScreen
     from clash_of_robots.harness.prompts import load_strategy
 
-    _configure_client_logging()
+    log_path = _configure_client_logging(display_name_hint=name)
+    # Print BEFORE the TUI takes the terminal so the user can grep/tail.
+    print(f"client log: {log_path}", flush=True)
 
     app = TUIApp(initial_screen_factory=LoginScreen)
     if url:
