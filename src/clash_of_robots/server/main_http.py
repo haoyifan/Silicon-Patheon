@@ -44,7 +44,20 @@ def main() -> int:
     mcp.settings.port = args.port
 
     log.info("clash-serve starting on http://%s:%d", args.host, args.port)
-    mcp.run(transport="streamable-http")
+
+    # Launch the heartbeat sweeper as a background task on the same
+    # asyncio loop FastMCP will use. We do this via a one-off anyio
+    # shim so it runs for the lifetime of mcp.run().
+    import anyio
+
+    from clash_of_robots.server.heartbeat import run_sweep_loop
+
+    async def _serve() -> None:
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(run_sweep_loop, app)
+            tg.start_soon(mcp.run_streamable_http_async)
+
+    anyio.run(_serve)
     return 0
 
 

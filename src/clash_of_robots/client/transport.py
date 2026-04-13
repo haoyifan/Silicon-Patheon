@@ -10,6 +10,7 @@ All transport errors bubble up as-is so the caller can distinguish
 
 from __future__ import annotations
 
+import asyncio
 import json
 import secrets
 from contextlib import asynccontextmanager
@@ -17,6 +18,8 @@ from typing import Any, AsyncIterator
 
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
+
+CLIENT_HEARTBEAT_INTERVAL_S = 10.0
 
 
 class RemoteToolError(RuntimeError):
@@ -30,6 +33,7 @@ class ServerClient:
     def __init__(self, session: ClientSession, *, connection_id: str):
         self._session = session
         self.connection_id = connection_id
+        self._heartbeat_task: asyncio.Task | None = None
 
     @classmethod
     @asynccontextmanager
@@ -65,3 +69,39 @@ class ServerClient:
         raise RemoteToolError(
             f"tool {tool_name} returned no text block: {result!r}"
         )
+
+    async def start_heartbeat(
+        self, interval_s: float = CLIENT_HEARTBEAT_INTERVAL_S
+    ) -> None:
+        """Launch a background task that calls `heartbeat` every N seconds.
+
+        Callers that stay connected for a while (lobby, in-game) should
+        start this right after `set_player_metadata` so the server's
+        soft-disconnect sweeper doesn't evict them.
+        """
+        if self._heartbeat_task is not None and not self._heartbeat_task.done():
+            return
+
+        async def loop() -> None:
+            try:
+                while True:
+                    await asyncio.sleep(interval_s)
+                    try:
+                        await self.call("heartbeat")
+                    except Exception:
+                        # Swallow transient errors — the server-side
+                        # sweeper will evict us if we stop heartbeating.
+                        pass
+            except asyncio.CancelledError:
+                return
+
+        self._heartbeat_task = asyncio.create_task(loop())
+
+    async def stop_heartbeat(self) -> None:
+        if self._heartbeat_task is not None and not self._heartbeat_task.done():
+            self._heartbeat_task.cancel()
+            try:
+                await self._heartbeat_task
+            except asyncio.CancelledError:
+                pass
+        self._heartbeat_task = None
