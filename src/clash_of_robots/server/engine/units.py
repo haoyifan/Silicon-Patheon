@@ -18,6 +18,7 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
         can_enter_forest=True,
         can_enter_mountain=False,
         can_heal=False,
+        sight=2,  # melee tank; limited peripheral vision
     ),
     UnitClass.ARCHER: UnitStats(
         hp_max=18,
@@ -32,6 +33,7 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
         can_enter_forest=True,
         can_enter_mountain=True,
         can_heal=False,
+        sight=4,  # ranged; long-range spotter
     ),
     UnitClass.CAVALRY: UnitStats(
         hp_max=22,
@@ -46,6 +48,7 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
         can_enter_forest=False,
         can_enter_mountain=False,
         can_heal=False,
+        sight=3,  # fast scout
     ),
     UnitClass.MAGE: UnitStats(
         hp_max=16,
@@ -61,6 +64,7 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
         can_enter_mountain=True,
         can_heal=True,
         heal_amount=8,
+        sight=3,
     ),
 }
 
@@ -83,4 +87,5 @@ def make_stats(cls: UnitClass) -> UnitStats:
         can_enter_mountain=src.can_enter_mountain,
         can_heal=src.can_heal,
         heal_amount=src.heal_amount,
+        sight=src.sight,
     )

@@ -81,6 +81,11 @@ class UnitStats:
     can_enter_mountain: bool
     can_heal: bool  # may take `heal` action instead of `attack`
     heal_amount: int = 0
+    # Fog-of-war sight range. Chebyshev distance from the unit within
+    # which tiles are considered visible before terrain line-of-sight
+    # is applied. 0 means no intrinsic sight (unit contributes nothing
+    # to team vision).
+    sight: int = 3
 
 
 @dataclass
