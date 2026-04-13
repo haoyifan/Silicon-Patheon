@@ -118,18 +118,85 @@ scenario disambiguate with a `-2`, `-3`, ... suffix.
 
 ### How lessons are injected
 
-Before each turn, the Claude provider loads the 5 most recent lessons for
-the current scenario and appends a section to the system prompt titled
-**"Prior lessons from this scenario"**. Each lesson is rendered as:
+**Injection is automatic and happens in the system prompt** — no tool
+call, no agent opt-in, no CLI flag needed. As long as lessons exist on
+disk for the scenario you're playing, the agent sees them at the start
+of every turn.
 
+**What the agent actually sees** (appended after the rules and any
+`--blue-strategy` / `--red-strategy` section):
+
+```markdown
+## Prior lessons from this scenario
+
+These are reflections written by agents who played this scenario before you
+(including past games you lost). Internalize the tactical principles — do not
+just replay past moves.
+
+### <title-of-lesson-1> [<team> <outcome>]
+
+<body of lesson 1>
+
+### <title-of-lesson-2> [<team> <outcome>]
+
+<body of lesson 2>
+
+...
 ```
-### <title> [<team> <outcome>]
 
-<body>
+**Selection rules:**
+
+- **Scope**: lessons for *this scenario* only (the `scenario` field in a
+  lesson's frontmatter must match `--game`). A lesson from
+  `02_basic_mirror` is invisible while playing `01_tiny_skirmish`.
+- **Cross-team**: both blue and red see **all** lessons for the
+  scenario, regardless of which team wrote them. The `[<team> <outcome>]`
+  tag tells the reader which side's perspective produced it so the agent
+  can weight advice accordingly.
+- **Ordering**: newest first, sorted by the `created_at` frontmatter
+  field.
+- **Cap**: up to **5** lessons per turn (`AnthropicProvider.max_injected_lessons`,
+  defaults to 5). The cap is currently internal — edit the provider
+  constructor if you need to override.
+- **Cadence**: re-loaded every turn, so lessons written by one match are
+  visible to the very next match on the same scenario.
+
+**Failure modes** (all silent, by design — lessons are advisory):
+
+- Lessons directory missing or empty → nothing injected, no warning.
+- A lesson file has malformed YAML frontmatter → that one file is
+  skipped via `try/except` in `LessonStore.list_for_scenario`; others
+  still load.
+- `--no-lessons` → disables both producer (won't write) and consumer
+  (won't inject) in one switch.
+- `--lessons-dir PATH` → point at a different folder; useful for
+  A/B-ing a curated set.
+
+**Want to force-inject a specific lesson?** Drop a hand-written
+markdown file at `lessons/<scenario>/my-lesson.md` with correct
+frontmatter. It's indistinguishable from an agent-written one once on
+disk. Minimal example:
+
+```markdown
+---
+title: Always check the threat map before moving cavalry
+slug: threat-map-before-cavalry
+scenario: 02_basic_mirror
+team: coach
+model: hand-written
+outcome: advice
+reason: ""
+created_at: 2026-04-12T00:00:00+00:00
+---
+
+Cavalry dies to archers. Before moving one into the open, call
+`get_threat_map` and verify no enemy archer can reach the destination tile.
 ```
 
-Injection is automatic — as long as the lessons folder exists for the
-scenario you're playing, the agent sees them. No tool call needed.
+The `team` / `outcome` / `model` fields are free-form strings; they
+only feed the header tag the agent sees. `created_at` drives ordering,
+so use a recent timestamp if you want your hand-written lesson to sit
+above the auto-generated ones.
 
 ### Controlling lesson behavior
 
