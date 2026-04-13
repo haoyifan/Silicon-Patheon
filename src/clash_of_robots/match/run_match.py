@@ -8,6 +8,7 @@ the `end_turn` tool). We loop until `status` is GAME_OVER.
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 import time
 from pathlib import Path
@@ -93,7 +94,9 @@ def run_match(
                     call_tool(session, viewer, "end_turn", {})
                 except Exception:
                     break
-            if verbose:
+            # Per-turn summary prints are redundant with (and visually fight)
+            # the TUI's header + units table, so skip them in render mode.
+            if verbose and not render:
                 print(
                     f"[T{turn_at_start} {viewer.value} half] done in "
                     f"{time.time() - t0:.2f}s "
@@ -130,6 +133,12 @@ def run_match(
 
 
 def main() -> int:
+    # Silence asyncio's "Loop ... that handles pid N is closed" warnings.
+    # They come from the child-process watcher when we open a fresh event
+    # loop per agent turn (via asyncio.run); the preceding turn's pid is
+    # still tracked by the prior loop. Harmless, but noisy on the TUI.
+    logging.getLogger("asyncio").setLevel(logging.ERROR)
+
     p = argparse.ArgumentParser(description="Run one Clash Of Robots match")
     p.add_argument("--game", default="01_tiny_skirmish")
     p.add_argument(
