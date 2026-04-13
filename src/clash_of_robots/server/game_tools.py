@@ -1,0 +1,222 @@
+"""MCP-facing wrappers around the 13 in-process game tools.
+
+Each MCP tool derives the player's viewer (Team.BLUE/RED) from the
+connection's slot in its room, looks up the room's authoritative
+Session, dispatches to the existing in-process tool layer, and
+returns a structured result.
+
+Phase 1a: only one hardcoded "dev room" exists, created by the
+`create_dev_game` tool. Phase 1b replaces that with proper lobby /
+create_room / join_room flow.
+
+The heavy lifting stays in `server/tools/__init__.py` — these are
+thin dispatch wrappers so fog-of-war filtering (1c) can slot into a
+single transform that every game tool output passes through.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from mcp.server.fastmcp import FastMCP
+
+from clash_of_robots.server.app import App, Connection, _error, _ok
+from clash_of_robots.server.engine.scenarios import load_scenario
+from clash_of_robots.server.engine.state import Team
+from clash_of_robots.server.rooms import Slot
+from clash_of_robots.server.session import new_session
+from clash_of_robots.server.tools import ToolError, call_tool
+from clash_of_robots.shared.protocol import ConnectionState, ErrorCode
+
+
+def _viewer_for(conn: Connection, app: App) -> tuple[Any, Team] | None:
+    """Resolve (session, viewer) for a connection currently in a game.
+
+    Returns None if the connection isn't in a game or the room/session
+    has gone away.
+    """
+    if conn.state != ConnectionState.IN_GAME:
+        return None
+    info = app.conn_to_room.get(conn.id)
+    if info is None:
+        return None
+    room_id, slot = info
+    session = app.sessions.get(room_id)
+    if session is None:
+        return None
+    # Slot → Team mapping is pinned at game-start time on the App.
+    mapping = app.slot_to_team.get(room_id)
+    if mapping is None:
+        return None
+    return session, mapping[slot]
+
+
+def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
+    """Shared body for every game tool wrapper."""
+    conn = app.get_connection(connection_id)
+    if conn is None:
+        return _error(ErrorCode.TOKEN_INVALID, "unknown connection_id")
+    if conn.state != ConnectionState.IN_GAME:
+        return _error(
+            ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+            f"game tools require state=in_game (current: {conn.state.value})",
+        )
+    resolved = _viewer_for(conn, app)
+    if resolved is None:
+        return _error(ErrorCode.GAME_NOT_STARTED, "no active game for this connection")
+    session, viewer = resolved
+    try:
+        result = call_tool(session, viewer, tool_name, args)
+    except ToolError as e:
+        return _error(ErrorCode.BAD_INPUT, str(e))
+    return _ok({"result": result})
+
+
+def register_game_tools(mcp: FastMCP, app: App) -> None:
+    """Attach the 13 game tools + create_dev_game to an MCP server.
+
+    Each tool has an explicit Python signature so FastMCP can generate
+    a proper JSON schema for agents. The dispatch body delegates to the
+    in-process tool layer via `_dispatch`.
+    """
+
+    # ---- dev-only game creation (Phase 1a) ----
+
+    @mcp.tool()
+    def create_dev_game(
+        connection_id: str,
+        scenario: str = "01_tiny_skirmish",
+    ) -> dict:
+        """Create a single hardcoded dev game and seat this connection
+        in slot A (blue). A second connection can call `join_dev_game`
+        to take slot B (red) and start the match.
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state != ConnectionState.IN_LOBBY:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "create_dev_game requires state=in_lobby",
+            )
+        if conn.player is None:
+            return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
+        if app.sessions:
+            return _error(ErrorCode.ALREADY_IN_ROOM, "a dev game already exists")
+        room, slot = app.rooms.create(scenario=scenario, host=conn.player)
+        app.conn_to_room[connection_id] = (room.id, slot)
+        conn.state = ConnectionState.IN_ROOM
+        return _ok({"room_id": room.id, "slot": slot.value})
+
+    @mcp.tool()
+    def join_dev_game(connection_id: str) -> dict:
+        """Join the single hardcoded dev game as slot B (red) and start
+        the match immediately (no ready protocol yet — that's Phase 1b).
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state != ConnectionState.IN_LOBBY:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "join_dev_game requires state=in_lobby",
+            )
+        if conn.player is None:
+            return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
+        rooms = app.rooms.list()
+        if not rooms:
+            return _error(ErrorCode.ROOM_NOT_FOUND, "no dev game to join")
+        room = rooms[0]
+        result = app.rooms.join(room.id, conn.player)
+        if result is None:
+            return _error(ErrorCode.ROOM_FULL, "dev game is full")
+        _, slot = result
+        app.conn_to_room[connection_id] = (room.id, slot)
+        # Start the game: build session, pin slot→team mapping, flip both
+        # connections' state to IN_GAME.
+        state = load_scenario(room.scenario)
+        session = new_session(state, scenario=room.scenario)
+        app.sessions[room.id] = session
+        # Hardcoded mapping for Phase 1a: slot A = blue, slot B = red.
+        app.slot_to_team[room.id] = {Slot.A: Team.BLUE, Slot.B: Team.RED}
+        for cid, (rid, _slot) in app.conn_to_room.items():
+            if rid == room.id:
+                c = app.get_connection(cid)
+                if c is not None:
+                    c.state = ConnectionState.IN_GAME
+        return _ok({"room_id": room.id, "slot": slot.value})
+
+    # ---- the 13 game tools, each a thin dispatch wrapper ----
+
+    @mcp.tool()
+    def get_state(connection_id: str) -> dict:
+        """Get the current full game state visible to you."""
+        return _dispatch(app, connection_id, "get_state", {})
+
+    @mcp.tool()
+    def get_unit(connection_id: str, unit_id: str) -> dict:
+        """Get a single unit's details by id."""
+        return _dispatch(app, connection_id, "get_unit", {"unit_id": unit_id})
+
+    @mcp.tool()
+    def get_legal_actions(connection_id: str, unit_id: str) -> dict:
+        """Get legal moves/attacks/heals/wait for one of your units."""
+        return _dispatch(app, connection_id, "get_legal_actions", {"unit_id": unit_id})
+
+    @mcp.tool()
+    def simulate_attack(
+        connection_id: str,
+        attacker_id: str,
+        target_id: str,
+        from_tile: dict | None = None,
+    ) -> dict:
+        """Predict attack outcome. Does not mutate state."""
+        args: dict = {"attacker_id": attacker_id, "target_id": target_id}
+        if from_tile is not None:
+            args["from_tile"] = from_tile
+        return _dispatch(app, connection_id, "simulate_attack", args)
+
+    @mcp.tool()
+    def get_threat_map(connection_id: str) -> dict:
+        """Return which enemy units can attack each tile."""
+        return _dispatch(app, connection_id, "get_threat_map", {})
+
+    @mcp.tool()
+    def get_history(connection_id: str, last_n: int = 10) -> dict:
+        """Get recent action history."""
+        return _dispatch(app, connection_id, "get_history", {"last_n": last_n})
+
+    @mcp.tool()
+    def get_coach_messages(connection_id: str, since_turn: int = 0) -> dict:
+        """Drain unread coach messages for your team."""
+        return _dispatch(app, connection_id, "get_coach_messages", {"since_turn": since_turn})
+
+    @mcp.tool()
+    def move(connection_id: str, unit_id: str, dest: dict) -> dict:
+        """Move a ready unit to a destination tile."""
+        return _dispatch(app, connection_id, "move", {"unit_id": unit_id, "dest": dest})
+
+    @mcp.tool()
+    def attack(connection_id: str, unit_id: str, target_id: str) -> dict:
+        """Attack an enemy unit; resolves combat + counter immediately."""
+        return _dispatch(
+            app, connection_id, "attack", {"unit_id": unit_id, "target_id": target_id}
+        )
+
+    @mcp.tool()
+    def heal(connection_id: str, healer_id: str, target_id: str) -> dict:
+        """Heal an adjacent ally (Mage only)."""
+        return _dispatch(
+            app, connection_id, "heal", {"healer_id": healer_id, "target_id": target_id}
+        )
+
+    @mcp.tool()
+    def wait(connection_id: str, unit_id: str) -> dict:
+        """End this unit's turn without attacking or healing."""
+        return _dispatch(app, connection_id, "wait", {"unit_id": unit_id})
+
+    @mcp.tool()
+    def end_turn(connection_id: str) -> dict:
+        """Pass control to the opponent."""
+        return _dispatch(app, connection_id, "end_turn", {})
+
+    @mcp.tool()
+    def send_to_agent(connection_id: str, team: str, text: str) -> dict:
+        """(Coach) Queue a message for a team, delivered next turn."""
+        return _dispatch(app, connection_id, "send_to_agent", {"team": team, "text": text})

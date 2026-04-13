@@ -26,7 +26,9 @@ from threading import Lock
 from mcp.server.fastmcp import FastMCP
 
 from clash_of_robots.server.auth import TokenRegistry
-from clash_of_robots.server.rooms import RoomRegistry
+from clash_of_robots.server.engine.state import Team
+from clash_of_robots.server.rooms import RoomRegistry, Slot
+from clash_of_robots.server.session import Session
 from clash_of_robots.shared.player_metadata import PlayerMetadata
 from clash_of_robots.shared.protocol import ConnectionState, ErrorCode
 
@@ -49,6 +51,15 @@ class App:
     def __init__(self) -> None:
         self.tokens = TokenRegistry()
         self.rooms = RoomRegistry()
+        # Per-room authoritative game session, once the match has started.
+        self.sessions: dict[str, Session] = {}
+        # Per-room slot → team mapping, pinned at game-start time
+        # (deterministic for fixed assignment, coin-flip for random).
+        self.slot_to_team: dict[str, dict[Slot, Team]] = {}
+        # Reverse index: which room + slot each connection is in.
+        # Populated by lobby / dev-game tools; read by game tools to
+        # resolve the viewer for an incoming call.
+        self.conn_to_room: dict[str, tuple[str, Slot]] = {}
         self._connections: dict[str, Connection] = {}
         self._conn_lock = Lock()
 
@@ -154,5 +165,11 @@ def build_mcp_server(app: App, *, name: str = "clash-server") -> FastMCP:
                 "player": conn.player.to_dict() if conn.player else None,
             }
         )
+
+    # Attach the 13 game tools + dev-game helpers. Imported locally to
+    # avoid a circular import with game_tools which depends on this module.
+    from clash_of_robots.server.game_tools import register_game_tools
+
+    register_game_tools(mcp, app)
 
     return mcp
