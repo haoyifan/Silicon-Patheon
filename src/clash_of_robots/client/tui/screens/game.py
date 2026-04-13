@@ -311,7 +311,11 @@ class GameScreen(Screen):
 
         lines: list[Text] = []
         if typing:
-            prompt = Text()
+            # overflow="fold" + no_wrap=False lets the prompt wrap over
+            # multiple terminal rows so long suggestions stay visible
+            # while being typed. Panel height is left unset so it grows
+            # to fit the wrapped content.
+            prompt = Text(no_wrap=False, overflow="fold")
             prompt.append("coach> ", style="yellow bold")
             prompt.append(self._coach_buffer, style="white")
             prompt.append("▌", style="yellow")  # non-blinking cursor
@@ -320,13 +324,21 @@ class GameScreen(Screen):
             recent = " · ".join(
                 f'"{m}"' for m in list(self._coach_sent)[-3:]
             )
-            lines.append(Text(f"recently sent: {recent}", style="dim"))
+            lines.append(
+                Text(
+                    f"recently sent: {recent}",
+                    style="dim",
+                    no_wrap=False,
+                    overflow="fold",
+                )
+            )
         body = Group(*lines) if len(lines) > 1 else lines[0]
         return Panel(
             body,
             title=("coach input" if typing else "coach"),
             border_style="yellow" if typing else "dim",
-            height=4 if len(lines) > 1 else 3,
+            # No fixed height — Panel sizes to wrapped content so
+            # long messages remain fully visible.
         )
 
     def _render_board(self, gs: dict[str, Any]) -> RenderableType:
