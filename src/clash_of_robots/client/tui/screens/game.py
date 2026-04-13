@@ -36,10 +36,21 @@ log = logging.getLogger("clash.tui.game")
 
 
 class GameScreen(Screen):
+    # Total rows reserved for the reasoning panel (including borders + title).
+    THOUGHTS_PANEL_HEIGHT = 18
+
     def __init__(self, app: TUIApp):
         self.app = app
         self._last_poll = 0.0
         self._state: dict[str, Any] | None = None
+        # Scroll position for the reasoning panel. 0 = newest thought visible
+        # at the bottom; +N = scrolled N thoughts toward older history.
+        self._reasoning_offset = 0
+        # Snapshot of the thoughts-deque length the last time we rendered.
+        # When new thoughts arrive AND the user is at offset=0, we want
+        # them to see the new content; when the user has scrolled back,
+        # we increase the offset so the panel stays visually stable.
+        self._last_thought_count = 0
 
     async def on_enter(self, app: TUIApp) -> None:
         log.info("GameScreen.on_enter: starting")
@@ -142,7 +153,10 @@ class GameScreen(Screen):
             style="dim",
         )
 
-        keys = Text("e end_turn   c concede   q quit", style="dim")
+        keys = Text(
+            "e end_turn   k/j scroll reasoning   0 jump-latest   x concede   q quit",
+            style="dim",
+        )
         status_line = Text("")
         if self.app.state.error_message:
             status_line.append(self.app.state.error_message, style="red")
@@ -181,20 +195,83 @@ class GameScreen(Screen):
         return body
 
     def _render_thoughts(self) -> RenderableType:
-        """Fixed-height panel of the last few reasoning snippets."""
+        """Scrollable, word-wrapped panel of agent reasoning.
+
+        Each thought is rendered in full (no ellipsis truncation) with
+        word-wrap on; the panel takes a fixed number of rows and we
+        pick which slice of thoughts to render based on `_reasoning_offset`.
+
+        Scroll model: offset 0 = newest thought occupies the bottom of
+        the panel; increasing offset scrolls toward older history.
+        Because wrapped thoughts can occupy multiple rows each, we greedily
+        pack thoughts from newest to oldest until the row budget is used,
+        then skip `offset` thoughts worth from the tail before rendering.
+        """
         thoughts = list(self.app.state.thoughts)
-        height = 10
-        inner = height - 2
-        body = Text(no_wrap=True, overflow="ellipsis")
-        visible = thoughts[-inner:] if inner > 0 else []
-        if not visible:
-            body.append("(no reasoning yet)", style="dim italic")
+        total = len(thoughts)
+        height = self.THOUGHTS_PANEL_HEIGHT
+        inner_rows = max(1, height - 2)
+
+        # If the user is scrolled back and new thoughts arrive, keep the
+        # *same historical thoughts* pinned in view by bumping the offset
+        # by however many new entries landed. Without this, new thoughts
+        # would silently push the user's window around.
+        new_count = total - self._last_thought_count
+        if new_count > 0 and self._reasoning_offset > 0:
+            self._reasoning_offset += new_count
+        self._last_thought_count = total
+
+        if total == 0:
+            body = Text("(no reasoning yet)", style="dim italic")
+            return Panel(
+                body,
+                title="agent reasoning",
+                border_style="dim",
+                height=height,
+            )
+
+        # Clamp offset to valid range so out-of-bound scrolls snap.
+        self._reasoning_offset = max(0, min(self._reasoning_offset, total - 1))
+
+        # Approximate visible window: we don't know the terminal width
+        # precisely, so assume ~80 chars/row for wrapped length budgeting.
+        # Err on the side of packing more thoughts; the Panel auto-crops
+        # if we overshoot.
+        approx_cols = 80
+        window: list[str] = []
+        rows_used = 0
+        # Walk thoughts from newest to oldest, starting `offset` back.
+        end = total - self._reasoning_offset
+        for i in range(end - 1, -1, -1):
+            t = thoughts[i]
+            est_rows = max(1, (len(t) + approx_cols - 1) // approx_cols)
+            if rows_used + est_rows > inner_rows and window:
+                break
+            window.append(t)
+            rows_used += est_rows
+        window.reverse()
+
+        body = Text(no_wrap=False, overflow="fold")
+        for i, t in enumerate(window):
+            body.append(t)
+            if i != len(window) - 1:
+                body.append("\n")
+
+        # Position header: indicates where the window is within the full
+        # transcript. "latest 5/42" when at offset 0 showing 5 thoughts;
+        # "12-16/42" when scrolled back.
+        if self._reasoning_offset == 0:
+            title = f"agent reasoning — latest {len(window)}/{total}"
         else:
-            for i, t in enumerate(visible):
-                body.append(t)
-                if i != len(visible) - 1:
-                    body.append("\n")
-        return Panel(body, title="agent reasoning", border_style="dim", height=height)
+            shown_end = total - self._reasoning_offset
+            shown_start = shown_end - len(window) + 1
+            title = f"agent reasoning — {shown_start}-{shown_end}/{total} (scrolled {self._reasoning_offset})"
+        return Panel(
+            body,
+            title=title,
+            border_style="dim",
+            height=height,
+        )
 
     def _render_board(self, gs: dict[str, Any]) -> RenderableType:
         board = gs.get("board", {})
@@ -273,8 +350,19 @@ class GameScreen(Screen):
             return None
         if key == "e":
             return await self._call("end_turn")
-        if key == "c":
+        if key == "x":
             return await self._call("concede")
+        # Scroll the reasoning panel. vim-style: k = older, j = newer,
+        # 0 jumps back to the bottom (latest). Also accept arrow keys.
+        if key in ("k", "up"):
+            self._reasoning_offset += 1
+            return None
+        if key in ("j", "down"):
+            self._reasoning_offset = max(0, self._reasoning_offset - 1)
+            return None
+        if key == "0":
+            self._reasoning_offset = 0
+            return None
         return None
 
     # ---- actions ----
