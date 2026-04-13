@@ -5,6 +5,7 @@ as coaches — they write a `STRATEGY.md`-style playbook and can send live advic
 during the match.
 
 See:
+- **`docs/USAGE.md` — CLI reference and workflows (start here if you just want to run matches)**
 - `DESIGN.md` — original motivation
 - `GAME_DESIGN.md` — full game spec (units, rules, MCP tool surface, scenarios)
 - `PLAN.md` — implementation plan (phases, repo layout, tooling)

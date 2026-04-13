@@ -1,0 +1,341 @@
+# Usage guide
+
+A hands-on reference for the three CLIs shipped with this repo
+(`clash-match`, `clash-replay`, `clash-play`) and the supporting
+concepts: run directories, lessons, real-time reasoning, and coaching.
+
+- [Quick start](#quick-start)
+- [`clash-match` — run a match](#clash-match--run-a-match)
+- [Lessons](#lessons)
+- [Real-time reasoning](#real-time-reasoning)
+- [Coaching during a match](#coaching-during-a-match)
+- [`clash-replay` — scrollable timeline](#clash-replay--scrollable-timeline)
+- [`clash-play` — interactive step-through replayer](#clash-play--interactive-step-through-replayer)
+- [Complete example workflows](#complete-example-workflows)
+
+---
+
+## Quick start
+
+```bash
+# Install dependencies.
+uv sync --extra dev
+
+# Smoke test: two random bots play the smallest scenario end-to-end.
+uv run clash-match --game 01_tiny_skirmish --blue random --red random --render
+```
+
+Claude-backed providers need the `claude` CLI (Claude Code) installed and
+logged in — no API key required.
+
+---
+
+## `clash-match` — run a match
+
+```
+clash-match [options]
+
+Options (all optional):
+  --game GAME                   scenario name (folder under games/). Default: 01_tiny_skirmish.
+  --blue BLUE                   provider spec. Default: random.
+  --red RED                     provider spec. Default: random.
+  --blue-strategy PATH          path to a STRATEGY.md for blue (see strategies/).
+  --red-strategy PATH           path to a STRATEGY.md for red.
+  --max-turns N                 override the scenario's max_turns.
+  --replay PATH                 explicit replay path. Default: <run-dir>/replay.jsonl.
+  --render                      live TUI (board + units + agent reasoning panel).
+  --seed N                      seed for random providers.
+  --thoughts-height N           rows for the reasoning panel in --render mode. Default: 12.
+  --coach-file-blue PATH        watch this file and send new lines to blue as coach messages.
+  --coach-file-red PATH         same, for red.
+  --runs-dir PATH               parent of the auto-created per-match folder. Default: ./runs.
+  --no-run-dir                  don't auto-create a per-match folder.
+  --lessons-dir PATH            where lessons are read from and written to. Default: ./lessons.
+  --no-lessons                  skip both writing lessons AND injecting priors into prompts.
+```
+
+### Provider specs
+
+| Spec | What it is |
+|---|---|
+| `random` | Picks a legal action at random. No LLM, no network, free. |
+| `claude-haiku-4-5` | Cheapest Claude; fine for iteration. |
+| `claude-sonnet-4-6` | Stronger; ~$X per match — see README's cost warning. |
+| `claude-opus-4-6` | Strongest; slowest & priciest. |
+| `gpt-*` | OpenAI stub (Phase 7; not fully wired). |
+
+### Run directories
+
+Every invocation creates a folder at `./runs/{timestamp}_{scenario}/` and
+routes per-match artifacts into it. After a match ends you'll find:
+
+```
+runs/20260412T143022_01_tiny_skirmish/
+├── replay.jsonl      every event (match_start, thoughts, actions, coach, errors)
+└── thoughts.log      plain-text stream of agent reasoning, one thought per line
+```
+
+The run directory's path is printed at the start of every match. Use
+`--no-run-dir` to suppress if you're iterating quickly and don't want
+the clutter.
+
+---
+
+## Lessons
+
+After a match ends, each Claude-backed provider writes a short
+markdown lesson reflecting on one key decision or pattern that drove the
+outcome. Lessons live at `./lessons/<scenario>/<slug>.md`, sharded by
+scenario so the system-prompt injection in future matches only pulls
+relevant priors.
+
+### Anatomy of a lesson file
+
+```markdown
+---
+title: Don't chase healers into the enemy fort
+slug: dont-chase-healers-into-enemy-fort
+scenario: 02_basic_mirror
+team: red
+model: claude-sonnet-4-6
+outcome: loss
+reason: seize
+created_at: 2026-04-12T14:30:00+00:00
+---
+
+## Situation
+Blue's mage was two tiles from our home fort with a knight escort...
+
+## Lesson
+Prioritize fort defense over kill-chasing when a healer is within
+reach of the fort. A full-HP mage on a fort will outheal the damage
+you can deal in two turns.
+```
+
+Filenames are slugified from the model-chosen title for searchability
+(`grep -l "terrain" lessons/02_basic_mirror/`). Collisions within a
+scenario disambiguate with a `-2`, `-3`, ... suffix.
+
+### How lessons are injected
+
+Before each turn, the Claude provider loads the 5 most recent lessons for
+the current scenario and appends a section to the system prompt titled
+**"Prior lessons from this scenario"**. Each lesson is rendered as:
+
+```
+### <title> [<team> <outcome>]
+
+<body>
+```
+
+Injection is automatic — as long as the lessons folder exists for the
+scenario you're playing, the agent sees them. No tool call needed.
+
+### Controlling lesson behavior
+
+```bash
+# Disable both writing new lessons AND injecting priors (useful while
+# iterating on prompts so you don't pollute the corpus).
+uv run clash-match --game 01_tiny_skirmish --no-lessons --render ...
+
+# Point at an alternate lessons folder (e.g. to test with a curated set).
+uv run clash-match --lessons-dir ./my-curated-lessons ...
+```
+
+Lessons are plain files — delete, hand-edit, or commit them to git at
+will.
+
+---
+
+## Real-time reasoning
+
+Three ways to watch the agent think:
+
+1. **The TUI reasoning panel** (`--render`). A fixed-height panel at the
+   bottom of the live view shows the last N thoughts, tagged with turn
+   and team. Bump it with `--thoughts-height 30` for more context.
+
+2. **`thoughts.log` tail** — every thought is also streamed
+   line-by-line to `runs/<ts>_<scenario>/thoughts.log`. One thought per
+   line, whitespace collapsed, tagged `[T{turn} {team}]`. Bidirectional
+   scroll via `less`:
+
+   ```bash
+   # Find the run (printed at match start, or):
+   ls -1t runs/ | head -1
+
+   # In a second terminal, follow live:
+   less +F --follow-name runs/20260412T143022_01_tiny_skirmish/thoughts.log
+   #   Ctrl-C in less to pause following; / to search; q to quit.
+   ```
+
+3. **`clash-replay` pager** (post-match only). Renders the full timeline
+   — thoughts + actions interleaved — through `$PAGER`. See below.
+
+---
+
+## Coaching during a match
+
+A coach is a text file you append lines to while the match runs. Each
+line becomes a coach message delivered to the team's agent at the start
+of its next turn.
+
+```bash
+# Terminal 1 — start the match with coach file wiring:
+uv run clash-match \
+  --game 02_basic_mirror \
+  --blue claude-sonnet-4-6 --red claude-sonnet-4-6 \
+  --coach-file-blue coach_blue.txt \
+  --coach-file-red  coach_red.txt  \
+  --render
+
+# Terminal 2 — issue guidance at any time. One line = one message.
+echo "push the cavalry on the right flank" >> coach_blue.txt
+echo "fall back to the fort, they're breaking through" >> coach_blue.txt
+```
+
+The agent calls `get_coach_messages` at the start of each turn and
+drains the queue. Messages logged to the replay as `coach_message`
+events (visible in `clash-replay` / `clash-play`).
+
+Tip: create the coach files before starting the match (`touch
+coach_blue.txt`) so the watcher has something to follow from turn one.
+
+---
+
+## `clash-replay` — scrollable timeline
+
+```
+clash-replay [run_dir] [--replay PATH] [--no-pager]
+```
+
+Post-match only. Pipes the full event timeline through `$PAGER`
+(usually `less`) so you get bidirectional scroll, `/` search, and `q`
+quit for free. Events shown: match_start, agent thoughts, actions,
+coach messages, forced end_turns, errors.
+
+```bash
+uv run clash-replay runs/20260412T143022_01_tiny_skirmish
+
+# Grep for all seizes across a run:
+uv run clash-replay --no-pager runs/... | grep seize
+
+# Point at an arbitrary replay file:
+uv run clash-replay --replay path/to/replay.jsonl
+```
+
+---
+
+## `clash-play` — interactive step-through replayer
+
+```
+clash-play [run_dir] [--replay PATH]
+```
+
+Reconstructs the match visually, one event at a time. The board starts
+at the scenario's initial state and updates as you step through actions.
+Agent reasoning appears in a side panel *before* the paired action
+updates the board — you see what the agent thought, then what it did.
+
+**Commands at the prompt:**
+
+| Key | Action |
+|---|---|
+| `Enter` | advance one step |
+| `s` + `Enter` | skip forward past thoughts to the next action |
+| `q` + `Enter` | quit |
+| `Ctrl-C` | abort |
+
+```bash
+uv run clash-play runs/20260412T143022_01_tiny_skirmish
+```
+
+If the replay is older than the `match_start` metadata event
+(commit `1deb07a`, 2026-04-12), the replayer will refuse with a clear
+error — re-record the match to get the metadata.
+
+---
+
+## Complete example workflows
+
+### 1. Run a Claude-vs-Claude match with coaching and real-time reasoning monitoring
+
+```bash
+# Pre-create the coach files so the watcher starts at turn 1.
+touch coach_blue.txt coach_red.txt
+
+# Terminal 1 — start the match.
+uv run clash-match \
+  --game 02_basic_mirror \
+  --blue claude-haiku-4-5 --blue-strategy strategies/aggressive_rush.md \
+  --red  claude-haiku-4-5 --red-strategy  strategies/defensive_chokepoint.md \
+  --coach-file-blue coach_blue.txt \
+  --coach-file-red  coach_red.txt  \
+  --thoughts-height 20 \
+  --render
+# → prints: "run directory: runs/20260412T143022_02_basic_mirror"
+# →         "  tail thoughts with: less +F runs/.../thoughts.log"
+```
+
+```bash
+# Terminal 2 — follow the reasoning log live.
+less +F --follow-name runs/20260412T143022_02_basic_mirror/thoughts.log
+```
+
+```bash
+# Terminal 3 — drop coach messages into the mix as the match unfolds.
+echo "focus the mage first" >> coach_blue.txt
+echo "don't chase — hold the fort" >> coach_red.txt
+```
+
+When the match ends you'll see a spinner (`Blue reviewing the match…`,
+`Red reviewing the match…`) while each agent writes its lesson. Lesson
+files print once saved:
+
+```
+[blue] lesson saved: lessons/02_basic_mirror/commit-mage-to-the-fort.md
+[red]  lesson saved: lessons/02_basic_mirror/baiting-cavalry-into-forest.md
+```
+
+### 2. Replay that match as a human
+
+```bash
+# Scrollable timeline log (fast skim, search, grep).
+uv run clash-replay runs/20260412T143022_02_basic_mirror
+
+# Interactive step-through (press Enter to advance).
+uv run clash-play runs/20260412T143022_02_basic_mirror
+```
+
+### 3. Iterate on prompts without polluting the lessons corpus
+
+```bash
+uv run clash-match --game 01_tiny_skirmish \
+  --blue claude-haiku-4-5 --red claude-haiku-4-5 \
+  --no-lessons --render
+```
+
+`--no-lessons` disables both writing new lessons and injecting priors, so
+you're evaluating the base prompt only.
+
+### 4. Use a curated lessons set for a tournament
+
+```bash
+# Put hand-picked lessons in ./canon-lessons/<scenario>/...
+uv run clash-match --game 02_basic_mirror \
+  --blue claude-sonnet-4-6 --red claude-sonnet-4-6 \
+  --lessons-dir ./canon-lessons --render
+```
+
+### 5. Inspect the raw replay
+
+The replay is plain JSONL — grep and jq work on it directly:
+
+```bash
+# All thoughts from the losing side of the last match.
+jq -c 'select(.kind == "agent_thought")' \
+  runs/20260412T143022_02_basic_mirror/replay.jsonl
+
+# All seizes across every run.
+grep -l '"reason": "seize"' runs/*/replay.jsonl
+```
