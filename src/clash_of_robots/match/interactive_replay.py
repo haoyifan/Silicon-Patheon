@@ -3,18 +3,21 @@
 Usage:
     clash-play runs/20260412T143022_01_tiny_skirmish
 
-Reconstructs the match from replay.jsonl:
+Reconstructs the match from replay.jsonl and walks the user through it:
 - Starts from the scenario's initial state.
-- Each Enter press advances one replay event.
-- If the event is an agent_thought / coach_message / error: the board is
-  unchanged; the current reasoning is shown in the side panel.
-- If the event is an action: the action is applied to the state first so
-  the board updates, then the step panel describes what happened.
+- Agent_thought / coach_message / error events: shown in the side panel
+  with the board unchanged.
+- Action events: the action is re-applied to the state so the board
+  visibly updates alongside the description.
+- All steps are precomputed as GameState snapshots, so backward
+  navigation is as cheap as forward.
 
-Commands at the prompt:
-    <Enter>  advance one step
-    s        skip forward to the next action (past any thoughts)
-    q        quit
+Controls (single keypress on a TTY; line-input fallback otherwise):
+    Enter or k   advance one step
+    j            go back one step
+    s            skip forward to the next action event
+    q            quit
+    Ctrl-C       quit
 """
 
 from __future__ import annotations
@@ -184,11 +187,62 @@ def _apply_action_event(state: GameState, ev: ReplayEvent, console: Console) -> 
 
 
 def _read_command() -> str:
-    """Block until the user presses Enter, returning any typed text."""
+    """Block on one keypress. Return normalized command tokens.
+
+    When stdin is an interactive POSIX TTY, reads a single character via
+    termios cbreak mode — no Enter needed. Otherwise (piped stdin, tests,
+    non-POSIX) falls back to line-oriented `input()` so you can still
+    drive the replayer by piping commands.
+
+    Return values:
+      ""   Enter was pressed (advance)
+      "q"  quit, EOF, or Ctrl-C
+      other single lowercase character: the key that was pressed
+    """
+    # Non-TTY fallback: line input. Keeps tests and pipe-driven usage working.
+    if not sys.stdin.isatty():
+        try:
+            return input().strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            return "q"
+
     try:
-        return input().strip().lower()
-    except (EOFError, KeyboardInterrupt):
+        import termios
+        import tty
+    except ImportError:
+        # Not a POSIX terminal (e.g. Windows without WSL) — line input.
+        try:
+            return input().strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            return "q"
+
+    fd = sys.stdin.fileno()
+    try:
+        old_settings = termios.tcgetattr(fd)
+    except termios.error:
+        try:
+            return input().strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            return "q"
+
+    try:
+        # cbreak disables line buffering and echo but preserves signal
+        # handling, so Ctrl-C still raises KeyboardInterrupt.
+        tty.setcbreak(fd)
+        try:
+            ch = sys.stdin.read(1)
+        except KeyboardInterrupt:
+            return "q"
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+    if not ch:  # EOF
         return "q"
+    if ch in ("\r", "\n"):
+        return ""  # Enter → advance
+    if ch == "\x03":  # defensive: Ctrl-C without signal delivery
+        return "q"
+    return ch.lower()
 
 
 def _build_snapshots(
@@ -302,7 +356,10 @@ def interactive_replay(replay_path: Path) -> int:
 
 def main() -> int:
     p = argparse.ArgumentParser(
-        description="Interactive step-through replayer. Press Enter to advance."
+        description=(
+            "Interactive step-through replayer. "
+            "Keys: Enter/k=next, j=prev, s=skip to next action, q=quit."
+        )
     )
     p.add_argument(
         "run_dir",
