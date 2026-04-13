@@ -194,7 +194,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"room_id": room_id, "slot": slot.value})
 
     @mcp.tool()
-    def leave_room(connection_id: str) -> dict:
+    async def leave_room(connection_id: str) -> dict:
         """Vacate this connection's seat. Cancels any autostart countdown."""
         conn = app.get_connection(connection_id)
         if conn is None or conn.state != ConnectionState.IN_ROOM:
@@ -212,7 +212,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({})
 
     @mcp.tool()
-    def get_room_state(connection_id: str) -> dict:
+    async def get_room_state(connection_id: str) -> dict:
         """Show the caller's current room, seats, readiness, and countdown."""
         conn = app.get_connection(connection_id)
         if conn is None or conn.state not in (
@@ -230,6 +230,18 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         room = app.rooms.get(room_id)
         if room is None:
             return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
+
+        # Belt-and-suspenders: if we're polled after the deadline has
+        # passed but the background _run_countdown task hasn't fired
+        # (FastMCP dispatch / event-loop context quirks have been known
+        # to drop the task), promote the room inline. At worst a client
+        # observes the transition one poll later than it would have.
+        _maybe_promote_on_deadline(app, room_id)
+
+        # Re-read the room after potential inline promotion.
+        room = app.rooms.get(room_id)
+        if room is None:
+            return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
         summary = _serialize_room_summary(room)
         countdown = app.autostart_deadlines.get(room_id)
         if countdown is not None:
@@ -239,7 +251,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"room": summary})
 
     @mcp.tool()
-    def set_ready(connection_id: str, ready: bool) -> dict:
+    async def set_ready(connection_id: str, ready: bool) -> dict:
         """Toggle this connection's readiness.
 
         When both seats are filled and both ready, the server starts a
@@ -308,5 +320,30 @@ async def _run_countdown(app: App, room_id: str) -> None:
     room = app.rooms.get(room_id)
     if room is None or not room.all_ready():
         return
+    if app.on_countdown_complete is not None:
+        app.on_countdown_complete(room_id)
+
+
+def _maybe_promote_on_deadline(app: App, room_id: str) -> None:
+    """Synchronous safety net: if the autostart deadline has passed,
+    promote the room even if the background _run_countdown task didn't
+    fire. Called from the polling-read path so every client's next poll
+    (≤1s cadence) will observe the promotion.
+    """
+    import time
+
+    deadline = app.autostart_deadlines.get(room_id)
+    if deadline is None:
+        return
+    if time.time() < deadline:
+        return
+    room = app.rooms.get(room_id)
+    if room is None or not room.all_ready():
+        return
+    # Clear deadline so we don't double-promote.
+    app.autostart_deadlines.pop(room_id, None)
+    task = app.autostart_tasks.pop(room_id, None)
+    if task is not None and not task.done():
+        task.cancel()
     if app.on_countdown_complete is not None:
         app.on_countdown_complete(room_id)
