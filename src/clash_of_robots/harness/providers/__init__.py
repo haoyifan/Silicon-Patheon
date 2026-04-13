@@ -28,7 +28,7 @@ def make_provider(spec: str, **kwargs) -> Provider:
             **{
                 k: v
                 for k, v in kwargs.items()
-                if k in {"strategy_path", "token_budget", "time_budget"}
+                if k in {"strategy_path", "token_budget", "time_budget", "lessons_dir"}
             },
         )
     if spec.startswith("gpt"):

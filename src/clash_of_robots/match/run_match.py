@@ -183,10 +183,35 @@ def main() -> int:
         help="path to a text file; append lines during the match to advise blue",
     )
     p.add_argument("--coach-file-red", type=Path, default=None)
+    p.add_argument(
+        "--lessons-dir",
+        type=Path,
+        default=Path("lessons"),
+        help="directory for post-match lesson files (default: ./lessons)",
+    )
+    p.add_argument(
+        "--no-lessons",
+        action="store_true",
+        help="skip writing lessons AND injecting prior ones into the system prompt",
+    )
     args = p.parse_args()
 
-    blue = make_provider(args.blue, seed=args.seed, strategy_path=args.blue_strategy)
-    red = make_provider(args.red, seed=args.seed, strategy_path=args.red_strategy)
+    # --no-lessons disables both the producer (run_match) and the consumer
+    # (provider-side prompt injection) by threading None through both.
+    effective_lessons_dir = None if args.no_lessons else args.lessons_dir
+
+    blue = make_provider(
+        args.blue,
+        seed=args.seed,
+        strategy_path=args.blue_strategy,
+        lessons_dir=effective_lessons_dir,
+    )
+    red = make_provider(
+        args.red,
+        seed=args.seed,
+        strategy_path=args.red_strategy,
+        lessons_dir=effective_lessons_dir,
+    )
 
     run_match(
         game=args.game,
@@ -197,6 +222,7 @@ def main() -> int:
         render=args.render,
         coach_file_blue=args.coach_file_blue,
         coach_file_red=args.coach_file_red,
+        lessons_dir=effective_lessons_dir,
     )
     return 0
 
