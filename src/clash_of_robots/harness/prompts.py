@@ -138,6 +138,35 @@ def build_turn_prompt(session: Session, viewer: Team) -> str:
     )
 
 
+def build_turn_prompt_from_state_dict(
+    state_dict: dict, viewer: Team
+) -> str:
+    """Same as build_turn_prompt but takes a pre-filtered state dict.
+
+    Used by the networked client which receives the state via a
+    `get_state` tool call rather than holding a local Session. The
+    dict should already be filtered for `viewer` by the server's
+    viewer-filter layer.
+    """
+    snapshot = {
+        "turn": state_dict.get("turn"),
+        "active_player": state_dict.get("active_player"),
+        "you": state_dict.get("you"),
+        "board": {
+            "width": state_dict.get("board", {}).get("width"),
+            "height": state_dict.get("board", {}).get("height"),
+            "forts": state_dict.get("board", {}).get("forts"),
+        },
+        "units": state_dict.get("units", []),
+        "last_action": state_dict.get("last_action"),
+    }
+    return TURN_PROMPT_TEMPLATE.format(
+        turn=state_dict.get("turn", "?"),
+        team=viewer.value,
+        state_json=json.dumps(snapshot, indent=2),
+    )
+
+
 def load_strategy(path: str | Path | None) -> str | None:
     if path is None:
         return None
