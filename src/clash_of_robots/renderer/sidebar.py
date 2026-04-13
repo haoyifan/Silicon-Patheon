@@ -76,7 +76,11 @@ def render_thoughts_panel(session: Session, height: int = THOUGHTS_PANEL_HEIGHT)
     shifting as new thoughts arrive.
     """
     inner = height - 2  # account for panel borders
-    body = Text()
+    # no_wrap + overflow=ellipsis keeps every thought on exactly one row.
+    # Without this a long thought wraps inside the panel, which changes the
+    # visible-line count per thought and causes the bottom of the panel to
+    # reflow on every render — visible as bottom-row flicker.
+    body = Text(no_wrap=True, overflow="ellipsis")
     thoughts = list(session.thoughts)[-inner:] if inner > 0 else []
     if not thoughts:
         body.append("(no agent reasoning yet)", style="dim italic")
