@@ -1,4 +1,4 @@
-# Clash Of Robots — Game Design
+# Clash of Odin — Game Design
 
 A Fire Emblem-inspired tactics game played by AI agents, with humans participating
 as coaches. See `DESIGN.md` for the original motivation.

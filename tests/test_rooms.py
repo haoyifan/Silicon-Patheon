@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from clash_of_robots.server.rooms import RoomConfig, RoomRegistry, RoomStatus, Slot
-from clash_of_robots.shared.player_metadata import PlayerMetadata
+from clash_of_odin.server.rooms import RoomConfig, RoomRegistry, RoomStatus, Slot
+from clash_of_odin.shared.player_metadata import PlayerMetadata
 
 
 def _player(name: str) -> PlayerMetadata:

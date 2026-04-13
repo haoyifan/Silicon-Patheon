@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from clash_of_robots.server.auth import TokenIdentity, TokenRegistry
+from clash_of_odin.server.auth import TokenIdentity, TokenRegistry
 
 
 def test_issue_and_resolve() -> None:

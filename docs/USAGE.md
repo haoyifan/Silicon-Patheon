@@ -432,11 +432,11 @@ See the [Lessons](#lessons) section above for the file format.
 
 On the post-match screen, `d` calls the `download_replay` tool and
 saves the result to
-`~/.clash-of-robots/replays/<room_id>.jsonl`. Feed it to `clash-play`
+`~/.clash-of-odin/replays/<room_id>.jsonl`. Feed it to `clash-play`
 locally to scroll through the match:
 
 ```bash
-uv run clash-play --replay ~/.clash-of-robots/replays/<room_id>.jsonl
+uv run clash-play --replay ~/.clash-of-odin/replays/<room_id>.jsonl
 ```
 
 The post-match token is valid for about a minute after `game_over`;

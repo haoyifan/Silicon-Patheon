@@ -1,11 +1,11 @@
-# Implementation Plan — Clash Of Robots
+# Implementation Plan — Clash of Odin
 
 End-to-end plan for building the agent-vs-agent tactics game described in
 `GAME_DESIGN.md`. Each phase ends with something runnable and demoable. Don't
 move to the next phase until the current one demos cleanly.
 
-**Project name:** Clash Of Robots
-**Python package:** `clash_of_robots`
+**Project name:** Clash of Odin
+**Python package:** `clash_of_odin`
 
 ## Repo structure
 
@@ -18,7 +18,7 @@ agent-game/
 ├── DECISIONS.md                       # log of design calls made during implementation
 ├── pyproject.toml                     # uv-managed; ruff + pyright configured
 │
-├── src/clash_of_robots/
+├── src/clash_of_odin/
 │   ├── __init__.py
 │   ├── server/                        # MCP server — game engine + tool wrappers
 │   │   ├── __init__.py
@@ -97,7 +97,7 @@ agent-game/
 
 ### Structural choices
 
-- `src/clash_of_robots/` is a single Python package using the **src layout**.
+- `src/clash_of_odin/` is a single Python package using the **src layout**.
   Subpackages (`server/`, `harness/`, `renderer/`, `match/`) keep concerns
   separated but share types and utilities cleanly.
 - `server/engine/` is **pure Python with no MCP knowledge**. Game engine is

@@ -8,20 +8,20 @@ from __future__ import annotations
 
 import time
 
-from clash_of_robots.server.app import App, Connection
-from clash_of_robots.server.engine.scenarios import load_scenario
-from clash_of_robots.server.engine.state import GameStatus, Team
-from clash_of_robots.server.heartbeat import (
+from clash_of_odin.server.app import App, Connection
+from clash_of_odin.server.engine.scenarios import load_scenario
+from clash_of_odin.server.engine.state import GameStatus, Team
+from clash_of_odin.server.heartbeat import (
     HEARTBEAT_GRACE_S,
     IN_GAME_HARD_CONCEDE_S,
     IN_GAME_SOFT_NOTICE_S,
     IN_ROOM_EVICT_S,
     run_sweep_once,
 )
-from clash_of_robots.server.rooms import RoomConfig, Slot
-from clash_of_robots.server.session import new_session
-from clash_of_robots.shared.player_metadata import PlayerMetadata
-from clash_of_robots.shared.protocol import ConnectionState
+from clash_of_odin.server.rooms import RoomConfig, Slot
+from clash_of_odin.server.session import new_session
+from clash_of_odin.shared.player_metadata import PlayerMetadata
+from clash_of_odin.shared.protocol import ConnectionState
 
 
 def _seat(app: App, cid: str, team: str, state: ConnectionState) -> Connection:

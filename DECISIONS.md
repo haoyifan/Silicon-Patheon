@@ -1,7 +1,7 @@
 # Decisions Log
 
 Running log of design and implementation calls made by Claude during build-out
-of Clash Of Robots. Each entry: what was decided, why, and any reversal cost if
+of Clash of Odin. Each entry: what was decided, why, and any reversal cost if
 we later disagree.
 
 Format:
@@ -15,10 +15,10 @@ Format:
 ---
 
 ## 2026-04-12 — Project & tooling baseline
-**Decision:** Project named "Clash Of Robots", Python package `clash_of_robots`,
+**Decision:** Project named "Clash of Odin", Python package `clash_of_odin`,
 Python 3.12, `uv` for env management, `ruff` for lint+format, `pyright` (basic
 mode) for type checking enforced from Phase 1, `pytest` for tests, src layout
-(`src/clash_of_robots/...`).
+(`src/clash_of_odin/...`).
 **Why:** User explicitly chose name, Python 3.12, ruff, and asked for early type
 checking. src layout is the modern Python default and prevents the common
 "importing from project root" foot-gun.

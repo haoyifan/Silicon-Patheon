@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_robots.server.engine.scenarios import load_scenario
-from clash_of_robots.server.engine.state import Team
-from clash_of_robots.server.session import new_session
-from clash_of_robots.server.tools import TOOL_REGISTRY, ToolError, call_tool
+from clash_of_odin.server.engine.scenarios import load_scenario
+from clash_of_odin.server.engine.state import Team
+from clash_of_odin.server.session import new_session
+from clash_of_odin.server.tools import TOOL_REGISTRY, ToolError, call_tool
 
 
 def _session():

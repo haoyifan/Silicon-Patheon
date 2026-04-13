@@ -1,4 +1,4 @@
-# Phase 1 design — networked clash-of-robots
+# Phase 1 design — networked clash-of-odin
 
 Detailed plan for the backend/client split agreed in
 [NETWORKED_ARCHITECTURE_REVIEW.md](NETWORKED_ARCHITECTURE_REVIEW.md)
@@ -71,7 +71,7 @@ Keep the existing `harness/` and `match/` so `clash-match` and
 for engine changes.
 
 ```
-src/clash_of_robots/
+src/clash_of_odin/
 ├── engine/                  # unchanged, pure game logic
 │   ├── board.py
 │   ├── combat.py
@@ -480,7 +480,7 @@ deps — decide during 1d). Five screens:
 
 `download_replay` returns the server's authoritative `replay.jsonl`
 contents as a single text payload. Client writes it locally to
-`~/.clash-of-robots/replays/<server-match-id>.jsonl` and can feed it
+`~/.clash-of-odin/replays/<server-match-id>.jsonl` and can feed it
 straight into `clash-play`.
 
 Available for 60 s after game-over, then the token is purged. Client

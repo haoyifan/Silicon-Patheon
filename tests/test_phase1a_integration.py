@@ -16,9 +16,9 @@ import time
 import pytest
 import uvicorn
 
-from clash_of_robots.client.transport import ServerClient
-from clash_of_robots.server.app import App, build_mcp_server
-from clash_of_robots.shared.protocol import ConnectionState
+from clash_of_odin.client.transport import ServerClient
+from clash_of_odin.server.app import App, build_mcp_server
+from clash_of_odin.shared.protocol import ConnectionState
 
 
 def _free_port() -> int:

@@ -1,5 +1,5 @@
 [project]
-name = "clash_of_robots"
+name = "clash_of_odin"
 version = "0.1.0"
 description = "Tactical grid combat played by AI agents"
 requires-python = ">=3.12"
@@ -20,18 +20,18 @@ dev = [
 ]
 
 [project.scripts]
-clash-match = "clash_of_robots.match.run_match:main"
-clash-server = "clash_of_robots.server.main:main"
-clash-play = "clash_of_robots.match.interactive_replay:main"
-clash-serve = "clash_of_robots.server.main_http:main"
-clash-join = "clash_of_robots.client.main:main"
+clash-match = "clash_of_odin.match.run_match:main"
+clash-server = "clash_of_odin.server.main:main"
+clash-play = "clash_of_odin.match.interactive_replay:main"
+clash-serve = "clash_of_odin.server.main_http:main"
+clash-join = "clash_of_odin.client.main:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/clash_of_robots"]
+packages = ["src/clash_of_odin"]
 
 [tool.ruff]
 line-length = 100

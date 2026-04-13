@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clash_of_robots.lessons import Lesson, LessonStore, slugify
+from clash_of_odin.lessons import Lesson, LessonStore, slugify
 
 
 def _sample(slug: str = "foo", scenario: str = "01_tiny_skirmish") -> Lesson:

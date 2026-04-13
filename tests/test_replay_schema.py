@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_robots.match.replay_schema import (
+from clash_of_odin.match.replay_schema import (
     AgentThought,
     CoachMessage,
     ErrorPayload,
@@ -14,7 +14,7 @@ from clash_of_robots.match.replay_schema import (
     action_from_payload,
     parse_event,
 )
-from clash_of_robots.server.engine.rules import (
+from clash_of_odin.server.engine.rules import (
     AttackAction,
     EndTurnAction,
     HealAction,

@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clash_of_robots.renderer.coach_input import CoachFileWatcher
-from clash_of_robots.server.engine.scenarios import load_scenario
-from clash_of_robots.server.engine.state import Team
-from clash_of_robots.server.session import new_session
-from clash_of_robots.server.tools import call_tool
+from clash_of_odin.renderer.coach_input import CoachFileWatcher
+from clash_of_odin.server.engine.scenarios import load_scenario
+from clash_of_odin.server.engine.state import Team
+from clash_of_odin.server.session import new_session
+from clash_of_odin.server.tools import call_tool
 
 
 def test_file_watcher_pushes_new_lines(tmp_path: Path):

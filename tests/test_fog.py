@@ -10,10 +10,10 @@ scenario geometry or the sight-stat values.
 
 from __future__ import annotations
 
-from clash_of_robots.server.engine.scenarios import load_scenario
-from clash_of_robots.server.engine.state import GameState, Pos, Team
-from clash_of_robots.shared.fog import visible_tiles
-from clash_of_robots.shared.viewer_filter import (
+from clash_of_odin.server.engine.scenarios import load_scenario
+from clash_of_odin.server.engine.state import GameState, Pos, Team
+from clash_of_odin.shared.fog import visible_tiles
+from clash_of_odin.shared.viewer_filter import (
     ViewerContext,
     currently_visible,
     filter_state,

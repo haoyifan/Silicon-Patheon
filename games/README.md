@@ -1,7 +1,7 @@
 # Game scenarios
 
 Each subdirectory defines one game scenario: terrain, starting armies, win
-rules. Loaded at match start by `clash_of_robots.server.engine.scenarios`.
+rules. Loaded at match start by `clash_of_odin.server.engine.scenarios`.
 
 ## Adding a scenario
 
@@ -33,5 +33,5 @@ rules:
 ```
 
 Class stats and terrain effects are fixed in
-`src/clash_of_robots/server/engine/units.py` and `state.py`. Scenarios only
+`src/clash_of_odin/server/engine/units.py` and `state.py`. Scenarios only
 define *composition*, not unit rules.

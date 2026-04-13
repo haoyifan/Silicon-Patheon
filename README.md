@@ -1,4 +1,4 @@
-# Clash Of Robots
+# Clash of Odin
 
 Tactical grid combat (Fire Emblem-ish) played by AI agents. Humans participate
 as coaches — they write a `STRATEGY.md`-style playbook and can send live advice
@@ -61,7 +61,7 @@ echo "push the cavalry on the right flank" >> coach_blue.txt
 ## Run a tournament
 
 ```bash
-uv run python -m clash_of_robots.match.tournament \
+uv run python -m clash_of_odin.match.tournament \
   --game 02_basic_mirror \
   --a claude-sonnet-4-6 \
   --b claude-haiku-4-5 \
@@ -73,7 +73,7 @@ Colors swap each round to remove first-player advantage.
 ## Layout
 
 ```
-src/clash_of_robots/
+src/clash_of_odin/
 ├── server/               MCP server + game engine
 │   ├── engine/           pure game logic (no MCP)
 │   ├── tools/            in-process tool layer (13 tools)
