@@ -1,15 +1,20 @@
 """Claude Agent SDK-backed provider.
 
-Wraps the in-process tool layer as SDK MCP tools and drives a one-shot `query`
-per turn. Uses the user's existing Claude subscription auth via the Claude CLI.
+Wraps the in-process tool layer as SDK MCP tools and drives the match
+via a **persistent `ClaudeSDKClient` session** that spans every turn
+of the match.
 
-Memory model: **fresh-per-turn**. Each `decide_turn` call starts a new
-conversation with only the system prompt (rules + strategy) and a snapshot of
-current state. No chain-of-thought or plans carry between turns. Cross-turn
-continuity comes from the server-side state, coach queue, and get_history
-tool — not the agent's context window. See DECISIONS.md for rationale and the
-recipe for switching to persistent sessions (ClaudeSDKClient) if agents seem
-tactically incoherent across turns.
+Memory model: the system prompt (rules + strategy + lessons) is sent
+once at `on_match_start`. Each `decide_turn` sends a new user message
+(the turn-prompt snapshot) onto the existing conversation. The agent
+retains its plan, remembers tool results, and can reflect on the
+opponent's move without re-deriving the position from scratch.
+
+See DECISIONS.md (2026-04-13 entry) for the full trade-off
+discussion. Summary: context grows monotonically across the match —
+fine on Sonnet / Opus 1M, may want pruning on Haiku for 30+ turn
+matches. Revert path: remove `_open_sdk_client` / `_close_sdk_client`
+and put `create_sdk_mcp_server` + `query()` back inside `_async_turn`.
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ from pathlib import Path
 from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
+    ClaudeSDKClient,
     ResultMessage,
     TextBlock,
     create_sdk_mcp_server,
@@ -112,16 +118,47 @@ class AnthropicProvider(Provider):
         self.max_agent_iterations = max_agent_iterations
         self.lessons_dir = Path(lessons_dir) if lessons_dir is not None else None
         self.max_injected_lessons = max_injected_lessons
+        # Persistent-session state: one asyncio loop + one ClaudeSDKClient
+        # per provider instance (i.e. per team), opened in on_match_start
+        # and reused by every decide_turn call until on_match_end.
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._sdk_client: ClaudeSDKClient | None = None
+        self._turn_count: int = 0
 
-    def decide_turn(self, session: Session, viewer: Team) -> None:
-        asyncio.run(self._async_turn(session, viewer))
+    # ---- match lifecycle ----
 
-    async def _async_turn(self, session: Session, viewer: Team) -> None:
-        start = time.time()
-        turn_at_start = session.state.turn
+    def on_match_start(self, session: Session, viewer: Team) -> None:
+        """Open the persistent SDK session.
+
+        Using a dedicated event loop (rather than asyncio.run per turn)
+        is required because the ClaudeSDKClient's stdio subprocess is
+        tied to whichever loop created it; a fresh asyncio.run each
+        turn would invalidate the client.
+        """
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        self._loop.run_until_complete(self._open_sdk_client(session, viewer))
+
+    def on_match_end(self, session: Session, viewer: Team) -> None:
+        """Close the persistent SDK session + its event loop."""
+        if self._loop is None:
+            return
+        try:
+            self._loop.run_until_complete(self._close_sdk_client())
+        except Exception as e:
+            session.log("agent_error", {"team": viewer.value, "error": f"close: {e}"})
+        finally:
+            try:
+                self._loop.close()
+            except Exception:
+                pass
+            self._loop = None
+
+    async def _open_sdk_client(self, session: Session, viewer: Team) -> None:
         sdk_tools = _sdk_tools_for(session, viewer)
-        mcp_server = create_sdk_mcp_server(name=MCP_SERVER_NAME, version="0.1.0", tools=sdk_tools)
-
+        mcp_server = create_sdk_mcp_server(
+            name=MCP_SERVER_NAME, version="0.1.0", tools=sdk_tools
+        )
         lessons = self._load_lessons(session)
         system_prompt = build_system_prompt(
             team=viewer,
@@ -129,8 +166,6 @@ class AnthropicProvider(Provider):
             strategy=self.strategy,
             lessons=lessons,
         )
-        turn_prompt = build_turn_prompt(session, viewer)
-
         allowed = [f"mcp__{MCP_SERVER_NAME}__{n}" for n in TOOL_REGISTRY]
         opts = ClaudeAgentOptions(
             model=self.model,
@@ -140,14 +175,51 @@ class AnthropicProvider(Provider):
             permission_mode="bypassPermissions",
             max_turns=self.max_agent_iterations,
         )
+        self._sdk_client = ClaudeSDKClient(options=opts)
+        await self._sdk_client.__aenter__()
+
+    async def _close_sdk_client(self) -> None:
+        if self._sdk_client is not None:
+            try:
+                await self._sdk_client.__aexit__(None, None, None)
+            except Exception:
+                pass
+            self._sdk_client = None
+
+    # ---- per-turn ----
+
+    def decide_turn(self, session: Session, viewer: Team) -> None:
+        if self._loop is None or self._sdk_client is None:
+            # on_match_start wasn't called (e.g. the test harness
+            # instantiates the provider directly). Fall back to a
+            # transient session for this one turn.
+            asyncio.run(self._one_shot_turn(session, viewer))
+            return
+        self._loop.run_until_complete(self._async_turn(session, viewer))
+
+    async def _async_turn(self, session: Session, viewer: Team) -> None:
+        assert self._sdk_client is not None
+        start = time.time()
+        turn_at_start = session.state.turn
+        self._turn_count += 1
+
+        base_prompt = build_turn_prompt(session, viewer)
+        if self._turn_count == 1:
+            prompt = base_prompt
+        else:
+            prompt = (
+                "The opponent has taken their turn. Here's the updated "
+                "state for your next half-turn. Your prior plan + what "
+                "you already observed should still be in context — "
+                "decide what to adjust based on what actually happened.\n\n"
+                + base_prompt
+            )
 
         try:
-            async for msg in query(prompt=turn_prompt, options=opts):
-                # Guard FIRST, process second. If the agent's end_turn has
-                # already flipped state or we've blown the time budget, any
-                # further AssistantMessage is post-turn chatter and must not
-                # be rendered as "this team's reasoning" — otherwise it looks
-                # like the opponent is narrating while it's not their turn.
+            await self._sdk_client.query(prompt)
+            async for msg in self._sdk_client.receive_response():
+                # Guard FIRST so post-end_turn chatter doesn't bleed
+                # into the opponent's half.
                 if session.state.active_player is not viewer:
                     break
                 if time.time() - start > self.time_budget_s:
@@ -155,16 +227,64 @@ class AnthropicProvider(Provider):
                 if isinstance(msg, AssistantMessage):
                     for block in msg.content:
                         if isinstance(block, TextBlock) and block.text.strip():
-                            # Pin to the turn this provider was invoked on so
-                            # the tag matches the action the text describes,
-                            # not whatever turn state has advanced to by now.
-                            session.add_thought(viewer, block.text, turn=turn_at_start)
+                            session.add_thought(
+                                viewer, block.text, turn=turn_at_start
+                            )
                 if isinstance(msg, ResultMessage):
                     break
         except Exception as e:
             session.log("agent_error", {"team": viewer.value, "error": str(e)})
 
-        # If the agent didn't end its turn, force it.
+        if session.state.active_player is viewer and session.state.turn == turn_at_start:
+            self._force_end_turn(session, viewer)
+
+    async def _one_shot_turn(self, session: Session, viewer: Team) -> None:
+        """Fallback for callers that skip the on_match_start/_end hooks.
+
+        Behaves like the pre-persistent implementation: one query() per
+        turn, no cross-turn memory. Keeps tests that instantiate
+        AnthropicProvider directly (without going through run_match)
+        working without rearranging their lifecycle.
+        """
+        start = time.time()
+        turn_at_start = session.state.turn
+        sdk_tools = _sdk_tools_for(session, viewer)
+        mcp_server = create_sdk_mcp_server(
+            name=MCP_SERVER_NAME, version="0.1.0", tools=sdk_tools
+        )
+        lessons = self._load_lessons(session)
+        system_prompt = build_system_prompt(
+            team=viewer,
+            max_turns=session.state.max_turns,
+            strategy=self.strategy,
+            lessons=lessons,
+        )
+        turn_prompt = build_turn_prompt(session, viewer)
+        allowed = [f"mcp__{MCP_SERVER_NAME}__{n}" for n in TOOL_REGISTRY]
+        opts = ClaudeAgentOptions(
+            model=self.model,
+            system_prompt=system_prompt,
+            mcp_servers={MCP_SERVER_NAME: mcp_server},
+            allowed_tools=allowed,
+            permission_mode="bypassPermissions",
+            max_turns=self.max_agent_iterations,
+        )
+        try:
+            async for msg in query(prompt=turn_prompt, options=opts):
+                if session.state.active_player is not viewer:
+                    break
+                if time.time() - start > self.time_budget_s:
+                    break
+                if isinstance(msg, AssistantMessage):
+                    for block in msg.content:
+                        if isinstance(block, TextBlock) and block.text.strip():
+                            session.add_thought(
+                                viewer, block.text, turn=turn_at_start
+                            )
+                if isinstance(msg, ResultMessage):
+                    break
+        except Exception as e:
+            session.log("agent_error", {"team": viewer.value, "error": str(e)})
         if session.state.active_player is viewer and session.state.turn == turn_at_start:
             self._force_end_turn(session, viewer)
 
