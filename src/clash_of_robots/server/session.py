@@ -34,6 +34,9 @@ class AgentThought:
 class Session:
     state: GameState
     replay: ReplayWriter | None = None
+    # Name of the scenario being played (matches the games/ folder name).
+    # Used by lesson-aware providers to scope which prior lessons to inject.
+    scenario: str | None = None
     # coach message queues per team (messages waiting to be read by that team's agent)
     coach_queues: dict[Team, list[CoachMessage]] = field(
         default_factory=lambda: {Team.BLUE: [], Team.RED: []}
@@ -75,6 +78,11 @@ class Session:
         # on every thought caused visible flicker on tall frames.
 
 
-def new_session(state: GameState, replay_path: str | Path | None = None) -> Session:
+def new_session(
+    state: GameState,
+    replay_path: str | Path | None = None,
+    *,
+    scenario: str | None = None,
+) -> Session:
     writer = ReplayWriter(replay_path) if replay_path else None
-    return Session(state=state, replay=writer)
+    return Session(state=state, replay=writer, scenario=scenario)

@@ -31,7 +31,7 @@ from claude_agent_sdk import (
 
 from clash_of_robots.harness.prompts import build_system_prompt, build_turn_prompt, load_strategy
 from clash_of_robots.harness.providers.base import Provider
-from clash_of_robots.lessons import Lesson, slugify
+from clash_of_robots.lessons import Lesson, LessonStore, slugify
 from clash_of_robots.server.engine.state import Team
 from clash_of_robots.server.session import Session
 from clash_of_robots.server.tools import TOOL_REGISTRY, ToolError, call_tool
@@ -103,11 +103,15 @@ class AnthropicProvider(Provider):
         strategy_path: str | Path | None = None,
         time_budget_s: float = 90.0,
         max_agent_iterations: int = 40,
+        lessons_dir: str | Path | None = "lessons",
+        max_injected_lessons: int = 5,
     ):
         self.model = model
         self.strategy = load_strategy(strategy_path)
         self.time_budget_s = time_budget_s
         self.max_agent_iterations = max_agent_iterations
+        self.lessons_dir = Path(lessons_dir) if lessons_dir is not None else None
+        self.max_injected_lessons = max_injected_lessons
 
     def decide_turn(self, session: Session, viewer: Team) -> None:
         asyncio.run(self._async_turn(session, viewer))
@@ -118,8 +122,12 @@ class AnthropicProvider(Provider):
         sdk_tools = _sdk_tools_for(session, viewer)
         mcp_server = create_sdk_mcp_server(name=MCP_SERVER_NAME, version="0.1.0", tools=sdk_tools)
 
+        lessons = self._load_lessons(session)
         system_prompt = build_system_prompt(
-            team=viewer, max_turns=session.state.max_turns, strategy=self.strategy
+            team=viewer,
+            max_turns=session.state.max_turns,
+            strategy=self.strategy,
+            lessons=lessons,
         )
         turn_prompt = build_turn_prompt(session, viewer)
 
@@ -159,6 +167,19 @@ class AnthropicProvider(Provider):
         # If the agent didn't end its turn, force it.
         if session.state.active_player is viewer and session.state.turn == turn_at_start:
             self._force_end_turn(session, viewer)
+
+    def _load_lessons(self, session: Session) -> list[Lesson]:
+        """Load the most recent lessons for this session's scenario."""
+        if self.lessons_dir is None or session.scenario is None:
+            return []
+        try:
+            store = LessonStore(self.lessons_dir)
+            return store.list_for_scenario(
+                session.scenario, limit=self.max_injected_lessons
+            )
+        except Exception as e:
+            session.log("lessons_load_error", {"error": str(e)})
+            return []
 
     # ---- post-match reflection ----
 

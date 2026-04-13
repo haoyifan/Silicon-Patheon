@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from clash_of_robots.lessons import Lesson
 from clash_of_robots.server.engine.serialize import state_to_dict
 from clash_of_robots.server.engine.state import Team
 from clash_of_robots.server.session import Session
@@ -51,7 +52,7 @@ forts) for defense. Mages counter Knights (ignore DEF). Archers counter Cavalry
 and Mages. Cavalry runs down Archers.
 
 {strategy_section}
-
+{lessons_section}
 When you're done with your turn, call `end_turn` and stop issuing tool calls."""
 
 
@@ -66,14 +67,40 @@ law — deviate when the tactical situation demands it:
 """
 
 
-def build_system_prompt(team: Team, max_turns: int, strategy: str | None) -> str:
+LESSONS_SECTION_HEADER = """## Prior lessons from this scenario
+
+These are reflections written by agents who played this scenario before you
+(including past games you lost). Internalize the tactical principles — do not
+just replay past moves.
+
+"""
+
+
+def _format_lessons(lessons: list[Lesson]) -> str:
+    if not lessons:
+        return ""
+    parts = [LESSONS_SECTION_HEADER]
+    for le in lessons:
+        outcome_tag = f"[{le.team} {le.outcome}]"
+        parts.append(f"### {le.title} {outcome_tag}\n\n{le.body.strip()}\n")
+    return "\n".join(parts) + "\n"
+
+
+def build_system_prompt(
+    team: Team,
+    max_turns: int,
+    strategy: str | None,
+    lessons: list[Lesson] | None = None,
+) -> str:
     strategy_section = ""
     if strategy:
         strategy_section = STRATEGY_SECTION_TEMPLATE.format(strategy=strategy.strip())
+    lessons_section = _format_lessons(lessons or [])
     return SYSTEM_PROMPT_TEMPLATE.format(
         team=team.value,
         max_turns=max_turns,
         strategy_section=strategy_section,
+        lessons_section=lessons_section,
     )
 
 

@@ -37,7 +37,7 @@ def run_match(
     state = load_scenario(game)
     if max_turns is not None:
         state.max_turns = max_turns
-    session = new_session(state, replay_path=replay_path)
+    session = new_session(state, replay_path=replay_path, scenario=game)
 
     blue.on_match_start(session, Team.BLUE)
     red.on_match_start(session, Team.RED)
