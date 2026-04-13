@@ -42,8 +42,14 @@ class TUIRenderer:
 
     def start(self) -> None:
         if self._tty:
+            # screen=True renders to the terminal's alternate screen buffer,
+            # which eliminates the bottom-row flicker that the primary-buffer
+            # cursor-move/clear sequence produces on tall frames. Downside:
+            # when Live exits, the terminal restores the pre-match state and
+            # the final board disappears — we handle that in stop() by
+            # re-printing the last frame to the primary screen.
             self._live = Live(
-                self._frame(), console=self.console, refresh_per_second=10, screen=False
+                self._frame(), console=self.console, refresh_per_second=10, screen=True
             )
             self._live.__enter__()
         else:
@@ -59,5 +65,9 @@ class TUIRenderer:
 
     def stop(self) -> None:
         if self._live is not None:
+            # Capture the final frame before exiting Live (which restores the
+            # primary screen buffer and wipes everything we drew).
+            final_frame = self._frame()
             self._live.__exit__(None, None, None)
             self._live = None
+            self.console.print(final_frame)
