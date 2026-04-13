@@ -2,32 +2,52 @@
 
 Architecture
 ------------
-The existing local AnthropicProvider wraps in-process tools as SDK MCP
-tools via `create_sdk_mcp_server` and hands them to `query()`. The
-networked agent follows the same shape but each tool handler proxies
-to the remote game server via `ServerClient.call(...)`:
+The agent sits on the client side and calls game tools via a local
+SDK MCP server whose handlers forward to the remote clash-serve over
+the existing ServerClient connection:
 
   LLM (Claude) <--MCP SDK--> local SDK MCP server
                                └─ tool handler per game tool
                                     └─ ServerClient.call()
                                         └─ MCP+SSE → clash-serve
 
-Only one connection to the backend is used — the TUI's. The agent
-calls tools exactly like a human TUI does, so all server-side auth,
-state gating, and fog-of-war filtering continues to apply naturally.
+Only one backend connection is used — the TUI's. Server-side auth,
+state gating, and fog-of-war filtering apply to the agent exactly as
+they do to a human pressing keys.
+
+Memory model: **persistent session across the whole match**
+-----------------------------------------------------------
+A single `ClaudeSDKClient` is opened on the first `play_turn` and
+reused for every subsequent turn until `close()`. Each turn sends one
+new user message (the updated state snapshot) on top of the existing
+transcript — the agent retains its plan, remembers what it already
+tried, and can reflect on the opponent's last move without
+re-deriving the position from scratch.
+
+This is the opposite of the local `AnthropicProvider`'s fresh-per-turn
+approach documented in DECISIONS.md. The escape hatch noted there —
+"switch to ClaudeSDKClient if agents seem tactically incoherent across
+turns" — is now the default for networked play.
+
+Cost consequences: context grows monotonically across the match, so
+very long matches (40+ turns with chatty agents) may run into the
+model's context window. Mitigations (periodic summarization, tool-
+result pruning) can be added as needed; the simple version is good
+enough for standard scenarios.
 
 Per-turn flow
 -------------
 `NetworkedAgent.play_turn(viewer)`:
-  1. Fetch filtered state via get_state (so we can feed it into the
-     turn prompt; server already masks it for fog).
-  2. Build system prompt (rules + strategy + any loaded lessons) and
-     a turn prompt snapshot.
-  3. Run one `query()` iteration. Tools are registered locally; each
-     call forwards to the server; the agent keeps acting until it
-     invokes end_turn or hits the iteration cap.
-  4. AssistantMessage text blocks are surfaced to an optional
-     thoughts callback so the TUI's reasoning panel can tick live.
+  1. Open the persistent ClaudeSDKClient the first time, with the
+     full system prompt (rules + strategy + lessons) baked in.
+  2. Fetch filtered state via get_state for the turn-prompt snapshot.
+  3. Send the turn prompt as a user message on the existing session.
+  4. Iterate `receive_response()`; each tool call the agent makes
+     forwards to the server. Stops when the turn ends (active_player
+     flips away), the time budget trips, or the SDK returns a
+     terminal ResultMessage.
+  5. AssistantMessage text blocks are surfaced to an optional
+     thoughts callback so the TUI's reasoning panel ticks live.
 """
 
 from __future__ import annotations
@@ -41,6 +61,7 @@ from typing import Any, Awaitable, Callable
 from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
+    ClaudeSDKClient,
     ResultMessage,
     TextBlock,
     create_sdk_mcp_server,
@@ -249,6 +270,24 @@ class NetworkedAgent:
         self.thoughts_callback = thoughts_callback
         self.time_budget_s = time_budget_s
         self.max_iterations = max_iterations
+        # Persistent-session state — opened on the first play_turn and
+        # reused for every turn of the match.
+        self._sdk_client: ClaudeSDKClient | None = None
+        self._turn_count: int = 0
+
+    async def close(self) -> None:
+        """Tear down the persistent SDK session.
+
+        Safe to call multiple times. GameScreen.on_exit hooks this up
+        so leaving the screen (game over, concede, quit) cleans up the
+        subprocess the SDK spawned."""
+        if self._sdk_client is not None:
+            try:
+                await self._sdk_client.__aexit__(None, None, None)
+            except Exception:
+                pass
+            self._sdk_client = None
+            self._turn_count = 0
 
     async def summarize_match(self, viewer: Team) -> Lesson | None:
         """Ask the model for one lesson reflecting on the finished match.
@@ -333,18 +372,23 @@ class NetworkedAgent:
                 pass
         return lesson
 
-    async def play_turn(self, viewer: Team, *, max_turns: int) -> dict:
-        """Play one full turn. Returns the last get_state snapshot seen.
+    async def _ensure_session_started(
+        self, viewer: Team, max_turns: int
+    ) -> None:
+        """Open the persistent ClaudeSDKClient on the first turn.
 
-        The agent may emit several AssistantMessage blocks and multiple
-        tool calls; this method returns after end_turn has fired (the
-        server flips active_player away from `viewer`) OR the iteration
-        budget / wall clock is exhausted.
+        System prompt (rules + strategy + lessons) is baked in at
+        open-time so the SDK bundles it once and subsequent turns only
+        send the new state delta as a user message.
         """
-        # Prime the turn prompt with a fresh state fetch — the agent
-        # will also have tool access to get_state if it wants to refresh.
-        state = await self._fetch_state()
-        turn_prompt = build_turn_prompt_from_state_dict(state, viewer)
+        if self._sdk_client is not None:
+            return
+
+        sdk_tools = self._make_sdk_tools()
+        mcp_server = create_sdk_mcp_server(
+            name="clash", version="1.0", tools=sdk_tools
+        )
+        allowed = [f"mcp__clash__{name}" for (name, _, _) in GAME_TOOLS]
         lessons = self._load_lessons()
         system_prompt = build_system_prompt(
             team=viewer,
@@ -352,12 +396,6 @@ class NetworkedAgent:
             strategy=self.strategy,
             lessons=lessons,
         )
-
-        sdk_tools = self._make_sdk_tools()
-        mcp_server = create_sdk_mcp_server(
-            name="clash", version="1.0", tools=sdk_tools
-        )
-        allowed = [f"mcp__clash__{name}" for (name, _, _) in GAME_TOOLS]
         opts = ClaudeAgentOptions(
             model=self.model,
             system_prompt=system_prompt,
@@ -366,17 +404,45 @@ class NetworkedAgent:
             permission_mode="bypassPermissions",
             max_turns=self.max_iterations,
         )
+        self._sdk_client = ClaudeSDKClient(options=opts)
+        await self._sdk_client.__aenter__()
+
+    async def play_turn(self, viewer: Team, *, max_turns: int) -> dict:
+        """Play one full turn against the persistent session.
+
+        The agent may emit several AssistantMessage blocks and multiple
+        tool calls per turn; this method returns after end_turn has
+        fired (server flips active_player away from `viewer`), the
+        SDK returns a terminal ResultMessage, or the time budget
+        trips.
+        """
+        await self._ensure_session_started(viewer, max_turns)
+        assert self._sdk_client is not None  # for the type checker
+        self._turn_count += 1
+
+        state = await self._fetch_state()
+        base_prompt = build_turn_prompt_from_state_dict(state, viewer)
+        if self._turn_count == 1:
+            prompt = base_prompt
+        else:
+            prompt = (
+                "The opponent has taken their turn. Here's the updated "
+                "state for your next half-turn. Your prior plan + what "
+                "you already observed should still be in context — "
+                "decide what to adjust based on what actually happened.\n\n"
+                + base_prompt
+            )
 
         start = time.time()
         try:
-            async for msg in query(prompt=turn_prompt, options=opts):
+            await self._sdk_client.query(prompt)
+            async for msg in self._sdk_client.receive_response():
                 # Time budget + turn-ended guards FIRST so post-turn
                 # chatter doesn't bleed into the next half.
                 if time.time() - start > self.time_budget_s:
                     break
                 if await self._is_turn_over(viewer):
                     break
-
                 if isinstance(msg, AssistantMessage):
                     if self.thoughts_callback is not None:
                         for block in msg.content:
@@ -388,8 +454,10 @@ class NetworkedAgent:
                 if isinstance(msg, ResultMessage):
                     break
         except Exception:
-            # Any transport / SDK failure — bail out; the server's
-            # turn-timer will eventually force a turn end if needed.
+            # Any transport / SDK failure during the turn — bail out;
+            # the server's turn-timer (when added) will eventually
+            # force a turn end. We keep the session alive so the next
+            # turn can still use it.
             pass
 
         return await self._fetch_state()

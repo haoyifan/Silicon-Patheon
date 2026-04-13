@@ -125,6 +125,39 @@ decide whether tactical incoherence across turns justifies the switch. If
 agents seem to "forget what they were doing," flip to persistent sessions. If
 they play coherently, stay fresh-per-turn.
 
+## 2026-04-13 — Networked agent uses a persistent session (reversal)
+
+**Decision:** The networked `NetworkedAgent` in `client/agent_bridge.py`
+opens one `ClaudeSDKClient` on the first `play_turn` and reuses it for
+every subsequent turn until `close()`. Each turn sends a new user
+message (updated state snapshot) onto the existing transcript; the
+agent retains its prior plan, remembers tool results, and can reflect
+on the opponent's move without re-deriving the position.
+
+**Why the flip, specifically for networked play:**
+- The local `AnthropicProvider` is still fresh-per-turn — it's fast,
+  cheap, and ideal for running hundreds of development matches.
+- The networked flow is meant for humans (or friends' agents) to watch
+  a match unfold; tactical incoherence between turns reads as the
+  agent "forgetting what it just did." Persistent session eliminates
+  that class of bug.
+- Context budget: matches on these scenarios top out around 20 turns,
+  40 half-turns, so a persistent conversation stays well within Sonnet
+  / Opus 1M context even with chatty reasoning.
+
+**Trade-offs:**
+- Token cost grows across a match (full history replayed each turn),
+  so a 20-turn match with 10 tool calls per turn can climb to 100k+
+  context tokens by the end.
+- A bad turn can poison later turns; if that becomes an issue, add
+  a "new subtree" escape hatch (start a fresh client mid-match).
+- Post-match summarization still uses a one-shot `query()` — by the
+  time we summarize, we want an unbiased post-mortem, not a
+  continuation of the in-match thread.
+
+**Reversal cost:** Low. Revert `play_turn` to re-open a fresh `query()`
+per call and drop the `ClaudeSDKClient` lifecycle from `close()`.
+
 ## 2026-04-12 — Python 3.13 in practice (pyproject requires ≥3.12)
 **Decision:** uv selected Python 3.13.5 on this machine; pyproject pins ≥3.12.
 No code changes needed; 3.12-only features (match, generic syntax) all work.

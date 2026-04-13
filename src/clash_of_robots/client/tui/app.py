@@ -148,6 +148,14 @@ class TUIApp:
                         await t
                     except asyncio.CancelledError:
                         pass
+        # Shut down the persistent agent session if one is still alive
+        # (user quit mid-match, or skipped post-match).
+        if self.state.agent is not None:
+            try:
+                await self.state.agent.close()
+            except Exception:
+                pass
+            self.state.agent = None
         # Disconnect client cleanly if still connected.
         if self.client is not None:
             try:

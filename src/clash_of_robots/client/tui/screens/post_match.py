@@ -48,6 +48,16 @@ class PostMatchScreen(Screen):
             except Exception:
                 self._summary_state = "failed"
                 return
+            finally:
+                # Close the persistent SDK session now that we're done
+                # with it — the TUI may loop back to the lobby after
+                # this screen, and next match needs a fresh agent.
+                if app.state.agent is not None:
+                    try:
+                        await app.state.agent.close()
+                    except Exception:
+                        pass
+                    app.state.agent = None
             if lesson is None:
                 self._summary_state = "failed"
                 return

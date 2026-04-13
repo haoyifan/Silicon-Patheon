@@ -57,6 +57,10 @@ class GameScreen(Screen):
         if app.state.agent_task is not None and not app.state.agent_task.done():
             app.state.agent_task.cancel()
         app.state.agent_task = None
+        # Note: we intentionally do NOT close `app.state.agent` here.
+        # PostMatchScreen needs the live session for summarize_match,
+        # and the TUIApp shutdown path (app.run cleanup) will close it
+        # if the user never reaches post-match.
 
     async def _maybe_build_agent(self, app: TUIApp) -> None:
         """Construct a NetworkedAgent if the login declared an LLM."""
