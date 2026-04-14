@@ -195,34 +195,30 @@ def _build_default_adapter(model: str) -> ProviderAdapter:
     """Factory for the provider adapter selected by the model id.
 
     Consults the credentials store + provider catalog to pick the
-    right SDK. Fallbacks:
-      - any claude-* model → Anthropic (subscription CLI)
-      - any gpt-* / o*-* model → OpenAI (api key)
-      - unknown → Anthropic (backward compatible default)
-    API key resolution for OpenAI walks env var → keyring → inline
-    key in the credentials file.
+    right SDK. Routing rules (applied in order):
+      - claude-* / sonnet-* / opus-*  → Anthropic (subscription CLI)
+      - gpt-* / o1-* / o3-* / o4-*    → OpenAI (api key)
+      - grok-*                        → xAI (api key, OpenAI-compat)
+      - unknown                       → credentials.default_provider
+                                        or Anthropic
+
+    API-key resolution walks credentials-file → env var → error.
     """
     from silicon_pantheon.client.credentials import (
         CredentialsError,
-        ProviderCredential,
         load,
         resolve_key,
     )
     from silicon_pantheon.shared.providers import get_provider
 
-    # Pick provider by model-id prefix (or credentials default_provider
-    # if the model itself doesn't disambiguate).
     model_lower = model.lower()
     provider_id: str
-    if model_lower.startswith("claude") or model_lower.startswith("sonnet") or model_lower.startswith("opus"):
+    if model_lower.startswith(("claude", "sonnet", "opus")):
         provider_id = "anthropic"
-    elif (
-        model_lower.startswith("gpt")
-        or model_lower.startswith("o1")
-        or model_lower.startswith("o3")
-        or model_lower.startswith("o4")
-    ):
+    elif model_lower.startswith(("gpt", "o1", "o3", "o4")):
         provider_id = "openai"
+    elif model_lower.startswith("grok"):
+        provider_id = "xai"
     else:
         creds = load()
         provider_id = creds.default_provider or "anthropic"
@@ -232,36 +228,57 @@ def _build_default_adapter(model: str) -> ProviderAdapter:
 
         return AnthropicAdapter(model=model)
 
-    if provider_id == "openai":
+    # OpenAI + xAI both use the OpenAI Chat Completions protocol.
+    # The only difference is the base URL (xAI = https://api.x.ai/v1)
+    # and which env var / credentials entry holds the key. Reuse the
+    # one adapter for both.
+    if provider_id in ("openai", "xai"):
         from silicon_pantheon.client.providers.openai import OpenAIAdapter
 
-        # Resolve key: credentials file first, then raw env var.
-        creds = load()
-        cred = creds.providers.get("openai")
-        api_key: str | None = None
-        if cred is not None:
-            try:
-                api_key = resolve_key(cred)
-            except CredentialsError:
-                api_key = None
-        if api_key is None:
-            spec = get_provider("openai")
-            if spec is not None and spec.env_var:
-                import os
-
-                api_key = os.environ.get(spec.env_var)
+        spec = get_provider(provider_id)
+        api_key = _resolve_api_key(provider_id)
         if not api_key:
+            env_name = spec.env_var if spec else f"{provider_id.upper()}_API_KEY"
             raise RuntimeError(
-                "OpenAI adapter selected but no API key could be resolved. "
-                "Set OPENAI_API_KEY or configure credentials.json."
+                f"{provider_id} adapter selected but no API key could be "
+                f"resolved. Set {env_name} or configure credentials.json."
             )
-        return OpenAIAdapter(model=model, api_key=api_key)
+        base_url = spec.openai_compatible_base_url if spec else None
+        return OpenAIAdapter(model=model, api_key=api_key, base_url=base_url)
 
     # Unknown provider_id → fall back to Anthropic so existing
     # default-flow callers don't crash.
     from silicon_pantheon.client.providers.anthropic import AnthropicAdapter
 
     return AnthropicAdapter(model=model)
+
+
+def _resolve_api_key(provider_id: str) -> str | None:
+    """Walk credentials file → env var for a given provider. None if
+    neither turns one up. Kept out of the factory function so the two
+    api-key providers (openai, xai) share the same resolution path."""
+    from silicon_pantheon.client.credentials import (
+        CredentialsError,
+        load,
+        resolve_key,
+    )
+    from silicon_pantheon.shared.providers import get_provider
+
+    creds = load()
+    cred = creds.providers.get(provider_id)
+    if cred is not None:
+        try:
+            key = resolve_key(cred)
+            if key:
+                return key
+        except CredentialsError:
+            pass
+    spec = get_provider(provider_id)
+    if spec is not None and spec.env_var:
+        import os
+
+        return os.environ.get(spec.env_var)
+    return None
 
 
 class NetworkedAgent:

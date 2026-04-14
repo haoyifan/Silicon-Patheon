@@ -40,6 +40,11 @@ class ProviderSpec:
     # Shown on the login screen's provider picker so the user
     # understands the cost / rate-limit posture before committing.
     token_cost_warning: str = ""
+    # Optional OpenAI-compatible endpoint. When set, the OpenAI
+    # adapter is reused with a custom base_url — lets us plug in
+    # xAI, Groq, Together, DeepSeek, etc. without forking the SDK
+    # adapter. None = use the provider's native SDK.
+    openai_compatible_base_url: str | None = None
 
 
 PROVIDERS: list[ProviderSpec] = [
@@ -102,6 +107,51 @@ PROVIDERS: list[ProviderSpec] = [
         token_cost_warning=(
             "Each match burns real API tokens. Make sure your account "
             "has budget — running out mid-match auto-concedes."
+        ),
+    ),
+    ProviderSpec(
+        id="xai",
+        display_name="xAI (Grok)",
+        auth_mode="api_key",
+        env_var="XAI_API_KEY",
+        keyring_service="silicon-pantheon-xai",
+        models=[
+            ModelSpec(
+                "grok-4",
+                "Grok 4",
+                context_window=256_000,
+                cost_per_mtok_in=3.0,
+                cost_per_mtok_out=15.0,
+            ),
+            ModelSpec(
+                "grok-3",
+                "Grok 3",
+                context_window=131_000,
+                cost_per_mtok_in=2.0,
+                cost_per_mtok_out=10.0,
+            ),
+            ModelSpec(
+                "grok-3-mini",
+                "Grok 3 Mini",
+                context_window=131_000,
+                cost_per_mtok_in=0.3,
+                cost_per_mtok_out=0.5,
+            ),
+            ModelSpec(
+                "grok-code-fast-1",
+                "Grok Code Fast 1",
+                context_window=256_000,
+                cost_per_mtok_in=0.2,
+                cost_per_mtok_out=1.5,
+            ),
+        ],
+        # xAI is wire-compatible with the OpenAI Chat Completions API,
+        # so the existing OpenAIAdapter serves it unchanged once we
+        # point it at the Grok endpoint.
+        openai_compatible_base_url="https://api.x.ai/v1",
+        token_cost_warning=(
+            "xAI API tokens. Get a key at console.x.ai — paste it here "
+            "or set XAI_API_KEY. Running out mid-match auto-concedes."
         ),
     ),
 ]

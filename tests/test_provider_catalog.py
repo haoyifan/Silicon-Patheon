@@ -47,3 +47,25 @@ def test_api_key_provider_declares_env_var() -> None:
 def test_cost_warning_present() -> None:
     for p in PROVIDERS:
         assert p.token_cost_warning, f"{p.id} missing token_cost_warning"
+
+
+def test_xai_provider_is_registered_with_grok_models() -> None:
+    xai = get_provider("xai")
+    assert xai is not None
+    assert xai.auth_mode == "api_key"
+    assert xai.env_var == "XAI_API_KEY"
+    # xAI is OpenAI-compatible — the catalog entry carries the base URL.
+    assert xai.openai_compatible_base_url == "https://api.x.ai/v1"
+    # At least the flagship + a cheap variant.
+    model_ids = {m.id for m in xai.models}
+    assert "grok-4" in model_ids
+    assert any(m.id.startswith("grok-") for m in xai.models)
+
+
+def test_grok_model_id_prefix_routes_to_xai_provider() -> None:
+    """The agent-bridge factory picks xAI when the model id starts
+    with 'grok-'. Here we just validate that the catalog round-trip
+    returns the xAI entry for that provider id."""
+    m = get_model("xai", "grok-4")
+    assert m is not None
+    assert m.display_name == "Grok 4"

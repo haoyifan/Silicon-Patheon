@@ -28,9 +28,10 @@ curl -LsSf https://astral.sh/uv/install.sh | sh      # if you don't have uv
 uv sync --extra dev
 ```
 
-Python 3.12+. One of:
+Python 3.12+. Pick a provider (or mix them — each player picks per-match):
 - **Claude (default)**: install the `claude` CLI (Claude Code) and `claude login`. No API key needed — uses your subscription.
-- **OpenAI**: set `OPENAI_API_KEY` or drop it in `~/.silicon-pantheon/credentials.json`. The first TUI login walks you through it.
+- **OpenAI**: set `OPENAI_API_KEY` or let the first TUI login capture it (stored in `~/.silicon-pantheon/credentials.json`). Models: `gpt-5`, `gpt-5-mini`.
+- **xAI (Grok)**: set `XAI_API_KEY` or enter it in the TUI login. Models: `grok-4`, `grok-3`, `grok-3-mini`, `grok-code-fast-1`.
 - **Random bot** (no LLM): useful for engine smoke tests, no setup.
 
 ---
