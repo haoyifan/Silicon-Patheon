@@ -45,6 +45,51 @@ from silicon_pantheon.shared.providers import PROVIDERS, ProviderSpec, get_provi
 log = logging.getLogger("silicon.tui.provider_auth")
 
 
+async def _validate_api_key(provider_id: str, api_key: str) -> str | None:
+    """Ping the provider's /v1/models endpoint with the key. Returns
+    None on success, or a short error string on failure.
+
+    Works for every OpenAI-compatible api-key provider we ship
+    (OpenAI itself, xAI via the base_url in the catalog). Anthropic
+    and any future subscription_cli providers never reach this path
+    because they don't use a key.
+
+    We use the OpenAI SDK rather than raw HTTP so the list of
+    base-URL / timeout / transport quirks stays identical to what
+    the adapter uses at match time — if models.list succeeds here,
+    the agent's chat.completions.create won't fail on auth.
+    """
+    spec = get_provider(provider_id)
+    if spec is None or spec.auth_mode != "api_key":
+        return "unknown provider"
+    if not api_key.strip():
+        return "empty key"
+    try:
+        from openai import AsyncOpenAI
+    except ImportError:
+        return "openai SDK not installed"
+    client = AsyncOpenAI(
+        api_key=api_key,
+        base_url=spec.openai_compatible_base_url,
+        timeout=10.0,
+    )
+    try:
+        await client.models.list()
+        return None
+    except Exception as e:  # noqa: BLE001 — surface anything to the user
+        msg = str(e) or type(e).__name__
+        # Many "Authentication" errors from openai-python have a
+        # long prefix; keep the banner readable.
+        if len(msg) > 160:
+            msg = msg[:157] + "…"
+        return msg
+    finally:
+        try:
+            await client.close()
+        except Exception:
+            pass
+
+
 @dataclass
 class _Step:
     """Lightweight state machine for the picker."""
@@ -157,16 +202,32 @@ class ProviderAuthScreen(Screen):
             lines.append(Text(f"{marker}{label}", style=style))
         if self._step.focused == 1:  # paste mode
             lines.append(Text(""))
+            n = len(self._step.key_buffer)
+            # Show a fixed-width mask so huge pastes don't blow out
+            # the modal, plus a live char count and a head/tail peek
+            # so the user can confirm their paste actually landed.
+            if n == 0:
+                mask = ""
+            elif n <= 12:
+                mask = "*" * n
+            else:
+                head = self._step.key_buffer[:4]
+                tail = self._step.key_buffer[-4:]
+                mask = f"{head}{'*' * (n - 8)}{tail}"
+                # Collapse the stars if there are a lot of them.
+                if n > 40:
+                    mask = f"{head}{'*' * 32}…{tail}"
             lines.append(
                 Text.assemble(
                     ("key: ", "yellow bold"),
-                    ("*" * len(self._step.key_buffer), "white"),
+                    (mask, "white"),
                     ("▌", "yellow"),
+                    (f"   ({n} chars)", "dim"),
                 )
             )
             lines.append(
                 Text(
-                    "(type the key, Enter to save to keyring + continue, Esc cancels)",
+                    "(paste or type the key, Enter to validate + save, Esc cancels)",
                     style="dim italic",
                 )
             )
@@ -313,6 +374,16 @@ class ProviderAuthScreen(Screen):
             self.app.state.error_message = "provider missing"
             return None
         key = self._step.key_buffer
+        # Validate the key against the provider BEFORE persisting —
+        # saves users from a silent failure when the first game starts
+        # and the agent can't authenticate.
+        self.app.state.error_message = "validating key with provider…"
+        err = await _validate_api_key(p.id, key)
+        if err:
+            self.app.state.error_message = f"key rejected: {err}"
+            # Keep the user in paste mode with their buffer intact so
+            # they can retry without retyping.
+            return None
         try:
             import keyring  # type: ignore[import-not-found]
 

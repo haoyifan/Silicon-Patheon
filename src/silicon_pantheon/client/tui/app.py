@@ -465,6 +465,18 @@ def _read_key_blocking() -> str:
                 if c1 == "O" and final == "Q":
                     return "f2"
                 if c1 == "[" and final == "~":
+                    # Bracketed-paste delimiters. Terminals wrap
+                    # clipboard paste with ESC[200~ ... ESC[201~.
+                    # Without this branch the reader decoded both
+                    # as plain "esc", which kicked the paste field
+                    # back to the provider picker and wiped the
+                    # buffer — so a long key showed as one asterisk
+                    # because only the first char or two had been
+                    # processed before the synthetic esc fired.
+                    # Treat them as no-ops so the pasted bytes
+                    # between the markers flow through as normal keys.
+                    if params in ("200", "201"):
+                        return ""
                     if params == "12":
                         return "f2"
                     if params == "11":
