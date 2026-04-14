@@ -70,6 +70,7 @@ terrain_types:
 unit_classes:
   # ---- Pilgrims ----
   tang_monk:
+    display_name: Tang Monk
     description: |
       Xuanzang, the pilgrim you must protect. A gentle Buddhist
       priest, physically frail — he can barely defend himself. If he
@@ -88,6 +89,7 @@ unit_classes:
     glyph: T
     color: bright_cyan      # Tang Monk: the VIP, distinct shade from his disciples
   sun_wukong:
+    display_name: Sun Wukong (Monkey King)
     description: |
       The Monkey King — fast, furious, nearly indestructible. Armed
       with the Ruyi Jingu Bang, he punches far above his weight.
@@ -107,6 +109,7 @@ unit_classes:
     glyph: S
     color: cyan
   zhu_bajie:
+    display_name: Zhu Bajie (Pigsy)
     description: |
       Pigsy, a brash and gluttonous ex-marshal of heaven turned pig
       demon. Sturdy bruiser with respectable attack, but slow and
@@ -124,6 +127,7 @@ unit_classes:
     glyph: P
     color: cyan
   sha_wujing:
+    display_name: Sha Wujing (Sandy)
     description: |
       Sandy, the porter-monk who carries the pilgrimage's luggage.
       The most defensive of the three disciples — high HP and DEF,
@@ -142,6 +146,7 @@ unit_classes:
     glyph: W
     color: cyan
   bai_long_ma:
+    display_name: White Dragon Horse
     description: |
       The White Dragon Horse — a dragon prince cursed into equine
       form, now Tang Monk's mount. Fastest unit in the pilgrim party
@@ -162,6 +167,7 @@ unit_classes:
 
   # ---- Monsters ----
   demon_king:
+    display_name: Demon King
     description: |
       The Demon King, ruler of this stretch of the road. A terrifying
       melee opponent — high HP, high ATK, solid defenses. Break his
@@ -180,6 +186,7 @@ unit_classes:
     glyph: D
     color: bright_red       # Demon King: the boss, distinct from his minions
   bull_demon:
+    display_name: Bull Demon
     description: |
       A brawny ox-headed demon. Tanky frontline fighter; slow, hits
       hard, terrible at magic defense. A Mage-class pilgrim or a
@@ -198,6 +205,7 @@ unit_classes:
     glyph: B
     color: red
   white_bone_demon:
+    display_name: White-Bone Demoness
     description: |
       The White-Bone Demoness — a magical caster who disguises
       herself as innocents to lure the pilgrims. Fragile body, but
@@ -217,6 +225,7 @@ unit_classes:
     glyph: O
     color: red
   spider_spirit:
+    display_name: Spider Spirit
     description: |
       A spider spirit from the caves. Very fast (SPD 8, move 5) and
       aggressive — swarms the weaker pilgrims. Individually fragile
@@ -235,6 +244,7 @@ unit_classes:
     glyph: X
     color: red
   skeleton:
+    display_name: Skeleton
     description: |
       A reanimated bandit skeleton. Low HP and slow, but cheap to
       spawn — the Demon King has many of them, and more show up at

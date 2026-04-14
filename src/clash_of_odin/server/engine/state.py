@@ -119,6 +119,12 @@ class UnitStats:
     # actually shows units instead of falling back to a placeholder.
     glyph: str | None = None
     color: str | None = None
+    # Human-readable name shown in the TUI everywhere a unit is
+    # mentioned (cards, win-condition prose, rosters). Distinct from
+    # the slug `class_name` used as the dict key — slugs are
+    # programmer-friendly identifiers; display_name is what a player
+    # actually sees ("Tang Monk", not "u_b_tang_monk_1").
+    display_name: str = ""
     # Short prose blurb surfaced in the TUI unit-card modal. Authors
     # drop this in per-class so players can tell scenario-specific
     # units apart without memorizing the YAML.

@@ -209,6 +209,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 "rng_min": s.rng_min, "rng_max": s.rng_max,
                 "is_magic": s.is_magic, "can_heal": s.can_heal,
                 "tags": list(s.tags),
+                "display_name": s.display_name or cls.value.title(),
                 "description": _BUILTIN_DESCRIPTIONS.get(cls.value, ""),
             }
         for cname, spec in (cfg.get("unit_classes") or {}).items():

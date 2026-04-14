@@ -31,6 +31,7 @@ from clash_of_odin.client.tui.screens.room import (
     _describe_win_condition,
     _terrain_effect_summary,
     _unit_cell_style,
+    _unit_display_name,
 )
 
 
@@ -241,10 +242,9 @@ class ScenarioPicker:
         if u:
             owner = u.get("owner", "?")
             color = "cyan" if owner == "blue" else "red"
+            name = _unit_display_name(u, self._current_desc())
             line.append("   ")
-            line.append(
-                f"{u.get('class', '?')} ({owner})", style=f"bold {color}"
-            )
+            line.append(f"{name} ({owner})", style=f"bold {color}")
             line.append("   Enter for details", style="dim italic")
         return line
 
@@ -272,7 +272,9 @@ class ScenarioPicker:
             rows.append(Text(""))
             rows.append(Text("How to win:", style="bold"))
             for wc in wcs:
-                rows.append(Text(f"  • {_describe_win_condition(wc)}", style="dim"))
+                rows.append(
+                    Text(f"  • {_describe_win_condition(wc, desc)}", style="dim")
+                )
         rows.append(Text(""))
         rows.append(Text("Armies:", style="bold"))
         for owner in ("blue", "red"):
@@ -282,8 +284,14 @@ class ScenarioPicker:
             cls_counts: dict[str, int] = {}
             for u in units:
                 cls_counts[u.get("class", "?")] = cls_counts.get(u.get("class", "?"), 0) + 1
+            # Show display_name when the class has one — "1×Tang Monk"
+            # reads better than "1×tang_monk".
+            def _cls_label(slug: str) -> str:
+                spec = unit_classes.get(slug) or {}
+                return str(spec.get("display_name") or slug)
             summary = ", ".join(
-                f"{n}×{c}" if n > 1 else c for c, n in cls_counts.items()
+                f"{n}×{_cls_label(c)}" if n > 1 else _cls_label(c)
+                for c, n in cls_counts.items()
             )
             color = "cyan" if owner == "blue" else "red"
             rows.append(Text(f"  {owner}: {summary}", style=color))

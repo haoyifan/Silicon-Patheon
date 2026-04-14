@@ -192,6 +192,66 @@ def test_focused_panel_gets_yellow_border():
     assert "Actions" in ansi
 
 
+def test_enter_on_open_unit_card_dismisses_it():
+    """Re-pressing Enter on the same unit toggles the card off — same
+    muscle memory as 'open it then close it again'."""
+    app = _FakeApp()
+    _stub_room(app)
+    screen = RoomScreen(app)
+    screen.scenario_preview = {
+        "width": 4, "height": 4,
+        "units": [
+            {"id": "u_b_knight_1", "owner": "blue", "class": "knight",
+             "pos": {"x": 0, "y": 0}},
+        ],
+        "forts": [],
+    }
+    _focus_map(screen)
+    asyncio.run(screen.handle_key("enter"))
+    assert screen.unit_card is not None
+    asyncio.run(screen.handle_key("enter"))
+    assert screen.unit_card is None
+    # Re-open and dismiss with Esc too.
+    asyncio.run(screen.handle_key("enter"))
+    assert screen.unit_card is not None
+    asyncio.run(screen.handle_key("esc"))
+    assert screen.unit_card is None
+
+
+def test_win_condition_prose_uses_display_name_when_available():
+    """Regression: win conditions used to render `u_b_tang_monk_1`
+    directly. With display_name in the bundle, the prose should say
+    `Tang Monk`."""
+    from clash_of_odin.client.tui.screens.room import _describe_win_condition
+
+    bundle = {
+        "unit_classes": {
+            "tang_monk": {"display_name": "Tang Monk"},
+        },
+    }
+    out = _describe_win_condition(
+        {"type": "protect_unit", "unit_id": "u_b_tang_monk_1",
+         "owning_team": "blue"},
+        bundle,
+    )
+    assert "Tang Monk" in out
+    assert "u_b_tang_monk_1" not in out
+
+
+def test_win_condition_prose_falls_back_when_no_display_name():
+    from clash_of_odin.client.tui.screens.room import _describe_win_condition
+
+    out = _describe_win_condition(
+        {"type": "protect_unit", "unit_id": "u_b_knight_1",
+         "owning_team": "blue"},
+        None,
+    )
+    # Without the bundle we still render something readable — the
+    # class slug — instead of the raw u_b_xxx_1.
+    assert "knight" in out
+    assert "u_b_knight_1" not in out
+
+
 def test_dropdown_shows_description_of_highlighted_option():
     dd = Dropdown(
         title="Change Fog",

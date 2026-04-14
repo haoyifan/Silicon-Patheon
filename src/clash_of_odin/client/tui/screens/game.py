@@ -48,6 +48,7 @@ from clash_of_odin.client.tui.screens.room import (
     _describe_win_condition,
     _terrain_effect_summary,
     _unit_cell_style,
+    _unit_display_name,
 )
 
 log = logging.getLogger("clash.tui.game")
@@ -127,15 +128,17 @@ class PlayerPanel(Panel):
                 alive = u.get("alive", u.get("hp", 0) > 0)
                 hp = u.get("hp", "?")
                 hp_max = u.get("hp_max", "?")
-                cls = u.get("class", "?")
+                name = _unit_display_name(
+                    u, self.screen.app.state.scenario_description
+                )
                 if alive:
                     line = Text(
-                        f"  {cls[:10]:<10} {hp}/{hp_max}",
+                        f"  {name[:14]:<14} {hp}/{hp_max}",
                         style="white",
                     )
                 else:
                     line = Text(
-                        f"  {cls[:10]:<10} dead",
+                        f"  {name[:14]:<14} dead",
                         style="dim strike",
                     )
                 rows.append(line)
@@ -306,9 +309,12 @@ class GameMapPanel(Panel):
         if u:
             owner = u.get("owner", "?")
             color = "cyan" if owner == "blue" else "red"
+            name = _unit_display_name(
+                u, self.screen.app.state.scenario_description
+            )
             line.append("   ")
             line.append(
-                f"{u.get('class', '?')} hp {u.get('hp', '?')}/{u.get('hp_max', '?')}",
+                f"{name} hp {u.get('hp', '?')}/{u.get('hp_max', '?')}",
                 style=f"bold {color}",
             )
             line.append("   ")
@@ -322,7 +328,9 @@ class GameMapPanel(Panel):
         h = int(board.get("height", 0))
         if w == 0 or h == 0:
             return None
-        if key == "esc" and self.screen.unit_card is not None:
+        # Esc / Enter / q on an open card dismisses it — re-pressing
+        # Enter on the same unit toggles the panel off.
+        if self.screen.unit_card is not None and key in ("esc", "enter", "q"):
             self.screen.unit_card = None
             return None
         if key in ("up", "k"):

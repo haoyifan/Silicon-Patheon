@@ -20,6 +20,7 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
         can_heal=False,
         sight=2,  # melee tank; limited peripheral vision
         glyph="K",
+        display_name="Knight",
     ),
     UnitClass.ARCHER: UnitStats(
         hp_max=18,
@@ -36,6 +37,7 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
         can_heal=False,
         sight=4,  # ranged; long-range spotter
         glyph="A",
+        display_name="Archer",
     ),
     UnitClass.CAVALRY: UnitStats(
         hp_max=22,
@@ -52,6 +54,7 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
         can_heal=False,
         sight=3,  # fast scout
         glyph="C",
+        display_name="Cavalry",
     ),
     UnitClass.MAGE: UnitStats(
         hp_max=16,
@@ -69,6 +72,7 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
         heal_amount=8,
         sight=3,
         glyph="M",
+        display_name="Mage",
     ),
 }
 
@@ -105,5 +109,6 @@ def make_stats(cls: UnitClass) -> UnitStats:
         vulnerability_to_tags=[dict(v) for v in src.vulnerability_to_tags],
         glyph=src.glyph,
         color=src.color,
+        display_name=src.display_name,
         description=src.description,
     )

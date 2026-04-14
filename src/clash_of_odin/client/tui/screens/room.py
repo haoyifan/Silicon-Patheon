@@ -212,7 +212,16 @@ class UnitCard:
         spec = self.class_spec or {}
         owner = u.get("owner", "?")
         team_color = "cyan" if owner == "blue" else "red"
-        title = f"{u.get('id', u.get('class', '?'))} — {u.get('class', '?')} ({owner})"
+        # Prefer a human-readable name (spec.display_name or
+        # unit-level display_name override) over the slug class name
+        # or the raw u_b_xxx_1 id.
+        display = (
+            u.get("display_name")
+            or spec.get("display_name")
+            or u.get("class")
+            or u.get("id", "?")
+        )
+        title = f"{display} ({owner})"
 
         rows: list[RenderableType] = []
         desc = spec.get("description") or u.get("description") or ""
@@ -361,7 +370,12 @@ class DescriptionPanel(Panel):
             rows.append(Text(""))
             rows.append(Text("How to win:", style="bold"))
             for wc in win_conds:
-                rows.append(Text(f"  • {_describe_win_condition(wc)}", style="dim"))
+                rows.append(
+                    Text(
+                        f"  • {_describe_win_condition(wc, desc)}",
+                        style="dim",
+                    )
+                )
         if not (story or intro or win_conds):
             rows.append(Text("(no scenario description loaded)", style="dim italic"))
         # Simple line-based scroll: drop the first `scroll` rows. Clamp
@@ -414,7 +428,50 @@ def _terrain_effect_summary(
     return ", ".join(parts)
 
 
-def _describe_win_condition(wc: dict[str, Any]) -> str:
+def _unit_display_name(
+    unit: dict[str, Any],
+    scenario_description: dict[str, Any] | None,
+) -> str:
+    """Best human-readable name for a unit. Per-unit override first,
+    then class display_name from the scenario bundle, then the slug."""
+    if unit.get("display_name"):
+        return str(unit["display_name"])
+    cls = unit.get("class") or ""
+    spec = (
+        (scenario_description or {}).get("unit_classes") or {}
+    ).get(cls)
+    if spec and spec.get("display_name"):
+        return str(spec["display_name"])
+    return cls or str(unit.get("id", "?"))
+
+
+def _humanize_unit_id(unit_id: str, scenario_description: dict[str, Any] | None) -> str:
+    """Translate `u_b_tang_monk_1` → `Tang Monk` when the scenario
+    bundle has a display_name for the class. Falls back to the slug
+    derived from the id (tang_monk → tang_monk) and finally to the
+    raw id so we never silently drop information."""
+    if not unit_id:
+        return "?"
+    parts = unit_id.split("_")
+    # Convention: u_<team>_<class>_<index>. The class can itself
+    # contain underscores (tang_monk, white_bone_demon), so re-join
+    # everything between the team initial and the trailing index.
+    if len(parts) >= 4 and parts[0] == "u":
+        class_slug = "_".join(parts[2:-1])
+    else:
+        class_slug = unit_id
+    spec = (
+        (scenario_description or {}).get("unit_classes") or {}
+    ).get(class_slug)
+    if spec and spec.get("display_name"):
+        return str(spec["display_name"])
+    return class_slug or unit_id
+
+
+def _describe_win_condition(
+    wc: dict[str, Any],
+    scenario_description: dict[str, Any] | None = None,
+) -> str:
     t = wc.get("type", "")
     if t == "seize_enemy_fort":
         return "seize the enemy fort"
@@ -424,12 +481,17 @@ def _describe_win_condition(wc: dict[str, Any]) -> str:
         n = wc.get("turns")
         return f"draw at turn {n}" if n else "draw at the turn cap"
     if t == "protect_unit":
-        return f"keep {wc.get('unit_id', '?')} alive ({wc.get('owning_team', '?')})"
+        name = _humanize_unit_id(wc.get("unit_id", ""), scenario_description)
+        team = wc.get("owning_team", "?")
+        return f"keep {name} ({team}) alive"
     if t == "reach_tile":
         pos = wc.get("pos") or {}
         team = wc.get("team", "?")
         u = wc.get("unit_id")
-        who = u or f"any {team} unit"
+        if u:
+            who = _humanize_unit_id(u, scenario_description)
+        else:
+            who = f"any {team} unit"
         return f"{who} reaches ({pos.get('x', '?')}, {pos.get('y', '?')})"
     if t == "hold_tile":
         pos = wc.get("pos") or {}
@@ -708,10 +770,9 @@ class MapPanel(Panel):
         if u:
             owner = u.get("owner", "?")
             color = "cyan" if owner == "blue" else "red"
+            name = _unit_display_name(u, self.screen.app.state.scenario_description)
             line.append("   ")
-            line.append(
-                f"{u.get('class', '?')} ({owner})", style=f"bold {color}"
-            )
+            line.append(f"{name} ({owner})", style=f"bold {color}")
             line.append("   ")
             line.append("Enter for details", style="dim italic")
         return line
@@ -722,8 +783,11 @@ class MapPanel(Panel):
         h = int(p.get("height", 0))
         if w == 0 or h == 0:
             return None
-        # Esc dismisses an open unit card before any cursor movement.
-        if key == "esc" and self.screen.unit_card is not None:
+        # Any of Esc / Enter / q dismisses an open unit card before
+        # we interpret the key as cursor / select. Re-pressing Enter
+        # on the same unit toggles the card off, which is the natural
+        # "open it then close it again" muscle memory.
+        if self.screen.unit_card is not None and key in ("esc", "enter", "q"):
             self.screen.unit_card = None
             return None
         if key in ("up", "k"):
