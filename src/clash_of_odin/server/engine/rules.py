@@ -230,6 +230,13 @@ def _apply_attack(state: GameState, attacker: Unit, target_id: str) -> dict:
     if not attacker.alive:
         killed.append(attacker.id)
 
+    # Narrative: fire on_unit_killed before removal, so plugins/events
+    # can still inspect the dying unit.
+    from clash_of_odin.server.engine import narrative as _narr
+
+    for uid in killed:
+        _narr.fire(state, "on_unit_killed", unit_id=uid)
+
     # Remove dead units.
     for uid in killed:
         del state.units[uid]
@@ -309,6 +316,11 @@ def _apply_end_turn(state: GameState) -> dict:
     # 3. If we wrapped back to first_player, increment turn counter.
     if state.active_player is state.first_player:
         state.turn += 1
+
+    # 3b. Narrative on_turn_start for the incoming player's turn number.
+    from clash_of_odin.server.engine import narrative as _narr
+
+    _narr.fire(state, "on_turn_start", turn=state.turn, team=state.active_player.value)
 
     # 4. Start-of-turn effects for the incoming player:
     #    - reset unit statuses to READY

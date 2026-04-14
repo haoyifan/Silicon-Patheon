@@ -286,4 +286,9 @@ def build_state(cfg: dict) -> GameState:
     # Runtime-attached: not a declared dataclass field because it holds
     # live rule instances (with per-game counters like HoldTile._count).
     state._win_conditions = win_rules
+    # Narrative block (title/description/intro + events). Absent → empty.
+    from clash_of_odin.server.engine.narrative import parse_narrative
+
+    state._narrative = parse_narrative(cfg)
+    state._narrative_log = []
     return state
