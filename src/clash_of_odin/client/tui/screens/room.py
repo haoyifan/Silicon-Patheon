@@ -1207,9 +1207,12 @@ class RoomScreen(Screen):
             return None
 
         # Global exit — but not when the Map panel has an open unit
-        # card (Esc/Enter/q close the card instead).
+        # card (Esc/Enter/q close the card instead). Route through
+        # the same ConfirmModal the Quit button uses so q and the
+        # button behave identically — quitting silently used to be
+        # a footgun with another player waiting in the room.
         if key == "q" and self.unit_card is None:
-            self.app.exit()
+            self._open_quit_confirm()
             return None
         if key == "\t":
             # Close any stale unit card on Tab so the next panel has

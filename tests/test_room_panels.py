@@ -244,6 +244,22 @@ def test_game_actions_panel_does_not_expose_end_turn_or_concede():
     assert "quit" in actions
 
 
+def test_q_in_room_opens_confirm_modal_not_immediate_exit():
+    """Regression: q used to call app.exit() directly while the Quit
+    button opened a ConfirmModal — the two paths should be identical
+    so a stray keystroke can't end the session by accident."""
+    app = _FakeApp()
+    _stub_room(app)
+    screen = RoomScreen(app)
+    asyncio.run(screen.handle_key("q"))
+    assert app.exited is False
+    assert screen._confirm is not None
+    # Dismiss the confirm with default 'No' (Enter on default selection).
+    asyncio.run(screen.handle_key("enter"))
+    assert app.exited is False
+    assert screen._confirm is None
+
+
 def test_unit_card_h_l_cycle_units_and_dismiss_snaps_cursor():
     """h/← steps to previous unit, l/→ to next; close lands the
     cursor on whichever unit is currently in the card."""

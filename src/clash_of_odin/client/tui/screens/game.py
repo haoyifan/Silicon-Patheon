@@ -688,9 +688,18 @@ class GameScreen(Screen):
             return None
 
         # Global quit — but not when a unit card is open (Esc/Enter/q
-        # close the card instead).
+        # close the card instead). Route through the same ConfirmModal
+        # the Quit button uses so q is consistent with the button
+        # (quitting an in-progress match without confirmation was a
+        # footgun, especially mid-turn).
         if key == "q" and self.unit_card is None:
-            self.app.exit()
+            async def _quit(yes: bool) -> None:
+                if yes:
+                    self.app.exit()
+
+            self._confirm = ConfirmModal(
+                prompt="Quit Clash of Odin?", on_confirm=_quit,
+            )
             return None
         if key == "\t":
             self.unit_card = None
