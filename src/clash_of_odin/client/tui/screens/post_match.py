@@ -83,11 +83,7 @@ class PostMatchScreen(Screen):
         elif my_team and winner == my_team:
             banner = Text(f"You won! (team {winner})", style="bold green")
         else:
-            # Use magenta for the loss banner — bold red would
-            # collide with the red team color (the message names
-            # winner explicitly, and the message renders for either
-            # losing side, so it shouldn't read as a team label).
-            banner = Text(f"You lost — {winner} wins", style="bold magenta")
+            banner = Text(f"You lost — {winner} wins", style="bold red")
         if reason:
             banner.append(f"  (reason: {reason})", style="dim")
 

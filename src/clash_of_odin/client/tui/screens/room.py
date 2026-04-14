@@ -140,9 +140,13 @@ class ConfirmModal:
     selected_yes: bool = False  # default: No, so accidental Enter cancels
 
     def render(self) -> RenderableType:
+        # Yes is the destructive option (leave / concede / quit), so
+        # red genuinely conveys "this is the dangerous side". Not a
+        # team-color collision in this context — confirm modals never
+        # render team status alongside.
         yes = Text(
             "[Yes]",
-            style="bold magenta" if self.selected_yes else "dim",
+            style="bold red" if self.selected_yes else "dim",
         )
         no = Text(
             "[No]",
@@ -361,6 +365,11 @@ class PlayerPanel(Panel):
         rs = s.last_room_state or {}
         seats = rs.get("seats", {})
         my_slot = s.slot or "?"
+        # When team_assignment is "random", colors haven't been
+        # decided yet — using cyan/red for the two slots would imply
+        # blue/red assignment that doesn't actually exist. Render
+        # neutrally until the assignment is fixed.
+        team_mode = rs.get("team_assignment", "fixed")
         rows: list[RenderableType] = []
         for slot_id in ("a", "b"):
             seat = seats.get(slot_id, {})
@@ -370,9 +379,18 @@ class PlayerPanel(Panel):
                 name = s.display_name or "(anonymous)"
             tag = " (you)" if slot_id == my_slot else ""
             ready = "✓" if seat.get("ready") else "…"
-            color = "cyan" if slot_id == my_slot else "red"
+            if team_mode == "random":
+                style = "bold yellow" if slot_id == my_slot else "bold white"
+            else:
+                # In fixed mode we know who plays what — color slot a
+                # by the configured host_team and slot b by the other.
+                host_team = rs.get("host_team", "blue")
+                slot_team = host_team if slot_id == "a" else (
+                    "red" if host_team == "blue" else "blue"
+                )
+                style = f"bold {'cyan' if slot_team == 'blue' else 'red'}"
             rows.append(
-                Text(f"{slot_id} [{ready}] {name}{tag}", style=f"bold {color}")
+                Text(f"{slot_id} [{ready}] {name}{tag}", style=style)
             )
         rows.append(Text(""))
         rows.append(Text(f"model: {s.model or 'random'}", style="dim"))
@@ -761,8 +779,21 @@ class ActionsPanel(Panel):
         rs = self.screen.app.state.last_room_state or {}
         is_host = self.screen.app.state.slot == "a"
         editable = rs.get("status") in ("waiting_for_players", "waiting_ready")
+        # Strategy is per-player (each side picks their own playbook),
+        # not a host-only setting. Renders the current file's stem so
+        # the player can see what's loaded without opening the picker.
+        strat_label = "(none)"
+        sp = self.screen.app.state.strategy_path
+        if sp is not None:
+            strat_label = sp.stem
         buttons: list[Button] = [
             Button(label="Toggle Ready", action="toggle_ready", enabled=editable),
+            Button(
+                label="Strategy",
+                action="change_strategy",
+                value=strat_label,
+                enabled=editable,
+            ),
         ]
         if is_host:
             buttons.extend(
@@ -1250,9 +1281,78 @@ class RoomScreen(Screen):
         if action == "change_host_team":
             self._open_host_team_modal()
             return None
+        if action == "change_strategy":
+            self._open_strategy_modal()
+            return None
         return None
 
     # ---- modal openers ----
+
+    def _open_strategy_modal(self) -> None:
+        """Pick a playbook from strategies/*.md (plus a `(none)` opt
+        to clear). Each player sets their own — doesn't affect the
+        opponent. Saved on the local SharedState only; the agent
+        reads it at game start to inject into its system prompt."""
+        from pathlib import Path as _Path
+
+        # Discover strategies/*.md relative to either the CWD or the
+        # repo root (works for `uv run clash-join` from any depth).
+        candidates: list[_Path] = []
+        for root in (_Path("."), _Path.cwd(), _Path(__file__).resolve().parents[5]):
+            d = root / "strategies"
+            if d.is_dir():
+                candidates = sorted(d.glob("*.md"))
+                if candidates:
+                    break
+        # Strip a README if present — it's not a playbook.
+        candidates = [p for p in candidates if p.stem.lower() != "readme"]
+        options = ["(none)"] + [p.stem for p in candidates]
+        # Highlight the currently-selected stem if any.
+        cur = "(none)"
+        if self.app.state.strategy_path is not None:
+            cur = self.app.state.strategy_path.stem
+        idx = options.index(cur) if cur in options else 0
+
+        async def _on_pick(chosen: str) -> None:
+            if chosen == "(none)":
+                self.app.state.strategy_path = None
+                self.app.state.strategy_text = None
+                return
+            for p in candidates:
+                if p.stem == chosen:
+                    self.app.state.strategy_path = p
+                    try:
+                        self.app.state.strategy_text = p.read_text(encoding="utf-8")
+                    except OSError as e:
+                        self.app.state.error_message = f"strategy read failed: {e}"
+                        self.app.state.strategy_text = None
+                    return
+
+        # Show a one-line summary of each strategy if we can read the
+        # first non-empty line — usually the title or a tagline.
+        descriptions: dict[str, str] = {"(none)": "No playbook. The agent uses only its baseline behavior."}
+        for p in candidates:
+            try:
+                txt = p.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            head = next(
+                (
+                    ln.strip("# \t\n")
+                    for ln in txt.splitlines()
+                    if ln.strip() and not ln.strip().startswith("---")
+                ),
+                "",
+            )
+            descriptions[p.stem] = head[:200]
+
+        self._dropdown = Dropdown(
+            title="Pick Strategy (your side only)",
+            options=options,
+            selected_idx=idx,
+            on_confirm=_on_pick,
+            option_descriptions=descriptions,
+        )
 
     def _open_leave_confirm(self) -> None:
         async def _on_confirm(yes: bool) -> None:

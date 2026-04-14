@@ -195,6 +195,55 @@ def test_focused_panel_gets_yellow_border():
     assert "Actions" in ansi
 
 
+def test_player_panel_uses_neutral_color_when_team_random():
+    """team_assignment='random' means slot→team isn't decided yet,
+    so cyan/red would falsely imply a fixed assignment. Use neutral."""
+    from clash_of_odin.client.tui.screens.room import PlayerPanel
+
+    app = _FakeApp()
+    app.state.slot = "a"
+    app.state.last_room_state = {
+        "team_assignment": "random",
+        "host_team": "blue",
+        "seats": {
+            "a": {"player": {"display_name": "alice"}, "ready": False},
+            "b": {"player": {"display_name": "bob"}, "ready": False},
+        },
+    }
+    panel = PlayerPanel(app)
+    console = Console(record=True, width=60)
+    console.print(panel.render(focused=False))
+    ansi = console.export_text(styles=True)
+    # Both slot lines should NOT use cyan or red ANSI escape codes.
+    # Yellow / white are fine. Detect by checking for the team color
+    # markers Rich emits: \x1b[36m (cyan) / \x1b[31m (red) on the
+    # same line as the names.
+    for line in ansi.splitlines():
+        if "alice" in line or "bob" in line:
+            # 36 = cyan, 31 = red bold codes can appear with bold prefix.
+            assert "\x1b[1;36m" not in line, f"alice/bob colored cyan: {line!r}"
+            assert "\x1b[1;31m" not in line, f"alice/bob colored red: {line!r}"
+
+
+def test_game_actions_panel_does_not_expose_end_turn_or_concede():
+    """End-turn and concede are agent-driven via MCP; the player
+    shouldn't be able to race the agent through the UI."""
+    from clash_of_odin.client.tui.screens.game import ActionsPanel as GameActions
+    from clash_of_odin.client.tui.app import SharedState
+
+    class _S:
+        state = None
+        app = type("App", (), {"state": SharedState()})()
+
+    s = _S()
+    s.state = {"active_player": "blue", "you": "blue", "status": "in_progress"}
+    panel = GameActions(s)
+    actions = [b.action for b in panel._buttons()]
+    assert "end_turn" not in actions
+    assert "concede" not in actions
+    assert "quit" in actions
+
+
 def test_unit_card_h_l_cycle_units_and_dismiss_snaps_cursor():
     """h/← steps to previous unit, l/→ to next; close lands the
     cursor on whichever unit is currently in the card."""

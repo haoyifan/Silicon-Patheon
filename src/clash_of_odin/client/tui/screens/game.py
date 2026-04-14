@@ -15,7 +15,8 @@ Coach). Arrows / j-k / Enter dispatch to the focused panel only.
     UnitCard with full stats / tags / abilities / inventory.
   - Reasoning (focused): up/down scroll the agent-thought log.
   - Coach (focused): type freely — Enter sends, Esc clears the buffer.
-  - Actions (focused): button list — end_turn / concede / quit.
+  - Actions (focused): button list — Quit (the only player-side
+    action; end-turn / concede are issued by the agent).
 
 Two sources of game actions:
 
@@ -150,7 +151,7 @@ class PlayerPanel(Panel):
         )
 
 
-# ---- panel: Actions (end_turn / concede / quit) ----
+# ---- panel: Actions (quit only — gameplay is agent-driven) ----
 
 
 @dataclass
@@ -171,13 +172,12 @@ class ActionsPanel(Panel):
         return "↑/↓ select   Enter activate"
 
     def _buttons(self) -> list[_Btn]:
-        gs = self.screen.state or {}
-        active = gs.get("active_player")
-        my_team = gs.get("you")
-        my_turn = active == my_team and gs.get("status") != "game_over"
+        # End-turn and concede are agent-driven actions: the running
+        # NetworkedAgent calls them through MCP tools as part of its
+        # play loop. Exposing buttons here would let the human race
+        # the agent and skip moves that haven't been decided yet.
+        # Quit (close the TUI) stays — it's how the human leaves.
         return [
-            _Btn(label="End Turn", action="end_turn", enabled=my_turn),
-            _Btn(label="Concede", action="concede", enabled=gs.get("status") != "game_over"),
             _Btn(label="Quit", action="quit"),
         ]
 
@@ -731,18 +731,6 @@ class GameScreen(Screen):
         self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes)
 
     async def run_action(self, action: str) -> Screen | None:
-        if action == "end_turn":
-            return await self._call("end_turn")
-        if action == "concede":
-            async def _concede(yes: bool) -> None:
-                if yes:
-                    await self._call("concede")
-
-            self._confirm = ConfirmModal(
-                prompt="Concede the match? Your opponent wins immediately.",
-                on_confirm=_concede,
-            )
-            return None
         if action == "quit":
             async def _quit(yes: bool) -> None:
                 if yes:

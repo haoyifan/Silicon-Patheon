@@ -260,7 +260,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             "plain": {"move_cost": 1, "defense_bonus": 0, "res_bonus": 0,
                       "description": "Open ground. No modifiers."},
             "forest": {"move_cost": 2, "defense_bonus": 2, "res_bonus": 0,
-                       "description": "Dense woods. +2 DEF for the occupant; costs 2 MP to enter."},
+                       "description": "Dense woods. +2 DEF for the occupant; costs 2 movement to enter."},
             "mountain": {"move_cost": 2, "defense_bonus": 3, "res_bonus": 1,
                          "description": "Steep terrain. +3 DEF / +1 RES; most classes cannot enter."},
             "fort": {"move_cost": 1, "defense_bonus": 3, "res_bonus": 3, "heals": 3,
