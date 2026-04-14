@@ -322,6 +322,21 @@ def _apply_end_turn(state: GameState) -> dict:
 
     _narr.fire(state, "on_turn_start", turn=state.turn, team=state.active_player.value)
 
+    # 3c. Plugin on_turn_start hooks — scenarios can register callables
+    # by listing their names in state._turn_start_hooks. Used for things
+    # like reinforcement spawning, weather rotation, etc.
+    ns = getattr(state, "_plugin_namespace", None) or {}
+    for fn_name in getattr(state, "_turn_start_hooks", []) or []:
+        fn = ns.get(fn_name)
+        if callable(fn):
+            try:
+                fn(state, turn=state.turn, team=state.active_player.value)
+            except Exception:
+                import logging as _logging
+                _logging.getLogger("clash.engine").exception(
+                    "plugin on_turn_start hook %r raised", fn_name,
+                )
+
     # 4. Start-of-turn effects for the incoming player:
     #    - reset unit statuses to READY
     #    - legacy fort heal (+3 on own fort)

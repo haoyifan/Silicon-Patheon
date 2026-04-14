@@ -291,4 +291,8 @@ def build_state(cfg: dict) -> GameState:
 
     state._narrative = parse_narrative(cfg)
     state._narrative_log = []
+    # Plugin hook registration: scenarios list plugin callable names
+    # under plugin_hooks: { on_turn_start: [fn1, fn2] }.
+    hooks = cfg.get("plugin_hooks") or {}
+    state._turn_start_hooks = list(hooks.get("on_turn_start") or [])
     return state
