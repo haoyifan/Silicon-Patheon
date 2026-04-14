@@ -101,12 +101,15 @@ GAME_TOOLS: list[ToolSpec] = [
     ToolSpec(
         "simulate_attack",
         (
-            "Deterministic attack preview without mutating state. "
-            "Returns damage_per_hit, attacker_hits (doubling), "
-            "counter info, and whether either dies. Pass `from_tile` "
-            "to preview an attack AS IF the attacker had already moved "
-            "to that tile — use this to pick between several attack "
-            "positions before committing `move`. Safe to call any time."
+            "READ-ONLY prediction — does NOT change the board. No HP "
+            "is deducted, no unit dies, no status flips. The response "
+            "carries `kind: \"prediction\"` and uses `predicted_*` "
+            "field names (predicted_damage_to_defender, "
+            "predicted_defender_dies, ...) so you can tell it apart "
+            "from `attack`'s return. To actually deal the damage, "
+            "you MUST call `attack(unit_id, target_id)` after this. "
+            "Pass `from_tile` to preview from a hypothetical "
+            "post-move position. Safe to call any time."
         ),
         {
             "type": "object",

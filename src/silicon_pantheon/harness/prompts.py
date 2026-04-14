@@ -93,9 +93,13 @@ history but they can't be moved, attacked, healed, or countered.
 3. For each ready unit, decide what to do:
    - `get_legal_actions(unit_id)` shows moves / attacks / heals available.
      Requires it to be your turn and the unit to be yours.
-   - `simulate_attack(attacker_id, target_id, from_tile?)` predicts the
-     outcome. Pass `from_tile` to preview the attack as if you'd moved
-     there first — saves having to actually move to check viability.
+   - `simulate_attack(attacker_id, target_id, from_tile?)` PREDICTS the
+     outcome but does NOT change the board. Its response is clearly
+     marked (`kind: "prediction"`, `predicted_*` fields). If you want
+     the damage to actually happen you MUST follow it with `attack`.
+     Never reason as if a simulation already killed the target.
+     Pass `from_tile` to preview from a hypothetical post-move
+     position.
    - `move(unit_id, dest)` then `attack(unit_id, target_id)` / `heal(...)` /
      `wait(unit_id)`, or skip the move and act directly from `ready`, or
      just `wait` if the unit has nothing useful to do.

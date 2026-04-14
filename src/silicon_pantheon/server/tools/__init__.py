@@ -123,18 +123,29 @@ def simulate_attack(
         attacker_pos=origin,
     )
     return {
+        # "kind" flags this as a prediction, not an executed attack.
+        # Models have conflated simulate_attack's return with attack's
+        # return because the damage fields match — then reasoned as if
+        # the target was already dead. "kind": "prediction" and the
+        # inline note give the LLM an unambiguous signal.
+        "kind": "prediction",
+        "note": (
+            "This is a SIMULATION result — no state has changed. "
+            "The target is still alive and unharmed. To actually "
+            "deal this damage, call attack(unit_id, target_id)."
+        ),
         "attacker_id": attacker_id,
         "target_id": target_id,
         "from": origin.to_dict(),
         "damage_per_hit": pred.damage_per_hit,
         "attacker_hits": pred.attacker_hits,
-        "total_damage_to_defender": pred.total_damage_to_defender,
-        "defender_dies": pred.defender_dies,
+        "predicted_damage_to_defender": pred.total_damage_to_defender,
+        "predicted_defender_dies": pred.defender_dies,
         "will_counter": pred.will_counter,
         "counter_damage_per_hit": pred.counter_damage_per_hit,
         "counter_hits": pred.counter_hits,
-        "total_counter_damage": pred.total_counter_damage,
-        "attacker_dies": pred.attacker_dies,
+        "predicted_counter_damage": pred.total_counter_damage,
+        "predicted_attacker_dies": pred.attacker_dies,
     }
 
 

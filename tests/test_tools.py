@@ -64,7 +64,10 @@ def test_simulate_attack_no_mutation():
             "from_tile": {"x": 2, "y": 5},
         },
     )
-    assert out["total_damage_to_defender"] > 0
+    # Prediction shape is clearly marked so the agent can't confuse
+    # simulate_attack's return with an executed attack.
+    assert out["kind"] == "prediction"
+    assert out["predicted_damage_to_defender"] > 0
     # HP unchanged after simulate
     assert s.state.units["u_r_archer_1"].hp == s.state.units["u_r_archer_1"].stats.hp_max
 
