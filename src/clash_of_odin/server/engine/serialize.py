@@ -57,6 +57,19 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
                 "can_heal": u.stats.can_heal,
                 "status": u.status.value,
                 "alive": u.alive,
+                # Reserved v2 fields — agents / clients can read them
+                # today even though the engine doesn't act on them yet.
+                "tags": list(u.stats.tags),
+                "mp_max": u.stats.mp_max,
+                "mp_per_turn": u.stats.mp_per_turn,
+                "abilities": list(u.stats.abilities),
+                "default_inventory": list(u.stats.default_inventory),
+                "damage_profile": dict(u.stats.damage_profile),
+                "defense_profile": dict(u.stats.defense_profile),
+                "bonus_vs_tags": [dict(b) for b in u.stats.bonus_vs_tags],
+                "vulnerability_to_tags": [
+                    dict(v) for v in u.stats.vulnerability_to_tags
+                ],
             }
         )
 
