@@ -296,6 +296,43 @@ class DescriptionPanel(Panel):
         )
 
 
+def _terrain_effect_summary(
+    scenario_description: dict[str, Any] | None, terrain: str
+) -> str:
+    """One-line summary of what a terrain does, built from the cached
+    describe_scenario bundle. Empty if we don't have the data.
+    Descriptions that ship in the bundle win; otherwise we compose
+    from the individual fields."""
+    if not scenario_description:
+        return ""
+    spec = (scenario_description.get("terrain_types") or {}).get(terrain)
+    if not spec:
+        return ""
+    if spec.get("description"):
+        return str(spec["description"])
+    parts: list[str] = []
+    mc = spec.get("move_cost")
+    if mc is not None:
+        parts.append(f"move={mc}")
+    db = spec.get("defense_bonus")
+    if db:
+        parts.append(f"+{db} DEF")
+    rb = spec.get("res_bonus") or spec.get("magic_bonus")
+    if rb:
+        parts.append(f"+{rb} RES")
+    heals = spec.get("heals")
+    if heals:
+        sign = "+" if heals > 0 else ""
+        parts.append(f"{sign}{heals} HP/turn")
+    if spec.get("blocks_sight"):
+        parts.append("blocks LoS")
+    if spec.get("passable") is False:
+        parts.append("impassable")
+    if spec.get("effects_plugin"):
+        parts.append(f"plugin: {spec['effects_plugin']}")
+    return ", ".join(parts)
+
+
 def _describe_win_condition(wc: dict[str, Any]) -> str:
     t = wc.get("type", "")
     if t == "seize_enemy_fort":
@@ -549,16 +586,21 @@ class MapPanel(Panel):
         if w == 0 or h == 0:
             return Text("(loading map…)", style="dim italic")
         pos = (self.cx, self.cy)
-        # Look up tile spec from cached scenario_description if any.
         terrain = "plain"
         for t in (self._board().get("tiles") or []):
             if int(t.get("x", -1)) == self.cx and int(t.get("y", -1)) == self.cy:
                 terrain = str(t.get("type", "plain"))
                 break
-        u = unit_at.get(pos)
         line = Text()
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
         line.append(f"terrain: {terrain}", style="yellow")
+        # Terrain effect summary from the cached scenario bundle.
+        summary = _terrain_effect_summary(
+            self.screen.app.state.scenario_description, terrain
+        )
+        if summary:
+            line.append(f" — {summary}", style="dim")
+        u = unit_at.get(pos)
         if u:
             owner = u.get("owner", "?")
             color = "cyan" if owner == "blue" else "red"
@@ -872,15 +914,18 @@ class RoomScreen(Screen):
         except Exception as e:
             self.app.state.error_message = f"preview failed: {e}"
             return
-        if r.get("ok"):
-            self.scenario_preview = (r.get("room") or {}).get("scenario_preview", {})
-        # Cache the full scenario bundle so the unit card + win-condition
-        # legend have their data without a second roundtrip.
-        scenario_name = (
-            (self.app.state.last_room_state or {}).get("scenario")
-            if self.app.state.last_room_state
-            else None
-        )
+        if not r.get("ok"):
+            return
+        room = r.get("room") or {}
+        self.scenario_preview = room.get("scenario_preview", {})
+        # Read the scenario name directly from preview_room so this
+        # works on the very first on_enter call — before
+        # _refresh_state has populated last_room_state. Previously we
+        # read it from last_room_state, which was None on first load,
+        # so describe_scenario silently never fired for the non-host
+        # and the Description panel stayed empty + the UnitCard had
+        # no stats to render (preview units carry only pos+glyph).
+        scenario_name = room.get("scenario")
         if scenario_name:
             try:
                 desc = await self.app.client.call(

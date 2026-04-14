@@ -205,8 +205,18 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         for cname, spec in (cfg.get("unit_classes") or {}).items():
             unit_classes[cname] = dict(spec or {})
 
-        terrain_types = {
-            "plain": {}, "forest": {}, "mountain": {}, "fort": {},
+        # Built-ins carry their baked-in effects so the client can show
+        # what "forest" means without having to know engine internals.
+        # Scenario overrides win — scenarios may redefine a built-in.
+        terrain_types: dict[str, dict] = {
+            "plain": {"move_cost": 1, "defense_bonus": 0, "res_bonus": 0,
+                      "description": "Open ground. No modifiers."},
+            "forest": {"move_cost": 2, "defense_bonus": 2, "res_bonus": 0,
+                       "description": "Dense woods. +2 DEF for the occupant; costs 2 MP to enter."},
+            "mountain": {"move_cost": 2, "defense_bonus": 3, "res_bonus": 1,
+                         "description": "Steep terrain. +3 DEF / +1 RES; most classes cannot enter."},
+            "fort": {"move_cost": 1, "defense_bonus": 3, "res_bonus": 3, "heals": 3,
+                     "description": "Fortification. +3 DEF / +3 RES; heals 3 HP to its owning team at turn start; seizing an enemy fort wins the match under default rules."},
         }
         for tname, spec in (cfg.get("terrain_types") or {}).items():
             terrain_types[tname] = dict(spec or {})

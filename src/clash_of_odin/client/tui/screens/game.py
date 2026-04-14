@@ -44,8 +44,9 @@ from clash_of_odin.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 from clash_of_odin.client.tui.panels import Panel, border_style
 from clash_of_odin.client.tui.screens.room import (
     UnitCard,
-    _unit_cell_style,
     _describe_win_condition,
+    _terrain_effect_summary,
+    _unit_cell_style,
 )
 
 log = logging.getLogger("clash.tui.game")
@@ -55,6 +56,10 @@ log = logging.getLogger("clash.tui.game")
 
 
 class PlayerPanel(Panel):
+    """Turn / team / agent status + compact unit roster for both
+    sides. Dead units stay in the roster, rendered dim + strikethrough
+    — they don't silently disappear when killed."""
+
     title = "Player"
 
     def __init__(self, screen: "GameScreen") -> None:
@@ -75,12 +80,10 @@ class PlayerPanel(Panel):
         rows: list[RenderableType] = []
         rows.append(
             Text(
-                f"You: {my_team}",
+                f"You: {my_team}   Turn {turn}/{max_turns}",
                 style="bold cyan" if my_team == "blue" else "bold red",
             )
         )
-        rows.append(Text(f"Turn {turn}/{max_turns}"))
-        rows.append(Text(""))
         my_turn = active == my_team
         rows.append(
             Text(
@@ -101,13 +104,40 @@ class PlayerPanel(Panel):
                 self.screen.app.state.agent_task is not None
                 and not self.screen.app.state.agent_task.done()
             )
-            rows.append(Text(""))
             rows.append(
                 Text(
                     f"agent {'thinking…' if busy else 'idle'}",
                     style="yellow" if busy else "dim",
                 )
             )
+        # Unit roster per team. Dead units are dim+strike so the
+        # player can see who's been lost without them silently
+        # disappearing from the board (the map itself treats corpses
+        # as empty tiles, so the roster is the only visible record).
+        units = gs.get("units") or []
+        for team in ("blue", "red"):
+            team_units = [u for u in units if u.get("owner") == team]
+            if not team_units:
+                continue
+            rows.append(Text(""))
+            header_style = "bold cyan" if team == "blue" else "bold red"
+            rows.append(Text(f"{team}:", style=header_style))
+            for u in team_units:
+                alive = u.get("alive", u.get("hp", 0) > 0)
+                hp = u.get("hp", "?")
+                hp_max = u.get("hp_max", "?")
+                cls = u.get("class", "?")
+                if alive:
+                    line = Text(
+                        f"  {cls[:10]:<10} {hp}/{hp_max}",
+                        style="white",
+                    )
+                else:
+                    line = Text(
+                        f"  {cls[:10]:<10} dead",
+                        style="dim strike",
+                    )
+                rows.append(line)
         return RichPanel(
             Group(*rows),
             title=self.title,
@@ -267,6 +297,11 @@ class GameMapPanel(Panel):
         line = Text()
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
         line.append(f"terrain: {terrain}", style="yellow")
+        summary = _terrain_effect_summary(
+            self.screen.app.state.scenario_description, terrain
+        )
+        if summary:
+            line.append(f" — {summary}", style="dim")
         if u:
             owner = u.get("owner", "?")
             color = "cyan" if owner == "blue" else "red"
