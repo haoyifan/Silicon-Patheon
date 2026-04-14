@@ -397,6 +397,8 @@ class DescriptionPanel(Panel):
         narrative = desc.get("narrative") or {}
         intro = (narrative.get("intro") or "").strip()
         win_conds = desc.get("win_conditions") or []
+        armies = desc.get("armies") or {}
+        unit_classes = desc.get("unit_classes") or {}
 
         rows: list[RenderableType] = []
         rows.append(Text(name, style="bold yellow"))
@@ -416,7 +418,57 @@ class DescriptionPanel(Panel):
                         style="dim",
                     )
                 )
-        if not (story or intro or win_conds):
+        # Army composition — same shape as the scenario picker so the
+        # game-room Description and the picker preview agree on what
+        # each side fields. Lists per-class display_name with counts;
+        # players read this to plan focus / matchups before ready-up.
+        if armies:
+            rows.append(Text(""))
+            rows.append(Text("Armies:", style="bold"))
+            for owner in ("blue", "red"):
+                units = armies.get(owner) or []
+                if not units:
+                    continue
+                cls_counts: dict[str, int] = {}
+                for u in units:
+                    cls_counts[u.get("class", "?")] = (
+                        cls_counts.get(u.get("class", "?"), 0) + 1
+                    )
+                team_color = "cyan" if owner == "blue" else "red"
+
+                def _label(slug: str) -> str:
+                    spec = unit_classes.get(slug) or {}
+                    return str(spec.get("display_name") or slug)
+
+                summary = ", ".join(
+                    f"{n}×{_label(c)}" if n > 1 else _label(c)
+                    for c, n in cls_counts.items()
+                )
+                rows.append(Text(f"  {owner}: {summary}", style=team_color))
+        # Per-class details: display name + one-line description from
+        # the scenario bundle. Only include classes that are actually
+        # in play (cuts noise for scenarios that ship a big roster
+        # but only field a few classes).
+        in_play = {
+            u.get("class")
+            for army in armies.values()
+            for u in (army or [])
+        }
+        described = [
+            (slug, unit_classes[slug])
+            for slug in sorted(in_play)
+            if slug and slug in unit_classes and unit_classes[slug].get("description")
+        ]
+        if described:
+            rows.append(Text(""))
+            rows.append(Text("Units:", style="bold"))
+            for slug, spec in described:
+                name_str = spec.get("display_name") or slug
+                rows.append(Text(f"  {name_str}", style="bold yellow"))
+                rows.append(
+                    Text(f"    {spec['description'].strip()}", style="dim")
+                )
+        if not (story or intro or win_conds or armies):
             rows.append(Text("(no scenario description loaded)", style="dim italic"))
         # Simple line-based scroll: drop the first `scroll` rows. Clamp
         # so scrolling past the end doesn't produce an empty panel.

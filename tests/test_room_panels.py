@@ -303,6 +303,39 @@ def test_win_condition_prose_falls_back_when_no_display_name():
     assert "u_b_knight_1" not in out
 
 
+def test_room_description_panel_includes_armies_and_unit_descriptions():
+    """The game-room Description panel should match the scenario picker:
+    army composition + per-class descriptions, not just the scenario
+    blurb + win conditions."""
+    from clash_of_odin.client.tui.screens.room import DescriptionPanel
+
+    app = _FakeApp()
+    app.state.scenario_description = {
+        "name": "Demo",
+        "description": "stub blurb",
+        "armies": {
+            "blue": [{"class": "tang_monk", "pos": {"x": 0, "y": 0}}],
+            "red": [{"class": "demon_king", "pos": {"x": 4, "y": 4}}],
+        },
+        "unit_classes": {
+            "tang_monk": {"display_name": "Tang Monk",
+                          "description": "The pilgrim."},
+            "demon_king": {"display_name": "Demon King",
+                           "description": "The boss."},
+        },
+        "win_conditions": [{"type": "eliminate_all_enemy_units"}],
+    }
+    panel = DescriptionPanel(app)
+    console = Console(record=True, width=80)
+    console.print(panel.render(focused=False))
+    out = console.export_text()
+    assert "Armies:" in out
+    assert "Tang Monk" in out
+    assert "Demon King" in out
+    assert "The pilgrim." in out
+    assert "The boss." in out
+
+
 def test_dropdown_shows_description_of_highlighted_option():
     dd = Dropdown(
         title="Change Fog",

@@ -133,10 +133,18 @@ class TUIApp:
     async def run(self) -> int:
         self._screen = self._initial_factory(self)
         await self._screen.on_enter(self)
+        # refresh_per_second is the cap for Live's *background* repaint
+        # thread when something is dirty but no explicit refresh has
+        # been requested. We pass refresh=True on every update() below
+        # so the screen paints immediately on user input. The
+        # background cadence is still useful for the few cases (e.g.
+        # asyncio task completion) that mark Live dirty without going
+        # through update — keep it brisk so the art-frame animation
+        # ticks along even without keystrokes.
         with Live(
             self._screen.render(),
             console=self.console,
-            refresh_per_second=4,
+            refresh_per_second=15,
             screen=True,
         ) as live:
             self._live = live
@@ -200,9 +208,18 @@ class TUIApp:
         self._refresh()
 
     def _refresh(self) -> None:
+        """Repaint the screen immediately.
+
+        Rich's Live.update() defaults to refresh=False — it just sets
+        the next renderable and lets the background thread paint at
+        refresh_per_second. With our default 4 Hz that meant ~250 ms
+        of input-to-screen lag, which felt awful when holding down an
+        arrow key. Forcing refresh=True paints right now; we cap rate
+        ourselves by coalescing key events in _dispatcher.
+        """
         if self._live is not None and self._screen is not None:
             try:
-                self._live.update(self._screen.render())
+                self._live.update(self._screen.render(), refresh=True)
             except Exception as e:
                 _log.exception("render raised")
                 self.state.error_message = f"render error: {e}"
@@ -220,6 +237,16 @@ class TUIApp:
             return
 
     async def _dispatcher(self) -> None:
+        """Apply key events; coalesce bursts so we render at most once
+        per drained run.
+
+        Holding down an arrow key generates ~30 events/sec. Painting
+        the full alternate-screen layout that often is wasted work —
+        the user only sees the final frame anyway. So: pop the queue,
+        run handle_key, and ONLY refresh when there's no key
+        immediately waiting. The background refresh_per_second cap
+        guarantees the screen updates even if keys keep arriving.
+        """
         try:
             while not self._should_exit:
                 key = await self._key_queue.get()
@@ -234,8 +261,25 @@ class TUIApp:
                     continue
                 if nxt is not None:
                     await self.transition(nxt)
-                else:
-                    self._refresh()
+                    continue
+                # Drain any key that arrived while we were handling
+                # this one — apply them all before painting.
+                while not self._key_queue.empty():
+                    try:
+                        next_key = self._key_queue.get_nowait()
+                    except asyncio.QueueEmpty:
+                        break
+                    try:
+                        nxt = await self._screen.handle_key(next_key)
+                    except Exception as e:
+                        _log.exception("handle_key raised (drain)")
+                        self.state.error_message = f"key handler error: {e}"
+                        nxt = None
+                    if nxt is not None:
+                        await self.transition(nxt)
+                        nxt = None
+                        break
+                self._refresh()
         except asyncio.CancelledError:
             return
 

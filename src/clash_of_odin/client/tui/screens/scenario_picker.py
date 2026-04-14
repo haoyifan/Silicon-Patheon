@@ -309,6 +309,26 @@ class ScenarioPicker:
             )
             color = "cyan" if owner == "blue" else "red"
             rows.append(Text(f"  {owner}: {summary}", style=color))
+        # Per-class descriptions for classes that are actually fielded.
+        in_play = {
+            u.get("class")
+            for army in armies.values()
+            for u in (army or [])
+        }
+        described = [
+            (slug, unit_classes[slug])
+            for slug in sorted(in_play)
+            if slug and slug in unit_classes and unit_classes[slug].get("description")
+        ]
+        if described:
+            rows.append(Text(""))
+            rows.append(Text("Units:", style="bold"))
+            for slug, spec in described:
+                name_str = spec.get("display_name") or slug
+                rows.append(Text(f"  {name_str}", style="bold yellow"))
+                rows.append(
+                    Text(f"    {spec['description'].strip()}", style="dim")
+                )
         max_turns = rules.get("max_turns")
         if max_turns:
             rows.append(Text(""))
