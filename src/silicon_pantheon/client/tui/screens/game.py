@@ -66,6 +66,30 @@ def _status_style(status: str) -> str:
     return "white"
 
 
+def _hp_style(hp: int | str, hp_max: int | str) -> str:
+    """Color the HP cell by remaining ratio so damage is readable at
+    a glance: >80% = green, 30-80% = yellow, <30% = red.
+
+    Pre-change everything rendered white on black and users had to
+    mentally divide hp/hp_max for every row. Now the colour is the
+    diff — green means "still full", yellow "bloodied", red
+    "one good hit from dying".
+    """
+    try:
+        hp_i = int(hp)
+        hp_max_i = int(hp_max)
+    except (TypeError, ValueError):
+        return "white"
+    if hp_max_i <= 0 or hp_i <= 0:
+        return "red"
+    ratio = hp_i / hp_max_i
+    if ratio > 0.8:
+        return "bold green"
+    if ratio >= 0.3:
+        return "bold yellow"
+    return "bold red"
+
+
 class PlayerPanel(Panel):
     """Turn / team / agent status + compact unit roster for both
     sides. Dead units stay in the roster, rendered dim + strikethrough
@@ -171,15 +195,16 @@ class PlayerPanel(Panel):
                 if alive:
                     status = str(u.get("status", "ready"))
                     hp_str = f"{hp}/{hp_max}"
-                    # Per-column styling: neutral name + HP, colored
-                    # status cell. Before this split the whole row
-                    # inherited _status_style and the entire roster
-                    # rendered green/yellow/dim on every render.
+                    # Per-column styling: neutral name, HP colored by
+                    # remaining ratio (green/yellow/red), status
+                    # colored by progress. Before the per-column split
+                    # the whole row inherited _status_style and the
+                    # entire roster rendered green/yellow/dim.
                     row = Text.assemble(
                         ("  ", None),
                         (f"{name[:14]:<14}", "white"),
                         ("  ", None),
-                        (f"{hp_str:>7}", "white"),
+                        (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                         ("  ", None),
                         (status, _status_style(status)),
                     )
