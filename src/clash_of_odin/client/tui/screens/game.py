@@ -151,7 +151,7 @@ class PlayerPanel(Panel):
             rows.append(Text(""))
             header_style = "bold cyan" if team == "blue" else "bold red"
             rows.append(Text(f"{team}:", style=header_style))
-            table = Table.grid(padding=(0, 1), expand=False)
+            table = Table.grid(padding=(0, 3), expand=False)
             table.add_column(style="dim")  # name
             table.add_column(style="dim", justify="right")  # HP
             table.add_column(style="dim")  # status
