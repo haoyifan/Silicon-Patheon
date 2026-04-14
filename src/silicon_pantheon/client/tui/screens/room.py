@@ -30,7 +30,7 @@ from rich.table import Table
 from rich.text import Text
 
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
-from silicon_pantheon.client.tui.panels import Panel, border_style
+from silicon_pantheon.client.tui.panels import Panel, border_style, wrap_rows_to_width
 
 log = logging.getLogger("silicon.tui.room")
 
@@ -527,6 +527,16 @@ class DescriptionPanel(Panel):
                 )
         if not (story or intro or win_conds or armies):
             rows.append(Text("(no scenario description loaded)", style="dim italic"))
+        # Pre-wrap long logical lines (scenario story / multi-line
+        # plugin win-rule descriptions / unit blurbs) into one Text
+        # per visible row so scroll advances per-line, not per-block.
+        # Description panel occupies the full width of its layout
+        # slot; approximate inner width off the console width.
+        try:
+            cw = self.app.console.width
+        except Exception:
+            cw = 100
+        rows = wrap_rows_to_width(rows, max(20, int(cw * 2 / 3) - 6))
         # Simple line-based scroll: drop the first `scroll` rows. Clamp
         # so scrolling past the end doesn't produce an empty panel.
         if self.scroll > 0 and rows:

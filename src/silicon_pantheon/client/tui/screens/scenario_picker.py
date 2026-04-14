@@ -25,7 +25,7 @@ from rich.layout import Layout
 from rich.panel import Panel as RichPanel
 from rich.text import Text
 
-from silicon_pantheon.client.tui.panels import border_style
+from silicon_pantheon.client.tui.panels import border_style, wrap_rows_to_width
 
 
 def _slug_to_title(slug: str) -> str:
@@ -367,6 +367,21 @@ class ScenarioPicker:
         if max_turns:
             rows.append(Text(""))
             rows.append(Text(f"Max turns: {max_turns}", style="dim"))
+        # Pre-wrap every row to the panel's inner width so scrolling
+        # advances one visible display line per step — previously a
+        # single long-paragraph row was atomic and disappeared in one
+        # keypress. Short styled rows (headers like "Armies:") pass
+        # through unchanged; long rows get split into multiple Text
+        # items preserving their original style.
+        try:
+            cw = self.screen_console_width()
+        except Exception:
+            cw = 120
+        # Description panel sits in the left column (ratio=3 of 4)
+        # and occupies the bottom half of that column. Wrap width
+        # approximates inner width minus border + padding.
+        inner_width = max(20, int(cw * 3 / 4) - 6)
+        rows = wrap_rows_to_width(rows, inner_width)
         # Apply scroll offset by trimming leading rows. Clamp first
         # so scrolling past the end snaps back instead of going blank.
         if self.desc_scroll > 0 and rows:
@@ -378,6 +393,14 @@ class ScenarioPicker:
             border_style=border_style(focused),
             padding=(0, 1),
         )
+
+    def screen_console_width(self) -> int:
+        """Best-effort console width lookup — the picker doesn't own
+        the console, but most owners forward one via .console. Falls
+        back to rich's get_console() which queries the terminal."""
+        from rich.console import Console
+
+        return Console().width
 
     # ---- input ----
 

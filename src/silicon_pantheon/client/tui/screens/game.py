@@ -151,14 +151,17 @@ class PlayerPanel(Panel):
             rows.append(Text(""))
             header_style = "bold cyan" if team == "blue" else "bold red"
             rows.append(Text(f"{team}:", style=header_style))
-            table = Table.grid(padding=(0, 3), expand=False)
-            table.add_column(style="dim")  # name
-            table.add_column(style="dim", justify="right")  # HP
-            table.add_column(style="dim")  # status
-            table.add_row(
-                Text("Unit", style="bold dim"),
-                Text("HP", style="bold dim"),
-                Text("Status", style="bold dim"),
+            # Emit one Text per unit instead of a Rich Table so the
+            # panel's line-scroll advances per unit — earlier we wrapped
+            # the whole roster in a single Table.grid row, which the
+            # scroll logic treated as one atomic item (scroll 1 = lose
+            # all units at once). Fixed-column padding reproduces the
+            # table look without the atomicity.
+            rows.append(
+                Text(
+                    f"  {'Unit':<14}  {'HP':>7}  Status",
+                    style="bold dim",
+                )
             )
             for u in team_units:
                 alive = u.get("alive", u.get("hp", 0) > 0)
@@ -167,25 +170,24 @@ class PlayerPanel(Panel):
                 name = _unit_display_name(u, scen_desc)
                 if alive:
                     status = str(u.get("status", "ready"))
-                    style = _status_style(status)
-                    table.add_row(
-                        Text(name[:14], style="white"),
-                        Text(f"{hp}/{hp_max}", style="white"),
-                        Text(status, style=style),
+                    hp_str = f"{hp}/{hp_max}"
+                    rows.append(
+                        Text(
+                            f"  {name[:14]:<14}  {hp_str:>7}  {status}",
+                            style=_status_style(status),
+                        )
                     )
                 else:
-                    # Don't rely on `strike` — many terminals render
-                    # strikethrough as nothing at all, making dead
-                    # units just look dim and get mistaken for
-                    # missing. Wrap the name in tildes as a portable
-                    # crossed-out marker and prefix with a ✗.
-                    dead_style = "dim"
-                    table.add_row(
-                        Text(f"✗ ~{name[:12]}~", style=dead_style),
-                        Text(f"0/{hp_max}", style=dead_style),
-                        Text("dead", style="bold red"),
+                    # Portable "dead" marker — see earlier comment; many
+                    # terminals render strikethrough as nothing.
+                    marker = f"✗ ~{name[:12]}~"
+                    hp_str = f"0/{hp_max}"
+                    rows.append(
+                        Text(
+                            f"  {marker:<14}  {hp_str:>7}  dead",
+                            style="dim",
+                        )
                     )
-            rows.append(table)
         # Apply scroll by dropping leading rows. Clamp so scrolling
         # past the bottom snaps back to the last full row.
         if self.scroll > 0 and rows:

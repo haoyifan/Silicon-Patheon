@@ -33,6 +33,55 @@ def border_style(focused: bool) -> str:
     return FOCUSED_BORDER_STYLE if focused else IDLE_BORDER_STYLE
 
 
+def wrap_rows_to_width(rows: list, inner_width: int) -> list:
+    """Flatten scroll rows so each entry is one visible display line.
+
+    Panels with per-line scroll offsets were buggy because a row like
+    `Text(long_paragraph)` is ONE entry in the rows list but renders
+    into many wrapped display rows; scrolling by 1 jumped the whole
+    block at once.
+
+    Pass the rendered `rows` list through this helper before applying
+    the scroll offset. Text rows are split on explicit '\\n' and
+    textwrap-wrapped to `inner_width`; non-Text renderables pass
+    through as-is (scrolling one Table or Group is still atomic —
+    convert those to Text rows in the panel if you need finer
+    control).
+
+    `inner_width` should approximate the panel's inner content width
+    (console width × panel layout fraction, minus border + padding).
+    Too narrow wraps more aggressively; too wide under-counts rows.
+    """
+    import textwrap
+
+    from rich.text import Text
+
+    out: list = []
+    for row in rows:
+        if not isinstance(row, Text):
+            out.append(row)
+            continue
+        plain = row.plain
+        style = row.style or None
+        if not plain:
+            out.append(Text("", style=style))
+            continue
+        for logical_line in plain.split("\n"):
+            if not logical_line.strip():
+                out.append(Text("", style=style))
+                continue
+            wrapped = textwrap.wrap(
+                logical_line,
+                width=inner_width,
+                break_long_words=True,
+                break_on_hyphens=False,
+                drop_whitespace=False,
+            ) or [logical_line]
+            for w in wrapped:
+                out.append(Text(w, style=style))
+    return out
+
+
 class Panel(ABC):
     """One framed region of a screen."""
 
