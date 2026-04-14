@@ -72,6 +72,7 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
                 ],
                 "glyph": u.stats.glyph,
                 "color": u.stats.color,
+                "description": u.stats.description,
             }
         )
 

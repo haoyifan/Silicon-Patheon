@@ -70,6 +70,11 @@ terrain_types:
 unit_classes:
   # ---- Pilgrims ----
   tang_monk:
+    description: |
+      Xuanzang, the pilgrim you must protect. A gentle Buddhist
+      priest, physically frail — he can barely defend himself. If he
+      dies, the pilgrimage ends. Reach Thunder Temple with him alive
+      or eliminate every monster to win.
     hp_max: 16
     atk: 2
     defense: 2
@@ -83,6 +88,11 @@ unit_classes:
     glyph: T
     color: bright_cyan      # Tang Monk: the VIP, distinct shade from his disciples
   sun_wukong:
+    description: |
+      The Monkey King — fast, furious, nearly indestructible. Armed
+      with the Ruyi Jingu Bang, he punches far above his weight.
+      Unique among the team: can cross mountain terrain. Use him to
+      scout and to bait demons away from Tang Monk.
     hp_max: 42
     atk: 14
     defense: 7
@@ -97,6 +107,10 @@ unit_classes:
     glyph: S
     color: cyan
   zhu_bajie:
+    description: |
+      Pigsy, a brash and gluttonous ex-marshal of heaven turned pig
+      demon. Sturdy bruiser with respectable attack, but slow and
+      easily distracted. Pair him with Wujing to anchor a flank.
     hp_max: 34
     atk: 11
     defense: 5
@@ -110,6 +124,11 @@ unit_classes:
     glyph: P
     color: cyan
   sha_wujing:
+    description: |
+      Sandy, the porter-monk who carries the pilgrimage's luggage.
+      The most defensive of the three disciples — high HP and DEF,
+      moderate attack. His polearm gives him 1–2 tile range, so he
+      can screen Tang Monk from one step behind.
     hp_max: 36
     atk: 9
     defense: 6
@@ -123,6 +142,11 @@ unit_classes:
     glyph: W
     color: cyan
   bai_long_ma:
+    description: |
+      The White Dragon Horse — a dragon prince cursed into equine
+      form, now Tang Monk's mount. Fastest unit in the pilgrim party
+      (move 6). Modest combat stats; his job is to get Tang Monk to
+      the temple, not to fight.
     hp_max: 22
     atk: 7
     defense: 4
@@ -138,6 +162,11 @@ unit_classes:
 
   # ---- Monsters ----
   demon_king:
+    description: |
+      The Demon King, ruler of this stretch of the road. A terrifying
+      melee opponent — high HP, high ATK, solid defenses. Break his
+      minions before engaging; fighting him head-on with Tang Monk
+      nearby is suicidal.
     hp_max: 40
     atk: 13
     defense: 6
@@ -151,6 +180,11 @@ unit_classes:
     glyph: D
     color: bright_red       # Demon King: the boss, distinct from his minions
   bull_demon:
+    description: |
+      A brawny ox-headed demon. Tanky frontline fighter; slow, hits
+      hard, terrible at magic defense. A Mage-class pilgrim or a
+      ranged strike from Wujing will wear him down without trading
+      hits.
     hp_max: 32
     atk: 10
     defense: 6
@@ -164,6 +198,11 @@ unit_classes:
     glyph: B
     color: red
   white_bone_demon:
+    description: |
+      The White-Bone Demoness — a magical caster who disguises
+      herself as innocents to lure the pilgrims. Fragile body, but
+      her 2–3 tile magic attacks can pick off Tang Monk from behind
+      your front line if you leave him exposed.
     hp_max: 20
     atk: 9
     defense: 3
@@ -178,6 +217,11 @@ unit_classes:
     glyph: O
     color: red
   spider_spirit:
+    description: |
+      A spider spirit from the caves. Very fast (SPD 8, move 5) and
+      aggressive — swarms the weaker pilgrims. Individually fragile
+      but dangerous in pairs; don't let one survive to reach Tang
+      Monk.
     hp_max: 18
     atk: 7
     defense: 3
@@ -191,6 +235,10 @@ unit_classes:
     glyph: X
     color: red
   skeleton:
+    description: |
+      A reanimated bandit skeleton. Low HP and slow, but cheap to
+      spawn — the Demon King has many of them, and more show up at
+      the bridge on turn 10. Good fodder to screen stronger monsters.
     hp_max: 14
     atk: 6
     defense: 3

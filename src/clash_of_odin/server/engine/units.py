@@ -105,4 +105,5 @@ def make_stats(cls: UnitClass) -> UnitStats:
         vulnerability_to_tags=[dict(v) for v in src.vulnerability_to_tags],
         glyph=src.glyph,
         color=src.color,
+        description=src.description,
     )

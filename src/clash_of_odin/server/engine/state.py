@@ -119,6 +119,10 @@ class UnitStats:
     # actually shows units instead of falling back to a placeholder.
     glyph: str | None = None
     color: str | None = None
+    # Short prose blurb surfaced in the TUI unit-card modal. Authors
+    # drop this in per-class so players can tell scenario-specific
+    # units apart without memorizing the YAML.
+    description: str = ""
 
 
 @dataclass

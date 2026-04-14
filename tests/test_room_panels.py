@@ -103,9 +103,10 @@ def test_map_panel_vim_hjkl_keys_also_move_cursor():
     screen = RoomScreen(app)
     screen.scenario_preview = {"width": 5, "height": 5, "units": [], "forts": []}
     _focus_map(screen)
-    asyncio.run(screen.handle_key("l"))  # right
+    # two rights to reach x=2, then down to y=1.
     asyncio.run(screen.handle_key("l"))
-    asyncio.run(screen.handle_key("j"))  # down
+    asyncio.run(screen.handle_key("l"))
+    asyncio.run(screen.handle_key("j"))
     assert (screen.map_panel.cx, screen.map_panel.cy) == (2, 1)
     asyncio.run(screen.handle_key("h"))  # left
     asyncio.run(screen.handle_key("k"))  # up

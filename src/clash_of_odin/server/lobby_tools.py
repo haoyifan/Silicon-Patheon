@@ -97,6 +97,14 @@ def _serialize_room_preview(room: Room) -> dict[str, Any]:
     return summary
 
 
+_BUILTIN_DESCRIPTIONS = {
+    "knight": "Armored melee fighter. High HP and DEF, slow, short range.",
+    "archer": "Ranged attacker. Weaker in close combat but hits from 2–3 tiles.",
+    "cavalry": "Fast horse unit. Long move range; no forest or mountain.",
+    "mage": "Magical unit. Uses RES instead of DEF; can heal adjacent allies.",
+}
+
+
 # ---- registration ----
 
 
@@ -201,6 +209,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 "rng_min": s.rng_min, "rng_max": s.rng_max,
                 "is_magic": s.is_magic, "can_heal": s.can_heal,
                 "tags": list(s.tags),
+                "description": _BUILTIN_DESCRIPTIONS.get(cls.value, ""),
             }
         for cname, spec in (cfg.get("unit_classes") or {}).items():
             unit_classes[cname] = dict(spec or {})
