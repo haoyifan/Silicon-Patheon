@@ -88,13 +88,16 @@ enriched_uranium_strike_check.__doc__ = (
 # looks for this attribute (falling back to the docstring's first
 # line) so the player/agent never has to decode the function name.
 enriched_uranium_strike_check.description = (
-    "Blue (US+Israel) wins only by delivering BOTH halves of the "
-    f"strike package within {10} turns: "
-    f"reach the enriched-uranium bunker at "
-    f"({_URANIUM_BUNKER_POS.x}, {_URANIUM_BUNKER_POS.y}) AND "
-    "kill Khamenei. Either objective alone is not enough. Red "
-    "(Iran) wins if the ten-turn budget expires with the compound "
-    "goal unmet, or if either US/Israeli leader dies."
+    "Blue (US + Israel) has two objectives and must complete BOTH "
+    "within 10 turns to win:\n"
+    "  1) Kill Khamenei (any blue unit kills the red 'khamenei' unit).\n"
+    f"  2) Capture the enriched-uranium bunker — any blue unit must "
+    f"end a turn standing on tile ({_URANIUM_BUNKER_POS.x}, "
+    f"{_URANIUM_BUNKER_POS.y}).\n"
+    "Doing only one of the two does not win — blue has to do both.\n"
+    "Red (Iran) wins in any of these cases: 10 turns pass without "
+    "blue finishing both objectives; either of blue's two leaders "
+    "(Trump or Netanyahu) is killed; or blue runs out of units."
 )
 
 
