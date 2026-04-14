@@ -435,6 +435,22 @@ class RoomScreen(Screen):
             return
         if r.get("ok"):
             self._scenario_preview = (r.get("room") or {}).get("scenario_preview", {})
+        # Also cache the full scenario bundle so the game screen can
+        # render unit/terrain legends without a second roundtrip.
+        scenario_name = (
+            (self.app.state.last_room_state or {}).get("scenario")
+            if self.app.state.last_room_state
+            else None
+        )
+        if scenario_name:
+            try:
+                desc = await self.app.client.call(
+                    "describe_scenario", name=scenario_name
+                )
+            except Exception:
+                desc = None
+            if desc and desc.get("ok"):
+                self.app.state.scenario_description = desc
 
     async def _load_scenarios(self) -> None:
         if self.app.client is None:

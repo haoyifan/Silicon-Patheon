@@ -109,6 +109,10 @@ class SharedState:
     thoughts: deque[tuple[str, str, str]] = field(
         default_factory=lambda: deque(maxlen=THOUGHTS_BUFFER_SIZE)
     )
+    # Full scenario bundle from the server's describe_scenario tool.
+    # Populated when the room screen first fetches the room's scenario
+    # so the preview + game-screen legends don't have to refetch.
+    scenario_description: dict[str, Any] | None = None
 
 
 class TUIApp:
