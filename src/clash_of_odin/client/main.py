@@ -32,12 +32,15 @@ async def _smoke(
         print(f"connected: connection_id={client.connection_id}")
         r = await client.call("whoami")
         print(f"whoami (pre): {json.dumps(r)}")
+        from clash_of_odin.shared.protocol import PROTOCOL_VERSION
+
         r = await client.call(
             "set_player_metadata",
             display_name=display_name,
             kind=kind,
             provider=provider,
             model=model,
+            client_protocol_version=PROTOCOL_VERSION,
         )
         print(f"set_player_metadata: {json.dumps(r)}")
         r = await client.call("heartbeat")

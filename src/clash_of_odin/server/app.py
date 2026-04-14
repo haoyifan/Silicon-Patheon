@@ -32,7 +32,11 @@ from clash_of_odin.server.engine.state import Team
 from clash_of_odin.server.rooms import RoomRegistry, Slot
 from clash_of_odin.server.session import Session
 from clash_of_odin.shared.player_metadata import PlayerMetadata
-from clash_of_odin.shared.protocol import ConnectionState, ErrorCode
+from clash_of_odin.shared.protocol import (
+    PROTOCOL_VERSION,
+    ConnectionState,
+    ErrorCode,
+)
 
 
 @dataclass
@@ -136,8 +140,21 @@ def build_mcp_server(app: App, *, name: str = "clash-server") -> FastMCP:
         provider: str | None = None,
         model: str | None = None,
         version: str = "1",
+        client_protocol_version: int | None = None,
     ) -> dict:
-        """Declare who you are. Required before lobby operations."""
+        """Declare who you are. Required before lobby operations.
+
+        The optional `client_protocol_version` argument lets the server
+        refuse to talk to a client whose wire format diverges from
+        ours. Older clients (which don't send the argument) are tolerated
+        during the v1 → v1 baseline; as soon as we bump to v2, omitting
+        the argument will be equivalent to a mismatch.
+        """
+        if client_protocol_version is not None and client_protocol_version != PROTOCOL_VERSION:
+            return _error(
+                ErrorCode.VERSION_MISMATCH,
+                f"client protocol v{client_protocol_version} incompatible with server v{PROTOCOL_VERSION}; upgrade the side running the older version",
+            )
         try:
             meta = PlayerMetadata.from_dict(
                 {
@@ -155,7 +172,13 @@ def build_mcp_server(app: App, *, name: str = "clash-server") -> FastMCP:
         if conn.state == ConnectionState.ANONYMOUS:
             conn.state = ConnectionState.IN_LOBBY
         conn.last_heartbeat_at = time.time()
-        return _ok({"state": conn.state.value, "player": meta.to_dict()})
+        return _ok(
+            {
+                "state": conn.state.value,
+                "player": meta.to_dict(),
+                "server_protocol_version": PROTOCOL_VERSION,
+            }
+        )
 
     @mcp.tool()
     def heartbeat(connection_id: str) -> dict:

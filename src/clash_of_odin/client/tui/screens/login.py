@@ -162,12 +162,15 @@ async def _connect_and_declare(app: TUIApp) -> None:
 
     app._transport_cleanup = _cleanup  # type: ignore[attr-defined]
 
+    from clash_of_odin.shared.protocol import PROTOCOL_VERSION
+
     r = await client.call(
         "set_player_metadata",
         display_name=app.state.display_name,
         kind=app.state.kind,
         provider=app.state.provider,
         model=app.state.model,
+        client_protocol_version=PROTOCOL_VERSION,
     )
     if not r.get("ok"):
         raise RuntimeError(r.get("error", {}).get("message", "metadata rejected"))
