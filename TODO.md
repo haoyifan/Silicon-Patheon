@@ -124,6 +124,74 @@ guidance for when this gets picked up:
 
 ---
 
+## Audit residue (known-but-not-fixed)
+
+Surfaced during the second-pass deep audit of the multi-provider /
+flexible-scenarios work. Each is a real gap; left in place because
+no shipping scenario hits it or because the fix is bigger than the
+current symptom warrants.
+
+- [ ] **`terrain_types` override of built-ins is partial.** A scenario
+      that says `terrain_types: { plain: { passable: false } }` only
+      changes tiles explicitly listed in `board.terrain`. Any tile
+      not enumerated falls through to `Board.tile()`'s synthetic
+      default `Tile(type="plain")`, which uses dataclass defaults
+      and ignores the per-scenario table. Workaround: enumerate every
+      tile. Real fix: pre-populate `Board.tiles` with the resolved
+      terrain spec for every position, or have `Board.tile()` consult
+      a state-level terrain-types table.
+
+- [ ] **`describe_scenario` returns inconsistent shapes.** Built-in
+      unit classes are serialized to a fixed key set; custom classes
+      pass through verbatim (may have extra/missing keys). Built-in
+      terrain types come back as `{}` so the UI can't display their
+      default `move_cost` / `def_bonus` / `heals`. Either serialize
+      both built-ins and custom uniformly, or have the client pull
+      defaults from a shared constants module.
+
+- [ ] **`PluginRule.module` field is dead.** PluginRule reads only
+      `check_fn`; the `module:` key in YAML is silently ignored.
+      Either drop the field (breaking change for any author who put
+      it in YAML) or actually scope lookups to a named submodule
+      (would matter once a scenario needs more than one plugin file).
+
+- [ ] **Narrative `on_turn_start` event without an explicit `turn:`
+      fires only on the first turn.** Consequence of the once-only
+      mechanism. Authors writing `{trigger: on_turn_start, text: ...}`
+      probably expected "every turn." Either document loudly or add
+      an explicit `every: true` opt-in.
+
+- [ ] **`HoldTile.consecutive_turns` counts end_turns, not full game
+      turns.** `consecutive_turns: 3` means hold across three
+      end_turn events ≈ 1.5 game rounds. Most authors will read
+      "turns" as full rounds. Fix: compare to `state.turn` snapshots
+      instead of incrementing on every end_turn.
+
+- [ ] **`games/_test_plugin/` ships in the games directory and shows
+      up in production `list_scenarios`.** UX noise; an end user
+      could try to launch it and get a tiny synthetic 4×4 match.
+      Either move test scenarios out of `games/` (a tests-only
+      directory the engine knows about) or filter underscore-prefixed
+      names from `list_scenarios`.
+
+- [ ] **Narrative events aren't surfaced in real time to the TUI.**
+      They land in `state._narrative_log`, get drained into
+      `replay.jsonl` after each action, but the TUI only sees them
+      via post-match replay download. F.7 in the original plan; the
+      data is in hand, the rendering layer needs a small story line
+      on the game screen that subscribes to the action hook and reads
+      the in-flight log before drain (or the server has to include
+      `narrative_events` in the action result).
+
+- [ ] **Built-in terrain `class_overrides` not supported by override
+      path either.** When a scenario declares
+      `terrain_types: { forest: { ...new fields... } }`, the new
+      fields take effect, but existing class_overrides on the
+      built-in (none today; future-proofing) wouldn't merge — the
+      override wholesale replaces. Document or implement merge.
+
+---
+
 ## Smaller polish
 
 - [ ] **Credentials file version field + migration** — add a
