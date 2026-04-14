@@ -81,7 +81,7 @@ unit_classes:
     tags: [vip, monk, human]
     sight: 3
     glyph: T
-    color: yellow
+    color: bright_cyan      # Tang Monk: the VIP, distinct shade from his disciples
   sun_wukong:
     hp_max: 42
     atk: 14
@@ -95,7 +95,7 @@ unit_classes:
     tags: [hero, monkey, immortal]
     sight: 4
     glyph: S
-    color: bright_yellow
+    color: cyan
   zhu_bajie:
     hp_max: 34
     atk: 11
@@ -121,7 +121,7 @@ unit_classes:
     tags: [hero, porter]
     sight: 3
     glyph: W
-    color: blue
+    color: cyan
   bai_long_ma:
     hp_max: 22
     atk: 7
@@ -134,7 +134,7 @@ unit_classes:
     tags: [mount, dragon]
     sight: 4
     glyph: H
-    color: white
+    color: cyan
 
   # ---- Monsters ----
   demon_king:
@@ -149,7 +149,7 @@ unit_classes:
     tags: [boss, demon]
     sight: 4
     glyph: D
-    color: bright_red
+    color: bright_red       # Demon King: the boss, distinct from his minions
   bull_demon:
     hp_max: 32
     atk: 10
@@ -176,7 +176,7 @@ unit_classes:
     tags: [demon, caster]
     sight: 4
     glyph: O
-    color: magenta
+    color: red
   spider_spirit:
     hp_max: 18
     atk: 7
@@ -202,7 +202,7 @@ unit_classes:
     tags: [undead, mook]
     sight: 2
     glyph: K
-    color: white
+    color: red
 
 armies:
   blue:
