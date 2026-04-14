@@ -138,6 +138,27 @@ def build_turn_prompt(session: Session, viewer: Team) -> str:
     )
 
 
+_AGENT_UNIT_KEYS = (
+    # Core identity / position.
+    "id", "owner", "class", "pos", "status", "alive",
+    # Combat stats the agent actually reasons over.
+    "hp", "hp_max", "atk", "def", "res", "spd", "move", "rng",
+    "is_magic", "can_heal",
+)
+
+
+def _slim_unit(u: dict) -> dict:
+    """Strip the per-unit dict down to combat-relevant fields for the
+    agent prompt. The full record carries ASCII art, class-level
+    descriptions, and reserved-v2 metadata (tags, MP, abilities,
+    damage_profile, etc.) that cost many hundreds of tokens per unit
+    and add nothing the agent uses for move decisions.
+
+    For a 13-unit scenario (JTTW) this cuts per-turn prompt length
+    from ~21 KB to ~6 KB — noticeably faster LLM turnaround."""
+    return {k: u.get(k) for k in _AGENT_UNIT_KEYS if k in u}
+
+
 def build_turn_prompt_from_state_dict(
     state_dict: dict, viewer: Team
 ) -> str:
@@ -157,7 +178,7 @@ def build_turn_prompt_from_state_dict(
             "height": state_dict.get("board", {}).get("height"),
             "forts": state_dict.get("board", {}).get("forts"),
         },
-        "units": state_dict.get("units", []),
+        "units": [_slim_unit(u) for u in state_dict.get("units", [])],
         "last_action": state_dict.get("last_action"),
     }
     return TURN_PROMPT_TEMPLATE.format(

@@ -174,13 +174,16 @@ class PlayerPanel(Panel):
                         Text(status, style=style),
                     )
                 else:
-                    # Dim-strike the whole row so killed units read as
-                    # gone-but-not-forgotten.
-                    dead_style = "dim strike"
+                    # Don't rely on `strike` — many terminals render
+                    # strikethrough as nothing at all, making dead
+                    # units just look dim and get mistaken for
+                    # missing. Wrap the name in tildes as a portable
+                    # crossed-out marker and prefix with a ✗.
+                    dead_style = "dim"
                     table.add_row(
-                        Text(name[:14], style=dead_style),
+                        Text(f"✗ ~{name[:12]}~", style=dead_style),
                         Text(f"0/{hp_max}", style=dead_style),
-                        Text("dead", style=dead_style),
+                        Text("dead", style="bold red"),
                     )
             rows.append(table)
         # Apply scroll by dropping leading rows. Clamp so scrolling
@@ -384,14 +387,16 @@ class ReasoningPanel(Panel):
             title = self.title
         else:
             self.offset = max(0, min(self.offset, total - 1))
-            # Greedy pack from newest backward.
-            window: list[tuple[str, str, str]] = []
+            # Render newest-first (top) so panel cropping chews on
+            # older thoughts at the bottom, not the tail of the
+            # freshest one the user actually cares about. Previously
+            # we printed chronologically (oldest first) and Rich's
+            # bottom-crop truncated the newest mid-sentence.
             end = total - self.offset
-            # Approximate: 6 thoughts max per panel render. Wrap handles
-            # the rest visually; the panel auto-crops.
-            for i in range(end - 1, max(-1, end - 7), -1):
-                window.append(thoughts[i])
-            window.reverse()
+            window: list[tuple[str, str, str]] = [
+                thoughts[i]
+                for i in range(end - 1, max(-1, end - 7), -1)
+            ]
             body = Text(no_wrap=False, overflow="fold")
             for i, (ts, team, t) in enumerate(window):
                 team_style = "cyan" if team == "blue" else "red"
