@@ -89,20 +89,17 @@ def test_enter_on_openai_drills_to_api_key(fresh_home) -> None:
     assert screen._step.provider_id == "openai"
 
 
-def test_saved_key_skips_api_key_step_on_reselect(fresh_home) -> None:
-    """If a provider already has a usable stored credential, picking
-    that provider from the provider list should jump straight to the
-    model picker — don't force the user to re-paste the key just to
-    change which model they play. Esc still backs out to re-enter.
-    """
+def test_saved_key_routes_through_confirm_auth(fresh_home) -> None:
+    """Picking a provider that already has stored credentials lands
+    on the confirm_auth step (keep vs re-enter), not directly on the
+    model picker. 'Keep' advances to pick_model; 're-auth' drops
+    into the paste step."""
     from silicon_pantheon.client.credentials import (
         Credentials,
         ProviderCredential,
         save,
     )
 
-    # Inline key saves skip the keyring round-trip so resolve_key
-    # returns the value directly from credentials.json.
     save(
         Credentials(
             default_provider=None,
@@ -116,17 +113,50 @@ def test_saved_key_skips_api_key_step_on_reselect(fresh_home) -> None:
     )
     app = _FakeApp()
     screen = ProviderAuthScreen(app)
-    # Fresh start (no default_model) → provider picker. Drill into OpenAI.
-    asyncio.run(screen.handle_key("down"))
+    asyncio.run(screen.handle_key("down"))  # focus OpenAI
+    asyncio.run(screen.handle_key("enter"))
+    assert screen._step.kind == "confirm_auth"
+    assert screen._step.provider_id == "openai"
+    # Default focus = "keep" → Enter advances to model picker.
     asyncio.run(screen.handle_key("enter"))
     assert screen._step.kind == "pick_model"
-    assert screen._step.provider_id == "openai"
+
+
+def test_confirm_auth_reauth_branch_opens_paste(fresh_home) -> None:
+    """Selecting 're-auth' on confirm_auth drops into the api_key
+    step with the paste row pre-focused."""
+    from silicon_pantheon.client.credentials import (
+        Credentials,
+        ProviderCredential,
+        save,
+    )
+
+    save(
+        Credentials(
+            providers={
+                "openai": ProviderCredential(
+                    auth_mode="api_key", inline_key="sk-old"
+                )
+            }
+        )
+    )
+    app = _FakeApp()
+    screen = ProviderAuthScreen(app)
+    asyncio.run(screen.handle_key("down"))
+    asyncio.run(screen.handle_key("enter"))
+    assert screen._step.kind == "confirm_auth"
+    # Move to "re-auth", then Enter.
+    asyncio.run(screen.handle_key("j"))
+    asyncio.run(screen.handle_key("enter"))
+    assert screen._step.kind == "api_key"
+    assert screen._step.focused == 1  # paste row
 
 
 def test_r_rotates_key_from_model_picker(fresh_home) -> None:
-    """With a cred already saved we auto-skip to the model picker,
-    but pressing 'r' there jumps back to the paste step so users
-    can replace the stored key without editing credentials.json."""
+    """After accepting saved credentials via confirm_auth, the user
+    lands on pick_model. Pressing 'r' there jumps back to the paste
+    step so users can replace the stored key without editing
+    credentials.json."""
     from silicon_pantheon.client.credentials import (
         Credentials,
         ProviderCredential,
@@ -147,6 +177,9 @@ def test_r_rotates_key_from_model_picker(fresh_home) -> None:
     app = _FakeApp()
     screen = ProviderAuthScreen(app)
     asyncio.run(screen.handle_key("down"))  # OpenAI
+    asyncio.run(screen.handle_key("enter"))
+    # New flow: saved cred → confirm_auth, Enter on "keep" → pick_model.
+    assert screen._step.kind == "confirm_auth"
     asyncio.run(screen.handle_key("enter"))
     assert screen._step.kind == "pick_model"
     # Pressing r should take us to the paste step, focused on the

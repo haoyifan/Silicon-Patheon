@@ -94,7 +94,13 @@ async def _validate_api_key(provider_id: str, api_key: str) -> str | None:
 class _Step:
     """Lightweight state machine for the picker."""
 
-    kind: str  # "resume" | "pick_provider" | "api_key" | "pick_model"
+    kind: str
+    # Steps in order of the auth flow:
+    #   resume         initial shortcut: "Using saved defaults ..."
+    #   pick_provider  pick which LLM provider to use
+    #   confirm_auth   saved credential found — re-auth yes/no
+    #   api_key        enter / paste / validate a new key
+    #   pick_model     pick a model from the chosen provider
     provider_id: str | None = None
     model_id: str | None = None
     # For api_key entry.
@@ -130,6 +136,8 @@ class ProviderAuthScreen(Screen):
             return self._render_resume()
         if self._step.kind == "pick_provider":
             return self._render_pick_provider()
+        if self._step.kind == "confirm_auth":
+            return self._render_confirm_auth()
         if self._step.kind == "api_key":
             return self._render_api_key()
         if self._step.kind == "pick_model":
@@ -169,6 +177,63 @@ class ProviderAuthScreen(Screen):
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
             Panel(Group(*lines), title="provider", border_style="yellow", padding=(1, 3)),
+            vertical="middle",
+        )
+
+    def _render_confirm_auth(self) -> RenderableType:
+        """Two-choice screen shown when the picked provider already
+        has stored credentials. Default (focused=0) keeps the saved
+        auth; focused=1 rotates it.
+
+        Keeping the saved auth advances straight to the model step
+        (or, if a default model is also saved, straight to apply for
+        a one-Enter fast path). Re-auth drops into api_key paste
+        mode with the paste row pre-focused."""
+        p = get_provider(self._step.provider_id or "")
+        provider_label = p.display_name if p else (self._step.provider_id or "?")
+        cred = self._creds.providers.get(self._step.provider_id or "")
+        auth_mode = cred.auth_mode if cred else "?"
+        if auth_mode == "subscription_cli":
+            summary = f"Stored auth: {provider_label} CLI subscription"
+            re_label = "Re-authenticate (run claude login again)"
+        else:
+            # Show a short tail of the resolved key so the user can
+            # tell at a glance which saved key they're about to use —
+            # useful if they've rotated between keys recently.
+            tail = "…"
+            try:
+                k = resolve_key(cred) if cred else ""
+                if k:
+                    tail = "…" + k[-4:]
+            except CredentialsError:
+                tail = "(unresolvable)"
+            summary = f"Stored key: {provider_label}  {tail}"
+            re_label = "Enter a different key (validate + save)"
+        options = [
+            ("keep", "Use the saved credentials"),
+            ("reauth", re_label),
+        ]
+        lines: list[Text] = [
+            Text(f"{provider_label} — authentication", style="bold yellow"),
+            Text(""),
+            Text(summary, style="green"),
+            Text(""),
+        ]
+        for i, (_opt, label) in enumerate(options):
+            marker = "➤ " if i == self._step.focused else "  "
+            style = "bold cyan" if i == self._step.focused else "white"
+            lines.append(Text(f"{marker}{label}", style=style))
+        lines.append(Text(""))
+        lines.append(
+            Text(
+                "↑/k ↓/j switch   Enter confirm   Esc back   q quit",
+                style="dim",
+            )
+        )
+        if self.app.state.error_message:
+            lines.append(Text(self.app.state.error_message, style="red"))
+        return Align.center(
+            Panel(Group(*lines), title="auth", border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
@@ -301,6 +366,8 @@ class ProviderAuthScreen(Screen):
             return await self._handle_resume_key(key)
         if self._step.kind == "pick_provider":
             return self._handle_pick_provider_key(key)
+        if self._step.kind == "confirm_auth":
+            return self._handle_confirm_auth_key(key)
         if self._step.kind == "api_key":
             return await self._handle_api_key_key(key)
         if self._step.kind == "pick_model":
@@ -324,38 +391,102 @@ class ProviderAuthScreen(Screen):
             self._step.focused = (self._step.focused - 1) % len(PROVIDERS)
         elif key == "enter":
             p = PROVIDERS[self._step.focused]
-            # Skip the api_key step if the provider already has a
-            # resolvable credential saved — the common reason to
-            # revisit this screen after a first successful login is
-            # "I want to change model", not "I want to re-enter the
-            # key I already stored". Esc from the model picker still
-            # drops the user back here if they did want to rotate
-            # the key.
-            if p.auth_mode == "api_key" and self._has_usable_cred(p.id):
-                next_kind = "pick_model"
+            # Branch on stored-credential state:
+            #   - api_key provider with a stored key → confirm_auth
+            #     step, which asks whether to reuse or rotate. This
+            #     keeps both paths reachable from one place.
+            #   - subscription_cli with a stored auth record → also
+            #     confirm_auth, same semantics (rerun `claude` login
+            #     or trust the existing one).
+            #   - no credential → straight to api_key (or pick_model
+            #     for subscription_cli, which validates in _apply).
+            if self._has_usable_cred(p.id):
+                next_kind = "confirm_auth"
+                # focused=0 = "keep" (the fast-path default); 1 = "re-auth".
+                focused = 0
             elif p.auth_mode == "api_key":
                 next_kind = "api_key"
+                focused = 0
             else:
                 next_kind = "pick_model"
+                focused = 0
             self._step = _Step(
                 kind=next_kind,
                 provider_id=p.id,
-                focused=0,
+                focused=focused,
             )
             self.app.state.error_message = ""
         return None
 
+    def _handle_confirm_auth_key(self, key: str) -> Screen | None:
+        p = get_provider(self._step.provider_id or "")
+        if p is None:
+            return None
+        if key == "esc":
+            self._step = _Step(kind="pick_provider", focused=0)
+            return None
+        if key in ("down", "j"):
+            self._step.focused = (self._step.focused + 1) % 2
+            return None
+        if key in ("up", "k"):
+            self._step.focused = (self._step.focused - 1) % 2
+            return None
+        if key == "enter":
+            if self._step.focused == 0:
+                # Keep saved credentials → advance to model selection,
+                # pre-focused on the stored default model if any (so
+                # the user can one-Enter through, or arrow to change).
+                focused = 0
+                if self._creds.default_model:
+                    try:
+                        focused = [m.id for m in p.models].index(
+                            self._creds.default_model
+                        )
+                    except ValueError:
+                        focused = 0
+                self._step = _Step(
+                    kind="pick_model",
+                    provider_id=p.id,
+                    focused=focused,
+                )
+                self.app.state.error_message = ""
+                return None
+            # Re-auth: drop into the paste step with the paste row
+            # pre-focused (the common case; the env-var row is still
+            # one arrow-key away).
+            if p.auth_mode == "api_key":
+                self._step = _Step(
+                    kind="api_key",
+                    provider_id=p.id,
+                    focused=1,
+                )
+            else:
+                # subscription_cli: re-apply re-checks `claude --version`
+                # and refreshes the stored auth record.
+                self._step = _Step(
+                    kind="pick_model", provider_id=p.id, focused=0
+                )
+            self.app.state.error_message = ""
+            return None
+        return None
+
     def _has_usable_cred(self, provider_id: str) -> bool:
-        """True if credentials.json already has a credential for this
-        provider that we can resolve to an actual key right now. We
-        intentionally do NOT re-validate against the server here —
+        """True if credentials.json already records an auth for this
+        provider that we can act on. For api_key providers that means
+        a resolvable key; for subscription_cli it means an
+        acknowledged auth record exists (the runtime shutil.which
+        check happens later at apply time).
+
+        We intentionally do NOT re-validate against the server here —
         that would block the UI on a network round-trip every time
         the user scrolls through providers. Stored+resolvable is
         good enough; if auth fails later the agent surfaces the
-        error and the user can press Esc back to re-enter the key."""
+        error and the user can press Esc to back out and re-auth."""
         cred = self._creds.providers.get(provider_id)
         if cred is None:
             return False
+        if cred.auth_mode == "subscription_cli":
+            return True
         try:
             key = resolve_key(cred)
         except CredentialsError:
