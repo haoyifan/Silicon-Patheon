@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.narrative import parse_narrative, fire
-from clash_of_odin.server.engine.rules import EndTurnAction, apply
-from clash_of_odin.server.engine.scenarios import build_state
+from silicon_pantheon.server.engine.narrative import parse_narrative, fire
+from silicon_pantheon.server.engine.rules import EndTurnAction, apply
+from silicon_pantheon.server.engine.scenarios import build_state
 
 
 def _base_cfg() -> dict:
@@ -46,10 +46,10 @@ def test_narrative_events_written_to_replay(tmp_path):
     """F.6: narrative_event lines appear in the JSONL replay stream."""
     import json
 
-    from clash_of_odin.server.engine.replay import ReplayWriter
-    from clash_of_odin.server.session import Session
-    from clash_of_odin.server.tools import end_turn
-    from clash_of_odin.server.engine.state import Team
+    from silicon_pantheon.server.engine.replay import ReplayWriter
+    from silicon_pantheon.server.session import Session
+    from silicon_pantheon.server.tools import end_turn
+    from silicon_pantheon.server.engine.state import Team
 
     cfg = _base_cfg()
     cfg["narrative"] = {

@@ -39,7 +39,7 @@ class ProviderSpec:
     display_name: str
     auth_mode: Literal["api_key", "subscription_cli"]
     env_var: str | None              # "ANTHROPIC_API_KEY" | "OPENAI_API_KEY"
-    keyring_service: str             # "clash-of-odin-<provider>"
+    keyring_service: str             # "silicon-pantheon-<provider>"
     models: list[ModelSpec]
     token_cost_warning: str          # shown on the login-screen picker
 ```
@@ -70,7 +70,7 @@ On **subsequent runs**: skip straight to a one-line "Using Anthropic
 ## Credential storage
 
 ```
-~/.clash-of-odin/credentials.json    (0600)
+~/.silicon-pantheon/credentials.json    (0600)
 ```
 
 ```json
@@ -79,7 +79,7 @@ On **subsequent runs**: skip straight to a one-line "Using Anthropic
   "default_model": "claude-sonnet-4-6",
   "providers": {
     "anthropic": {"auth_mode": "subscription_cli"},
-    "openai":    {"auth_mode": "api_key", "key_ref": "keyring:clash-of-odin-openai/default"}
+    "openai":    {"auth_mode": "api_key", "key_ref": "keyring:silicon-pantheon-openai/default"}
   }
 }
 ```
@@ -202,7 +202,7 @@ compares:
 
 - **Client version < server version** → server refuses with
   `ErrorCode.VERSION_MISMATCH` + a message like `"client v3 not
-  supported by server v5; upgrade clash-of-odin to ≥5"`.
+  supported by server v5; upgrade silicon-pantheon to ≥5"`.
 - **Client version > server version** → server also refuses, same
   code, `"client v5 talking to server v3; downgrade or wait for
   server upgrade"`.
@@ -722,7 +722,7 @@ doesn't act on them yet.
 Feature is "done" when:
 
 **Feature 1 (multi-provider)**
-- [ ] `clash-join` on a fresh machine with no env vars drops into the
+- [ ] `silicon-join` on a fresh machine with no env vars drops into the
       provider picker, lets the user paste an OpenAI key into the
       OS keyring, and successfully plays a match against an Anthropic
       opponent.

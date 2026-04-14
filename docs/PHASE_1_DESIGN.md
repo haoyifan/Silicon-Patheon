@@ -1,4 +1,4 @@
-# Phase 1 design — networked clash-of-odin
+# Phase 1 design — networked silicon-pantheon
 
 Detailed plan for the backend/client split agreed in
 [NETWORKED_ARCHITECTURE_REVIEW.md](NETWORKED_ARCHITECTURE_REVIEW.md)
@@ -47,7 +47,7 @@ Status: **proposal, not implemented.** Review before any refactor.
 Phase 1 is big. Break it into shippable increments so we can validate
 the protocol before we dress it up:
 
-- **1a — Protocol core.** `clash-serve` accepts MCP+SSE; `clash-join`
+- **1a — Protocol core.** `silicon-serve` accepts MCP+SSE; `silicon-join`
   authenticates, creates/joins a single hard-coded room, and runs one
   game end-to-end between two CLI-driven clients (random bots).
   *Defines the contract.*
@@ -66,12 +66,12 @@ Each sub-phase is independently testable. Ship 1a→1e in order.
 
 ## Repo layout after the split
 
-Keep the existing `harness/` and `match/` so `clash-match` and
-`clash-play` still work locally — they're the fastest iteration loop
+Keep the existing `harness/` and `match/` so `silicon-match` and
+`silicon-play` still work locally — they're the fastest iteration loop
 for engine changes.
 
 ```
-src/clash_of_odin/
+src/silicon_pantheon/
 ├── engine/                  # unchanged, pure game logic
 │   ├── board.py
 │   ├── combat.py
@@ -94,7 +94,7 @@ src/clash_of_odin/
 │   │   ├── lobby_tools.py   # list/create/preview/join/leave/ready
 │   │   └── game_tools.py    # the 13 existing tools, remote-safe
 │   ├── heartbeat.py         # timers + disconnect state machine
-│   ├── main.py              # `clash-serve` CLI entry
+│   ├── main.py              # `silicon-serve` CLI entry
 │   └── engine/              # (existing, still here)
 ├── client/                  # NEW — remote-agent + TUI client
 │   ├── transport.py         # MCP+SSE client wrapper
@@ -106,9 +106,9 @@ src/clash_of_odin/
 │   │   ├── room.py
 │   │   ├── game.py
 │   │   └── post_match.py
-│   └── main.py              # `clash-join` CLI entry
+│   └── main.py              # `silicon-join` CLI entry
 ├── harness/                 # unchanged — local bot drivers
-├── match/                   # unchanged — `clash-match`, `clash-play`
+├── match/                   # unchanged — `silicon-match`, `silicon-play`
 └── lessons.py               # unchanged
 ```
 
@@ -118,8 +118,8 @@ logic have to be pure so both server (authoritative) and client
 
 **New CLI entry points** (`pyproject.toml`):
 
-- `clash-serve` → `server.main:main`
-- `clash-join`  → `client.main:main`
+- `silicon-serve` → `server.main:main`
+- `silicon-join`  → `client.main:main`
 
 ---
 
@@ -426,7 +426,7 @@ rules:
 And `sight` in the unit class table (engine-level, not scenario-level).
 
 Existing scenarios default to `fog_of_war: none` unless migrated,
-keeping `clash-match` local play unchanged.
+keeping `silicon-match` local play unchanged.
 
 ---
 
@@ -452,7 +452,7 @@ deps — decide during 1d). Five screens:
 
 ### Screen 3 — Room / preview
 
-- Shows the scenario map (same renderer as `clash-play`) plus unit
+- Shows the scenario map (same renderer as `silicon-play`) plus unit
   composition, fog mode, team assignment mode.
 - If host: config editor before anyone joins.
 - Seat list with ready flags.
@@ -480,8 +480,8 @@ deps — decide during 1d). Five screens:
 
 `download_replay` returns the server's authoritative `replay.jsonl`
 contents as a single text payload. Client writes it locally to
-`~/.clash-of-odin/replays/<server-match-id>.jsonl` and can feed it
-straight into `clash-play`.
+`~/.silicon-pantheon/replays/<server-match-id>.jsonl` and can feed it
+straight into `silicon-play`.
 
 Available for 60 s after game-over, then the token is purged. Client
 TUI prompts once on the post-match screen.
@@ -514,11 +514,11 @@ tractable:
 ## Phase 1 done-definition checklist
 
 ### 1a — Protocol core
-- [ ] `clash-serve` starts an MCP+SSE server on a configurable port.
-- [ ] `clash-join` connects, does `set_player_metadata`, and calls a
+- [ ] `silicon-serve` starts an MCP+SSE server on a configurable port.
+- [ ] `silicon-join` connects, does `set_player_metadata`, and calls a
       tool roundtrip.
 - [ ] `TokenRegistry` issues + resolves + expires tokens.
-- [ ] Two `clash-join` processes play a hard-coded 1v1 match to
+- [ ] Two `silicon-join` processes play a hard-coded 1v1 match to
       completion (random bots, no fog).
 
 ### 1b — Lobby
@@ -544,7 +544,7 @@ tractable:
       correctly under fault injection tests.
 - [ ] `resume_session` works within the soft window.
 - [ ] `download_replay` delivers a valid JSONL the client can feed to
-      `clash-play`.
+      `silicon-play`.
 
 ### Non-goals tagged for Phase 2
 - Spectator slot kind.

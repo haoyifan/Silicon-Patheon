@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.server.engine.scenarios import build_state
+from silicon_pantheon.server.engine.scenarios import build_state
 
 
 def _cfg(*, unit_classes: dict | None = None, blue=None, red=None) -> dict:
@@ -90,7 +90,7 @@ def test_reserved_fields_default_to_empty() -> None:
 def test_reserved_fields_round_trip_through_state_to_dict() -> None:
     """Custom class fields survive the serializer — agents / clients
     can read tags / abilities / mp / profiles via get_state."""
-    from clash_of_odin.server.engine.serialize import state_to_dict
+    from silicon_pantheon.server.engine.serialize import state_to_dict
 
     state = build_state(
         _cfg(

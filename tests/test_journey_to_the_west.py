@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.scenarios import load_scenario
+from silicon_pantheon.server.engine.scenarios import load_scenario
 
 
 def test_jttw_loads():

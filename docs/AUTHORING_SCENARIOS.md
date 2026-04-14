@@ -153,9 +153,9 @@ narrative:                # optional — story beats
 ```python
 """games/my_scenario/rules.py — scenario-local callables."""
 
-from clash_of_odin.server.engine.state import Pos, Team, Unit, UnitStatus
-from clash_of_odin.server.engine.units import make_stats
-from clash_of_odin.server.engine.state import UnitClass
+from silicon_pantheon.server.engine.state import Pos, Team, Unit, UnitStatus
+from silicon_pantheon.server.engine.units import make_stats
+from silicon_pantheon.server.engine.state import UnitClass
 
 
 def poison_damage(state, unit, tile, hook):

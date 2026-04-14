@@ -4,9 +4,9 @@ on end_turn to alter the occupying unit's HP.
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.rules import EndTurnAction, apply
-from clash_of_odin.server.engine.scenarios import build_state
-from clash_of_odin.server.engine.state import Team
+from silicon_pantheon.server.engine.rules import EndTurnAction, apply
+from silicon_pantheon.server.engine.scenarios import build_state
+from silicon_pantheon.server.engine.state import Team
 
 
 def test_lethal_terrain_removes_unit_and_records_death():

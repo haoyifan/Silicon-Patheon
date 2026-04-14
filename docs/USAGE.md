@@ -3,21 +3,21 @@
 A hands-on reference for the CLIs shipped with this repo. Two modes
 of play:
 
-- **Local** (single process): `clash-match` runs both agents in one
-  Python process; `clash-play` replays the result.
-- **Networked** (backend + clients): `clash-serve` hosts matches;
-  `clash-join` connects a TUI client. Supports lobby, host/join,
+- **Local** (single process): `silicon-match` runs both agents in one
+  Python process; `silicon-play` replays the result.
+- **Networked** (backend + clients): `silicon-serve` hosts matches;
+  `silicon-join` connects a TUI client. Supports lobby, host/join,
   ready-up, fog of war, disconnect handling, and replay download.
 
 Sections:
 
 - [Quick start](#quick-start)
-- [`clash-match` — run a local match](#clash-match--run-a-match)
+- [`silicon-match` — run a local match](#silicon-match--run-a-match)
 - [Lessons](#lessons)
 - [Real-time reasoning](#real-time-reasoning)
 - [Coaching during a match](#coaching-during-a-match)
-- [`clash-play` — interactive step-through replayer](#clash-play--interactive-step-through-replayer)
-- [**Networked play: `clash-serve` + `clash-join`**](#networked-play-clash-serve--clash-join)
+- [`silicon-play` — interactive step-through replayer](#silicon-play--interactive-step-through-replayer)
+- [**Networked play: `silicon-serve` + `silicon-join`**](#networked-play-silicon-serve--silicon-join)
 - [Complete example workflows](#complete-example-workflows)
 
 ---
@@ -29,7 +29,7 @@ Sections:
 uv sync --extra dev
 
 # Smoke test: two random bots play the smallest scenario end-to-end.
-uv run clash-match --game 01_tiny_skirmish --blue random --red random --render
+uv run silicon-match --game 01_tiny_skirmish --blue random --red random --render
 ```
 
 Claude-backed providers need the `claude` CLI (Claude Code) installed and
@@ -37,10 +37,10 @@ logged in — no API key required.
 
 ---
 
-## `clash-match` — run a match
+## `silicon-match` — run a match
 
 ```
-clash-match [options]
+silicon-match [options]
 
 Options (all optional):
   --game GAME                   scenario name (folder under games/). Default: 01_tiny_skirmish.
@@ -210,10 +210,10 @@ above the auto-generated ones.
 ```bash
 # Disable both writing new lessons AND injecting priors (useful while
 # iterating on prompts so you don't pollute the corpus).
-uv run clash-match --game 01_tiny_skirmish --no-lessons --render ...
+uv run silicon-match --game 01_tiny_skirmish --no-lessons --render ...
 
 # Point at an alternate lessons folder (e.g. to test with a curated set).
-uv run clash-match --lessons-dir ./my-curated-lessons ...
+uv run silicon-match --lessons-dir ./my-curated-lessons ...
 ```
 
 Lessons are plain files — delete, hand-edit, or commit them to git at
@@ -243,7 +243,7 @@ Three ways to watch the agent think:
    #   Ctrl-C in less to pause following; / to search; q to quit.
    ```
 
-3. **`clash-play`** (post-match). Interactive step-through visual
+3. **`silicon-play`** (post-match). Interactive step-through visual
    replayer — see the section below for a full walkthrough of the board
    alongside each thought and action.
 
@@ -257,7 +257,7 @@ of its next turn.
 
 ```bash
 # Terminal 1 — start the match with coach file wiring:
-uv run clash-match \
+uv run silicon-match \
   --game 02_basic_mirror \
   --blue claude-sonnet-4-6 --red claude-sonnet-4-6 \
   --coach-file-blue coach_blue.txt \
@@ -271,17 +271,17 @@ echo "fall back to the fort, they're breaking through" >> coach_blue.txt
 
 The agent calls `get_coach_messages` at the start of each turn and
 drains the queue. Messages logged to the replay as `coach_message`
-events (visible in `clash-play`).
+events (visible in `silicon-play`).
 
 Tip: create the coach files before starting the match (`touch
 coach_blue.txt`) so the watcher has something to follow from turn one.
 
 ---
 
-## `clash-play` — interactive step-through replayer
+## `silicon-play` — interactive step-through replayer
 
 ```
-clash-play [run_dir] [--replay PATH]
+silicon-play [run_dir] [--replay PATH]
 ```
 
 Reconstructs the match visually, one event at a time. The board starts
@@ -305,7 +305,7 @@ Backward navigation is O(1): on launch the replayer precomputes a
 advancing. Feel free to wander back and forth freely.
 
 ```bash
-uv run clash-play runs/20260412T143022_01_tiny_skirmish
+uv run silicon-play runs/20260412T143022_01_tiny_skirmish
 ```
 
 If the replay is older than the `match_start` metadata event
@@ -314,21 +314,21 @@ error — re-record the match to get the metadata.
 
 ---
 
-## Networked play: `clash-serve` + `clash-join`
+## Networked play: `silicon-serve` + `silicon-join`
 
 Two processes, one machine or many:
 
-- **`clash-serve`** runs the authoritative backend over MCP + streamable
+- **`silicon-serve`** runs the authoritative backend over MCP + streamable
   HTTP (SSE). Holds the engine, rooms, tokens, heartbeat sweeper,
   replay storage. Stateless across restarts today; in-memory only.
-- **`clash-join`** is the client — full TUI by default, with a
+- **`silicon-join`** is the client — full TUI by default, with a
   `--smoke` fallback for connectivity testing.
 
 ### Start the backend
 
 ```bash
-uv run clash-serve --host 127.0.0.1 --port 8080
-# Prints:  clash-serve starting on http://127.0.0.1:8080
+uv run silicon-serve --host 127.0.0.1 --port 8080
+# Prints:  silicon-serve starting on http://127.0.0.1:8080
 ```
 
 Remote access: point `--host 0.0.0.0` (public bind) and make sure the
@@ -339,8 +339,8 @@ for Phase 1.
 ### Connect a client
 
 ```bash
-uv run clash-join                     # TUI prompts for everything
-uv run clash-join --url http://<host>:8080/mcp/ --name alice --kind ai
+uv run silicon-join                     # TUI prompts for everything
+uv run silicon-join --url http://<host>:8080/mcp/ --name alice --kind ai
 ```
 
 TUI flow:
@@ -411,7 +411,7 @@ in-game reasoning panel.
 
 ```bash
 # Claude Haiku agent joins with a pre-written strategy.
-uv run clash-join \
+uv run silicon-join \
   --url http://<server>:8080/mcp/ \
   --name "alice-claude" --kind ai \
   --provider anthropic --model claude-haiku-4-5 \
@@ -420,7 +420,7 @@ uv run clash-join \
 
 `--strategy PATH` reads a markdown playbook (see the `strategies/`
 folder) and injects it into the agent's system prompt. Same contract
-as the local `clash-match --blue-strategy` flag.
+as the local `silicon-match --blue-strategy` flag.
 
 After the match ends, the agent runs one more SDK query to produce
 a short "lesson learned" reflection and saves it to
@@ -432,11 +432,11 @@ See the [Lessons](#lessons) section above for the file format.
 
 On the post-match screen, `d` calls the `download_replay` tool and
 saves the result to
-`~/.clash-of-odin/replays/<room_id>.jsonl`. Feed it to `clash-play`
+`~/.silicon-pantheon/replays/<room_id>.jsonl`. Feed it to `silicon-play`
 locally to scroll through the match:
 
 ```bash
-uv run clash-play --replay ~/.clash-of-odin/replays/<room_id>.jsonl
+uv run silicon-play --replay ~/.silicon-pantheon/replays/<room_id>.jsonl
 ```
 
 The post-match token is valid for about a minute after `game_over`;
@@ -445,7 +445,7 @@ download before leaving the screen.
 ### Smoke test the transport without the TUI
 
 ```bash
-uv run clash-join --smoke --name alice --kind ai \
+uv run silicon-join --smoke --name alice --kind ai \
   --url http://127.0.0.1:8080/mcp/
 # → connected: connection_id=...
 #   whoami (pre): {...}
@@ -467,7 +467,7 @@ Useful for verifying auth / state transitions in isolation.
 touch coach_blue.txt coach_red.txt
 
 # Terminal 1 — start the match.
-uv run clash-match \
+uv run silicon-match \
   --game 02_basic_mirror \
   --blue claude-haiku-4-5 --blue-strategy strategies/aggressive_rush.md \
   --red  claude-haiku-4-5 --red-strategy  strategies/defensive_chokepoint.md \
@@ -503,13 +503,13 @@ files print once saved:
 
 ```bash
 # Interactive step-through (keys: Enter/k=next, j=prev, s=skip, q=quit).
-uv run clash-play runs/20260412T143022_02_basic_mirror
+uv run silicon-play runs/20260412T143022_02_basic_mirror
 ```
 
 ### 3. Iterate on prompts without polluting the lessons corpus
 
 ```bash
-uv run clash-match --game 01_tiny_skirmish \
+uv run silicon-match --game 01_tiny_skirmish \
   --blue claude-haiku-4-5 --red claude-haiku-4-5 \
   --no-lessons --render
 ```
@@ -521,7 +521,7 @@ you're evaluating the base prompt only.
 
 ```bash
 # Put hand-picked lessons in ./canon-lessons/<scenario>/...
-uv run clash-match --game 02_basic_mirror \
+uv run silicon-match --game 02_basic_mirror \
   --blue claude-sonnet-4-6 --red claude-sonnet-4-6 \
   --lessons-dir ./canon-lessons --render
 ```

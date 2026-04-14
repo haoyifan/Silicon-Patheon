@@ -12,15 +12,15 @@ from pathlib import Path
 
 import pytest
 
-from clash_of_odin.harness.providers import make_provider
-from clash_of_odin.match.interactive_replay import (
+from silicon_pantheon.harness.providers import make_provider
+from silicon_pantheon.match.interactive_replay import (
     _apply_action_event,
     _find_match_start,
     _load_events,
     interactive_replay,
 )
-from clash_of_odin.match.run_match import run_match
-from clash_of_odin.server.engine.scenarios import load_scenario
+from silicon_pantheon.match.run_match import run_match
+from silicon_pantheon.server.engine.scenarios import load_scenario
 
 
 def _play_match(tmp_path: Path) -> Path:

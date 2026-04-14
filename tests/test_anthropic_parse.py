@@ -6,7 +6,7 @@ model text, tolerating code fences and surrounding prose.
 
 from __future__ import annotations
 
-from clash_of_odin.harness.providers.anthropic import _parse_lesson_json
+from silicon_pantheon.harness.providers.anthropic import _parse_lesson_json
 
 
 def test_bare_json_object() -> None:

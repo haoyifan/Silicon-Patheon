@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.server.engine.scenarios import (
+from silicon_pantheon.server.engine.scenarios import (
     SUPPORTED_SCHEMA_VERSION,
     UnsupportedSchemaVersion,
     build_state,

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from clash_of_odin.client.credentials import (
+from silicon_pantheon.client.credentials import (
     Credentials,
     CredentialsError,
     ProviderCredential,

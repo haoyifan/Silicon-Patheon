@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.rules import EndTurnAction, apply
-from clash_of_odin.server.engine.scenarios import build_state
+from silicon_pantheon.server.engine.rules import EndTurnAction, apply
+from silicon_pantheon.server.engine.scenarios import build_state
 
 
 def _cfg(
@@ -40,7 +40,7 @@ def test_custom_terrain_movement_cost_honored() -> None:
         )
     )
     tile = state.board.tile_at = state.board.tile  # alias for readability
-    sand = state.board.tile(__import__("clash_of_odin.server.engine.state", fromlist=["Pos"]).Pos(1, 0))
+    sand = state.board.tile(__import__("silicon_pantheon.server.engine.state", fromlist=["Pos"]).Pos(1, 0))
     assert sand.move_cost() == 3
     assert sand.passable is True
 
@@ -78,8 +78,8 @@ def test_custom_terrain_heal_tile_revives_hp() -> None:
 
 
 def test_custom_terrain_blocks_sight() -> None:
-    from clash_of_odin.server.engine.state import Pos, Team
-    from clash_of_odin.shared.fog import visible_tiles
+    from silicon_pantheon.server.engine.state import Pos, Team
+    from silicon_pantheon.shared.fog import visible_tiles
 
     # Wall tile at (1,0); blue archer at (0,0) with sight 4; red
     # knight at (2,0). Under LOS rules the wall should mask (2,0).
@@ -99,8 +99,8 @@ def test_custom_terrain_blocks_sight() -> None:
 
 
 def test_class_override_prevents_passage() -> None:
-    from clash_of_odin.server.engine.board import can_enter
-    from clash_of_odin.server.engine.state import Pos
+    from silicon_pantheon.server.engine.board import can_enter
+    from silicon_pantheon.server.engine.state import Pos
 
     state = build_state(
         _cfg(
@@ -118,8 +118,8 @@ def test_class_override_prevents_passage() -> None:
     sand_tile = state.board.tile(Pos(1, 0))
     assert not can_enter(cavalry.stats, sand_tile, cavalry.class_)
     # But a knight can cross it (no override).
-    from clash_of_odin.server.engine.units import make_stats
-    from clash_of_odin.server.engine.state import UnitClass
+    from silicon_pantheon.server.engine.units import make_stats
+    from silicon_pantheon.server.engine.state import UnitClass
 
     knight_stats = make_stats(UnitClass.KNIGHT)
     assert can_enter(knight_stats, sand_tile, "knight")
@@ -131,7 +131,7 @@ def test_builtin_terrain_still_works() -> None:
     state = build_state(
         _cfg(terrain=[{"x": 1, "y": 1, "type": "forest"}])
     )
-    from clash_of_odin.server.engine.state import Pos
+    from silicon_pantheon.server.engine.state import Pos
 
     tile = state.board.tile(Pos(1, 1))
     assert tile.move_cost() == 2  # legacy forest cost

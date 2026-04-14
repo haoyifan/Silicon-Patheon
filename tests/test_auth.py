@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from clash_of_odin.server.auth import TokenIdentity, TokenRegistry
+from silicon_pantheon.server.auth import TokenIdentity, TokenRegistry
 
 
 def test_issue_and_resolve() -> None:

@@ -11,8 +11,8 @@ from pathlib import Path
 import pytest
 from rich.console import Console
 
-from clash_of_odin.client.tui.app import SharedState
-from clash_of_odin.client.tui.screens.provider_auth import ProviderAuthScreen
+from silicon_pantheon.client.tui.app import SharedState
+from silicon_pantheon.client.tui.screens.provider_auth import ProviderAuthScreen
 
 
 class _FakeApp:
@@ -49,7 +49,7 @@ def test_fresh_start_shows_provider_picker(fresh_home) -> None:
 
 
 def test_saved_defaults_shows_resume_prompt(fresh_home, monkeypatch) -> None:
-    from clash_of_odin.client.credentials import (
+    from silicon_pantheon.client.credentials import (
         Credentials,
         ProviderCredential,
         save,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from clash_of_odin.shared.providers import (
+from silicon_pantheon.shared.providers import (
     PROVIDERS,
     get_model,
     get_provider,

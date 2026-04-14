@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.rules import EndTurnAction, apply
-from clash_of_odin.server.engine.scenarios import build_state
-from clash_of_odin.server.engine.state import (
+from silicon_pantheon.server.engine.rules import EndTurnAction, apply
+from silicon_pantheon.server.engine.scenarios import build_state
+from silicon_pantheon.server.engine.state import (
     Pos,
     Team,
     Unit,
     UnitStatus,
 )
-from clash_of_odin.server.engine.units import make_stats
-from clash_of_odin.server.engine.state import UnitClass
+from silicon_pantheon.server.engine.units import make_stats
+from silicon_pantheon.server.engine.state import UnitClass
 
 
 def _spawn_on_turn_3(state, turn, team, **_):

@@ -21,7 +21,7 @@ Full MCP+SSE transport proven end-to-end.
   available tools (`set_player_metadata`, `heartbeat`, `whoami`).
 - `client/transport.py` — `ServerClient` async context manager over
   real MCP streamable-HTTP.
-- `clash-serve` and `clash-join` CLI entry points in `pyproject.toml`.
+- `silicon-serve` and `silicon-join` CLI entry points in `pyproject.toml`.
 - Integration test spinning up uvicorn in a background thread on an
   ephemeral port and driving real MCP+SSE clients against it.
 - The 13 existing game tools exposed remotely via typed FastMCP
@@ -66,7 +66,7 @@ Full MCP+SSE transport proven end-to-end.
   monkey-patchable for tests.
 - Client `ServerClient.start_heartbeat()` / `stop_heartbeat()` runs a
   10s ping loop as a background asyncio task.
-- `clash-serve` startup co-runs the sweeper alongside the HTTP app
+- `silicon-serve` startup co-runs the sweeper alongside the HTTP app
   via an anyio task group.
 - `download_replay` tool returns the server's authoritative
   replay.jsonl body while `IN_GAME` (valid until game over, purged
@@ -82,7 +82,7 @@ Five screens (login, lobby, room preview, in-game, post-match) plus
 transition / error handling. Substantial and visually-iterative; best
 approached once the backend stabilizes. All 122 tests pass without it;
 the transport, lobby, fog, and disconnect machinery can all be
-exercised from plain Python or the existing `clash-join` smoke flow.
+exercised from plain Python or the existing `silicon-join` smoke flow.
 
 ### Residual 1e items
 
@@ -97,8 +97,8 @@ exercised from plain Python or the existing `clash-join` smoke flow.
 - **X.2 Structured JSON logging.** Left as plain `logging` for now;
   upgrade when more server code accretes.
 - **X.3 `docs/USAGE.md` update.** Still only documents the local
-  `clash-match` / `clash-play` flow. Add a "networked play" section
-  covering `clash-serve`, `clash-join`, the lobby flow, and the new
+  `silicon-match` / `silicon-play` flow. Add a "networked play" section
+  covering `silicon-serve`, `silicon-join`, the lobby flow, and the new
   fog-of-war config.
 
 ## How to manually verify the backend today
@@ -106,14 +106,14 @@ exercised from plain Python or the existing `clash-join` smoke flow.
 Terminal 1:
 ```bash
 cd /home/pringles/dev/agent-game-phase1
-uv run clash-serve --host 127.0.0.1 --port 8080
+uv run silicon-serve --host 127.0.0.1 --port 8080
 ```
 
 Terminal 2 (smoke flow only — exercises connect, metadata, heartbeat,
 whoami):
 ```bash
 cd /home/pringles/dev/agent-game-phase1
-uv run clash-join --name alice --kind ai --provider anthropic \
+uv run silicon-join --name alice --kind ai --provider anthropic \
   --model claude-haiku-4-5
 ```
 

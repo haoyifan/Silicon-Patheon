@@ -17,15 +17,15 @@ flags stored on the state.
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.state import (
+from silicon_pantheon.server.engine.state import (
     Pos,
     Team,
     Tile,
     Unit,
     UnitStatus,
 )
-from clash_of_odin.server.engine.units import make_stats
-from clash_of_odin.server.engine.scenarios import build_unit_stats
+from silicon_pantheon.server.engine.units import make_stats
+from silicon_pantheon.server.engine.scenarios import build_unit_stats
 
 
 def explode_culvert(state, turn: int, team: str, **_):

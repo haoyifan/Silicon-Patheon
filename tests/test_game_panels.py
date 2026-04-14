@@ -6,14 +6,14 @@ import asyncio
 
 from rich.console import Console
 
-from clash_of_odin.client.tui.app import SharedState
-from clash_of_odin.client.tui.screens.game import (
+from silicon_pantheon.client.tui.app import SharedState
+from silicon_pantheon.client.tui.screens.game import (
     CoachPanel,
     GameMapPanel,
     GameScreen,
     ReasoningPanel,
 )
-from clash_of_odin.client.tui.screens.room import UnitCard
+from silicon_pantheon.client.tui.screens.room import UnitCard
 
 
 class _FakeApp:
@@ -38,7 +38,7 @@ def _stub_state(app, *, units=None, board_w=6, board_h=6, my_team="blue"):
 
 def test_player_panel_roster_shows_header_status_and_dead_state():
     from rich.console import Console
-    from clash_of_odin.client.tui.screens.game import PlayerPanel
+    from silicon_pantheon.client.tui.screens.game import PlayerPanel
 
     app = _FakeApp()
     _stub_state(
@@ -83,7 +83,7 @@ def test_game_on_enter_clears_thoughts_buffer():
 
 
 def test_player_panel_scrolls_when_focused():
-    from clash_of_odin.client.tui.screens.game import PlayerPanel
+    from silicon_pantheon.client.tui.screens.game import PlayerPanel
 
     app = _FakeApp()
     _stub_state(

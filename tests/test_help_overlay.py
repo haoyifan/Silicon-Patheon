@@ -7,7 +7,7 @@ import asyncio
 
 from rich.console import Console
 
-from clash_of_odin.client.tui.app import HELP_TEXT, _HelpOverlay
+from silicon_pantheon.client.tui.app import HELP_TEXT, _HelpOverlay
 
 
 def test_help_overlay_renders_some_help_content():
@@ -15,7 +15,7 @@ def test_help_overlay_renders_some_help_content():
     console = Console(record=True, width=120)
     console.print(overlay.render())
     out = console.export_text()
-    assert "Welcome to Clash of Odin" in out
+    assert "Welcome to SiliconPantheon" in out
     assert "Tab" in out
     # Footer keys present.
     assert "Esc / F2 close" in out
@@ -28,7 +28,7 @@ def test_help_overlay_scroll_drops_leading_lines():
     console.print(overlay.render())
     out = console.export_text()
     # The original header should now be off-screen.
-    assert "Welcome to Clash of Odin" not in out
+    assert "Welcome to SiliconPantheon" not in out
     # ...but later content remains.
     assert "Tab" in out
 
@@ -45,7 +45,7 @@ def test_app_help_intercept_does_not_leak_to_screen():
     """When help is open, gameplay keys (e/x/q) should be swallowed
     by the overlay so they don't end the turn or concede behind the
     user's back."""
-    from clash_of_odin.client.tui.app import SharedState, TUIApp
+    from silicon_pantheon.client.tui.app import SharedState, TUIApp
 
     seen: list[str] = []
 

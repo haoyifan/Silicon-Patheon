@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.server.engine.board import reachable_tiles
-from clash_of_odin.server.engine.combat import damage_per_hit, doubles, predict_attack
-from clash_of_odin.server.engine.rules import (
+from silicon_pantheon.server.engine.board import reachable_tiles
+from silicon_pantheon.server.engine.combat import damage_per_hit, doubles, predict_attack
+from silicon_pantheon.server.engine.rules import (
     AttackAction,
     EndTurnAction,
     HealAction,
@@ -16,9 +16,9 @@ from clash_of_odin.server.engine.rules import (
     apply,
     legal_actions_for_unit,
 )
-from clash_of_odin.server.engine.scenarios import load_scenario
-from clash_of_odin.server.engine.serialize import state_to_dict
-from clash_of_odin.server.engine.state import (
+from silicon_pantheon.server.engine.scenarios import load_scenario
+from silicon_pantheon.server.engine.serialize import state_to_dict
+from silicon_pantheon.server.engine.state import (
     Board,
     GameState,
     GameStatus,
@@ -30,7 +30,7 @@ from clash_of_odin.server.engine.state import (
     UnitClass,
     UnitStatus,
 )
-from clash_of_odin.server.engine.units import make_stats
+from silicon_pantheon.server.engine.units import make_stats
 
 # ---- helpers ----
 

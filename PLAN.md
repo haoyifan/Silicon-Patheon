@@ -1,11 +1,11 @@
-# Implementation Plan — Clash of Odin
+# Implementation Plan — SiliconPantheon
 
 End-to-end plan for building the agent-vs-agent tactics game described in
 `GAME_DESIGN.md`. Each phase ends with something runnable and demoable. Don't
 move to the next phase until the current one demos cleanly.
 
-**Project name:** Clash of Odin
-**Python package:** `clash_of_odin`
+**Project name:** SiliconPantheon
+**Python package:** `silicon_pantheon`
 
 ## Repo structure
 
@@ -18,7 +18,7 @@ agent-game/
 ├── DECISIONS.md                       # log of design calls made during implementation
 ├── pyproject.toml                     # uv-managed; ruff + pyright configured
 │
-├── src/clash_of_odin/
+├── src/silicon_pantheon/
 │   ├── __init__.py
 │   ├── server/                        # MCP server — game engine + tool wrappers
 │   │   ├── __init__.py
@@ -97,7 +97,7 @@ agent-game/
 
 ### Structural choices
 
-- `src/clash_of_odin/` is a single Python package using the **src layout**.
+- `src/silicon_pantheon/` is a single Python package using the **src layout**.
   Subpackages (`server/`, `harness/`, `renderer/`, `match/`) keep concerns
   separated but share types and utilities cleanly.
 - `server/engine/` is **pure Python with no MCP knowledge**. Game engine is

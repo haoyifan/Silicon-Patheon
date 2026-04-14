@@ -12,13 +12,13 @@ on_turn_start invocations are idempotent.
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.state import (
+from silicon_pantheon.server.engine.state import (
     Pos,
     Team,
     Unit,
     UnitStatus,
 )
-from clash_of_odin.server.engine.scenarios import build_unit_stats
+from silicon_pantheon.server.engine.scenarios import build_unit_stats
 
 
 def second_goblin_wave(state, turn: int, team: str, **_):

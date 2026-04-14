@@ -85,7 +85,7 @@ behavior to fields that already exist in the schema as no-ops.
 - [ ] **In-game pause + re-sync** — some way for a spectator or the
       host to freeze a match to discuss or screenshot. Depends on
       server support. Estimate: 2 days.
-- [ ] **Replay viewer inside the TUI** — we already have `clash-play`
+- [ ] **Replay viewer inside the TUI** — we already have `silicon-play`
       as a separate CLI; fold a replay-player screen into the main
       TUI so users don't context-switch. Estimate: 1 day.
 
@@ -96,7 +96,7 @@ behavior to fields that already exist in the schema as no-ops.
 Status: **out of scope for v1** per 2026-04-13 review. Design
 guidance for when this gets picked up:
 
-- [ ] **Tournament runner** as a separate CLI (`clash-tourney`) that
+- [ ] **Tournament runner** as a separate CLI (`silicon-tourney`) that
       orchestrates a bracket of matches with verified configs.
       Should read a bracket spec (YAML), run N matches sequentially
       or in parallel, collect results into a summary report.
@@ -115,7 +115,7 @@ guidance for when this gets picked up:
       mitigation, per-user rate limits, structured audit logs, DB
       persistence. (See `docs/PHASE_1_DESIGN.md` scaling-seams
       section for what's already prepped.)
-- [ ] **Graceful server upgrade** — today restarting `clash-serve`
+- [ ] **Graceful server upgrade** — today restarting `silicon-serve`
       drops all in-flight matches. A "drain mode" that finishes
       existing matches and refuses new ones would be useful.
 - [ ] **Persistent replay archive** — server-side replays
@@ -228,17 +228,17 @@ current symptom warrants.
 - [ ] **Coach message to the opponent's agent** (ops-enabled) — let
       the operator push a message into either team's coach queue
       for testing / debugging / humor. Estimate: 1 hour.
-- [ ] **Scenario validator CLI** — `clash-validate path/to/config.yaml`
+- [ ] **Scenario validator CLI** — `silicon-validate path/to/config.yaml`
       that loads a scenario through the full engine validation
       pipeline and reports errors without starting a match. Great
       for scenario authors. Estimate: 0.5 day.
 - [ ] **Keyring dependency marker** — `pyproject.toml` gains
-      `keyring` as an optional extra (`pip install clash-of-odin[keyring]`)
+      `keyring` as an optional extra (`pip install silicon-pantheon[keyring]`)
       so users who don't want it don't pay the install cost.
-- [ ] **Ported `clash-server` (stdio MCP wrapper)** — the legacy
+- [ ] **Ported `silicon-server` (stdio MCP wrapper)** — the legacy
       stdio variant hasn't been touched in a while; confirm it
       still works or deprecate it. Current stance: quietly works but
-      unused since clash-serve (streamable HTTP) replaced it.
+      unused since silicon-serve (streamable HTTP) replaced it.
 
 ---
 

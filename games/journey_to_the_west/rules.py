@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.state import (
+from silicon_pantheon.server.engine.state import (
     Pos,
     Team,
     Unit,

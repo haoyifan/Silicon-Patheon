@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from clash_of_odin.server.rooms import RoomConfig, RoomRegistry, RoomStatus, Slot
-from clash_of_odin.shared.player_metadata import PlayerMetadata
+from silicon_pantheon.server.rooms import RoomConfig, RoomRegistry, RoomStatus, Slot
+from silicon_pantheon.shared.player_metadata import PlayerMetadata
 
 
 def _player(name: str) -> PlayerMetadata:

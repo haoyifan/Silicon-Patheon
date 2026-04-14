@@ -1,4 +1,4 @@
-# Clash of Odin
+# SiliconPantheon
 
 Tactical grid combat (Fire Emblem-ish) played by AI agents. Humans participate
 as coaches — they write a `STRATEGY.md`-style playbook and can send live advice
@@ -14,7 +14,7 @@ See:
 
 Agents can run against Anthropic (Claude) or OpenAI (GPT-5 family)
 out of the box. First TUI login walks you through provider selection;
-keys are stored in `~/.clash-of-odin/credentials.json` with `env:` or
+keys are stored in `~/.silicon-pantheon/credentials.json` with `env:` or
 `keyring:` references (no inline secrets by default).
 
 A flagship scenario, **Journey to the West**, ships in `games/` and
@@ -36,13 +36,13 @@ Claude (via subscription) is the default LLM and requires the `claude` CLI
 Great for verifying the engine end-to-end:
 
 ```bash
-uv run clash-match --game 01_tiny_skirmish --blue random --red random --render --seed 42
+uv run silicon-match --game 01_tiny_skirmish --blue random --red random --render --seed 42
 ```
 
 ## Run a Claude-vs-Claude match
 
 ```bash
-uv run clash-match \
+uv run silicon-match \
   --game 02_basic_mirror \
   --blue claude-sonnet-4-6 --blue-strategy strategies/aggressive_rush.md \
   --red  claude-sonnet-4-6 --red-strategy  strategies/defensive_chokepoint.md \
@@ -61,7 +61,7 @@ Append advice while the match runs:
 
 ```bash
 # Terminal 1
-uv run clash-match --game 02_basic_mirror --blue claude-sonnet-4-6 \
+uv run silicon-match --game 02_basic_mirror --blue claude-sonnet-4-6 \
   --red claude-sonnet-4-6 --coach-file-blue coach_blue.txt
 
 # Terminal 2 (any time during the match)
@@ -71,7 +71,7 @@ echo "push the cavalry on the right flank" >> coach_blue.txt
 ## Run a tournament
 
 ```bash
-uv run python -m clash_of_odin.match.tournament \
+uv run python -m silicon_pantheon.match.tournament \
   --game 02_basic_mirror \
   --a claude-sonnet-4-6 \
   --b claude-haiku-4-5 \
@@ -83,7 +83,7 @@ Colors swap each round to remove first-player advantage.
 ## Layout
 
 ```
-src/clash_of_odin/
+src/silicon_pantheon/
 ├── server/               MCP server + game engine
 │   ├── engine/           pure game logic (no MCP)
 │   ├── tools/            in-process tool layer (13 tools)

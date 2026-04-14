@@ -1,6 +1,6 @@
 # Battle Scenarios — design notes
 
-Ten classic battles adapted to Clash of Odin. Each is sized to the
+Ten classic battles adapted to SiliconPantheon. Each is sized to the
 engine's current mechanics (two teams, HP/ATK/DEF/RES/MOVE/RANGE,
 tag-less v1 combat, custom glyph+color per class, optional `rules.py`
 plugins and narrative events). No MP, no abilities — everything is

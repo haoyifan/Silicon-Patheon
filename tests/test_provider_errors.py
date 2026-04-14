@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.client.providers.errors import (
+from silicon_pantheon.client.providers.errors import (
     ProviderError,
     ProviderErrorReason,
     classify,

@@ -24,7 +24,7 @@ burning_ship type so each end_turn ticks down occupant HP.
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.state import Pos, Tile, Team
+from silicon_pantheon.server.engine.state import Pos, Tile, Team
 
 # How far the fire has spread (number of ship tiles consumed).
 _STATE_KEY = "_red_cliffs_fire_state"

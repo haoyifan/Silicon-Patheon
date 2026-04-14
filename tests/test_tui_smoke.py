@@ -15,11 +15,11 @@ from types import SimpleNamespace
 import pytest
 from rich.console import Console
 
-from clash_of_odin.client.tui.app import SharedState
-from clash_of_odin.client.tui.screens.login import LoginScreen
-from clash_of_odin.client.tui.screens.lobby import LobbyScreen
-from clash_of_odin.client.tui.screens.post_match import PostMatchScreen
-from clash_of_odin.client.tui.screens.room import RoomScreen
+from silicon_pantheon.client.tui.app import SharedState
+from silicon_pantheon.client.tui.screens.login import LoginScreen
+from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
+from silicon_pantheon.client.tui.screens.post_match import PostMatchScreen
+from silicon_pantheon.client.tui.screens.room import RoomScreen
 
 
 class _FakeApp:

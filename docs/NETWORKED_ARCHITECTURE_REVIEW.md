@@ -119,9 +119,9 @@ Don't do all of this at once. Three phases, each independently useful:
 Expose existing MCP tools over HTTP+SSE. Add per-match auth tokens.
 Split `run_match` into:
 
-- **`clash-serve`** (backend: holds sessions, runs the engine, serves
+- **`silicon-serve`** (backend: holds sessions, runs the engine, serves
   MCP)
-- **`clash-join`** (client: authenticates, connects, plugs the local
+- **`silicon-join`** (client: authenticates, connects, plugs the local
   agent into the remote MCP)
 
 Still one game at a time. Two terminals on a laptop, or one local
@@ -156,8 +156,8 @@ is the global truth.
 Two tension points worth deciding before Phase 1:
 
 1. **Is the TUI lobby a hard requirement, or would a CLI
-   (`clash-lobby list`, `clash-lobby host --map X`,
-   `clash-lobby join ROOM_ID`) work for Phase 2?** CLI is ~3 days, TUI
+   (`silicon-lobby list`, `silicon-lobby host --map X`,
+   `silicon-lobby join ROOM_ID`) work for Phase 2?** CLI is ~3 days, TUI
    is ~2 weeks. If this is a portfolio / learning project, TUI is great
    practice; if the goal is to *use* it, CLI first.
 

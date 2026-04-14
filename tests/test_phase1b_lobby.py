@@ -14,9 +14,9 @@ import time
 import pytest
 import uvicorn
 
-from clash_of_odin.client.transport import ServerClient
-from clash_of_odin.server.app import App, build_mcp_server
-from clash_of_odin.shared.protocol import ConnectionState
+from silicon_pantheon.client.transport import ServerClient
+from silicon_pantheon.server.app import App, build_mcp_server
+from silicon_pantheon.shared.protocol import ConnectionState
 
 
 def _free_port() -> int:
@@ -29,7 +29,7 @@ def _free_port() -> int:
 def fast_countdown(monkeypatch: pytest.MonkeyPatch) -> None:
     """Shrink the autostart countdown so tests don't wait 10 real seconds."""
     monkeypatch.setattr(
-        "clash_of_odin.server.lobby_tools.AUTOSTART_DELAY_S", 0.2
+        "silicon_pantheon.server.lobby_tools.AUTOSTART_DELAY_S", 0.2
     )
 
 

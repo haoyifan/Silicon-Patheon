@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from clash_of_odin.harness.prompts import build_system_prompt
-from clash_of_odin.lessons import Lesson
-from clash_of_odin.server.engine.state import Team
+from silicon_pantheon.harness.prompts import build_system_prompt
+from silicon_pantheon.lessons import Lesson
+from silicon_pantheon.server.engine.state import Team
 
 
 def _lesson(slug: str, title: str, body: str, team: str = "blue") -> Lesson:

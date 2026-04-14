@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.server.engine.scenarios import load_scenario
-from clash_of_odin.server.engine.state import Team
-from clash_of_odin.server.session import new_session
-from clash_of_odin.server.tools import TOOL_REGISTRY, ToolError, call_tool
+from silicon_pantheon.server.engine.scenarios import load_scenario
+from silicon_pantheon.server.engine.state import Team
+from silicon_pantheon.server.session import new_session
+from silicon_pantheon.server.tools import TOOL_REGISTRY, ToolError, call_tool
 
 
 def _session():

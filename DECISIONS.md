@@ -1,7 +1,7 @@
 # Decisions Log
 
 Running log of design and implementation calls made by Claude during build-out
-of Clash of Odin. Each entry: what was decided, why, and any reversal cost if
+of SiliconPantheon. Each entry: what was decided, why, and any reversal cost if
 we later disagree.
 
 Format:
@@ -15,10 +15,10 @@ Format:
 ---
 
 ## 2026-04-12 — Project & tooling baseline
-**Decision:** Project named "Clash of Odin", Python package `clash_of_odin`,
+**Decision:** Project named "SiliconPantheon", Python package `silicon_pantheon`,
 Python 3.12, `uv` for env management, `ruff` for lint+format, `pyright` (basic
 mode) for type checking enforced from Phase 1, `pytest` for tests, src layout
-(`src/clash_of_odin/...`).
+(`src/silicon_pantheon/...`).
 **Why:** User explicitly chose name, Python 3.12, ruff, and asked for early type
 checking. src layout is the modern Python default and prevents the common
 "importing from project root" foot-gun.
@@ -165,7 +165,7 @@ per call and drop the `ClaudeSDKClient` lifecycle from `close()`.
 1. **Multi-provider agent support** via a `ProviderAdapter` protocol.
    Anthropic (Claude SDK) and OpenAI (Chat Completions + function
    calling) land initially; others plug in behind the same interface.
-   Keys resolve through `~/.clash-of-odin/credentials.json` using
+   Keys resolve through `~/.silicon-pantheon/credentials.json` using
    `env:` / `keyring:` refs — no inline secrets by default.
 
 2. **Flexible scenarios.** A scenario's YAML can now declare custom

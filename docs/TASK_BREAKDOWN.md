@@ -68,7 +68,7 @@ units table; today's 4-class scenarios are unchanged.
 | C.1 ✅ | Add `ProviderAdapter` Protocol + `ToolSpec` dataclass | `client/providers/base.py`. No behavior change yet. | mypy/pyright passes | XS |
 | C.2 ✅ | Extract Anthropic adapter | `client/providers/anthropic.py` containing today's `ClaudeSDKClient` code behind the Protocol. `NetworkedAgent` calls it. | existing Anthropic smoke test unchanged | M |
 | C.3 ✅ | Add `ProviderSpec` / `ModelSpec` catalog | `shared/providers.py` with Anthropic entries. No wiring yet. | test: catalog enumerates expected models | XS |
-| C.4 ✅ | Credentials store module | `client/credentials.py` that reads `~/.clash-of-odin/credentials.json`, resolves `env:` / `keyring:` refs. | unit test with tmp home | S |
+| C.4 ✅ | Credentials store module | `client/credentials.py` that reads `~/.silicon-pantheon/credentials.json`, resolves `env:` / `keyring:` refs. | unit test with tmp home | S |
 | C.5 ✅ | Make `keyring` an optional dependency | `pyproject.toml` extras. Graceful degrade when missing. | test: credentials module imports without keyring | XS |
 | C.6 | Login-screen → provider picker transition | New `ProviderAuthScreen` between Login and Lobby; reads from credentials file; if empty, runs the first-run flow. | stub smoke test using fake credentials | M |
 | C.7 | API-key auth subscreen | Input-box subscreen for api-key providers; offers env-var detection and keyring save. | stub smoke test | M |
@@ -152,7 +152,7 @@ Operator-trusted execution of scenario-local Python. No sandbox.
 | F.3 | Terrain `effects_plugin` hook | Tile-enter and end_turn effects via plugin call. | test: plugin-damages-unit scenario | S |
 | F.4 | Scenario `narrative:` block parser | `title`, `description`, `intro`, `events: [...]`. Absent → defaults. | load test | S |
 | F.5 | Narrative-event engine hook | Fires `on_turn_start` / `on_unit_killed` / `on_plugin` at the right moments. | test: turn-5 intro text fires at turn 5 | S |
-| F.6 | Narrative events in `replay.jsonl` | New `narrative_event` entry kind, rendered by `clash-play`. | round-trip test | S |
+| F.6 | Narrative events in `replay.jsonl` | New `narrative_event` entry kind, rendered by `silicon-play`. | round-trip test | S |
 | F.7 | TUI renders narrative events | Game screen gains a small "story" line that updates as events fire. Auto-clears after N seconds. | render test | S |
 | F.8 | Plugin reinforcement example | `spawn_reinforcements` plugin adds units mid-match; test it against a synthetic scenario. | integration test | M |
 | F.9 | Docs: authoring plugins + narrative | Security / trust-model paragraph up front. | — | S |

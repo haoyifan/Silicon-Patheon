@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import asyncio
 
-from clash_of_odin.server.app import App, build_mcp_server
-from clash_of_odin.shared.protocol import ConnectionState, ErrorCode
+from silicon_pantheon.server.app import App, build_mcp_server
+from silicon_pantheon.shared.protocol import ConnectionState, ErrorCode
 
 
 def _call(mcp, name: str, **kwargs) -> dict:

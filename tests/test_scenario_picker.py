@@ -6,7 +6,7 @@ import asyncio
 
 from rich.console import Console
 
-from clash_of_odin.client.tui.screens.scenario_picker import ScenarioPicker
+from silicon_pantheon.client.tui.screens.scenario_picker import ScenarioPicker
 
 
 class _FakeClient:

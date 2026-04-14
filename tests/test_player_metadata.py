@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.shared.player_metadata import PlayerMetadata
+from silicon_pantheon.shared.player_metadata import PlayerMetadata
 
 
 def test_roundtrip() -> None:

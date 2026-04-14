@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.server.engine.rules import EndTurnAction, apply
-from clash_of_odin.server.engine.state import (
+from silicon_pantheon.server.engine.rules import EndTurnAction, apply
+from silicon_pantheon.server.engine.state import (
     Board,
     GameState,
     GameStatus,
@@ -24,13 +24,13 @@ from clash_of_odin.server.engine.state import (
     Unit,
     UnitStatus,
 )
-from clash_of_odin.server.engine.units import make_stats
-from clash_of_odin.server.engine.state import UnitClass
-from clash_of_odin.server.engine.win_conditions import (
+from silicon_pantheon.server.engine.units import make_stats
+from silicon_pantheon.server.engine.state import UnitClass
+from silicon_pantheon.server.engine.win_conditions import (
     build_conditions,
     default_conditions,
 )
-from clash_of_odin.server.engine.win_conditions.rules import (
+from silicon_pantheon.server.engine.win_conditions.rules import (
     EliminateAllEnemyUnits,
     MaxTurnsDraw,
     ProtectUnit,
@@ -126,8 +126,8 @@ def test_protect_unit_fires_when_vip_killed_in_combat():
     dict, and the rule's old `state.units.get(...) is None` branch
     treated 'missing' as 'not yet dead'). Now dead_unit_ids carries
     the death record across removal."""
-    from clash_of_odin.server.engine.rules import AttackAction
-    from clash_of_odin.server.engine.scenarios import build_state
+    from silicon_pantheon.server.engine.rules import AttackAction
+    from silicon_pantheon.server.engine.scenarios import build_state
 
     cfg = {
         "board": {"width": 4, "height": 4, "terrain": [], "forts": []},
@@ -188,7 +188,7 @@ def test_reach_goal_line_fires_on_axis():
 
 def test_scenario_load_sets_win_conditions_attribute():
     """load_scenario should attach _win_conditions to the state."""
-    from clash_of_odin.server.engine.scenarios import load_scenario
+    from silicon_pantheon.server.engine.scenarios import load_scenario
 
     state = load_scenario("01_tiny_skirmish")
     assert hasattr(state, "_win_conditions")

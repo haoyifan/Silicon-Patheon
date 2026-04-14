@@ -3,12 +3,12 @@ slim per-unit fields in the per-turn + tool responses."""
 
 from __future__ import annotations
 
-from clash_of_odin.harness.prompts import (
+from silicon_pantheon.harness.prompts import (
     build_system_prompt,
     build_turn_prompt_from_state_dict,
     _slim_unit,
 )
-from clash_of_odin.server.engine.state import Team
+from silicon_pantheon.server.engine.state import Team
 
 
 def _fake_bundle() -> dict:

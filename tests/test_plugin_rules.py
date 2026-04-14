@@ -5,9 +5,9 @@ Uses the synthetic `_test_plugin` scenario in games/.
 
 from __future__ import annotations
 
-from clash_of_odin.server.engine.rules import EndTurnAction, apply
-from clash_of_odin.server.engine.scenarios import load_scenario
-from clash_of_odin.server.engine.state import GameStatus
+from silicon_pantheon.server.engine.rules import EndTurnAction, apply
+from silicon_pantheon.server.engine.scenarios import load_scenario
+from silicon_pantheon.server.engine.state import GameStatus
 
 
 def test_plugin_namespace_exposes_public_callables_only():

@@ -10,8 +10,8 @@ import asyncio
 
 import pytest
 
-from clash_of_odin.server.app import App, build_mcp_server
-from clash_of_odin.shared.protocol import ConnectionState
+from silicon_pantheon.server.app import App, build_mcp_server
+from silicon_pantheon.shared.protocol import ConnectionState
 
 
 @pytest.fixture

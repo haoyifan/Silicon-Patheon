@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.server.engine.rules import EndTurnAction, apply
-from clash_of_odin.server.engine.scenarios import (
+from silicon_pantheon.server.engine.rules import EndTurnAction, apply
+from silicon_pantheon.server.engine.scenarios import (
     _is_safe_scenario_name,
     build_state,
     load_scenario,

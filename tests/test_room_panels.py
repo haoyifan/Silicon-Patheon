@@ -7,8 +7,8 @@ import asyncio
 import pytest
 from rich.console import Console
 
-from clash_of_odin.client.tui.app import SharedState
-from clash_of_odin.client.tui.screens.room import (
+from silicon_pantheon.client.tui.app import SharedState
+from silicon_pantheon.client.tui.screens.room import (
     ActionsPanel,
     ConfirmModal,
     Dropdown,
@@ -198,7 +198,7 @@ def test_focused_panel_gets_yellow_border():
 def test_player_panel_uses_neutral_color_when_team_random():
     """team_assignment='random' means slot→team isn't decided yet,
     so cyan/red would falsely imply a fixed assignment. Use neutral."""
-    from clash_of_odin.client.tui.screens.room import PlayerPanel
+    from silicon_pantheon.client.tui.screens.room import PlayerPanel
 
     app = _FakeApp()
     app.state.slot = "a"
@@ -229,8 +229,8 @@ def test_game_screen_has_no_actions_panel():
     """Regression: the Actions panel was removed from gameplay —
     end-turn/concede are agent-driven and Quit lives in the footer
     as `q`. Panels should be Map / Player / Reasoning / Coach."""
-    from clash_of_odin.client.tui.app import SharedState
-    from clash_of_odin.client.tui.screens.game import GameScreen
+    from silicon_pantheon.client.tui.app import SharedState
+    from silicon_pantheon.client.tui.screens.game import GameScreen
 
     class _FakeGameApp:
         def __init__(self):
@@ -384,7 +384,7 @@ def test_win_condition_prose_uses_display_name_when_available():
     """Regression: win conditions used to render `u_b_tang_monk_1`
     directly. With display_name in the bundle, the prose should say
     `Tang Monk`."""
-    from clash_of_odin.client.tui.screens.room import _describe_win_condition
+    from silicon_pantheon.client.tui.screens.room import _describe_win_condition
 
     bundle = {
         "unit_classes": {
@@ -406,7 +406,7 @@ def test_protect_unit_prose_names_the_winning_side():
     """The opposite team of `owning_team` is the one that wins when
     the protected unit dies. Earlier prose buried this — it just said
     'keep X alive (blue)' which never explained how RED wins."""
-    from clash_of_odin.client.tui.screens.room import _describe_win_condition
+    from silicon_pantheon.client.tui.screens.room import _describe_win_condition
 
     out = _describe_win_condition(
         {"type": "protect_unit", "unit_id": "u_r_boss_1", "owning_team": "red"},
@@ -416,14 +416,14 @@ def test_protect_unit_prose_names_the_winning_side():
 
 
 def test_eliminate_all_prose_says_either_side_wins():
-    from clash_of_odin.client.tui.screens.room import _describe_win_condition
+    from silicon_pantheon.client.tui.screens.room import _describe_win_condition
 
     out = _describe_win_condition({"type": "eliminate_all_enemy_units"}, None)
     assert "Either side" in out
 
 
 def test_win_condition_prose_falls_back_when_no_display_name():
-    from clash_of_odin.client.tui.screens.room import _describe_win_condition
+    from silicon_pantheon.client.tui.screens.room import _describe_win_condition
 
     out = _describe_win_condition(
         {"type": "protect_unit", "unit_id": "u_b_knight_1",
@@ -440,7 +440,7 @@ def test_room_description_panel_includes_armies_and_unit_descriptions():
     """The game-room Description panel should match the scenario picker:
     army composition + per-class descriptions, not just the scenario
     blurb + win conditions."""
-    from clash_of_odin.client.tui.screens.room import DescriptionPanel
+    from silicon_pantheon.client.tui.screens.room import DescriptionPanel
 
     app = _FakeApp()
     app.state.scenario_description = {

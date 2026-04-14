@@ -7,8 +7,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from clash_of_odin.client.providers.base import ToolSpec
-from clash_of_odin.client.providers.openai import OpenAIAdapter, _as_openai_tool
+from silicon_pantheon.client.providers.base import ToolSpec
+from silicon_pantheon.client.providers.openai import OpenAIAdapter, _as_openai_tool
 
 
 def test_tool_schema_conversion() -> None:

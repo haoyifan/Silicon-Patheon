@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clash_of_odin.match.replay_schema import (
+from silicon_pantheon.match.replay_schema import (
     AgentThought,
     CoachMessage,
     ErrorPayload,
@@ -14,7 +14,7 @@ from clash_of_odin.match.replay_schema import (
     action_from_payload,
     parse_event,
 )
-from clash_of_odin.server.engine.rules import (
+from silicon_pantheon.server.engine.rules import (
     AttackAction,
     EndTurnAction,
     HealAction,

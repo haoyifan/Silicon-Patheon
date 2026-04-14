@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clash_of_odin.harness.providers import make_provider
-from clash_of_odin.match.run_match import _make_run_dir, run_match
+from silicon_pantheon.harness.providers import make_provider
+from silicon_pantheon.match.run_match import _make_run_dir, run_match
 
 
 def test_random_vs_random_completes():

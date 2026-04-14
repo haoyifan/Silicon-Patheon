@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clash_of_odin.server.engine.scenarios import load_scenario
-from clash_of_odin.server.engine.state import Team
-from clash_of_odin.server.session import new_session
+from silicon_pantheon.server.engine.scenarios import load_scenario
+from silicon_pantheon.server.engine.state import Team
+from silicon_pantheon.server.session import new_session
 
 
 def test_thoughts_log_is_appended_live(tmp_path: Path) -> None:
