@@ -264,6 +264,10 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 "res": s.res, "spd": s.spd, "move": s.move,
                 "rng_min": s.rng_min, "rng_max": s.rng_max,
                 "is_magic": s.is_magic, "can_heal": s.can_heal,
+                # heal_amount matters only if can_heal; included
+                # unconditionally because 0 on non-healers is a fine
+                # canonical answer and saves a special-case lookup.
+                "heal_amount": s.heal_amount,
                 # Terrain restrictions — matter for agent planning
                 # (Cavalry can't enter forest, some classes can enter
                 # mountain). Without these the built-in class entries

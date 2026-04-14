@@ -54,6 +54,9 @@ always has the authoritative values.
   tile is within the defender's attack range AND (b) the defender survives
   the incoming salvo. Use `simulate_attack` to see the exact outcome before
   committing.
+- **Fort heal**: a unit standing on a friendly fort at the start of its
+  team's turn regenerates +3 HP (capped at hp_max). Ferrying a wounded
+  unit onto your own fort for one rotation is a standard recovery play.
 - **Determinism**: combat has no RNG. `simulate_attack` is authoritative.
 - **Max turns**: {max_turns}. Each side gets {max_turns} half-turns; after
   both sides act on turn {max_turns} with no win-condition fired, the match
@@ -205,7 +208,13 @@ def _format_class_catalog(
             if spec.get("is_magic"):
                 flags.append("magic")
             if spec.get("can_heal"):
-                flags.append("can_heal")
+                # Heal amount is load-bearing for the agent's planning —
+                # without it they know "this unit can heal" but have to
+                # spend an action to discover the per-use amount.
+                amt = spec.get("heal_amount")
+                flags.append(
+                    f"can_heal (+{amt}/use)" if amt else "can_heal"
+                )
             # Terrain restrictions (defaults: forest=True, mountain=False).
             if spec.get("can_enter_forest") is False:
                 flags.append("no forest")
