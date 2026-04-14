@@ -592,12 +592,40 @@ class GameScreen(Screen):
         )
 
         async def _run() -> None:
+            from clash_of_odin.client.providers.errors import (
+                ProviderError,
+                ProviderErrorReason,
+            )
+
             try:
                 log.info("agent.play_turn: starting")
                 await self.app.state.agent.play_turn(viewer, max_turns=max_turns)
                 log.info("agent.play_turn: finished")
             except asyncio.CancelledError:
                 log.info("agent.play_turn: cancelled")
+            except ProviderError as e:
+                log.warning("agent.play_turn provider error: %s", e)
+                if e.is_terminal:
+                    # Auth failure / out of credit / model-gone: we can't
+                    # continue playing. Concede so the opponent gets a
+                    # clean win + we leave the room naturally.
+                    self.app.state.error_message = (
+                        f"{e.reason.value}: {e} — conceding match"
+                    )
+                    try:
+                        await self._call("concede")
+                    except Exception:
+                        log.exception("concede-after-provider-error raised")
+                elif e.reason == ProviderErrorReason.RATE_LIMIT:
+                    # Caller will see the banner; the SDK+transport
+                    # already retried internally if configured. Do
+                    # nothing more here — next tick will try again
+                    # if it's still our turn.
+                    self.app.state.error_message = (
+                        "rate-limited — retrying on next poll"
+                    )
+                else:
+                    self.app.state.error_message = f"agent error: {e}"
             except Exception as e:
                 log.exception("agent.play_turn raised: %s", e)
                 self.app.state.error_message = f"agent error: {e}"

@@ -36,6 +36,7 @@ from clash_of_odin.client.providers.base import (
     ToolDispatcher,
     ToolSpec,
 )
+from clash_of_odin.client.providers.errors import classify
 from clash_of_odin.lessons import Lesson, slugify
 from clash_of_odin.server.engine.state import Team
 
@@ -169,7 +170,7 @@ class AnthropicAdapter:
                     break
         except Exception as e:
             log.exception("Anthropic play_turn raised: %s", e)
-            raise
+            raise classify(e) from e
 
     async def summarize_match(
         self,

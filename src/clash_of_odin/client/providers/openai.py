@@ -29,6 +29,7 @@ from clash_of_odin.client.providers.base import (
     ToolSpec,
 )
 from clash_of_odin.client.providers.anthropic import _parse_lesson_json
+from clash_of_odin.client.providers.errors import classify
 from clash_of_odin.lessons import Lesson, slugify
 from clash_of_odin.server.engine.state import Team
 
@@ -95,9 +96,9 @@ class OpenAIAdapter:
                     tools=openai_tools,
                     tool_choice="auto",
                 )
-            except Exception:
+            except Exception as e:
                 log.exception("OpenAI completion raised")
-                raise
+                raise classify(e) from e
 
             choice = resp.choices[0]
             msg = choice.message
