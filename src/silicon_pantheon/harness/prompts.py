@@ -41,21 +41,42 @@ always has the authoritative values.
 
 ## Universal combat rules
 
-- **Damage**: max(1, attacker.ATK − defender.DEF) for physical attacks,
-  max(1, attacker.ATK − defender.RES) for magic attacks (flagged `is_magic`).
-  Terrain bonuses apply to the defender.
-- **Doubling**: if attacker.SPD ≥ defender.SPD + 3, the attacker hits twice per
-  attack. Doubling applies to counter-attacks too.
-- **Counter**: the defender counter-attacks if (and only if) the attacker is
-  within the defender's attack range.
-- **Determinism**: combat has no RNG. `simulate_attack` returns exact outcomes.
-- **Max turns**: {max_turns}; reaching that is a draw.
+- **Damage per hit**: `max(1, attacker.ATK − mitigation)`.
+  `mitigation` = defender.DEF + defender_tile.defense_bonus (physical) or
+  defender.RES + defender_tile.res_bonus (magic, unit flagged `is_magic`).
+  The *defender's* tile bonus always applies, including on counter-attacks
+  (so when the defender counters, the attacker's terrain protects the
+  attacker's hp pool).
+- **Doubling**: if attacker.SPD ≥ defender.SPD + 3, the attack lands twice
+  (2 × damage_per_hit). Applies to counter-attacks using defender.SPD
+  vs attacker.SPD.
+- **Counter-attack**: the defender counters IFF (a) the attacker's post-move
+  tile is within the defender's attack range AND (b) the defender survives
+  the incoming salvo. Use `simulate_attack` to see the exact outcome before
+  committing.
+- **Determinism**: combat has no RNG. `simulate_attack` is authoritative.
+- **Max turns**: {max_turns}. Each side gets {max_turns} half-turns; after
+  both sides act on turn {max_turns} with no win-condition fired, the match
+  ends in a draw.
+- **Fog of war**: mode `{fog_mode}`. "none" = full visibility. "classic" =
+  enemies outside your sight radius are hidden, tiles ever-seen stay
+  revealed with last-known terrain. "line_of_sight" = only currently
+  visible tiles/enemies. Dead enemies remain visible regardless of fog —
+  they're a known historical record.
 
 ## Your turn
 
-Each of your units has a status: `ready` (can move AND act), `moved` (moved,
-still can attack/heal/wait), or `done` (finished). You must issue actions for
-the units you want to use, then call `end_turn` to pass control.
+Each of your units has a status:
+- `ready` — can move AND then act (attack/heal/wait), OR skip the move and
+  act immediately.
+- `moved` — already moved this turn; *must still act* (attack/heal/wait)
+  before you can `end_turn`. Trying to `end_turn` with a `moved` unit that
+  hasn't acted returns an error "unit X moved but has not acted".
+- `done` — finished for this turn.
+
+Units in the `units` array with `alive: false` are casualties from earlier
+turns — ignore them for planning, they're in the list so you can reconstruct
+history but they can't be moved, attacked, healed, or countered.
 
 ## How to play
 
@@ -68,10 +89,21 @@ the units you want to use, then call `end_turn` to pass control.
    unexpectedly (e.g. a plugin mutated the board).
 3. For each ready unit, decide what to do:
    - `get_legal_actions(unit_id)` shows moves / attacks / heals available.
-   - `simulate_attack(attacker_id, target_id)` predicts the outcome.
+     Requires it to be your turn and the unit to be yours.
+   - `simulate_attack(attacker_id, target_id, from_tile?)` predicts the
+     outcome. Pass `from_tile` to preview the attack as if you'd moved
+     there first — saves having to actually move to check viability.
    - `move(unit_id, dest)` then `attack(unit_id, target_id)` / `heal(...)` /
-     `wait(unit_id)`, or just `wait` if the unit has nothing to do.
-4. When all desired units have acted, call `end_turn`. **You MUST call
+     `wait(unit_id)`, or skip the move and act directly from `ready`, or
+     just `wait` if the unit has nothing useful to do.
+   - `heal` requires a unit with `can_heal: true` in its class spec (not
+     just "mage" — any can_heal class). Target must be an adjacent
+     (Manhattan distance 1) friendly unit that is not the healer itself.
+4. Before you call `end_turn`, every unit with status `moved` must have
+   acted (attack/heal/wait). A unit that only moved and then you try to
+   end the turn will reject the end_turn with an "moved but has not acted"
+   error — send `wait(unit_id)` on it if you want it to hold.
+5. When all desired units have acted, call `end_turn`. **You MUST call
    `end_turn`** — the game will not advance otherwise.
 
 ### Tactical priors
@@ -313,6 +345,15 @@ def build_system_prompt(
     unit_classes = scenario_description.get("unit_classes") or {}
     terrain_types = scenario_description.get("terrain_types") or {}
     board = scenario_description.get("board") or {}
+    # fog_of_war is declared in scenario rules ("none" | "classic" |
+    # "line_of_sight"). The room host can override it at room-config
+    # time; the server-side session is what ultimately applies, so
+    # this is just the default the scenario shipped with. Clients
+    # that pass a scenario_description bundle should include the
+    # room's effective mode once fog-override becomes room-config-
+    # time. Missing = treat as the scenario's declared default.
+    rules = scenario_description.get("rules") or {}
+    fog_mode = str(rules.get("fog_of_war") or "none")
     tiles_by_pos: dict[tuple[int, int], str] = {}
     for t in board.get("terrain") or []:
         tiles_by_pos[(int(t.get("x", -1)), int(t.get("y", -1)))] = str(t.get("type", "plain"))
@@ -342,6 +383,7 @@ def build_system_prompt(
         map_grid=map_grid,
         strategy_section=strategy_section,
         lessons_section=lessons_section,
+        fog_mode=fog_mode,
     )
 
 

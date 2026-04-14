@@ -63,12 +63,22 @@ def _slim_tool_response(tool_name: str, payload: dict) -> dict:
 GAME_TOOLS: list[ToolSpec] = [
     ToolSpec(
         "get_state",
-        "Get the current game state visible to you (fog-of-war filtered).",
+        (
+            "Get the current game state. Under fog-of-war modes "
+            "(classic / line_of_sight), enemy units outside your sight "
+            "are hidden and terrain of un-seen tiles shows as 'unknown'. "
+            "Dead units still appear with alive=false (they're history, "
+            "not targets). Safe to call any time — always your turn or not."
+        ),
         {"type": "object", "properties": {}, "required": []},
     ),
     ToolSpec(
         "get_unit",
-        "Get a single unit's details by id.",
+        (
+            "Get a single LIVE unit's full details by id (hp, pos, status, "
+            "stats). Returns error for dead units — check the get_state "
+            "`units[*].alive` flag first if unsure."
+        ),
         {
             "type": "object",
             "properties": {"unit_id": {"type": "string"}},
@@ -77,7 +87,11 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "get_legal_actions",
-        "Get the legal moves/attacks/heals/wait for one of your units.",
+        (
+            "Enumerate legal moves / attacks / heals / wait for one of "
+            "YOUR units on YOUR turn. Server rejects with 'not your turn' "
+            "if called while the opponent is active."
+        ),
         {
             "type": "object",
             "properties": {"unit_id": {"type": "string"}},
@@ -86,7 +100,14 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "simulate_attack",
-        "Predict attack outcome without mutating state.",
+        (
+            "Deterministic attack preview without mutating state. "
+            "Returns damage_per_hit, attacker_hits (doubling), "
+            "counter info, and whether either dies. Pass `from_tile` "
+            "to preview an attack AS IF the attacker had already moved "
+            "to that tile — use this to pick between several attack "
+            "positions before committing `move`. Safe to call any time."
+        ),
         {
             "type": "object",
             "properties": {
@@ -103,12 +124,16 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "get_threat_map",
-        "For each tile, which visible enemy units can attack you there.",
+        (
+            "For each tile, which visible enemy units can attack you "
+            "there. Only includes enemies you can currently see under "
+            "fog-of-war. Use before moving a fragile unit."
+        ),
         {"type": "object", "properties": {}, "required": []},
     ),
     ToolSpec(
         "get_history",
-        "Recent action history.",
+        "Recent action history (move/attack/heal/wait/end_turn events).",
         {
             "type": "object",
             "properties": {"last_n": {"type": "integer", "default": 10}},
@@ -117,7 +142,11 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "get_coach_messages",
-        "Drain unread coach messages for your team.",
+        (
+            "Drain unread coach messages for your team. Call once at the "
+            "start of each turn — the human coach may have left strategic "
+            "advice that supersedes your playbook."
+        ),
         {
             "type": "object",
             "properties": {"since_turn": {"type": "integer", "default": 0}},
@@ -126,7 +155,14 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "move",
-        "Move one of your ready units to a destination tile.",
+        (
+            "Move one of your READY units to a destination tile. "
+            "Destination must be in the unit's reachable set (BFS over "
+            "the board, each tile costs `terrain.move_cost` from the "
+            "unit's `move` budget; impassable tiles blocked entirely). "
+            "After this call the unit's status flips to MOVED — you must "
+            "then issue attack/heal/wait for it before `end_turn`."
+        ),
         {
             "type": "object",
             "properties": {
@@ -142,7 +178,14 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "attack",
-        "Attack an enemy unit from your current position.",
+        (
+            "Attack an enemy unit from the attacker's current position. "
+            "Attacker must be READY or MOVED (not DONE). Target must be "
+            "alive, enemy-owned, and within attack range "
+            "(Manhattan distance in [rng_min, rng_max]). Defender counters "
+            "if it survives and the attacker is in ITS range. Sets "
+            "attacker status to DONE."
+        ),
         {
             "type": "object",
             "properties": {
@@ -154,7 +197,13 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "heal",
-        "Heal an adjacent ally (Mage only).",
+        (
+            "Heal an adjacent friendly unit. Healer must have "
+            "`can_heal: true` in its class spec (not limited to mages — "
+            "any class-declared healer works). Target must be owned by "
+            "you, alive, at Manhattan distance 1, and not the healer "
+            "itself. Sets healer status to DONE."
+        ),
         {
             "type": "object",
             "properties": {
@@ -166,7 +215,11 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "wait",
-        "End this unit's turn without attacking or healing.",
+        (
+            "End this unit's turn without attacking or healing. Sets "
+            "status to DONE. Use this to clear a MOVED unit that has "
+            "nothing useful to do before calling end_turn."
+        ),
         {
             "type": "object",
             "properties": {"unit_id": {"type": "string"}},
@@ -175,7 +228,12 @@ GAME_TOOLS: list[ToolSpec] = [
     ),
     ToolSpec(
         "end_turn",
-        "Pass control to the opponent. Must be called to end your turn.",
+        (
+            "Pass control to the opponent. REJECTED if any of your "
+            "units has status MOVED (moved but not yet acted) — send "
+            "attack/heal/wait on each such unit first. Must be called "
+            "to advance the game."
+        ),
         {"type": "object", "properties": {}, "required": []},
     ),
     ToolSpec(
