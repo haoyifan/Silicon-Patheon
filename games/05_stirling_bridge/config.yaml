@@ -1,0 +1,266 @@
+schema_version: 1
+name: Stirling Bridge
+description: |
+  September 11, 1297. The English army under the Earl of Surrey
+  approaches the River Forth at Stirling, the lowest crossing
+  point between the Highlands and the Lowlands. The only bridge
+  is a wooden one, two horses wide. William Wallace and Andrew
+  Moray hide their Scottish foot on Abbey Craig and let the
+  English vanguard cross. When the column is half-over, the Scots
+  charge down. The bridge becomes a bottleneck through which the
+  English can neither retreat nor reinforce. They are destroyed
+  against their own river.
+
+board:
+  width: 12
+  height: 10
+  terrain:
+    # The Forth — impassable river dividing the map. Only one tile
+    # at (6, 5) is the bridge.
+    - {x: 0, y: 5, type: river}
+    - {x: 1, y: 5, type: river}
+    - {x: 2, y: 5, type: river}
+    - {x: 3, y: 5, type: river}
+    - {x: 4, y: 5, type: river}
+    - {x: 5, y: 5, type: river}
+    - {x: 6, y: 5, type: bridge}
+    - {x: 7, y: 5, type: river}
+    - {x: 8, y: 5, type: river}
+    - {x: 9, y: 5, type: river}
+    - {x: 10, y: 5, type: river}
+    - {x: 11, y: 5, type: river}
+    # Abbey Craig — the high ground where Wallace hid his men.
+    - {x: 2, y: 2, type: high_ground}
+    - {x: 3, y: 2, type: high_ground}
+    - {x: 4, y: 2, type: high_ground}
+    - {x: 2, y: 3, type: high_ground}
+    - {x: 3, y: 3, type: high_ground}
+    # Marsh on the south bank — slows the English deployment.
+    - {x: 5, y: 7, type: marsh}
+    - {x: 6, y: 7, type: marsh}
+    - {x: 7, y: 7, type: marsh}
+    - {x: 6, y: 8, type: marsh}
+  forts: []
+
+terrain_types:
+  river:
+    move_cost: 99
+    passable: false
+    glyph: "~"
+    color: blue
+  bridge:
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "="
+    color: yellow
+  high_ground:
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "^"
+    color: green
+  marsh:
+    move_cost: 3
+    defense_bonus: 0
+    glyph: ","
+    color: bright_black
+
+unit_classes:
+  wallace:
+    display_name: William Wallace
+    description: |
+      Scottish knight and outlaw. Twenty-seven years old. Brings
+      the Scots to a war they shouldn't be able to win. Lose him
+      and the line dissolves.
+    hp_max: 38
+    atk: 13
+    defense: 7
+    res: 4
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [vip, hero, scot]
+    sight: 4
+    glyph: W
+    color: bright_cyan
+
+  andrew_moray:
+    display_name: Andrew Moray
+    description: |
+      Wallace's co-commander, the actual military mind of the
+      pair. Moray is mortally wounded at Stirling Bridge in
+      historical accounts; the engine doesn't enforce that.
+    hp_max: 28
+    atk: 9
+    defense: 6
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [hero, scot]
+    sight: 3
+    glyph: M
+    color: cyan
+
+  scots_spearman:
+    display_name: Scots Spearman
+    description: |
+      Common levy with a 12-foot pike — the schiltron's backbone.
+      Slow, but sets walls of points. Reach 1–2 lets him jab past
+      the front rank.
+    hp_max: 18
+    atk: 7
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 2
+    move: 3
+    tags: [spearman, scot]
+    sight: 3
+    glyph: S
+    color: cyan
+
+  highland_swordsman:
+    display_name: Highland Swordsman
+    description: |
+      Claymore-wielding clansman from the north. Higher attack and
+      mobility than the lowland spearmen; weaker defense.
+    hp_max: 22
+    atk: 9
+    defense: 4
+    res: 2
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [scot, highlander]
+    sight: 3
+    glyph: H
+    color: cyan
+
+  english_knight:
+    display_name: English Knight
+    description: |
+      Heavy lance and barding. Devastating in the open — utterly
+      stuck on a one-tile bridge. No room to charge. The Scots
+      pikes find every gap in the plate.
+    hp_max: 30
+    atk: 10
+    defense: 7
+    res: 3
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [knight, english]
+    sight: 3
+    glyph: K
+    color: red
+
+  english_longbowman:
+    display_name: English Longbowman
+    description: |
+      Welsh and English yeomen with the great war bow. Devastating
+      from range, soft in melee. The Scots will close on them.
+    hp_max: 16
+    atk: 8
+    defense: 2
+    res: 2
+    spd: 5
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [archer, english]
+    sight: 4
+    glyph: A
+    color: red
+
+  english_man_at_arms:
+    display_name: English Man-at-Arms
+    description: |
+      Mid-tier English foot — chainmail, sword and shield. The
+      bulk of Surrey's army.
+    hp_max: 22
+    atk: 8
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, english]
+    sight: 3
+    glyph: E
+    color: red
+
+armies:
+  blue:
+    # Wallace and Moray on Abbey Craig with the foot. Spearmen near
+    # the bridge mouth, swordsmen on the flanks.
+    - {class: wallace, pos: {x: 3, y: 2}}
+    - {class: andrew_moray, pos: {x: 4, y: 2}}
+    - {class: scots_spearman, pos: {x: 5, y: 4}}
+    - {class: scots_spearman, pos: {x: 6, y: 4}}
+    - {class: scots_spearman, pos: {x: 7, y: 4}}
+    - {class: scots_spearman, pos: {x: 4, y: 4}}
+    - {class: highland_swordsman, pos: {x: 2, y: 4}}
+    - {class: highland_swordsman, pos: {x: 3, y: 4}}
+    - {class: highland_swordsman, pos: {x: 8, y: 4}}
+    - {class: highland_swordsman, pos: {x: 9, y: 4}}
+  red:
+    # English column waiting to cross from the south bank. A
+    # vanguard already on the bridge / north bank in the historical
+    # ambush moment — the player has to push the bridge.
+    - {class: english_knight, pos: {x: 6, y: 6}}
+    - {class: english_man_at_arms, pos: {x: 5, y: 6}}
+    - {class: english_man_at_arms, pos: {x: 7, y: 6}}
+    - {class: english_knight, pos: {x: 4, y: 8}}
+    - {class: english_knight, pos: {x: 6, y: 9}}
+    - {class: english_knight, pos: {x: 8, y: 8}}
+    - {class: english_knight, pos: {x: 5, y: 9}}
+    - {class: english_knight, pos: {x: 7, y: 9}}
+    - {class: english_man_at_arms, pos: {x: 3, y: 8}}
+    - {class: english_man_at_arms, pos: {x: 9, y: 8}}
+    - {class: english_man_at_arms, pos: {x: 4, y: 9}}
+    - {class: english_man_at_arms, pos: {x: 8, y: 9}}
+    - {class: english_man_at_arms, pos: {x: 2, y: 9}}
+    - {class: english_man_at_arms, pos: {x: 10, y: 9}}
+    - {class: english_longbowman, pos: {x: 1, y: 9}}
+    - {class: english_longbowman, pos: {x: 11, y: 9}}
+
+rules:
+  max_turns: 25
+  fog_of_war: false
+  first_player: red
+
+win_conditions:
+  # Scots lose if Wallace dies.
+  - {type: protect_unit, unit_id: u_b_wallace_1, owning_team: blue}
+  # Scots win by holding the bridge approach (4, 4) for 6 end_turns
+  # — the historical "trap is sprung" outcome.
+  - {type: hold_tile, team: blue, pos: {x: 6, y: 4}, consecutive_turns: 6}
+  # Or by elimination either way.
+  - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
+
+narrative:
+  title: Stirling Bridge
+  description: |
+    Wallace's ambush at the Forth — a wooden bridge as a death
+    trap.
+  intro: |
+    Dawn over the Forth. Wallace and Moray crouch on Abbey Craig
+    with five thousand foot. Below them, the English vanguard
+    starts onto the bridge.
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: "The English column thickens. Two thousand are now on the bridge or the north bank."
+    - trigger: on_turn_start
+      turn: 6
+      text: "Wallace gives the signal. The schiltrons charge down from the Craig."
+    - trigger: on_unit_killed
+      unit_id: u_b_wallace_1
+      text: "Wallace falls. The Scots lose their heart."
