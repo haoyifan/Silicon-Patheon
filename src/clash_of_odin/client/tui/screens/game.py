@@ -33,6 +33,7 @@ from rich.align import Align
 from rich.console import Group, RenderableType
 from rich.layout import Layout
 from rich.panel import Panel as RichPanel
+from rich.table import Table
 from rich.text import Text
 
 from clash_of_odin.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
@@ -50,6 +51,19 @@ log = logging.getLogger("clash.tui.game")
 
 
 # ---- panel: Player (turn / team / agent status) ----
+
+
+def _status_style(status: str) -> str:
+    """Color the status cell by how "done" the unit is this turn:
+    ready (still to act) = green, moved (partial) = yellow, done
+    (spent) = dim."""
+    if status == "ready":
+        return "green"
+    if status == "moved":
+        return "yellow"
+    if status == "done":
+        return "dim"
+    return "white"
 
 
 class PlayerPanel(Panel):
@@ -121,11 +135,15 @@ class PlayerPanel(Panel):
                     style="yellow" if busy else "dim",
                 )
             )
-        # Unit roster per team. Dead units are dim+strike so the
-        # player can see who's been lost without them silently
-        # disappearing from the board (the map itself treats corpses
-        # as empty tiles, so the roster is the only visible record).
+        # Unit roster per team, rendered as a 3-column table:
+        # name / HP / status. Dead units stay in the list so the map
+        # doesn't silently swallow them — they render dim +
+        # strikethrough with the "dead" status in place of the live
+        # value. The same status vocabulary the engine uses (ready,
+        # moved, done) shows through so the player can see at a
+        # glance which units have already acted this turn.
         units = gs.get("units") or []
+        scen_desc = self.screen.app.state.scenario_description
         for team in ("blue", "red"):
             team_units = [u for u in units if u.get("owner") == team]
             if not team_units:
@@ -133,24 +151,38 @@ class PlayerPanel(Panel):
             rows.append(Text(""))
             header_style = "bold cyan" if team == "blue" else "bold red"
             rows.append(Text(f"{team}:", style=header_style))
+            table = Table.grid(padding=(0, 1), expand=False)
+            table.add_column(style="dim")  # name
+            table.add_column(style="dim", justify="right")  # HP
+            table.add_column(style="dim")  # status
+            table.add_row(
+                Text("Unit", style="bold dim"),
+                Text("HP", style="bold dim"),
+                Text("Status", style="bold dim"),
+            )
             for u in team_units:
                 alive = u.get("alive", u.get("hp", 0) > 0)
                 hp = u.get("hp", "?")
                 hp_max = u.get("hp_max", "?")
-                name = _unit_display_name(
-                    u, self.screen.app.state.scenario_description
-                )
+                name = _unit_display_name(u, scen_desc)
                 if alive:
-                    line = Text(
-                        f"  {name[:14]:<14} {hp}/{hp_max}",
-                        style="white",
+                    status = str(u.get("status", "ready"))
+                    style = _status_style(status)
+                    table.add_row(
+                        Text(name[:14], style="white"),
+                        Text(f"{hp}/{hp_max}", style="white"),
+                        Text(status, style=style),
                     )
                 else:
-                    line = Text(
-                        f"  {name[:14]:<14} dead",
-                        style="dim strike",
+                    # Dim-strike the whole row so killed units read as
+                    # gone-but-not-forgotten.
+                    dead_style = "dim strike"
+                    table.add_row(
+                        Text(name[:14], style=dead_style),
+                        Text(f"0/{hp_max}", style=dead_style),
+                        Text("dead", style=dead_style),
                     )
-                rows.append(line)
+            rows.append(table)
         # Apply scroll by dropping leading rows. Clamp so scrolling
         # past the bottom snaps back to the last full row.
         if self.scroll > 0 and rows:

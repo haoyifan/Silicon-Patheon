@@ -36,6 +36,37 @@ def _stub_state(app, *, units=None, board_w=6, board_h=6, my_team="blue"):
     }
 
 
+def test_player_panel_roster_shows_header_status_and_dead_state():
+    from rich.console import Console
+    from clash_of_odin.client.tui.screens.game import PlayerPanel
+
+    app = _FakeApp()
+    _stub_state(
+        app,
+        units=[
+            {"id": "u_b_1", "owner": "blue", "class": "knight",
+             "hp": 20, "hp_max": 30, "alive": True, "status": "moved",
+             "pos": {"x": 0, "y": 0}},
+            {"id": "u_r_1", "owner": "red", "class": "archer",
+             "hp": 0, "hp_max": 18, "alive": False,
+             "pos": {"x": 3, "y": 3}},
+        ],
+    )
+    screen = GameScreen(app)
+    screen.state = app.state.last_game_state
+    console = Console(record=True, width=60)
+    console.print(PlayerPanel(screen).render(focused=False))
+    out = console.export_text()
+    # Header columns.
+    assert "Unit" in out
+    assert "HP" in out
+    assert "Status" in out
+    # Live unit's status text.
+    assert "moved" in out
+    # Dead unit's "dead" marker.
+    assert "dead" in out
+
+
 def test_game_on_enter_clears_thoughts_buffer():
     """Regression: the reasoning panel kept showing the previous
     match's thoughts because SharedState.thoughts survives screen
