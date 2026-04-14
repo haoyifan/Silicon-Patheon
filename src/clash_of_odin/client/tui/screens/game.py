@@ -491,6 +491,12 @@ class GameScreen(Screen):
 
     async def on_enter(self, app: TUIApp) -> None:
         log.info("GameScreen.on_enter: starting")
+        # Reasoning is per-match: clear the thought buffer so the new
+        # game's panel doesn't start with old text. The buffer lives
+        # on SharedState (which survives screen transitions — it's
+        # how PostMatchScreen can show the final transcript) so we
+        # have to reset it ourselves each time a new match starts.
+        app.state.thoughts.clear()
         await self._refresh_state()
         if app.state.agent is None:
             await self._maybe_build_agent(app)

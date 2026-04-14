@@ -36,6 +36,21 @@ def _stub_state(app, *, units=None, board_w=6, board_h=6, my_team="blue"):
     }
 
 
+def test_game_on_enter_clears_thoughts_buffer():
+    """Regression: the reasoning panel kept showing the previous
+    match's thoughts because SharedState.thoughts survives screen
+    transitions (PostMatchScreen needs it for the transcript). The
+    new game's on_enter should wipe it so reasoning starts empty."""
+    app = _FakeApp()
+    app.state.thoughts.extend(
+        [(f"00:00:0{i}", "blue", f"prior match thought {i}") for i in range(3)]
+    )
+    _stub_state(app)
+    screen = GameScreen(app)
+    asyncio.run(screen.on_enter(app))
+    assert len(app.state.thoughts) == 0
+
+
 def test_player_panel_scrolls_when_focused():
     from clash_of_odin.client.tui.screens.game import PlayerPanel
 
