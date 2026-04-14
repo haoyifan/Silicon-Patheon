@@ -306,22 +306,29 @@ def _read_key_blocking() -> str:
             c1 = _peek(0.05)
             if not c1:
                 return "esc"
-            c2 = _peek(0.02)
-            seq = c1 + c2
-            # Two cursor-key encodings exist and either may show up
-            # depending on whether the terminal is in "normal" or
-            # "application" keypad mode (DECCKM). Rich's prior output
-            # can flip the terminal into application mode, after which
-            # arrows arrive as ESC O A instead of ESC [ A — which used
-            # to look broken because j/k worked but ↑/↓ did not.
-            if seq in ("[A", "OA"):
-                return "up"
-            if seq in ("[B", "OB"):
-                return "down"
-            if seq in ("[C", "OC"):
-                return "right"
-            if seq in ("[D", "OD"):
-                return "left"
+            # CSI ('[') or SS3 ('O') introducer. Both can carry
+            # parameters between the introducer and a final letter
+            # (e.g. ESC [ 1 ; 5 A for Ctrl+Up). Drain until the final
+            # byte (a letter or '~') so leftover parameter bytes don't
+            # bleed into the next keypress and look like stray input.
+            if c1 in ("[", "O"):
+                final = ""
+                # Cap drain to keep a malformed terminal from spinning.
+                for _ in range(16):
+                    nxt = _peek(0.02)
+                    if not nxt:
+                        break
+                    if nxt.isalpha() or nxt == "~":
+                        final = nxt
+                        break
+                if final == "A":
+                    return "up"
+                if final == "B":
+                    return "down"
+                if final == "C":
+                    return "right"
+                if final == "D":
+                    return "left"
             return "esc"
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
