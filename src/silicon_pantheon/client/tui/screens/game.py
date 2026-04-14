@@ -210,9 +210,12 @@ class PlayerPanel(Panel):
                     )
                     rows.append(row)
                 else:
-                    # Portable "dead" marker — see earlier comment; many
-                    # terminals render strikethrough as nothing.
-                    marker = f"✗ ~{name[:12]}~"
+                    # Dead unit: the dim color + ✗ prefix + "dead"
+                    # status column together convey the state clearly.
+                    # Earlier we wrapped the name in tildes as a
+                    # portable strikethrough, but it just looked like
+                    # noise once the row was already dim.
+                    marker = f"✗ {name[:12]}"
                     hp_str = f"0/{hp_max}"
                     row = Text.assemble(
                         ("  ", None),
