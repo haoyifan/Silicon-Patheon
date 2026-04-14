@@ -1,0 +1,277 @@
+schema_version: 1
+name: Kadesh
+description: |
+  May, 1274 BC. Pharaoh Ramses II marches north into Hittite
+  territory to retake the city of Kadesh on the Orontes. Bedouins,
+  paid by the Hittite king Muwatalli II, feed Ramses false
+  intelligence; he advances with only one of his four divisions.
+  Hittite chariots ambush the strung-out Egyptian column from the
+  flank. Ramses, separated from most of his army, rallies his
+  household guard and counter-charges in person. Both kings later
+  claim victory; the surviving treaty is the earliest recorded
+  peace agreement in history. The chariot is the showpiece of the
+  Bronze Age, and this is its biggest stage.
+
+board:
+  width: 14
+  height: 10
+  terrain:
+    # The Orontes — impassable along the north edge with a single
+    # ford at (3, 1).
+    - {x: 0, y: 0, type: river}
+    - {x: 1, y: 0, type: river}
+    - {x: 2, y: 0, type: river}
+    - {x: 3, y: 0, type: river}
+    - {x: 4, y: 0, type: river}
+    - {x: 5, y: 0, type: river}
+    - {x: 6, y: 0, type: river}
+    - {x: 7, y: 0, type: river}
+    - {x: 8, y: 0, type: river}
+    - {x: 9, y: 0, type: river}
+    - {x: 10, y: 0, type: river}
+    - {x: 11, y: 0, type: river}
+    - {x: 12, y: 0, type: river}
+    - {x: 13, y: 0, type: river}
+    - {x: 3, y: 1, type: ford}
+    # Kadesh fortress — a fort cluster on the northeast.
+    - {x: 12, y: 8, type: kadesh_wall}
+    - {x: 13, y: 8, type: kadesh_wall}
+    - {x: 12, y: 9, type: kadesh_wall}
+  forts:
+    - {x: 13, y: 9, owner: red}
+
+terrain_types:
+  river:
+    move_cost: 99
+    passable: false
+    glyph: "~"
+    color: blue
+  ford:
+    move_cost: 2
+    defense_bonus: 0
+    glyph: "="
+    color: yellow
+  kadesh_wall:
+    move_cost: 99
+    passable: false
+    defense_bonus: 5
+    glyph: "#"
+    color: yellow
+
+unit_classes:
+  ramses:
+    display_name: Ramses II
+    description: |
+      Pharaoh of Egypt, third of the 19th dynasty. Twenty-five years
+      old at Kadesh and personally rallies his troops when the line
+      breaks. Will live for 66 more years and become 'Ramses the
+      Great'.
+    hp_max: 36
+    atk: 11
+    defense: 6
+    res: 4
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [vip, pharaoh]
+    sight: 5
+    glyph: R
+    color: bright_cyan
+
+  egyptian_chariot:
+    display_name: Egyptian Chariot
+    description: |
+      Two-man light chariot — driver and a single archer with a
+      composite bow. Faster and more maneuverable than the Hittite
+      design, but lighter armor. Cannot enter forest or mountain.
+    hp_max: 24
+    atk: 8
+    defense: 4
+    res: 3
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 7
+    can_enter_forest: false
+    can_enter_mountain: false
+    tags: [chariot, light]
+    sight: 4
+    glyph: H
+    color: cyan
+
+  egyptian_infantry:
+    display_name: Egyptian Infantry
+    description: |
+      Sherden mercenaries and Egyptian conscripts. Bronze axes,
+      hide shields. Solid line troops.
+    hp_max: 18
+    atk: 7
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry]
+    sight: 3
+    glyph: E
+    color: cyan
+
+  egyptian_archer:
+    display_name: Egyptian Archer
+    description: |
+      Composite-bow archer behind the chariot screen. Outranges
+      Hittite spearmen but folds in melee.
+    hp_max: 14
+    atk: 8
+    defense: 2
+    res: 3
+    spd: 5
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [archer]
+    sight: 4
+    glyph: A
+    color: cyan
+
+  muwatalli:
+    display_name: Muwatalli II
+    description: |
+      King of Hatti, brother of the future Hattusili III. Holds his
+      reserves on the east bank and lets his vassal chariots spring
+      the trap. Patient, calculating.
+    hp_max: 32
+    atk: 10
+    defense: 6
+    res: 4
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [vip, king]
+    sight: 5
+    glyph: M
+    color: bright_red
+
+  hittite_chariot:
+    display_name: Hittite Chariot
+    description: |
+      Three-man heavy chariot — driver, shield-bearer, spearman.
+      Slower and more vulnerable to potholes than the Egyptian
+      version, but devastating in a melee charge. Can't enter
+      forest.
+    hp_max: 28
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    can_enter_forest: false
+    can_enter_mountain: false
+    tags: [chariot, heavy]
+    sight: 4
+    glyph: K
+    color: red
+
+  hittite_spearman:
+    display_name: Hittite Spearman
+    description: |
+      Anatolian foot. Bronze spears, leather cuirasses. Holds the
+      ground the chariots take.
+    hp_max: 20
+    atk: 8
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 2
+    move: 3
+    tags: [spearman]
+    sight: 3
+    glyph: S
+    color: red
+
+armies:
+  blue:
+    # Egyptian column — Ramses leading the chariots, infantry trail,
+    # archers behind. Strung out along the south.
+    - {class: ramses, pos: {x: 4, y: 6}}
+    - {class: egyptian_chariot, pos: {x: 3, y: 6}}
+    - {class: egyptian_chariot, pos: {x: 5, y: 6}}
+    - {class: egyptian_chariot, pos: {x: 4, y: 7}}
+    - {class: egyptian_chariot, pos: {x: 5, y: 7}}
+    - {class: egyptian_chariot, pos: {x: 3, y: 7}}
+    - {class: egyptian_chariot, pos: {x: 6, y: 7}}
+    - {class: egyptian_infantry, pos: {x: 2, y: 8}}
+    - {class: egyptian_infantry, pos: {x: 3, y: 8}}
+    - {class: egyptian_infantry, pos: {x: 4, y: 8}}
+    - {class: egyptian_infantry, pos: {x: 5, y: 8}}
+    - {class: egyptian_infantry, pos: {x: 6, y: 8}}
+    - {class: egyptian_infantry, pos: {x: 7, y: 8}}
+    - {class: egyptian_archer, pos: {x: 3, y: 9}}
+    - {class: egyptian_archer, pos: {x: 4, y: 9}}
+    - {class: egyptian_archer, pos: {x: 5, y: 9}}
+    - {class: egyptian_archer, pos: {x: 6, y: 9}}
+  red:
+    # Hittite chariots burst from the east — flanking ambush.
+    # Spearmen at Kadesh; Muwatalli holds back near the city.
+    - {class: muwatalli, pos: {x: 11, y: 8}}
+    - {class: hittite_chariot, pos: {x: 9, y: 5}}
+    - {class: hittite_chariot, pos: {x: 10, y: 5}}
+    - {class: hittite_chariot, pos: {x: 11, y: 5}}
+    - {class: hittite_chariot, pos: {x: 12, y: 5}}
+    - {class: hittite_chariot, pos: {x: 9, y: 6}}
+    - {class: hittite_chariot, pos: {x: 10, y: 6}}
+    - {class: hittite_chariot, pos: {x: 11, y: 6}}
+    - {class: hittite_chariot, pos: {x: 12, y: 6}}
+    - {class: hittite_spearman, pos: {x: 10, y: 8}}
+    - {class: hittite_spearman, pos: {x: 11, y: 9}}
+    - {class: hittite_spearman, pos: {x: 9, y: 8}}
+    - {class: hittite_spearman, pos: {x: 9, y: 9}}
+    - {class: hittite_spearman, pos: {x: 10, y: 9}}
+    - {class: hittite_spearman, pos: {x: 8, y: 8}}
+    - {class: hittite_spearman, pos: {x: 8, y: 9}}
+
+rules:
+  max_turns: 30
+  fog_of_war: false
+  first_player: red
+
+win_conditions:
+  # Mutual VIP rules.
+  - {type: protect_unit, unit_id: u_b_ramses_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_r_muwatalli_1, owning_team: red}
+  # Either side can win by seizing the enemy stronghold (only red
+  # has a fort; blue's "stronghold" is reaching the ford bridge
+  # back to safety with Ramses).
+  - {type: seize_enemy_fort}
+  - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
+
+narrative:
+  title: Kadesh
+  description: |
+    The earliest battle in recorded history with surviving accounts
+    from both sides. Chariots in the open at the dawn of the
+    Bronze Age.
+  intro: |
+    Noon on the plain south of Kadesh. The Orontes glints to the
+    north. Ramses, with only his Amun division, rides ahead of
+    his army. Hittite chariots wait in the dust east of the river.
+  events:
+    - trigger: on_turn_start
+      turn: 2
+      text: "Hittite chariots burst from cover. The Egyptian flank breaks."
+    - trigger: on_turn_start
+      turn: 6
+      text: "Ramses rallies his guard. 'Set is at my side!'"
+    - trigger: on_unit_killed
+      unit_id: u_b_ramses_1
+      text: "Pharaoh has fallen. The Egyptian line collapses."
+    - trigger: on_unit_killed
+      unit_id: u_r_muwatalli_1
+      text: "Muwatalli is down. The Hittite line scatters."
