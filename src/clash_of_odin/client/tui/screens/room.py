@@ -1,26 +1,19 @@
-"""Room screen — button-driven UI with dropdown modals.
+"""Room screen — five-panel grid: Map | Player / Actions | Description | Chat.
+
+Tab cycles focus across the focusable panels. Arrows / j-k / Enter
+all dispatch to the focused panel. The map panel carries a tile
+cursor; Enter on a unit opens a unit-card modal.
 
 Layout
 ------
 
-  header ......................................  scenario / fog / teams
-  seats table .................................  who's occupying each slot
-  status banner ...............................  countdown / waiting / starting
-  scenario preview panel ......................  mini ascii board
-  actions panel ...............................  highlighted list of buttons
-
-Navigation
-----------
-
-The action panel shows one button per row with a ➤ marker on the
-currently focused one. Tab / ↓ / j moves down; Shift-Tab / ↑ / k moves
-up; Enter activates the focused button; Esc does nothing when no
-modal is open.
-
-Buttons that need a choice (Scenario, Fog, Teams, Host Team) open a
-full-screen dropdown modal when activated. The modal is navigated the
-same way — arrows or j/k, Enter confirms, Esc cancels. Host-only
-buttons are hidden for non-host players (slot B).
+    ┌──────────────────────────┬──────────┐
+    │                          │ Player   │
+    │           Map            ├──────────┤
+    │                          │ Actions  │
+    ├──────────────────────────┼──────────┤
+    │       Description        │   Chat   │
+    └──────────────────────────┴──────────┘
 """
 
 from __future__ import annotations
@@ -31,23 +24,26 @@ from typing import Any, Awaitable, Callable
 
 from rich.align import Align
 from rich.console import Group, RenderableType
-from rich.panel import Panel
+from rich.layout import Layout
+from rich.panel import Panel as RichPanel
 from rich.table import Table
 from rich.text import Text
 
 from clash_of_odin.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
+from clash_of_odin.client.tui.panels import Panel, border_style
 
 log = logging.getLogger("clash.tui.room")
 
 
-def _unit_cell_style(u: dict[str, Any]) -> tuple[str, str]:
-    """Pick the (glyph, Rich style) for a unit cell in any board view.
+# ---- shared helpers (used by both room and game renderers) ----
 
-    Honors scenario-provided `glyph` / `color` from the unit_classes
-    block. Falls back to the first letter of the class name (uppercase
-    for blue, lowercase for red) so legacy scenarios and any class
-    that omits glyph/color still render something visible.
-    """
+
+def _unit_cell_style(u: dict[str, Any]) -> tuple[str, str]:
+    """Pick the (glyph, Rich style) for a unit cell on any map view.
+
+    Honors scenario-provided glyph / color from the unit_classes block.
+    Falls back to the first letter of the class name (uppercase for
+    blue, lowercase for red) so legacy scenarios still render."""
     cls = str(u.get("class", "") or "")
     owner = u.get("owner")
     glyph = u.get("glyph")
@@ -60,14 +56,7 @@ def _unit_cell_style(u: dict[str, Any]) -> tuple[str, str]:
     return glyph, f"bold {color}"
 
 
-@dataclass
-class Button:
-    label: str
-    action: str  # identifier dispatched to _run_action
-    enabled: bool = True
-    # For value-display buttons (Scenario / Fog / Teams / Host Team),
-    # `value` is displayed to the right of the label.
-    value: str | None = None
+# ---- modals (shared with the game screen via re-export) ----
 
 
 @dataclass
@@ -86,17 +75,15 @@ class Dropdown:
             style = "bold cyan" if i == self.selected_idx else "white"
             lines.append(Text(f"{marker}{opt}", style=style))
         footer = Text(
-            "\n↑/k up   ↓/j down   Enter select   Esc cancel",
-            style="dim",
+            "\n↑/k up   ↓/j down   Enter select   Esc cancel", style="dim"
         )
         body = Group(*(lines + [footer]))
         return Align.center(
-            Panel(body, title=self.title, border_style="cyan", padding=(1, 3)),
+            RichPanel(body, title=self.title, border_style="cyan", padding=(1, 3)),
             vertical="middle",
         )
 
     async def handle_key(self, key: str) -> bool:
-        """Return True if the modal should close after this keypress."""
         if key == "esc":
             return True
         if key in ("up", "k"):
@@ -112,142 +99,270 @@ class Dropdown:
         return False
 
 
+@dataclass
+class UnitCard:
+    """Read-only modal showing a unit's full description / stats /
+    tags / abilities / inventory. Esc to dismiss."""
+
+    unit: dict[str, Any]
+    class_spec: dict[str, Any] | None  # from describe_scenario.unit_classes
+
+    def render(self) -> RenderableType:
+        u = self.unit
+        spec = self.class_spec or {}
+        owner = u.get("owner", "?")
+        team_color = "cyan" if owner == "blue" else "red"
+        title = f"{u.get('id', '?')} — {u.get('class', '?')} ({owner})"
+
+        rows: list[RenderableType] = []
+        desc = spec.get("description") or u.get("description") or ""
+        if desc:
+            rows.append(Text(desc, style="italic"))
+            rows.append(Text(""))
+
+        stats = Table.grid(padding=(0, 2))
+        stats.add_column(style="dim")
+        stats.add_column()
+        stats.add_row("HP", f"{u.get('hp', '?')} / {u.get('hp_max', '?')}")
+        stats.add_row("ATK", str(u.get("atk", "?")))
+        stats.add_row("DEF", str(u.get("def", "?")))
+        stats.add_row("RES", str(u.get("res", "?")))
+        stats.add_row("SPD", str(u.get("spd", "?")))
+        stats.add_row("MOVE", str(u.get("move", "?")))
+        rng = u.get("rng") or [u.get("rng_min", "?"), u.get("rng_max", "?")]
+        stats.add_row("RANGE", f"{rng[0]}–{rng[1]}")
+        if u.get("is_magic"):
+            stats.add_row("type", "magic")
+        if u.get("can_heal"):
+            stats.add_row("can_heal", "yes")
+        rows.append(stats)
+
+        tags = u.get("tags") or spec.get("tags") or []
+        if tags:
+            rows.append(Text(""))
+            rows.append(Text("tags: " + ", ".join(tags), style="dim"))
+
+        abilities = u.get("abilities") or spec.get("abilities") or []
+        if abilities:
+            rows.append(Text(""))
+            rows.append(Text("abilities: " + ", ".join(abilities)))
+
+        inv = u.get("default_inventory") or spec.get("default_inventory") or []
+        if inv:
+            rows.append(Text(""))
+            rows.append(Text("inventory: " + ", ".join(inv)))
+
+        rows.append(Text(""))
+        rows.append(Text("Esc to close", style="dim"))
+
+        return Align.center(
+            RichPanel(
+                Group(*rows),
+                title=title,
+                border_style=team_color,
+                padding=(1, 3),
+            ),
+            vertical="middle",
+        )
+
+    async def handle_key(self, key: str) -> bool:
+        return key == "esc" or key == "enter" or key == "q"
+
+
+# ---- panel: Player ----
+
+
+class PlayerPanel(Panel):
+    title = "Player"
+
+    def __init__(self, app: TUIApp) -> None:
+        self.app = app
+
+    def can_focus(self) -> bool:
+        return False
+
+    def render(self, focused: bool) -> RenderableType:
+        s = self.app.state
+        rs = s.last_room_state or {}
+        seats = rs.get("seats", {})
+        my_slot = s.slot or "?"
+        rows: list[RenderableType] = []
+        for slot_id in ("a", "b"):
+            seat = seats.get(slot_id, {})
+            player = seat.get("player") or {}
+            name = player.get("display_name") or "(empty)"
+            if slot_id == my_slot and name == "(empty)":
+                name = s.display_name or "(anonymous)"
+            tag = " (you)" if slot_id == my_slot else ""
+            ready = "✓" if seat.get("ready") else "…"
+            color = "cyan" if slot_id == my_slot else "red"
+            rows.append(
+                Text(f"{slot_id} [{ready}] {name}{tag}", style=f"bold {color}")
+            )
+        rows.append(Text(""))
+        rows.append(Text(f"model: {s.model or 'random'}", style="dim"))
+        return RichPanel(
+            Group(*rows),
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(1, 2),
+        )
+
+
+# ---- panel: Description ----
+
+
+class DescriptionPanel(Panel):
+    title = "Description"
+
+    def __init__(self, app: TUIApp) -> None:
+        self.app = app
+
+    def can_focus(self) -> bool:
+        return False
+
+    def render(self, focused: bool) -> RenderableType:
+        s = self.app.state
+        desc = s.scenario_description or {}
+        name = desc.get("name") or (s.last_room_state or {}).get("scenario", "?")
+        story = (desc.get("description") or "").strip()
+        narrative = desc.get("narrative") or {}
+        intro = (narrative.get("intro") or "").strip()
+        win_conds = desc.get("win_conditions") or []
+
+        rows: list[RenderableType] = []
+        rows.append(Text(name, style="bold yellow"))
+        if story:
+            rows.append(Text(""))
+            rows.append(Text(story))
+        if intro:
+            rows.append(Text(""))
+            rows.append(Text(intro, style="italic"))
+        if win_conds:
+            rows.append(Text(""))
+            rows.append(Text("How to win:", style="bold"))
+            for wc in win_conds:
+                rows.append(Text(f"  • {_describe_win_condition(wc)}", style="dim"))
+        if not (story or intro or win_conds):
+            rows.append(Text("(no scenario description loaded)", style="dim italic"))
+        return RichPanel(
+            Group(*rows),
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(1, 2),
+        )
+
+
+def _describe_win_condition(wc: dict[str, Any]) -> str:
+    t = wc.get("type", "")
+    if t == "seize_enemy_fort":
+        return "seize the enemy fort"
+    if t == "eliminate_all_enemy_units":
+        return "eliminate every enemy unit"
+    if t == "max_turns_draw":
+        n = wc.get("turns")
+        return f"draw at turn {n}" if n else "draw at the turn cap"
+    if t == "protect_unit":
+        return f"keep {wc.get('unit_id', '?')} alive ({wc.get('owning_team', '?')})"
+    if t == "reach_tile":
+        pos = wc.get("pos") or {}
+        team = wc.get("team", "?")
+        u = wc.get("unit_id")
+        who = u or f"any {team} unit"
+        return f"{who} reaches ({pos.get('x', '?')}, {pos.get('y', '?')})"
+    if t == "hold_tile":
+        pos = wc.get("pos") or {}
+        n = wc.get("consecutive_turns", "?")
+        return (
+            f"{wc.get('team', '?')} holds ({pos.get('x', '?')}, {pos.get('y', '?')})"
+            f" for {n} turns"
+        )
+    if t == "reach_goal_line":
+        return f"{wc.get('team', '?')} crosses {wc.get('axis', '?')}={wc.get('value', '?')}"
+    if t == "plugin":
+        return f"plugin rule: {wc.get('check_fn', '?')}"
+    return t or "(unknown rule)"
+
+
+# ---- panel: Chat (placeholder) ----
+
+
+class ChatPanel(Panel):
+    title = "Chat"
+
+    def can_focus(self) -> bool:
+        return False  # input not wired yet — see TODO.md "chat pipeline"
+
+    def render(self, focused: bool) -> RenderableType:
+        body = Text(
+            "(chat pipeline not wired yet — see TODO.md)\n\n"
+            "Players will be able to type here to chat with each other\n"
+            "and with the AI agents while a match is being set up or played.",
+            style="dim italic",
+        )
+        return RichPanel(
+            body,
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(1, 2),
+        )
+
+
+# ---- panel: Actions ----
+
+
+@dataclass
+class Button:
+    label: str
+    action: str
+    enabled: bool = True
+    value: str | None = None
+
+
 _FOG_OPTIONS = ("none", "classic", "line_of_sight")
 _TEAM_MODE_OPTIONS = ("fixed", "random")
 _HOST_TEAM_OPTIONS = ("blue", "red")
 
 
-class RoomScreen(Screen):
-    def __init__(self, app: TUIApp):
-        self.app = app
-        self._last_poll = 0.0
-        self._scenario_preview: dict[str, Any] | None = None
-        # Button navigation state.
-        self._focus = 0
-        self._modal: Dropdown | None = None
-        # Cache scenarios list; fetched once on entry.
-        self._scenarios: list[str] = []
+class ActionsPanel(Panel):
+    title = "Actions"
 
-    async def on_enter(self, app: TUIApp) -> None:
-        await self._load_preview()
-        await self._refresh_state()
-        await self._load_scenarios()
+    def __init__(self, screen: "RoomScreen") -> None:
+        self.screen = screen
+        self.focus = 0
 
-    # ---- render ----
-
-    def render(self) -> RenderableType:
-        # Modal overlays the whole screen when active.
-        if self._modal is not None:
-            return self._modal.render()
-        return self._render_main()
-
-    def _render_main(self) -> RenderableType:
-        rs = self.app.state.last_room_state or {}
-        room_id = rs.get("room_id") or self.app.state.room_id or "?"
-
-        header = Text(
-            f"Room {room_id[:10]} — {rs.get('scenario', '?')}   "
-            f"fog={rs.get('fog_of_war', '?')}   teams={rs.get('team_assignment', '?')}",
-            style="bold cyan",
+    def render(self, focused: bool) -> RenderableType:
+        buttons = self._buttons()
+        if not buttons:
+            body: RenderableType = Text("(no actions)", style="dim")
+        else:
+            self.focus = max(0, min(self.focus, len(buttons) - 1))
+            lines: list[Text] = []
+            for i, btn in enumerate(buttons):
+                is_focused = focused and i == self.focus
+                marker = "➤ " if is_focused else "  "
+                label = btn.label
+                if btn.value is not None:
+                    label = f"{btn.label}: {btn.value}"
+                if not btn.enabled:
+                    style = "dim strike" if is_focused else "dim"
+                elif is_focused:
+                    style = "bold cyan"
+                else:
+                    style = "white"
+                lines.append(Text(f"{marker}{label}", style=style))
+            body = Group(*lines)
+        return RichPanel(
+            body,
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(1, 2),
         )
 
-        seats = rs.get("seats", {})
-        seat_table = Table(expand=False, show_header=True, header_style="bold")
-        seat_table.add_column("Slot")
-        seat_table.add_column("Player")
-        seat_table.add_column("Ready")
-        for slot_id in ("a", "b"):
-            seat = seats.get(slot_id, {})
-            player = seat.get("player") or {}
-            seat_table.add_row(
-                slot_id,
-                player.get("display_name", "(empty)"),
-                "✓" if seat.get("ready") else "…",
-            )
-
-        banner = Text("")
-        countdown = rs.get("autostart_in_s")
-        status = rs.get("status", "?")
-        if countdown is not None:
-            banner = Text(
-                f"Match auto-starts in {countdown:.1f}s …", style="yellow bold"
-            )
-        elif status == "waiting_for_players":
-            banner = Text("waiting for opponent…", style="dim")
-        elif status == "waiting_ready":
-            banner = Text(
-                "both players present — select Toggle Ready and press Enter",
-                style="cyan",
-            )
-        elif status == "in_game":
-            banner = Text("starting match…", style="green bold")
-
-        preview = (
-            self._render_preview()
-            if self._scenario_preview
-            else Text("(loading preview…)", style="dim italic")
-        )
-
-        actions_panel = self._render_actions(rs)
-        error_line = Text("")
-        if self.app.state.error_message:
-            error_line.append(self.app.state.error_message, style="red")
-
-        body = Group(
-            header,
-            Text(""),
-            seat_table,
-            Text(""),
-            banner,
-            Text(""),
-            Panel(preview, title="scenario preview", border_style="dim"),
-            Text(""),
-            actions_panel,
-            error_line,
-        )
-        return Align.center(
-            Panel(body, title="room", border_style="yellow"), vertical="top"
-        )
-
-    def _render_actions(self, rs: dict[str, Any]) -> RenderableType:
-        """Vertical button list with a focus marker on the highlighted row."""
-        buttons = self._build_buttons(rs)
-        lines: list[Text] = []
-        for i, btn in enumerate(buttons):
-            is_focused = i == self._focus
-            marker = "➤ " if is_focused else "  "
-            label = btn.label
-            if btn.value is not None:
-                label = f"{btn.label}: {btn.value}"
-            if not btn.enabled:
-                style = "dim strike" if is_focused else "dim"
-            elif is_focused:
-                style = "bold cyan"
-            else:
-                style = "white"
-            lines.append(Text(f"{marker}{label}", style=style))
-        lines.append(
-            Text(
-                "\n↑/k up   ↓/j (or Tab) down   Enter activate   q quit",
-                style="dim",
-            )
-        )
-        return Panel(
-            Group(*lines), title="actions", border_style="bright_black"
-        )
-
-    def _build_buttons(self, rs: dict[str, Any]) -> list[Button]:
-        """Return the buttons visible in the current state.
-
-        Host-only controls are hidden for slot B. Buttons whose action
-        doesn't apply in the current state are kept but disabled so
-        the layout doesn't shift around as readiness toggles.
-        """
-        is_host = self.app.state.slot == "a"
-        editable = rs.get("status") in (
-            "waiting_for_players",
-            "waiting_ready",
-        )
+    def _buttons(self) -> list[Button]:
+        rs = self.screen.app.state.last_room_state or {}
+        is_host = self.screen.app.state.slot == "a"
+        editable = rs.get("status") in ("waiting_for_players", "waiting_ready")
         buttons: list[Button] = [
             Button(label="Toggle Ready", action="toggle_ready", enabled=editable),
         ]
@@ -258,7 +373,7 @@ class RoomScreen(Screen):
                         label="Change Scenario",
                         action="change_scenario",
                         value=rs.get("scenario", "?"),
-                        enabled=editable and bool(self._scenarios),
+                        enabled=editable and bool(self.screen.scenarios),
                     ),
                     Button(
                         label="Change Fog",
@@ -289,40 +404,250 @@ class RoomScreen(Screen):
         )
         return buttons
 
-    def _render_preview(self) -> RenderableType:
-        p = self._scenario_preview or {}
+    async def handle_key(self, key: str) -> Screen | None:
+        buttons = self._buttons()
+        if not buttons:
+            return None
+        if key in ("down", "j"):
+            self.focus = (self.focus + 1) % len(buttons)
+            return None
+        if key in ("up", "k"):
+            self.focus = (self.focus - 1) % len(buttons)
+            return None
+        if key == "enter":
+            btn = buttons[self.focus]
+            if not btn.enabled:
+                return None
+            return await self.screen.run_action(btn.action)
+        return None
+
+
+# ---- panel: Map (with tile cursor + unit card modal) ----
+
+
+class MapPanel(Panel):
+    title = "Map"
+
+    def __init__(self, screen: "RoomScreen") -> None:
+        self.screen = screen
+        self.cx = 0
+        self.cy = 0
+
+    def _board(self) -> dict[str, Any]:
+        return self.screen.scenario_preview or {}
+
+    def render(self, focused: bool) -> RenderableType:
+        p = self._board()
         w = int(p.get("width", 0))
         h = int(p.get("height", 0))
         units = p.get("units", [])
         forts = p.get("forts", [])
-        # cell -> (glyph, style). Forts pre-painted; units overwrite.
+
+        # Clamp cursor to current board.
+        if w > 0 and h > 0:
+            self.cx = max(0, min(self.cx, w - 1))
+            self.cy = max(0, min(self.cy, h - 1))
+
         styled: dict[tuple[int, int], tuple[str, str]] = {}
         for f in forts:
             pos = f.get("pos") or {}
             x, y = int(pos.get("x", -1)), int(pos.get("y", -1))
             if 0 <= x < w and 0 <= y < h:
                 styled[(x, y)] = ("*", "yellow")
+        unit_at: dict[tuple[int, int], dict] = {}
         for u in units:
             pos = u.get("pos") or {}
             x, y = int(pos.get("x", -1)), int(pos.get("y", -1))
             if 0 <= x < w and 0 <= y < h:
                 glyph, style = _unit_cell_style(u)
                 styled[(x, y)] = (glyph, style)
+                unit_at[(x, y)] = u
+
         text = Text()
         text.append("   " + " ".join(f"{x:>2}" for x in range(w)) + "\n", style="dim")
         for y in range(h):
             text.append(f"{y:>2} ", style="dim")
             for x in range(w):
                 cell = styled.get((x, y))
-                if cell is None:
-                    text.append(" .", style="dim")
+                g, st = (".", "dim") if cell is None else cell
+                if focused and x == self.cx and y == self.cy:
+                    # Square brackets around the cursor cell — visible even
+                    # in monochrome terminals where the reverse style might
+                    # not pop.
+                    text.append(f"[{g}]", style=f"reverse {st}")
                 else:
-                    g, st = cell
-                    text.append(f" {g}", style=st)
-                text.append(" ")
+                    text.append(f" {g} ", style=st)
             text.append("\n")
-        text.append(f"\n{w}x{h} board · {len(units)} units · {len(forts)} forts")
-        return text
+        # Footer: tile / unit info.
+        info = self._cursor_tooltip(w, h, unit_at)
+        body = Group(text, Text(""), info)
+        return RichPanel(
+            body,
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(0, 1),
+        )
+
+    def _cursor_tooltip(
+        self, w: int, h: int, unit_at: dict[tuple[int, int], dict]
+    ) -> RenderableType:
+        if w == 0 or h == 0:
+            return Text("(loading map…)", style="dim italic")
+        pos = (self.cx, self.cy)
+        # Look up tile spec from cached scenario_description if any.
+        terrain = "plain"
+        for t in (self._board().get("tiles") or []):
+            if int(t.get("x", -1)) == self.cx and int(t.get("y", -1)) == self.cy:
+                terrain = str(t.get("type", "plain"))
+                break
+        u = unit_at.get(pos)
+        line = Text()
+        line.append(f"({self.cx}, {self.cy}) ", style="dim")
+        line.append(f"terrain: {terrain}", style="yellow")
+        if u:
+            owner = u.get("owner", "?")
+            color = "cyan" if owner == "blue" else "red"
+            line.append("   ")
+            line.append(
+                f"{u.get('class', '?')} ({owner})", style=f"bold {color}"
+            )
+            line.append("   ")
+            line.append("Enter for details", style="dim italic")
+        return line
+
+    async def handle_key(self, key: str) -> Screen | None:
+        p = self._board()
+        w = int(p.get("width", 0))
+        h = int(p.get("height", 0))
+        if w == 0 or h == 0:
+            return None
+        if key in ("up", "k"):
+            self.cy = (self.cy - 1) % h
+            return None
+        if key in ("down", "j"):
+            self.cy = (self.cy + 1) % h
+            return None
+        if key == "left":
+            self.cx = (self.cx - 1) % w
+            return None
+        if key == "right":
+            self.cx = (self.cx + 1) % w
+            return None
+        if key == "enter":
+            for u in p.get("units", []):
+                pos = u.get("pos") or {}
+                if int(pos.get("x", -1)) == self.cx and int(pos.get("y", -1)) == self.cy:
+                    self.screen.open_unit_card(u)
+                    break
+            return None
+        return None
+
+
+# ---- the screen itself ----
+
+
+class RoomScreen(Screen):
+    def __init__(self, app: TUIApp):
+        self.app = app
+        self.scenario_preview: dict[str, Any] | None = None
+        self.scenarios: list[str] = []
+        self._last_poll = 0.0
+        self._modal: Dropdown | UnitCard | None = None
+
+        # Build panels. Order matters: Tab cycles in this order, restricted
+        # to focusable ones.
+        self.map_panel = MapPanel(self)
+        self.actions_panel = ActionsPanel(self)
+        self._panels: list[Panel] = [
+            self.map_panel,
+            PlayerPanel(app),
+            self.actions_panel,
+            DescriptionPanel(app),
+            ChatPanel(),
+        ]
+        # Start focus on the Actions panel — that's where Toggle Ready
+        # lives, which is what the player almost always wants first.
+        self._focus_idx = self._panels.index(self.actions_panel)
+
+    async def on_enter(self, app: TUIApp) -> None:
+        await self._load_preview()
+        await self._refresh_state()
+        await self._load_scenarios()
+
+    # ---- render ----
+
+    def render(self) -> RenderableType:
+        if self._modal is not None:
+            return self._modal.render()
+
+        rs = self.app.state.last_room_state or {}
+        room_id = rs.get("room_id") or self.app.state.room_id or "?"
+        scenario = rs.get("scenario", "?")
+        status = rs.get("status", "?")
+        countdown = rs.get("autostart_in_s")
+
+        header = Text()
+        header.append(f"Room {room_id[:10]}  ", style="bold cyan")
+        header.append(scenario, style="yellow")
+        header.append(f"   fog={rs.get('fog_of_war', '?')}", style="dim")
+        header.append(f"   teams={rs.get('team_assignment', '?')}", style="dim")
+        if countdown is not None:
+            header.append(
+                f"   match starting in {countdown:.1f}s", style="bold yellow"
+            )
+        elif status == "waiting_for_players":
+            header.append("   waiting for opponent…", style="dim")
+        elif status == "waiting_ready":
+            header.append("   ready up to start", style="green")
+
+        footer = Text(
+            "Tab cycle panels   ↑/↓/←/→ navigate focused panel   "
+            "Enter activate   q quit",
+            style="dim",
+        )
+        if self.app.state.error_message:
+            footer = Text(self.app.state.error_message, style="red")
+
+        layout = self._build_layout()
+        return Group(header, Text(""), layout, Text(""), footer)
+
+    def _build_layout(self) -> Layout:
+        root = Layout()
+        root.split_column(
+            Layout(name="top", ratio=3),
+            Layout(name="bottom", ratio=2),
+        )
+        root["top"].split_row(
+            Layout(name="map", ratio=2),
+            Layout(name="right", ratio=1),
+        )
+        root["top"]["right"].split_column(
+            Layout(name="player", ratio=2),
+            Layout(name="actions", ratio=3),
+        )
+        root["bottom"].split_row(
+            Layout(name="description", ratio=2),
+            Layout(name="chat", ratio=1),
+        )
+
+        focused_panel = self._panels[self._focus_idx]
+        # Use object identity for "is this one focused".
+        root["top"]["map"].update(self.map_panel.render(focused_panel is self.map_panel))
+        root["top"]["right"]["player"].update(
+            self._panels[1].render(focused_panel is self._panels[1])
+        )
+        root["top"]["right"]["actions"].update(
+            self.actions_panel.render(focused_panel is self.actions_panel)
+        )
+        root["bottom"]["description"].update(
+            self._panels[3].render(focused_panel is self._panels[3])
+        )
+        root["bottom"]["chat"].update(
+            self._panels[4].render(focused_panel is self._panels[4])
+        )
+        # Make the layout fill a reasonable minimum size so panels render.
+        root.size = None  # let the renderer pick height
+        return root
 
     # ---- input ----
 
@@ -331,29 +656,42 @@ class RoomScreen(Screen):
             close = await self._modal.handle_key(key)
             if close:
                 self._modal = None
-                await self._refresh_state()
+                # If a Dropdown closed, the on_confirm call already
+                # refreshed state; nothing else to do here.
             return None
 
         if key == "q":
             self.app.exit()
             return None
-        buttons = self._build_buttons(self.app.state.last_room_state or {})
-        if not buttons:
+        if key == "\t":
+            self._focus_next(1)
             return None
-        if key in ("down", "j") or key == "\t":
-            self._focus = (self._focus + 1) % len(buttons)
+        if key == "shift_tab":  # not currently emitted; here for completeness
+            self._focus_next(-1)
             return None
-        if key in ("up", "k"):
-            self._focus = (self._focus - 1) % len(buttons)
-            return None
-        if key == "enter":
-            btn = buttons[self._focus]
-            if not btn.enabled:
-                return None
-            return await self._run_action(btn.action)
-        return None
+        focused = self._panels[self._focus_idx]
+        return await focused.handle_key(key)
 
-    async def _run_action(self, action: str) -> Screen | None:
+    def _focus_next(self, step: int) -> None:
+        n = len(self._panels)
+        if n == 0:
+            return
+        i = self._focus_idx
+        for _ in range(n):
+            i = (i + step) % n
+            if self._panels[i].can_focus():
+                self._focus_idx = i
+                return
+
+    # ---- public API used by panels ----
+
+    def open_unit_card(self, unit: dict[str, Any]) -> None:
+        spec = (
+            (self.app.state.scenario_description or {}).get("unit_classes") or {}
+        ).get(unit.get("class"))
+        self._modal = UnitCard(unit=unit, class_spec=spec)
+
+    async def run_action(self, action: str) -> Screen | None:
         if action == "toggle_ready":
             await self._toggle_ready()
             return None
@@ -380,7 +718,7 @@ class RoomScreen(Screen):
 
     def _open_scenario_modal(self) -> None:
         current = (self.app.state.last_room_state or {}).get("scenario")
-        options = list(self._scenarios) or [current or "01_tiny_skirmish"]
+        options = list(self.scenarios) or [current or "01_tiny_skirmish"]
         idx = options.index(current) if current in options else 0
         self._modal = Dropdown(
             title="Change Scenario",
@@ -449,9 +787,9 @@ class RoomScreen(Screen):
             self.app.state.error_message = f"preview failed: {e}"
             return
         if r.get("ok"):
-            self._scenario_preview = (r.get("room") or {}).get("scenario_preview", {})
-        # Also cache the full scenario bundle so the game screen can
-        # render unit/terrain legends without a second roundtrip.
+            self.scenario_preview = (r.get("room") or {}).get("scenario_preview", {})
+        # Cache the full scenario bundle so the unit card + win-condition
+        # legend have their data without a second roundtrip.
         scenario_name = (
             (self.app.state.last_room_state or {}).get("scenario")
             if self.app.state.last_room_state
@@ -475,7 +813,7 @@ class RoomScreen(Screen):
         except Exception:
             return
         if r.get("ok"):
-            self._scenarios = r.get("scenarios", [])
+            self.scenarios = r.get("scenarios", [])
 
     async def _refresh_state(self) -> Screen | None:
         import time as _time
@@ -498,34 +836,17 @@ class RoomScreen(Screen):
         room = r.get("room", {})
         prior_scenario = (self.app.state.last_room_state or {}).get("scenario")
         self.app.state.last_room_state = room
-        log.info(
-            "poll room=%s status=%s autostart_in_s=%s seats=%s",
-            room.get("room_id"),
-            room.get("status"),
-            room.get("autostart_in_s"),
-            {k: v.get("ready") for k, v in (room.get("seats") or {}).items()},
-        )
-        # Clamp focus so it stays on a valid button.
-        button_count = len(self._build_buttons(room))
-        if self._focus >= button_count:
-            self._focus = max(0, button_count - 1)
         if room.get("status") == "in_game":
-            log.info("room status is in_game; transitioning to GameScreen")
             from clash_of_odin.client.tui.screens.game import GameScreen
 
             next_screen = GameScreen(self.app)
-            log.info("calling app.transition(GameScreen)")
             await self.app.transition(next_screen)
-            log.info("app.transition(GameScreen) returned")
             return next_screen
-        # If the host changed the scenario since our last refresh,
-        # reload the mini-map preview so the ASCII board matches.
         if prior_scenario and room.get("scenario") != prior_scenario:
             await self._load_preview()
         return None
 
     async def _apply_config(self, fields: dict[str, Any]) -> None:
-        """Send update_room_config with the given fields and refresh."""
         if self.app.client is None:
             return
         try:
@@ -547,22 +868,23 @@ class RoomScreen(Screen):
         if self.app.client is None:
             return
         rs = self.app.state.last_room_state or {}
-        my_slot = self.app.state.slot
-        current = (rs.get("seats") or {}).get(my_slot, {}).get("ready", False)
-        log.info("toggle_ready: sending ready=%s", not current)
+        slot = self.app.state.slot
+        seats = rs.get("seats", {})
+        my_seat = seats.get(slot or "", {})
+        currently_ready = bool(my_seat.get("ready"))
         try:
-            r = await self.app.client.call("set_ready", ready=(not current))
+            r = await self.app.client.call(
+                "set_ready", ready=not currently_ready
+            )
         except Exception as e:
-            log.exception("set_ready raised")
             self.app.state.error_message = f"set_ready failed: {e}"
             return
-        log.info("toggle_ready: response=%s", r)
         if not r.get("ok"):
             self.app.state.error_message = r.get("error", {}).get(
                 "message", "set_ready rejected"
             )
-        else:
-            self.app.state.error_message = ""
+            return
+        self.app.state.error_message = ""
         await self._refresh_state()
 
     async def _leave(self) -> Screen | None:
@@ -570,10 +892,11 @@ class RoomScreen(Screen):
             return None
         try:
             await self.app.client.call("leave_room")
-        except Exception:
-            pass
-        self.app.state.room_id = None
-        self.app.state.slot = None
+        except Exception as e:
+            self.app.state.error_message = f"leave_room failed: {e}"
+            return None
         from clash_of_odin.client.tui.screens.lobby import LobbyScreen
 
+        self.app.state.room_id = None
+        self.app.state.slot = None
         return LobbyScreen(self.app)
