@@ -266,9 +266,15 @@ class ProviderAuthScreen(Screen):
                 )
             )
         lines.append(Text(""))
-        lines.append(
-            Text("↑/k ↓/j navigate   Enter pick   Esc back   q quit", style="dim")
-        )
+        # Show the [r] rotate-key hint only when it's actually
+        # actionable (api-key providers with a saved credential).
+        hint = "↑/k ↓/j navigate   Enter pick   Esc back   q quit"
+        if p.auth_mode == "api_key" and self._has_usable_cred(p.id):
+            hint = (
+                "↑/k ↓/j navigate   Enter pick   r re-enter key   "
+                "Esc back   q quit"
+            )
+        lines.append(Text(hint, style="dim"))
         if self.app.state.error_message:
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
@@ -478,6 +484,15 @@ class ProviderAuthScreen(Screen):
         elif key == "enter":
             m = p.models[self._step.focused]
             return await self._apply_selection(p.id, m.id)
+        elif key == "r" and p.auth_mode == "api_key":
+            # Explicit key rotation: jump back to the paste step even
+            # though a saved credential already exists. Defaults to
+            # the paste row (focused=1) since that's what rotation
+            # actually is.
+            self._step = _Step(
+                kind="api_key", provider_id=p.id, focused=1
+            )
+            self.app.state.error_message = ""
         return None
 
     # ---- apply ----

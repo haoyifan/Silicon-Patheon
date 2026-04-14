@@ -66,7 +66,7 @@ class LobbyScreen(Screen):
                 )
 
         keys = Text(
-            "↓/k next   ↑/j prev   Enter join   p preview   n new room   r refresh   q quit",
+            "↓/j next   ↑/k prev   Enter join   p preview   n new room   r refresh   q quit",
             style="dim",
         )
 

@@ -123,6 +123,40 @@ def test_saved_key_skips_api_key_step_on_reselect(fresh_home) -> None:
     assert screen._step.provider_id == "openai"
 
 
+def test_r_rotates_key_from_model_picker(fresh_home) -> None:
+    """With a cred already saved we auto-skip to the model picker,
+    but pressing 'r' there jumps back to the paste step so users
+    can replace the stored key without editing credentials.json."""
+    from silicon_pantheon.client.credentials import (
+        Credentials,
+        ProviderCredential,
+        save,
+    )
+
+    save(
+        Credentials(
+            default_provider=None,
+            default_model=None,
+            providers={
+                "openai": ProviderCredential(
+                    auth_mode="api_key", inline_key="sk-old-key"
+                )
+            },
+        )
+    )
+    app = _FakeApp()
+    screen = ProviderAuthScreen(app)
+    asyncio.run(screen.handle_key("down"))  # OpenAI
+    asyncio.run(screen.handle_key("enter"))
+    assert screen._step.kind == "pick_model"
+    # Pressing r should take us to the paste step, focused on the
+    # paste row (focused=1) not the env-var row.
+    asyncio.run(screen.handle_key("r"))
+    assert screen._step.kind == "api_key"
+    assert screen._step.provider_id == "openai"
+    assert screen._step.focused == 1
+
+
 def test_no_saved_key_still_goes_to_api_key_step(fresh_home) -> None:
     """Regression guard for the skip path: providers WITHOUT a stored
     cred still land on the api_key prompt."""
