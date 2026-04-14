@@ -11,6 +11,33 @@ from __future__ import annotations
 from silicon_pantheon.client.providers.anthropic import _parse_lesson_json
 
 
+def test_networked_agent_constructs_without_nameerror():
+    """Regression: __init__ referenced `logging.getLogger(...)` but
+    the module didn't import `logging`, so every construction raised
+    NameError at `self._prompt_log = ...` before the first turn."""
+    import asyncio
+
+    from silicon_pantheon.client.agent_bridge import NetworkedAgent
+
+    class _StubClient:
+        async def call(self, *a, **kw):
+            return {"ok": True, "result": {}}
+
+    class _StubAdapter:
+        async def close(self) -> None:
+            return None
+
+    agent = NetworkedAgent(
+        client=_StubClient(),
+        model="grok-4",
+        scenario="journey_to_the_west",
+        adapter=_StubAdapter(),
+    )
+    # Prompt logger is attached and points at the expected namespace.
+    assert agent._prompt_log.name == "silicon.agent.prompts"
+    asyncio.run(agent.close())
+
+
 def test_bare_json_object() -> None:
     out = _parse_lesson_json('{"title":"T","slug":"s","body":"B"}')
     assert out == {"title": "T", "slug": "s", "body": "B"}

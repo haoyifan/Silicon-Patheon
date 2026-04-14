@@ -15,8 +15,11 @@ its chain-of-thought across turns within a single match.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
+
+log = logging.getLogger("silicon.client.agent_bridge")
 
 from silicon_pantheon.client.providers import (
     ProviderAdapter,
