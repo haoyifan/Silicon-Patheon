@@ -281,28 +281,43 @@ def _read_key_blocking() -> str:
             return "q"
         return line.strip().lower() or "enter"
 
+    import os
+    import select
+
     fd = sys.stdin.fileno()
     try:
         old = termios.tcgetattr(fd)
     except termios.error:
         return "q"
+
+    def _read_byte() -> str:
+        """Blocking single-byte read, bypassing Python's TextIOWrapper.
+
+        sys.stdin.read(1) goes through a buffered text wrapper that may
+        slurp the trailing bytes of an escape sequence into Python's
+        internal buffer, after which select() on the kernel fd reports
+        nothing readable and our peek loop gives up. os.read on the
+        raw fd doesn't have that buffer, so each byte is observed
+        exactly when the kernel makes it available.
+        """
+        try:
+            b = os.read(fd, 1)
+        except OSError:
+            return ""
+        return b.decode("utf-8", errors="replace") if b else ""
+
+    def _peek(timeout: float) -> str:
+        r, _, _ = select.select([fd], [], [], timeout)
+        return _read_byte() if r else ""
+
     try:
         tty.setcbreak(fd)
-        ch = sys.stdin.read(1)
+        ch = _read_byte()
+        if not ch:
+            return "q"
         if ch == "\x1b":
-            # Escape sequence: read continuation bytes with a short
-            # timeout each. Terminals can delay the follow-up bytes
-            # of an arrow key (ESC, '[', 'A') by tens of milliseconds;
-            # the previous 10 ms window was too tight and the 2nd/3rd
-            # bytes were routed to the next _read_key_blocking call,
-            # showing up as stray '[' / 'A' characters in the login
-            # fields. 50 ms is well below perceptual ESC latency.
-            import select
-
-            def _peek(timeout: float) -> str:
-                r, _, _ = select.select([sys.stdin], [], [], timeout)
-                return sys.stdin.read(1) if r else ""
-
+            # Escape sequence: drain follow-up bytes with a short
+            # per-byte timeout so unmodified ESC reads still work.
             c1 = _peek(0.05)
             if not c1:
                 return "esc"
@@ -313,7 +328,6 @@ def _read_key_blocking() -> str:
             # bleed into the next keypress and look like stray input.
             if c1 in ("[", "O"):
                 final = ""
-                # Cap drain to keep a malformed terminal from spinning.
                 for _ in range(16):
                     nxt = _peek(0.02)
                     if not nxt:
@@ -333,8 +347,6 @@ def _read_key_blocking() -> str:
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
-    if not ch:
-        return "q"
     if ch in ("\r", "\n"):
         return "enter"
     if ch == "\x03":
