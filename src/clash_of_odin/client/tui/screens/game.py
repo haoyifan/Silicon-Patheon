@@ -61,15 +61,29 @@ log = logging.getLogger("clash.tui.game")
 class PlayerPanel(Panel):
     """Turn / team / agent status + compact unit roster for both
     sides. Dead units stay in the roster, rendered dim + strikethrough
-    — they don't silently disappear when killed."""
+    — they don't silently disappear when killed.
+
+    Scrollable when focused: scenarios with large rosters
+    (Journey to the West has 13 units) don't always fit in the
+    available rows, so the user can page through."""
 
     title = "Player"
 
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
+        self.scroll = 0
 
     def key_hints(self) -> str:
-        return "(read-only)"
+        return "↑/↓ (or k/j) scroll"
+
+    async def handle_key(self, key: str) -> "Screen | None":
+        if key in ("down", "j"):
+            self.scroll += 1
+            return None
+        if key in ("up", "k"):
+            self.scroll = max(0, self.scroll - 1)
+            return None
+        return None
 
     def render(self, focused: bool) -> RenderableType:
         gs = self.screen.state or {}
@@ -143,6 +157,11 @@ class PlayerPanel(Panel):
                         style="dim strike",
                     )
                 rows.append(line)
+        # Apply scroll by dropping leading rows. Clamp so scrolling
+        # past the bottom snaps back to the last full row.
+        if self.scroll > 0 and rows:
+            self.scroll = min(self.scroll, max(0, len(rows) - 1))
+            rows = rows[self.scroll :]
         return RichPanel(
             Group(*rows),
             title=self.title,
@@ -645,9 +664,14 @@ class GameScreen(Screen):
             Layout(name="map", ratio=2),
             Layout(name="right", ratio=1),
         )
+        # Actions is just one Quit button now; a ratio'd split wastes
+        # most of its rows. Pin Actions to a fixed height and let
+        # Player soak up the rest so the roster (both teams, each
+        # unit on its own line) has room to display without
+        # clipping.
         body["top"]["right"].split_column(
-            Layout(name="player", ratio=2),
-            Layout(name="actions", ratio=3),
+            Layout(name="player"),
+            Layout(name="actions", size=4),
         )
         body["bottom"].split_row(
             Layout(name="reasoning", ratio=2),

@@ -36,6 +36,31 @@ def _stub_state(app, *, units=None, board_w=6, board_h=6, my_team="blue"):
     }
 
 
+def test_player_panel_scrolls_when_focused():
+    from clash_of_odin.client.tui.screens.game import PlayerPanel
+
+    app = _FakeApp()
+    _stub_state(
+        app,
+        units=[
+            {"id": f"u{i}", "owner": "blue", "class": "knight",
+             "hp": 30, "hp_max": 30, "alive": True, "pos": {"x": 0, "y": i}}
+            for i in range(6)
+        ],
+    )
+    screen = GameScreen(app)
+    screen.state = app.state.last_game_state
+    panel = PlayerPanel(screen)
+    assert panel.scroll == 0
+    asyncio.run(panel.handle_key("down"))
+    assert panel.scroll == 1
+    asyncio.run(panel.handle_key("up"))
+    assert panel.scroll == 0
+    # Can't go below 0.
+    asyncio.run(panel.handle_key("up"))
+    assert panel.scroll == 0
+
+
 def test_tab_cycles_through_all_five_panels_in_order():
     app = _FakeApp()
     screen = GameScreen(app)

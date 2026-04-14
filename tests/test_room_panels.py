@@ -244,6 +244,33 @@ def test_game_actions_panel_does_not_expose_end_turn_or_concede():
     assert "quit" in actions
 
 
+def test_dropdown_modal_width_is_stable_across_option_descriptions():
+    """Regression: the Dropdown used to auto-size to the widest
+    description, so highlighting a different option changed the
+    modal's shape. Now width is pinned and long descriptions wrap."""
+    dd = Dropdown(
+        title="Test",
+        options=["short", "very_long"],
+        selected_idx=0,
+        on_confirm=lambda v: None,  # type: ignore[arg-type]
+        option_descriptions={
+            "short": "tiny",
+            "very_long": "This is a very long description " * 20,
+        },
+    )
+    console = Console(record=True, width=140)
+    dd.selected_idx = 0
+    console.print(dd.render())
+    w1 = max(len(line) for line in console.export_text().splitlines())
+    console = Console(record=True, width=140)
+    dd.selected_idx = 1
+    console.print(dd.render())
+    w2 = max(len(line) for line in console.export_text().splitlines())
+    # Both renders should produce the same outer width (the modal
+    # doesn't grow horizontally with description length).
+    assert w1 == w2, f"modal width changed: {w1} vs {w2}"
+
+
 def test_q_in_room_opens_confirm_modal_not_immediate_exit():
     """Regression: q used to call app.exit() directly while the Quit
     button opened a ConfirmModal — the two paths should be identical

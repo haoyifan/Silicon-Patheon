@@ -94,9 +94,14 @@ class Dropdown:
             self.options[self.selected_idx] if self.options else ""
         )
         if desc:
+            # overflow="fold" + no_wrap=False makes Rich wrap the
+            # description across multiple lines inside the panel's
+            # fixed width — otherwise a long explanation blew the
+            # whole dropdown sideways and the shape changed per
+            # option, which read as a shifting modal.
             body_parts.append(
                 RichPanel(
-                    Text(desc, style="white"),
+                    Text(desc, style="white", no_wrap=False, overflow="fold"),
                     title=self.options[self.selected_idx],
                     border_style="yellow",
                     padding=(0, 1),
@@ -104,12 +109,17 @@ class Dropdown:
             )
         body_parts.append(Text(""))
         body_parts.append(footer)
+        # Fixed width (~60 cols) so the modal shape stays stable as
+        # the highlight moves between options with different
+        # description lengths. Vertical height grows to fit wrapped
+        # content; horizontal stays constant.
         return Align.center(
             RichPanel(
                 Group(*body_parts),
                 title=self.title,
                 border_style="yellow",
                 padding=(1, 3),
+                width=60,
             ),
             vertical="middle",
         )
