@@ -13,8 +13,8 @@ Reconstructs the match from replay.jsonl and walks the user through it:
   navigation is as cheap as forward.
 
 Controls (single keypress on a TTY; line-input fallback otherwise):
-    Enter or k   advance one step
-    j            go back one step
+    Enter or j   advance one step
+    k            go back one step
     s            skip forward to the next action event
     q            quit
     Ctrl-C       quit
@@ -315,7 +315,7 @@ def interactive_replay(replay_path: Path) -> int:
         console.print(_frame(state, ev, step, total))
         console.print(
             Text(
-                "[Enter/k] next   [j] previous   [s] skip to next action   [q] quit",
+                "[Enter/j] next   [k] previous   [s] skip to next action   [q] quit",
                 style="dim",
             )
         )
@@ -327,13 +327,13 @@ def interactive_replay(replay_path: Path) -> int:
         cmd = _read_command()
         if cmd == "q":
             break
-        if cmd in ("", "k"):
+        if cmd in ("", "j"):
             # Advance one step (or stay put at the end).
             if step < total:
                 step += 1
             _render(step)
             continue
-        if cmd == "j":
+        if cmd == "k":
             # Go back one step (or stay put at the start).
             if step > 0:
                 step -= 1
@@ -383,7 +383,7 @@ def main() -> int:
     p = argparse.ArgumentParser(
         description=(
             "Interactive step-through replayer. "
-            "Keys: Enter/k=next, j=prev, s=skip to next action, q=quit."
+            "Keys: Enter/j=next, k=prev, s=skip to next action, q=quit."
         )
     )
     p.add_argument(

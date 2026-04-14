@@ -85,11 +85,11 @@ def test_interactive_replay_main_flow_with_stubbed_input(
 def test_interactive_replay_supports_backward_navigation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """k advances, j goes back — forward-3, back-2, forward-1 round-trips."""
+    """j advances, k goes back — forward-3, back-2, forward-1 round-trips."""
     replay = _play_match(tmp_path)
 
     # 3 forwards, 2 backs, 1 forward, quit. Should not raise.
-    inputs = iter(["k", "k", "k", "j", "j", "k", "q"])
+    inputs = iter(["j", "j", "j", "k", "k", "j", "q"])
     monkeypatch.setattr("builtins.input", lambda *_a, **_k: next(inputs))
     rc = interactive_replay(replay)
     assert rc == 0
