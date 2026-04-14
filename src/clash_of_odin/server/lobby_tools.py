@@ -144,6 +144,70 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"scenarios": candidates})
 
     @mcp.tool()
+    def describe_scenario(connection_id: str, name: str) -> dict:
+        """Return the full scenario bundle for UI preview.
+
+        Includes name/description, unit class table, terrain type
+        table, win conditions (as declared, not serialized rules),
+        armies, board dimensions, and narrative block. The client
+        caches this on room enter so the room preview and the game
+        screen can show unit/terrain legends without refetching.
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state == ConnectionState.ANONYMOUS:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "set_player_metadata first",
+            )
+        from pathlib import Path
+
+        import yaml
+
+        path = Path("games") / name / "config.yaml"
+        if not path.is_file():
+            return _error(ErrorCode.BAD_INPUT, f"unknown scenario: {name}")
+        try:
+            cfg = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError as e:
+            return _error(ErrorCode.INTERNAL, f"scenario yaml invalid: {e}")
+
+        # Start from built-in unit classes so the client sees the full
+        # roster, not just scenario-declared overrides.
+        from clash_of_odin.server.engine.state import UnitClass
+        from clash_of_odin.server.engine.units import make_stats
+
+        unit_classes: dict[str, dict] = {}
+        for cls in UnitClass:
+            s = make_stats(cls)
+            unit_classes[cls.value] = {
+                "hp_max": s.hp_max, "atk": s.atk, "defense": s.defense,
+                "res": s.res, "spd": s.spd, "move": s.move,
+                "rng_min": s.rng_min, "rng_max": s.rng_max,
+                "is_magic": s.is_magic, "can_heal": s.can_heal,
+                "tags": list(s.tags),
+            }
+        for cname, spec in (cfg.get("unit_classes") or {}).items():
+            unit_classes[cname] = dict(spec or {})
+
+        terrain_types = {
+            "plain": {}, "forest": {}, "mountain": {}, "fort": {},
+        }
+        for tname, spec in (cfg.get("terrain_types") or {}).items():
+            terrain_types[tname] = dict(spec or {})
+
+        return _ok({
+            "name": cfg.get("name", name),
+            "description": cfg.get("description", ""),
+            "board": cfg.get("board", {}),
+            "armies": cfg.get("armies", {}),
+            "rules": cfg.get("rules", {}),
+            "unit_classes": unit_classes,
+            "terrain_types": terrain_types,
+            "win_conditions": cfg.get("win_conditions") or [],
+            "narrative": cfg.get("narrative") or {},
+        })
+
+    @mcp.tool()
     async def update_room_config(
         connection_id: str,
         scenario: str | None = None,
