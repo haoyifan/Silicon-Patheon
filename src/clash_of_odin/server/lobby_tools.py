@@ -131,16 +131,17 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
                 "set_player_metadata first",
             )
-        from pathlib import Path
+        from clash_of_odin.server.engine.scenarios import _games_root
 
-        # The scenarios live at repo-root/games. Mirror the logic in
-        # engine/scenarios.load_scenario which imports from this path.
+        # Use the engine's locator so server CWD doesn't matter.
         candidates: list[str] = []
-        games_root = Path("games")
-        if games_root.is_dir():
-            for sub in sorted(games_root.iterdir()):
-                if sub.is_dir() and (sub / "config.yaml").is_file():
-                    candidates.append(sub.name)
+        try:
+            games_root = _games_root()
+        except FileNotFoundError:
+            return _ok({"scenarios": []})
+        for sub in sorted(games_root.iterdir()):
+            if sub.is_dir() and (sub / "config.yaml").is_file():
+                candidates.append(sub.name)
         return _ok({"scenarios": candidates})
 
     @mcp.tool()
@@ -159,11 +160,14 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
                 "set_player_metadata first",
             )
-        from pathlib import Path
-
         import yaml
 
-        path = Path("games") / name / "config.yaml"
+        from clash_of_odin.server.engine.scenarios import _games_root
+
+        try:
+            path = _games_root() / name / "config.yaml"
+        except FileNotFoundError as e:
+            return _error(ErrorCode.INTERNAL, str(e))
         if not path.is_file():
             return _error(ErrorCode.BAD_INPUT, f"unknown scenario: {name}")
         try:

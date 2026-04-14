@@ -227,6 +227,11 @@ class GameState:
     winner: Team | None = None
     last_action: dict | None = None
     history: list[dict] = field(default_factory=list)
+    # Set of unit ids that have died this match. Populated whenever a
+    # unit is removed from `units`. Win conditions like ProtectUnit
+    # need this because once a unit is deleted from `units`, its dict
+    # entry is gone and we cannot re-derive "this VIP was killed".
+    dead_unit_ids: set[str] = field(default_factory=set)
 
     # ---- lookups ----
     def units_of(self, team: Team) -> list[Unit]:

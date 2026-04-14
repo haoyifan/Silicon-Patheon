@@ -27,6 +27,16 @@ def test_plugin_win_rule_fires_via_dsl():
     assert state.status is GameStatus.GAME_OVER
 
 
+def test_plugin_namespace_does_not_leak_imports():
+    """Regression: dir(module) used to expose every imported name
+    (Pos, Team, annotations, ...). Now we filter to names whose
+    __module__ matches the plugin module."""
+    state = load_scenario("_test_plugin")
+    ns = state._plugin_namespace
+    for leak in ("Pos", "Team", "annotations", "Unit", "UnitStatus"):
+        assert leak not in ns, f"plugin namespace leaked import: {leak}"
+
+
 def test_scenario_without_rules_py_has_empty_namespace():
     state = load_scenario("01_tiny_skirmish")
     assert state._plugin_namespace == {}

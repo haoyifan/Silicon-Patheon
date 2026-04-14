@@ -120,6 +120,44 @@ def test_reach_tile_does_not_fire_when_wrong_team():
     assert state.status is not GameStatus.GAME_OVER
 
 
+def test_protect_unit_fires_when_vip_killed_in_combat():
+    """Regression: protect_unit used to silently no-op when the VIP
+    was actually killed (because attack deletes the unit from the
+    dict, and the rule's old `state.units.get(...) is None` branch
+    treated 'missing' as 'not yet dead'). Now dead_unit_ids carries
+    the death record across removal."""
+    from clash_of_odin.server.engine.rules import AttackAction
+    from clash_of_odin.server.engine.scenarios import build_state
+
+    cfg = {
+        "board": {"width": 4, "height": 4, "terrain": [], "forts": []},
+        "unit_classes": {
+            "vip":    {"hp_max": 1,  "atk": 1,  "defense": 0, "res": 0, "spd": 1, "move": 3},
+            "killer": {"hp_max": 30, "atk": 99, "defense": 5, "res": 5, "spd": 9, "move": 3},
+        },
+        "armies": {
+            "blue": [
+                {"class": "vip",    "pos": {"x": 1, "y": 1}},
+                {"class": "vip",    "pos": {"x": 0, "y": 0}},  # second blue so elimination doesn't fire
+            ],
+            "red":  [{"class": "killer", "pos": {"x": 1, "y": 2}}],
+        },
+        "rules": {"max_turns": 10, "first_player": "red"},
+        "win_conditions": [
+            {"type": "protect_unit", "unit_id": "u_b_vip_1", "owning_team": "blue"},
+            {"type": "eliminate_all_enemy_units"},
+            {"type": "max_turns_draw"},
+        ],
+    }
+    state = build_state(cfg)
+    apply(state, AttackAction(unit_id="u_r_killer_1", target_id="u_b_vip_1"))
+    assert "u_b_vip_1" not in state.units
+    assert "u_b_vip_1" in state.dead_unit_ids
+    result = apply(state, EndTurnAction())
+    assert result["winner"] == "red"
+    assert result["reason"] == "vip_lost"
+
+
 def test_protect_unit_fires_when_vip_missing():
     # VIP already dead (not in state.units).
     red = _mkunit("u_r_1", Team.RED, Pos(5, 5))

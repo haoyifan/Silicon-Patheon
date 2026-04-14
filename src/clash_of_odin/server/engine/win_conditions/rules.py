@@ -78,10 +78,18 @@ class ProtectUnit:
     trigger: str = "end_turn"  # checked at end_turn too in case of HP=0 sneak
 
     def check(self, state, hook, **_) -> WinResult | None:
+        # The VIP is "lost" if it has died this match — either visibly
+        # in the dict at hp=0 (rare; combat removes immediately) or
+        # already deleted (the common case after _apply_attack). The
+        # dead_unit_ids set is the single source of truth.
         u = state.units.get(self.unit_id)
-        if u is None:
+        if u is not None and u.alive:
             return None
-        if u.alive:
+        if u is None and self.unit_id not in getattr(state, "dead_unit_ids", set()):
+            # Unit never existed — treat as not-yet-lost (the scenario
+            # may simply have a stale unit_id; don't end the match on
+            # that). If it had existed and died, dead_unit_ids would
+            # know.
             return None
         loser = self.owning_team
         winner = "red" if loser == "blue" else "blue"

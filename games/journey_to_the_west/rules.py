@@ -18,12 +18,18 @@ def spawn_ambush(state, turn: int, team: str, **_):
         return
     if "u_r_ambush_1" in state.units:
         return
-    skel_stats = state.units[next(iter(state.units))].stats  # fallback source
-    # Prefer copying from an existing skeleton if alive.
+    # Find a live skeleton to copy stats from. If every skeleton is
+    # already dead, give up — there's no clean source for the right
+    # numbers and we'd rather skip the ambush than spawn knights with
+    # the wrong stats (which an earlier version of this code did when
+    # it fell back on next(iter(state.units)).stats).
+    skel_stats = None
     for u in state.units.values():
         if u.class_ == "skeleton":
             skel_stats = u.stats
             break
+    if skel_stats is None:
+        return
     spawns = [("u_r_ambush_1", Pos(7, 3)), ("u_r_ambush_2", Pos(7, 5))]
     for uid, pos in spawns:
         # Skip if tile occupied.

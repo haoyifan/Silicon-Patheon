@@ -237,8 +237,10 @@ def _apply_attack(state: GameState, attacker: Unit, target_id: str) -> dict:
     for uid in killed:
         _narr.fire(state, "on_unit_killed", unit_id=uid)
 
-    # Remove dead units.
+    # Remove dead units, but remember they died so win conditions like
+    # protect_unit can detect VIP loss after the dict entry is gone.
     for uid in killed:
+        state.dead_unit_ids.add(uid)
         del state.units[uid]
 
     if attacker.alive:
@@ -295,6 +297,9 @@ def _apply_end_turn(state: GameState) -> dict:
     # 1. Custom-terrain heal/damage effects for the OUTGOING player's
     # units (Fire Emblem-classic timing — hit at the end of *your*
     # turn). Legacy fort heal for the incoming player is in step 4.
+    from clash_of_odin.server.engine import narrative as _narr
+
+    terrain_kills: list[str] = []
     for u in list(state.units_of(active)):
         if not u.alive:
             continue
@@ -309,6 +314,16 @@ def _apply_end_turn(state: GameState) -> dict:
                 delta = int(out.get("hp_delta", 0))
                 if delta:
                     u.hp = max(0, min(u.stats.hp_max, u.hp + delta))
+        if not u.alive:
+            terrain_kills.append(u.id)
+    # Mirror the attack path: remove dead units, log the death, fire
+    # the narrative event. Without this, terrain damage produces a
+    # zombie that lingers in state.units with hp=0.
+    for uid in terrain_kills:
+        _narr.fire(state, "on_unit_killed", unit_id=uid)
+        state.dead_unit_ids.add(uid)
+        if uid in state.units:
+            del state.units[uid]
 
     # 2. Hand over to opponent.
     state.active_player = enemy
@@ -318,8 +333,6 @@ def _apply_end_turn(state: GameState) -> dict:
         state.turn += 1
 
     # 3b. Narrative on_turn_start for the incoming player's turn number.
-    from clash_of_odin.server.engine import narrative as _narr
-
     _narr.fire(state, "on_turn_start", turn=state.turn, team=state.active_player.value)
 
     # 3c. Plugin on_turn_start hooks — scenarios can register callables

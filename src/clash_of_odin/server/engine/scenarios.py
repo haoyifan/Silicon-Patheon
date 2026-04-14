@@ -140,11 +140,19 @@ def _load_plugin(path: Path, scenario_name: str) -> dict:
         raise ImportError(f"could not load scenario plugin at {path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return {
-        name: getattr(module, name)
-        for name in dir(module)
-        if not name.startswith("_")
-    }
+    # Expose only names defined in this module — drop imported helpers
+    # (Pos, Team, etc.) and dunder/private names. Without this, every
+    # `from ... import` in rules.py would land in the plugin namespace
+    # and could shadow a real plugin function with the same name.
+    out: dict = {}
+    for name in dir(module):
+        if name.startswith("_"):
+            continue
+        obj = getattr(module, name)
+        defined_here = getattr(obj, "__module__", None) == mod_name
+        if defined_here:
+            out[name] = obj
+    return out
 
 
 SUPPORTED_SCHEMA_VERSION = 1
