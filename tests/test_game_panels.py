@@ -201,6 +201,49 @@ def test_coach_tab_only_releases_when_buffer_empty():
     assert screen._panels[screen._focus_idx] is screen.map_panel
 
 
+def test_reasoning_panel_pins_view_while_user_scrolled_up():
+    """Default: panel tails the latest thought, so k/j at offset 0 is
+    reading newest-first on every render. Once the user scrolls up
+    (offset > 0), the view must freeze on the content the user is
+    reading — new thoughts appended to the tail should not yank the
+    view away. Pressing '0' drops back to live tail."""
+    app = _FakeApp()
+    # Stub the console width/height that the panel queries via
+    # self.screen.app.console — _FakeApp has no console attribute
+    # by default, so construct one with the Rich stub.
+    app.console = Console(width=120, height=30)
+    _stub_state(app)
+
+    screen = GameScreen(app)
+    screen.state = app.state.last_game_state
+
+    panel = screen.reasoning_panel
+
+    # First thought populates the tail.
+    app.state.thoughts.append(("12:00:01", "blue", "A\nB\nC\nD\nE"))
+    first = panel.render(focused=False).renderable.plain
+    assert "A" in first and "E" in first, "tail should show the thought"
+
+    # User scrolls up — view shows older content.
+    panel.line_offset = 3
+    pinned_before = panel.render(focused=False).renderable.plain
+
+    # New thought arrives while scrolled. The pinning logic in
+    # render() bumps line_offset by the number of appended lines so
+    # the same content slice stays visible.
+    app.state.thoughts.append(("12:00:05", "blue", "Z1\nZ2\nZ3"))
+    pinned_after = panel.render(focused=False).renderable.plain
+
+    assert pinned_after == pinned_before, (
+        "view shifted while user was scrolled up; pinning is broken"
+    )
+
+    # '0' returns to live tail, revealing the newest thought.
+    asyncio.run(panel.handle_key("0"))
+    live = panel.render(focused=False).renderable.plain
+    assert "Z1" in live, "returning to tail should reveal newest content"
+
+
 def test_reasoning_panel_scroll_is_focus_gated():
     app = _FakeApp()
     screen = GameScreen(app)

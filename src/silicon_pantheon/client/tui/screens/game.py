@@ -480,9 +480,21 @@ class ReasoningPanel(Panel):
                 body.append("\n")
 
         if self.line_offset == 0:
-            title = f"{self.title} — tail (lines {end}/{total})"
+            title = f"{self.title} — live ({end}/{total})"
         else:
-            title = f"{self.title} — scrolled (line {end}/{total})"
+            # Surface how many lines are hidden below the user's
+            # current view so they know there's new content waiting —
+            # pressing 0 returns to live tail. Without this hint the
+            # pinned-while-scrolled behaviour is invisible: you'd see
+            # the agent's old thought sitting still and have no cue
+            # that a newer one landed behind it.
+            hidden_below = total - end
+            title = (
+                f"{self.title} — PAUSED · scrolled  (showing {end}/{total}"
+                + (f", {hidden_below} new below — press 0 to resume"
+                   if hidden_below > 0 else "")
+                + ")"
+            )
         return RichPanel(
             body,
             title=title,
