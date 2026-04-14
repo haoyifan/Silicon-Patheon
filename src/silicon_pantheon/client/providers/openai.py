@@ -100,6 +100,67 @@ class OpenAIAdapter:
         self._messages: list[dict] = []
         self._system_prompt: str | None = None
 
+    # ---- transcript bookkeeping ----
+
+    @staticmethod
+    def _estimate_tokens(messages: list[dict]) -> int:
+        """Rough token count — ~4 characters per token for English +
+        code. Good enough to detect context-window blow-ups before
+        the provider rejects; tiktoken would be exact but adds a
+        runtime dep and matters only for a warning threshold."""
+        total = 0
+        for m in messages:
+            # content + tool_calls.function.arguments + tool name are
+            # the main bulk. Walk them generically via json.dumps so
+            # a provider-specific field doesn't slip past the count.
+            total += len(json.dumps(m, default=str))
+        return total // 4
+
+    def _compact_prior_turns(self) -> None:
+        """Shrink completed turns down to their reasoning so the
+        context window doesn't grow without bound.
+
+        Called at the START of each new turn's play_turn — every
+        message already in self._messages is from a completed turn
+        and safe to rewrite. Strategy:
+
+          - keep the system message verbatim
+          - keep user (turn-prompt) messages — they're small and
+            carry useful "here's what turn N looked like" context
+          - keep assistant messages' `content` text (the reasoning
+            the LLM emitted in prose) but drop their `tool_calls`
+            field; cross-turn reasoning needs the prose, not the
+            per-tool payload
+          - drop `tool` role messages entirely — the 10-20 KB
+            get_state dumps are the main context-window offender
+            and the model doesn't need them to remember what
+            happened (the next turn's fresh user prompt carries
+            the current state)
+          - drop assistants whose content was empty after stripping
+            (they were tool_calls-only — nothing left to contribute).
+
+        Problem this solves: a Grok match at turn 5-6 hit
+        'maximum prompt length is 131072 but request contains 351186'
+        because self._messages grew linearly with every tool round-
+        trip. Compacting at turn boundaries keeps growth flat."""
+        if len(self._messages) <= 1:
+            return  # just the system prompt; nothing to compact
+
+        compacted: list[dict] = []
+        for m in self._messages:
+            role = m.get("role")
+            if role == "system" or role == "user":
+                compacted.append(m)
+                continue
+            if role == "tool":
+                continue
+            if role == "assistant":
+                content = m.get("content") or ""
+                if not content.strip():
+                    continue
+                compacted.append({"role": "assistant", "content": content})
+        self._messages = compacted
+
     async def play_turn(
         self,
         *,
@@ -114,8 +175,26 @@ class OpenAIAdapter:
         if not self._messages:
             self._messages.append({"role": "system", "content": system_prompt})
             self._system_prompt = system_prompt
+        else:
+            # Every turn after the first: compact completed turns so
+            # the transcript doesn't grow without bound and hit the
+            # provider's context limit on turn 5-6. See docstring.
+            before = self._estimate_tokens(self._messages)
+            self._compact_prior_turns()
+            after = self._estimate_tokens(self._messages)
+            if before != after:
+                log.info(
+                    "compacted transcript: %d→%d est_tokens (%d messages)",
+                    before, after, len(self._messages),
+                )
 
         self._messages.append({"role": "user", "content": user_prompt})
+        # Log token estimate each turn so operators can see growth
+        # trajectory even without hitting the limit.
+        log.info(
+            "turn start: messages=%d est_tokens=%d",
+            len(self._messages), self._estimate_tokens(self._messages),
+        )
 
         openai_tools = [_as_openai_tool(s) for s in tools]
         start = time.time()

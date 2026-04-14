@@ -182,6 +182,95 @@ async def test_play_turn_surfaces_reasoning_content() -> None:
 
 
 @pytest.mark.asyncio
+async def test_transcript_compacts_between_turns() -> None:
+    """Regression: at turn 5-6 a Grok match hit
+    'maximum prompt length is 131072 but request contains 351186'
+    because self._messages grew unboundedly — every get_state tool
+    result (10-20KB) + every assistant tool_call stayed forever.
+
+    After each turn the adapter should compact PRIOR turns down to
+    their reasoning (system + user + assistant.content) and drop
+    tool_calls / tool results that have no cross-turn value."""
+
+    # Build a fake conversation: system + user turn 1 + assistant-with-
+    # tool-calls + tool result + assistant text + user turn 2
+    # (about-to-start). After compaction the tool messages from
+    # turn 1 should be gone.
+    assistant_final_turn1 = _FakeResp(
+        _FakeMessage(content="Plan turn 1.", tool_calls=None)
+    )
+    assistant_final_turn2 = _FakeResp(
+        _FakeMessage(content="Plan turn 2.", tool_calls=None)
+    )
+    adapter = _make_adapter_with_mock_client(
+        [assistant_final_turn1, assistant_final_turn2]
+    )
+
+    # Turn 1: no tool calls, just text → simple transcript after.
+    await adapter.play_turn(
+        system_prompt="sys",
+        user_prompt="turn 1 state",
+        tools=[],
+        tool_dispatcher=None,
+        on_thought=None,
+    )
+    # Manually inject a fake tool_call pair into turn 1's messages,
+    # simulating what happens when the model DOES call tools — we want
+    # to verify those evict on compaction.
+    adapter._messages.insert(
+        2,
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"id": "tc1", "type": "function",
+                 "function": {"name": "get_state", "arguments": "{}"}},
+            ],
+        },
+    )
+    adapter._messages.insert(
+        3,
+        {
+            "role": "tool",
+            "tool_call_id": "tc1",
+            # 20KB fake state dump — the exact shape that filled the
+            # context window in production.
+            "content": "x" * 20000,
+        },
+    )
+    before_tokens = adapter._estimate_tokens(adapter._messages)
+
+    # Turn 2: triggers _compact_prior_turns at entry.
+    await adapter.play_turn(
+        system_prompt="sys",
+        user_prompt="turn 2 state",
+        tools=[],
+        tool_dispatcher=None,
+        on_thought=None,
+    )
+
+    after_tokens = adapter._estimate_tokens(adapter._messages)
+    roles = [m["role"] for m in adapter._messages]
+
+    # No 'tool' messages survive from the prior turn.
+    # The only 'tool' messages allowed would be from the current turn,
+    # but this test's turn 2 didn't call any tools.
+    assert "tool" not in roles, f"tool role survived compaction: {roles}"
+    # The transcript shrank substantially (the 20KB dump was the
+    # majority of tokens).
+    assert after_tokens < before_tokens // 2, (
+        f"compaction didn't shrink meaningfully: {before_tokens}→{after_tokens}"
+    )
+    # System prompt is preserved.
+    assert roles[0] == "system"
+    # Prior turn's assistant reasoning text survives.
+    assert any(
+        m.get("role") == "assistant" and "Plan turn 1" in (m.get("content") or "")
+        for m in adapter._messages
+    )
+
+
+@pytest.mark.asyncio
 async def test_close_is_idempotent() -> None:
     adapter = _make_adapter_with_mock_client([])
     await adapter.close()
