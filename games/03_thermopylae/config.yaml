@@ -1,0 +1,246 @@
+schema_version: 1
+name: Thermopylae
+description: |
+  480 BC. Xerxes I of Persia marches the largest army the ancient
+  world has ever seen down the coast road toward Athens. Leonidas,
+  king of Sparta, with 300 of his royal guard plus several thousand
+  allied Greek hoplites, bottles him up at the Hot Gates — a
+  coastal pass 50 feet wide between sheer cliffs and the sea. For
+  three days a handful of heavily-armored infantry holds the
+  narrowest chokepoint on the road. The textbook hold-the-line.
+
+board:
+  width: 14
+  height: 6
+  terrain:
+    # Cliffs along the top and bottom rows — impassable, channel
+    # the battle into the narrow middle strip.
+    - {x: 0, y: 0, type: cliff}
+    - {x: 1, y: 0, type: cliff}
+    - {x: 2, y: 0, type: cliff}
+    - {x: 3, y: 0, type: cliff}
+    - {x: 4, y: 0, type: cliff}
+    - {x: 5, y: 0, type: cliff}
+    - {x: 6, y: 0, type: cliff}
+    - {x: 7, y: 0, type: cliff}
+    - {x: 8, y: 0, type: cliff}
+    - {x: 9, y: 0, type: cliff}
+    - {x: 10, y: 0, type: cliff}
+    - {x: 11, y: 0, type: cliff}
+    - {x: 12, y: 0, type: cliff}
+    - {x: 13, y: 0, type: cliff}
+    - {x: 0, y: 5, type: cliff}
+    - {x: 1, y: 5, type: cliff}
+    - {x: 2, y: 5, type: cliff}
+    - {x: 3, y: 5, type: cliff}
+    - {x: 4, y: 5, type: cliff}
+    - {x: 5, y: 5, type: cliff}
+    - {x: 6, y: 5, type: cliff}
+    - {x: 7, y: 5, type: cliff}
+    - {x: 8, y: 5, type: cliff}
+    - {x: 9, y: 5, type: cliff}
+    - {x: 10, y: 5, type: cliff}
+    - {x: 11, y: 5, type: cliff}
+    - {x: 12, y: 5, type: cliff}
+    - {x: 13, y: 5, type: cliff}
+    # The Hot Gate stones — fort tiles marking Leonidas's line.
+    - {x: 4, y: 1, type: stone_wall}
+    - {x: 4, y: 2, type: stone_wall}
+    - {x: 4, y: 3, type: stone_wall}
+    - {x: 4, y: 4, type: stone_wall}
+  forts: []
+
+terrain_types:
+  cliff:
+    move_cost: 99
+    passable: false
+    blocks_sight: true
+    glyph: "^"
+    color: bright_black
+  stone_wall:
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "="
+    color: yellow
+
+unit_classes:
+  leonidas:
+    display_name: Leonidas
+    description: |
+      King of Sparta. Trained from age seven for nothing but this
+      battle. His death breaks the Greek line — protect him at all
+      costs.
+    hp_max: 40
+    atk: 11
+    defense: 8
+    res: 4
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [vip, hoplite, king]
+    sight: 4
+    glyph: L
+    color: bright_cyan
+
+  spartan:
+    display_name: Spartan Hoplite
+    description: |
+      One of the 300. Elite in every stat, fights shoulder-to-shoulder
+      with aspis shield and dory spear. Worth three Persians in a
+      straight fight.
+    hp_max: 28
+    atk: 9
+    defense: 7
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [hoplite, spartan]
+    sight: 3
+    glyph: S
+    color: cyan
+
+  greek_hoplite:
+    display_name: Greek Hoplite
+    description: |
+      Allied troops from Thespiae, Thebes, and Phocis who stayed to
+      fight alongside the Spartans. Not as fearsome one-on-one, but
+      a solid wall of bronze.
+    hp_max: 22
+    atk: 7
+    defense: 6
+    res: 3
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [hoplite]
+    sight: 3
+    glyph: H
+    color: cyan
+
+  immortal:
+    display_name: Persian Immortal
+    description: |
+      The Ten Thousand — Xerxes's household guard, every fallen
+      Immortal immediately replaced to keep the number constant.
+      The best troops the Persian Empire can field.
+    hp_max: 26
+    atk: 10
+    defense: 5
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [elite, immortal]
+    sight: 3
+    glyph: I
+    color: bright_red
+
+  persian_infantry:
+    display_name: Persian Infantry
+    description: |
+      Levies from every corner of the empire — Medes, Cissians,
+      Saka. Lightly armored; their strength is their number.
+    hp_max: 14
+    atk: 5
+    defense: 3
+    res: 2
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry]
+    sight: 3
+    glyph: P
+    color: red
+
+  persian_archer:
+    display_name: Persian Archer
+    description: |
+      Herodotus says the Persian arrows at Thermopylae blotted out
+      the sun. Soft in melee; keep them behind the infantry line.
+    hp_max: 12
+    atk: 7
+    defense: 2
+    res: 2
+    spd: 5
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [ranged]
+    sight: 4
+    glyph: A
+    color: red
+
+armies:
+  blue:
+    # Leonidas and the Spartans form the first rank just behind the
+    # stone wall at x=4. Greek allies fill out the corridor.
+    - {class: leonidas, pos: {x: 3, y: 2}}
+    - {class: spartan, pos: {x: 3, y: 1}}
+    - {class: spartan, pos: {x: 3, y: 3}}
+    - {class: spartan, pos: {x: 3, y: 4}}
+    - {class: greek_hoplite, pos: {x: 2, y: 1}}
+    - {class: greek_hoplite, pos: {x: 2, y: 2}}
+    - {class: greek_hoplite, pos: {x: 2, y: 3}}
+    - {class: greek_hoplite, pos: {x: 2, y: 4}}
+    - {class: greek_hoplite, pos: {x: 1, y: 2}}
+    - {class: greek_hoplite, pos: {x: 1, y: 3}}
+  red:
+    # Xerxes pushes from the east — two Immortals lead, massed
+    # levies behind, archers at the rear for volleys over the line.
+    - {class: immortal, pos: {x: 10, y: 2}}
+    - {class: immortal, pos: {x: 10, y: 3}}
+    - {class: persian_infantry, pos: {x: 11, y: 1}}
+    - {class: persian_infantry, pos: {x: 11, y: 2}}
+    - {class: persian_infantry, pos: {x: 11, y: 3}}
+    - {class: persian_infantry, pos: {x: 11, y: 4}}
+    - {class: persian_infantry, pos: {x: 12, y: 1}}
+    - {class: persian_infantry, pos: {x: 12, y: 2}}
+    - {class: persian_infantry, pos: {x: 12, y: 3}}
+    - {class: persian_infantry, pos: {x: 12, y: 4}}
+    - {class: persian_archer, pos: {x: 13, y: 1}}
+    - {class: persian_archer, pos: {x: 13, y: 2}}
+    - {class: persian_archer, pos: {x: 13, y: 3}}
+    - {class: persian_archer, pos: {x: 13, y: 4}}
+
+rules:
+  max_turns: 25
+  fog_of_war: false
+  first_player: red
+
+win_conditions:
+  # Blue (Spartans) lose if Leonidas dies.
+  - {type: protect_unit, unit_id: u_b_leonidas_1, owning_team: blue}
+  # Red wins by pushing a unit past the Hot Gate — any red crossing
+  # the goal line at x=1 wins the pass and the road to Athens.
+  - {type: reach_goal_line, team: red, axis: x, value: 1}
+  # Either side wins by wiping the other out.
+  - {type: eliminate_all_enemy_units}
+  # Leonidas survives turn 25 → Greeks have bought enough time for
+  # the rest of Greece to prepare. Draw counts as a blue victory
+  # in the narrative; the engine records it as a draw.
+  - {type: max_turns_draw}
+
+narrative:
+  title: Thermopylae
+  description: |
+    Three hundred Spartans, seven thousand Greek allies, one narrow
+    pass. Hold the Hot Gates.
+  intro: |
+    Day One. The Persian host stretches to the horizon. Xerxes sits
+    on his throne above the pass to watch. Leonidas forms the line.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: "Persian arrows darken the sky. The Greeks shelter under their shields."
+    - trigger: on_turn_start
+      turn: 10
+      text: "Xerxes sends the Immortals forward. The pass narrows."
+    - trigger: on_unit_killed
+      unit_id: u_b_leonidas_1
+      text: "Leonidas falls. The line breaks."
