@@ -239,9 +239,14 @@ def _apply_attack(state: GameState, attacker: Unit, target_id: str) -> dict:
 
     # Remove dead units, but remember they died so win conditions like
     # protect_unit can detect VIP loss after the dict entry is gone.
+    # Also snapshot each dying unit into fallen_units so client views
+    # can still render it (dim / "dead" marker) — otherwise the
+    # roster silently loses rows when units die.
     for uid in killed:
         state.dead_unit_ids.add(uid)
-        del state.units[uid]
+        if uid in state.units:
+            state.fallen_units[uid] = state.units[uid]
+            del state.units[uid]
 
     if attacker.alive:
         attacker.status = UnitStatus.DONE
@@ -331,6 +336,7 @@ def _apply_end_turn(state: GameState) -> dict:
         _narr.fire(state, "on_unit_killed", unit_id=uid)
         state.dead_unit_ids.add(uid)
         if uid in state.units:
+            state.fallen_units[uid] = state.units[uid]
             del state.units[uid]
 
     # 2. Hand over to opponent.

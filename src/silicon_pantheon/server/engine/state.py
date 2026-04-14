@@ -255,6 +255,14 @@ class GameState:
     # need this because once a unit is deleted from `units`, its dict
     # entry is gone and we cannot re-derive "this VIP was killed".
     dead_unit_ids: set[str] = field(default_factory=set)
+    # Full snapshots of units that have died, captured at the moment
+    # of removal so client views can still render them (dim /
+    # strikethrough) instead of silently dropping from the roster.
+    # Keyed by unit id. Append-only; never rehydrated into `units`.
+    # The stored Unit carries the last-known stats (hp forced to 0)
+    # and final position — engine invariants are enforced on `units`
+    # only, so these ghosts are safe.
+    fallen_units: dict[str, "Unit"] = field(default_factory=dict)
 
     # ---- lookups ----
     def units_of(self, team: Team) -> list[Unit]:

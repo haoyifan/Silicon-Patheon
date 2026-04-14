@@ -35,7 +35,11 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
             )
 
     units_payload = []
-    for u in state.units.values():
+    # Serialize alive units from state.units, then append fallen-unit
+    # snapshots so clients can still render them dim in the roster.
+    # Engine invariants (`units_of`, position lookups) operate on
+    # `state.units` only — these ghosts never rejoin that dict.
+    for u in list(state.units.values()) + list(state.fallen_units.values()):
         # Include dead units (hp=0) so clients can show them dim in
         # the units table without losing the record; the `alive` flag
         # lets the client skip them on the board itself.
