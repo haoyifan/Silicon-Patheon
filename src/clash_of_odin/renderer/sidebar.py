@@ -21,14 +21,14 @@ def render_units_table(state: GameState) -> Table:
     t.add_column("HP", justify="right")
     t.add_column("Status")
 
-    for u in sorted(state.units.values(), key=lambda u: (u.owner.value, u.class_.value, u.id)):
+    for u in sorted(state.units.values(), key=lambda u: (u.owner.value, u.class_, u.id)):
         team_style = "cyan" if u.owner is Team.BLUE else "red"
         hp_pct = u.hp / u.stats.hp_max if u.stats.hp_max else 0
         hp_style = "green" if hp_pct > 0.66 else "yellow" if hp_pct > 0.33 else "red"
         t.add_row(
             u.id,
             Text(u.owner.value, style=team_style),
-            u.class_.value,
+            u.class_,
             f"({u.pos.x},{u.pos.y})",
             Text(f"{u.hp}/{u.stats.hp_max}", style=hp_style),
             u.status.value,

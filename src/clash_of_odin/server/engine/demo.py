@@ -20,9 +20,9 @@ def _ascii(state) -> str:
             u = state.unit_at(p)
             if u is not None:
                 ch = (
-                    u.class_.value[0].upper()
+                    u.class_[0].upper()
                     if u.owner.value == "blue"
-                    else u.class_.value[0].lower()
+                    else u.class_[0].lower()
                 )
             else:
                 t = state.board.tile(p).type.value
@@ -42,7 +42,7 @@ def main() -> None:
     from .state import Pos
 
     knight = next(
-        u for u in state.units.values() if u.class_.value == "knight" and u.owner.value == "blue"
+        u for u in state.units.values() if u.class_ == "knight" and u.owner.value == "blue"
     )
     apply(state, MoveAction(unit_id=knight.id, dest=Pos(0, 3)))
     apply(state, EndTurnAction())

@@ -43,7 +43,7 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
             {
                 "id": u.id,
                 "owner": u.owner.value,
-                "class": u.class_.value,
+                "class": u.class_,
                 "pos": u.pos.to_dict(),
                 "hp": u.hp,
                 "hp_max": u.stats.hp_max,

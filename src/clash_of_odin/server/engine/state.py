@@ -179,7 +179,11 @@ class Board:
 class Unit:
     id: str
     owner: Team
-    class_: UnitClass
+    # Was UnitClass (enum); now a plain str so scenarios can introduce
+    # custom class names beyond the built-in four. The built-in enum
+    # still exists for the default scenarios' convenience, but custom
+    # classes just pass a string through.
+    class_: str
     pos: Pos
     hp: int
     status: UnitStatus

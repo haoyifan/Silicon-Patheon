@@ -16,9 +16,77 @@ from .state import (
     Tile,
     Unit,
     UnitClass,
+    UnitStats,
     UnitStatus,
 )
-from .units import make_stats
+from .units import CLASS_STATS, make_stats
+
+
+def _copy_stats(src: UnitStats) -> UnitStats:
+    """Shallow-deep clone so per-unit mutations (future inventory, MP
+    drain, etc.) don't leak back into the scenario's class table."""
+    return UnitStats(
+        hp_max=src.hp_max,
+        atk=src.atk,
+        defense=src.defense,
+        res=src.res,
+        spd=src.spd,
+        rng_min=src.rng_min,
+        rng_max=src.rng_max,
+        move=src.move,
+        is_magic=src.is_magic,
+        can_enter_forest=src.can_enter_forest,
+        can_enter_mountain=src.can_enter_mountain,
+        can_heal=src.can_heal,
+        heal_amount=src.heal_amount,
+        sight=src.sight,
+        tags=list(src.tags),
+        mp_max=src.mp_max,
+        mp_per_turn=src.mp_per_turn,
+        abilities=list(src.abilities),
+        default_inventory=list(src.default_inventory),
+        damage_profile=dict(src.damage_profile),
+        defense_profile=dict(src.defense_profile),
+        bonus_vs_tags=[dict(b) for b in src.bonus_vs_tags],
+        vulnerability_to_tags=[dict(v) for v in src.vulnerability_to_tags],
+    )
+
+
+def _build_unit_stats(name: str, spec: dict) -> UnitStats:
+    """Construct a UnitStats from a scenario YAML unit_classes entry.
+
+    All fields optional. Core combat stats (hp_max / atk / defense /
+    res / spd / rng_min / rng_max / move) default to sensible baseline
+    values if omitted. Reserved v2 fields default to empty / zero.
+    """
+    s = spec or {}
+    return UnitStats(
+        hp_max=int(s.get("hp_max", 20)),
+        atk=int(s.get("atk", 5)),
+        defense=int(s.get("defense", 3)),
+        res=int(s.get("res", 3)),
+        spd=int(s.get("spd", 4)),
+        rng_min=int(s.get("rng_min", 1)),
+        rng_max=int(s.get("rng_max", 1)),
+        move=int(s.get("move", 4)),
+        is_magic=bool(s.get("is_magic", False)),
+        can_enter_forest=bool(s.get("can_enter_forest", True)),
+        can_enter_mountain=bool(s.get("can_enter_mountain", False)),
+        can_heal=bool(s.get("can_heal", False)),
+        heal_amount=int(s.get("heal_amount", 0)),
+        sight=int(s.get("sight", 3)),
+        tags=list(s.get("tags") or []),
+        mp_max=int(s.get("mp_max", 0)),
+        mp_per_turn=int(s.get("mp_per_turn", 0)),
+        abilities=list(s.get("abilities") or []),
+        default_inventory=list(s.get("default_inventory") or []),
+        damage_profile=dict(s.get("damage_profile") or {}),
+        defense_profile=dict(s.get("defense_profile") or {}),
+        bonus_vs_tags=[dict(b) for b in (s.get("bonus_vs_tags") or [])],
+        vulnerability_to_tags=[
+            dict(v) for v in (s.get("vulnerability_to_tags") or [])
+        ],
+    )
 
 
 def _games_root() -> Path:
@@ -79,6 +147,15 @@ def build_state(cfg: dict) -> GameState:
 
     board = Board(width=width, height=height, tiles=tiles)
 
+    # Resolve the per-scenario class table: start from built-ins, then
+    # layer on any `unit_classes:` block from the YAML. Custom classes
+    # can override a built-in or introduce a brand-new name.
+    class_table: dict[str, UnitStats] = {
+        cls.value: make_stats(cls) for cls in UnitClass
+    }
+    for name, spec in (cfg.get("unit_classes") or {}).items():
+        class_table[name] = _build_unit_stats(name, spec)
+
     units: dict[str, Unit] = {}
     rules = cfg.get("rules", {})
     max_turns = int(rules.get("max_turns", 30))
@@ -97,15 +174,20 @@ def build_state(cfg: dict) -> GameState:
         )
         per_class: dict[str, int] = {}
         for u in cfg["armies"].get(team_name, []):
-            cls = UnitClass(u["class"])
-            stats = make_stats(cls)
+            class_name = str(u["class"])
+            if class_name not in class_table:
+                raise ValueError(
+                    f"army references unknown unit class {class_name!r}; "
+                    f"add it to unit_classes or use a built-in"
+                )
+            stats = _copy_stats(class_table[class_name])
             pos = Pos(int(u["pos"]["x"]), int(u["pos"]["y"]))
-            per_class[cls.value] = per_class.get(cls.value, 0) + 1
-            uid = f"u_{team.value[0]}_{cls.value}_{per_class[cls.value]}"
+            per_class[class_name] = per_class.get(class_name, 0) + 1
+            uid = f"u_{team.value[0]}_{class_name}_{per_class[class_name]}"
             units[uid] = Unit(
                 id=uid,
                 owner=team,
-                class_=cls,
+                class_=class_name,
                 pos=pos,
                 hp=stats.hp_max,
                 status=initial_status,

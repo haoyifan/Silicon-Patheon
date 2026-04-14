@@ -69,7 +69,7 @@ def get_unit(session: Session, viewer: Team, unit_id: str) -> dict:
     return {
         "id": u.id,
         "owner": u.owner.value,
-        "class": u.class_.value,
+        "class": u.class_,
         "pos": u.pos.to_dict(),
         "hp": u.hp,
         "hp_max": u.stats.hp_max,

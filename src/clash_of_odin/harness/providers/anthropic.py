@@ -346,11 +346,11 @@ class AnthropicProvider(Provider):
             "max_turns": session.state.max_turns,
             "final_units": {
                 "blue": [
-                    {"id": u.id, "class": u.class_.value, "hp": u.hp}
+                    {"id": u.id, "class": u.class_, "hp": u.hp}
                     for u in session.state.units_of(Team.BLUE)
                 ],
                 "red": [
-                    {"id": u.id, "class": u.class_.value, "hp": u.hp}
+                    {"id": u.id, "class": u.class_, "hp": u.hp}
                     for u in session.state.units_of(Team.RED)
                 ],
             },
