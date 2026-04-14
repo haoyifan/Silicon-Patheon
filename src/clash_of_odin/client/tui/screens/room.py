@@ -582,6 +582,19 @@ def _terrain_effect_summary(
     return ", ".join(parts)
 
 
+def _strip_frontmatter(text: str) -> str:
+    """Drop a leading `---\\n...\\n---` YAML frontmatter block if one
+    is present. Strategy md files sometimes start with one; players
+    don't need to see the metadata, just the prose playbook."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return text
+    for i, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            return "\n".join(lines[i + 1 :])
+    return text
+
+
 def _unit_display_name(
     unit: dict[str, Any],
     scenario_description: dict[str, Any] | None,
@@ -1341,23 +1354,17 @@ class RoomScreen(Screen):
                         self.app.state.strategy_text = None
                     return
 
-        # Show a one-line summary of each strategy if we can read the
-        # first non-empty line — usually the title or a tagline.
+        # Show the full strategy text in the description box so the
+        # player can read the playbook before committing. Rich wraps
+        # it inside the fixed-width modal; the box grows vertically.
+        # Drop YAML frontmatter if any so it's just the prose.
         descriptions: dict[str, str] = {"(none)": "No playbook. The agent uses only its baseline behavior."}
         for p in candidates:
             try:
                 txt = p.read_text(encoding="utf-8")
             except OSError:
                 continue
-            head = next(
-                (
-                    ln.strip("# \t\n")
-                    for ln in txt.splitlines()
-                    if ln.strip() and not ln.strip().startswith("---")
-                ),
-                "",
-            )
-            descriptions[p.stem] = head[:200]
+            descriptions[p.stem] = _strip_frontmatter(txt).strip()
 
         self._dropdown = Dropdown(
             title="Pick Strategy (your side only)",
