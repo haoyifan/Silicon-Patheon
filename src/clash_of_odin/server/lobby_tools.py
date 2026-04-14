@@ -162,8 +162,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             )
         import yaml
 
-        from clash_of_odin.server.engine.scenarios import _games_root
+        from clash_of_odin.server.engine.scenarios import (
+            _games_root,
+            _is_safe_scenario_name,
+        )
 
+        if not _is_safe_scenario_name(name):
+            return _error(ErrorCode.BAD_INPUT, f"unsafe scenario name: {name!r}")
         try:
             path = _games_root() / name / "config.yaml"
         except FileNotFoundError as e:

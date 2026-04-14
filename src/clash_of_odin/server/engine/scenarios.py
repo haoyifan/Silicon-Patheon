@@ -102,6 +102,19 @@ def _games_root() -> Path:
     raise FileNotFoundError("Could not locate games/ directory")
 
 
+def _is_safe_scenario_name(name: str) -> bool:
+    """Names must be a single path component — no slashes, no dot-only,
+    no leading dot. Prevents path traversal when name comes from a
+    network request (e.g. describe_scenario)."""
+    if not name or name in (".", ".."):
+        return False
+    if "/" in name or "\\" in name:
+        return False
+    if name.startswith("."):
+        return False
+    return True
+
+
 def load_scenario(name: str) -> GameState:
     """Load a scenario by folder name (e.g. '01_tiny_skirmish').
 
@@ -110,6 +123,8 @@ def load_scenario(name: str) -> GameState:
     state's `_plugin_namespace`. This runs at scenario-load time so
     import errors surface immediately, not mid-match.
     """
+    if not _is_safe_scenario_name(name):
+        raise ValueError(f"unsafe scenario name: {name!r}")
     scenario_dir = _games_root() / name
     config_path = scenario_dir / "config.yaml"
     if not config_path.exists():
@@ -232,6 +247,7 @@ def build_state(cfg: dict) -> GameState:
         class_table[name] = _build_unit_stats(name, spec)
 
     units: dict[str, Unit] = {}
+    occupied_positions: dict[Pos, str] = {}
     rules = cfg.get("rules", {})
     max_turns = int(rules.get("max_turns", 30))
     first_player = Team(rules.get("first_player", "blue"))
@@ -257,8 +273,19 @@ def build_state(cfg: dict) -> GameState:
                 )
             stats = _copy_stats(class_table[class_name])
             pos = Pos(int(u["pos"]["x"]), int(u["pos"]["y"]))
+            if not (0 <= pos.x < width and 0 <= pos.y < height):
+                raise ValueError(
+                    f"unit {class_name} placed off-board at {pos} "
+                    f"(board is {width}x{height})"
+                )
+            if pos in occupied_positions:
+                raise ValueError(
+                    f"two units share starting position {pos}: "
+                    f"{occupied_positions[pos]} and a {team.value} {class_name}"
+                )
             per_class[class_name] = per_class.get(class_name, 0) + 1
             uid = f"u_{team.value[0]}_{class_name}_{per_class[class_name]}"
+            occupied_positions[pos] = uid
             units[uid] = Unit(
                 id=uid,
                 owner=team,

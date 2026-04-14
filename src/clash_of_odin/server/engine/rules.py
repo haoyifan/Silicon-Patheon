@@ -310,8 +310,16 @@ def _apply_end_turn(state: GameState) -> dict:
             ns = getattr(state, "_plugin_namespace", None) or {}
             fn = ns.get(tile.effects_plugin)
             if callable(fn):
-                out = fn(state, u, tile, "end_turn") or {}
-                delta = int(out.get("hp_delta", 0))
+                try:
+                    out = fn(state, u, tile, "end_turn") or {}
+                    delta = int(out.get("hp_delta", 0))
+                except Exception:
+                    import logging as _logging
+                    _logging.getLogger("clash.engine").exception(
+                        "terrain effects_plugin %r raised on tile %s",
+                        tile.effects_plugin, u.pos,
+                    )
+                    delta = 0
                 if delta:
                     u.hp = max(0, min(u.stats.hp_max, u.hp + delta))
         if not u.alive:
@@ -385,12 +393,24 @@ def _apply_end_turn(state: GameState) -> dict:
         for rule in rules_:
             # Seize rule checks 'active' (the one ending); restore the
             # flipped state for rules that assume post-handover.
-            if type(rule).__name__ == "SeizeEnemyFort":
-                result = rule.check(state, "end_turn")
-            else:
-                state.active_player = original_active
-                result = rule.check(state, "end_turn")
+            try:
+                if type(rule).__name__ == "SeizeEnemyFort":
+                    result = rule.check(state, "end_turn")
+                else:
+                    state.active_player = original_active
+                    result = rule.check(state, "end_turn")
+                    state.active_player = active
+            except Exception:
+                # A misbehaving plugin rule must not crash the game.
+                import logging as _logging
+                _logging.getLogger("clash.engine").exception(
+                    "win-condition rule %r raised; treating as no-result",
+                    type(rule).__name__,
+                )
+                # Make sure active_player is in the post-handover state
+                # before the next iteration.
                 state.active_player = active
+                result = None
             if result is None:
                 continue
             state.active_player = original_active
