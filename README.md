@@ -6,10 +6,20 @@ during the match.
 
 See:
 - **`docs/USAGE.md` — CLI reference and workflows (start here if you just want to run matches)**
+- `docs/AUTHORING_SCENARIOS.md` — write your own scenarios (custom units, terrain, win conditions, narrative, plugins)
 - `DESIGN.md` — original motivation
 - `GAME_DESIGN.md` — full game spec (units, rules, MCP tool surface, scenarios)
 - `PLAN.md` — implementation plan (phases, repo layout, tooling)
 - `DECISIONS.md` — log of design calls made during build-out
+
+Agents can run against Anthropic (Claude) or OpenAI (GPT-5 family)
+out of the box. First TUI login walks you through provider selection;
+keys are stored in `~/.clash-of-odin/credentials.json` with `env:` or
+`keyring:` references (no inline secrets by default).
+
+A flagship scenario, **Journey to the West**, ships in `games/` and
+exercises every scenario-authoring feature — run it with
+`--game journey_to_the_west`.
 
 ## Install
 

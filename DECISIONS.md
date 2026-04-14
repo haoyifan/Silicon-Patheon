@@ -158,6 +158,42 @@ on the opponent's move without re-deriving the position.
 **Reversal cost:** Low. Revert `play_turn` to re-open a fresh `query()`
 per call and drop the `ClaudeSDKClient` lifecycle from `close()`.
 
+## 2026-04-12 — Multi-provider agents + flexible scenarios
+
+**Decision:** Added two major capability bundles in one push:
+
+1. **Multi-provider agent support** via a `ProviderAdapter` protocol.
+   Anthropic (Claude SDK) and OpenAI (Chat Completions + function
+   calling) land initially; others plug in behind the same interface.
+   Keys resolve through `~/.clash-of-odin/credentials.json` using
+   `env:` / `keyring:` refs — no inline secrets by default.
+
+2. **Flexible scenarios.** A scenario's YAML can now declare custom
+   unit classes, custom terrain types (with effects_plugin for
+   arbitrary on-tile behavior), a declarative `win_conditions:` DSL
+   (7 built-in rule types + `plugin` escape hatch), a `narrative:`
+   block with `on_turn_start`/`on_unit_killed` events, and `rules.py`
+   plugin callables (operator-trusted, no sandbox). `PROTOCOL_VERSION`
+   and `SUPPORTED_SCHEMA_VERSION` gates refuse loads that the engine
+   can't understand so future fields never get silently dropped.
+
+Journey to the West ships as the flagship scenario exercising every
+knob above (10 custom classes, 4 custom terrain types, 4 stacked
+win conditions, 5 narrative events, a reinforcement-spawning plugin).
+
+**Why:** the first-party Claude Sonnet agent loop is not the only
+interesting client; and a single balanced map is too narrow a stage
+for the agent coaching we care about. Both had been hardcoded in
+Phase 1–5; separating them lets scenario authors and provider authors
+move independently.
+
+**Reversal cost:** Medium — provider code is behind the adapter
+boundary and easy to remove; scenarios without new blocks keep
+loading unchanged thanks to the schema gate and legacy fallbacks.
+The big revert would be rolling `state._win_conditions`,
+`state._plugin_namespace`, and `state._narrative` back to hardcoded
+equivalents.
+
 ## 2026-04-12 — Python 3.13 in practice (pyproject requires ≥3.12)
 **Decision:** uv selected Python 3.13.5 on this machine; pyproject pins ≥3.12.
 No code changes needed; 3.12-only features (match, generic syntax) all work.
