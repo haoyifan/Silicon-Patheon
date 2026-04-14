@@ -156,12 +156,73 @@ GAME_TOOLS: list[ToolSpec] = [
 
 
 def _build_default_adapter(model: str) -> ProviderAdapter:
-    """Factory for the default (Anthropic) adapter.
+    """Factory for the provider adapter selected by the model id.
 
-    Other providers slot in as alternatives; selection happens in
-    NetworkedAgent based on the model id prefix / the user's
-    credentials. A proper catalog + registry comes in a later commit.
+    Consults the credentials store + provider catalog to pick the
+    right SDK. Fallbacks:
+      - any claude-* model → Anthropic (subscription CLI)
+      - any gpt-* / o*-* model → OpenAI (api key)
+      - unknown → Anthropic (backward compatible default)
+    API key resolution for OpenAI walks env var → keyring → inline
+    key in the credentials file.
     """
+    from clash_of_odin.client.credentials import (
+        CredentialsError,
+        ProviderCredential,
+        load,
+        resolve_key,
+    )
+    from clash_of_odin.shared.providers import get_provider
+
+    # Pick provider by model-id prefix (or credentials default_provider
+    # if the model itself doesn't disambiguate).
+    model_lower = model.lower()
+    provider_id: str
+    if model_lower.startswith("claude") or model_lower.startswith("sonnet") or model_lower.startswith("opus"):
+        provider_id = "anthropic"
+    elif (
+        model_lower.startswith("gpt")
+        or model_lower.startswith("o1")
+        or model_lower.startswith("o3")
+        or model_lower.startswith("o4")
+    ):
+        provider_id = "openai"
+    else:
+        creds = load()
+        provider_id = creds.default_provider or "anthropic"
+
+    if provider_id == "anthropic":
+        from clash_of_odin.client.providers.anthropic import AnthropicAdapter
+
+        return AnthropicAdapter(model=model)
+
+    if provider_id == "openai":
+        from clash_of_odin.client.providers.openai import OpenAIAdapter
+
+        # Resolve key: credentials file first, then raw env var.
+        creds = load()
+        cred = creds.providers.get("openai")
+        api_key: str | None = None
+        if cred is not None:
+            try:
+                api_key = resolve_key(cred)
+            except CredentialsError:
+                api_key = None
+        if api_key is None:
+            spec = get_provider("openai")
+            if spec is not None and spec.env_var:
+                import os
+
+                api_key = os.environ.get(spec.env_var)
+        if not api_key:
+            raise RuntimeError(
+                "OpenAI adapter selected but no API key could be resolved. "
+                "Set OPENAI_API_KEY or configure credentials.json."
+            )
+        return OpenAIAdapter(model=model, api_key=api_key)
+
+    # Unknown provider_id → fall back to Anthropic so existing
+    # default-flow callers don't crash.
     from clash_of_odin.client.providers.anthropic import AnthropicAdapter
 
     return AnthropicAdapter(model=model)
