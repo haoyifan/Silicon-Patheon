@@ -186,6 +186,12 @@ class AnthropicAdapter:
         last = final_state.get("last_action") or {}
         reason = str(last.get("reason", "")) if isinstance(last, dict) else ""
 
+        # Strip class-invariant + display-only fields from the final
+        # units list before stuffing it into the summary prompt. Saves
+        # several KB per scenario; nothing in the reflection needs
+        # art_frames / display_name / descriptions / v2 fields.
+        from clash_of_odin.harness.prompts import _slim_unit
+
         context = {
             "scenario": scenario,
             "you": viewer.value,
@@ -194,7 +200,9 @@ class AnthropicAdapter:
             "turns_played": final_state.get("turn"),
             "max_turns": final_state.get("max_turns"),
             "action_history": action_history[-60:],
-            "final_units": final_state.get("units", []),
+            "final_units": [
+                _slim_unit(u) for u in final_state.get("units", [])
+            ],
         }
         prompt = (
             f"You just finished a Clash of Odin match as {viewer.value} on scenario "

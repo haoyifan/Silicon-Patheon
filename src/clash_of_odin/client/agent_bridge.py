@@ -25,6 +25,7 @@ from clash_of_odin.client.providers import (
 )
 from clash_of_odin.client.transport import ServerClient
 from clash_of_odin.harness.prompts import (
+    _slim_unit,
     build_system_prompt,
     build_turn_prompt_from_state_dict,
 )
@@ -34,6 +35,27 @@ from clash_of_odin.server.engine.state import Team
 # Canonical list of game-side tools exposed to the agent. Each entry:
 # (name, description, JSON-schema input). connection_id is injected by
 # ServerClient.call so it's not part of the schema the agent sees.
+def _slim_tool_response(tool_name: str, payload: dict) -> dict:
+    """Trim verbose fields from tool responses the agent consumes.
+
+    The TUI's own `get_state` call path doesn't go through this — it
+    uses `ServerClient.call` directly for rendering, so art_frames,
+    display_name, etc. stay available. Agent-bound responses get the
+    same combat-only unit shape the per-turn prompt uses.
+    """
+    if not isinstance(payload, dict):
+        return payload
+    if tool_name == "get_state" and isinstance(payload.get("units"), list):
+        payload = {**payload, "units": [_slim_unit(u) for u in payload["units"]]}
+    if tool_name == "get_unit" and isinstance(payload.get("unit"), dict):
+        payload = {**payload, "unit": _slim_unit(payload["unit"])}
+    if tool_name == "get_history" and isinstance(payload.get("history"), list):
+        # History entries are action dicts, not units — they're
+        # already small. Nothing to trim here.
+        pass
+    return payload
+
+
 GAME_TOOLS: list[ToolSpec] = [
     ToolSpec(
         "get_state",
@@ -152,6 +174,19 @@ GAME_TOOLS: list[ToolSpec] = [
         "Pass control to the opponent. Must be called to end your turn.",
         {"type": "object", "properties": {}, "required": []},
     ),
+    ToolSpec(
+        "describe_class",
+        (
+            "Look up the invariant stats + description for a unit class "
+            "(e.g. 'tang_monk', 'knight'). Use this if you forget what a "
+            "class does — values never change during a match."
+        ),
+        {
+            "type": "object",
+            "properties": {"class": {"type": "string"}},
+            "required": ["class"],
+        },
+    ),
 ]
 
 
@@ -242,6 +277,7 @@ class NetworkedAgent:
         thoughts_callback: ThoughtCallback | None = None,
         time_budget_s: float = 90.0,
         adapter: ProviderAdapter | None = None,
+        scenario_description: dict | None = None,
     ):
         self.client = client
         self.model = model
@@ -251,6 +287,15 @@ class NetworkedAgent:
         self.thoughts_callback = thoughts_callback
         self.time_budget_s = time_budget_s
         self.adapter: ProviderAdapter = adapter or _build_default_adapter(model)
+        # Scenario invariants (classes / terrain / win conditions /
+        # starting map). Lazily fetched on the first play_turn if the
+        # caller didn't hand one in; cached for the match lifetime and
+        # used both in the system prompt and to serve `describe_class`
+        # tool calls without round-tripping the server.
+        self._scenario_bundle: dict | None = scenario_description
+        # Lazily built once per session.
+        self._system_prompt_cached: str | None = None
+        self._prompt_log = logging.getLogger("clash.agent.prompts")
 
     async def close(self) -> None:
         try:
@@ -266,10 +311,27 @@ class NetworkedAgent:
         Unwraps the server's {ok, result | error} envelope so the agent
         sees raw game-tool payloads; {ok:false} surfaces as an error dict
         the SDK tool wrapper marks as isError.
+
+        Two client-side tools short-circuit before hitting the server:
+
+          - describe_class: serves from the cached scenario bundle the
+            system prompt was built from. No round-trip needed; the
+            data doesn't change during a match.
+          - describe_scenario: same — returns the cached bundle.
         """
+        if name == "describe_class":
+            slug = args.get("class") or args.get("name")
+            spec = ((self._scenario_bundle or {}).get("unit_classes") or {}).get(slug)
+            if spec is None:
+                return {"error": {"code": "not_found",
+                                  "message": f"unknown class {slug!r}"}}
+            return {"class": slug, "spec": spec}
+        if name == "describe_scenario":
+            return self._scenario_bundle or {}
         result = await self.client.call(name, **args)
         if result.get("ok"):
-            return result.get("result", result)
+            payload = result.get("result", result)
+            return _slim_tool_response(name, payload)
         return {"error": result.get("error", {})}
 
     # ---- state helpers ----
@@ -296,16 +358,41 @@ class NetworkedAgent:
         """Drive one half-turn: fetch state, build prompt, let the
         adapter run until the turn ends."""
         state = await self._fetch_state()
-        base_prompt = build_turn_prompt_from_state_dict(state, viewer)
-        # First turn vs subsequent: subsequent turns frame the state
-        # as an update so the persistent transcript reads coherently.
-        user_prompt = base_prompt
-        system_prompt = build_system_prompt(
-            team=viewer,
-            max_turns=max_turns,
-            strategy=self.strategy,
-            lessons=self._load_lessons(),
+        user_prompt = build_turn_prompt_from_state_dict(state, viewer)
+        # Lazy-fetch scenario invariants on the first turn. The
+        # Anthropic adapter reuses its ClaudeSDKClient across turns
+        # so the system prompt is only consumed on turn 1; no point
+        # re-building it each call.
+        if self._scenario_bundle is None:
+            try:
+                r = await self.client.call(
+                    "describe_scenario", name=self.scenario
+                )
+                if r.get("ok"):
+                    self._scenario_bundle = r
+            except Exception:
+                log.exception("describe_scenario failed; system prompt will lack scenario data")
+        if self._system_prompt_cached is None:
+            self._system_prompt_cached = build_system_prompt(
+                team=viewer,
+                max_turns=max_turns,
+                strategy=self.strategy,
+                lessons=self._load_lessons(),
+                scenario_description=self._scenario_bundle,
+            )
+            # Log the system prompt once, in full, so operators can
+            # tail the client log and audit what the model sees.
+            self._prompt_log.info(
+                "system_prompt (team=%s, scenario=%s):\n%s",
+                viewer.value, self.scenario, self._system_prompt_cached,
+            )
+        # Every turn's user prompt gets logged too so the full
+        # conversation-by-conversation view is reconstructible.
+        self._prompt_log.info(
+            "turn_prompt (team=%s, turn=%s):\n%s",
+            viewer.value, state.get("turn"), user_prompt,
         )
+        system_prompt = self._system_prompt_cached
 
         await self.adapter.play_turn(
             system_prompt=system_prompt,

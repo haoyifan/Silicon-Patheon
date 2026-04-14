@@ -584,6 +584,10 @@ class GameScreen(Screen):
             scenario=scenario,
             strategy=app.state.strategy_text,
             thoughts_callback=on_thought,
+            # Hand over the scenario bundle the room screen already
+            # fetched so the agent doesn't need to re-call the server.
+            # Falls back to a first-turn fetch if it's missing.
+            scenario_description=app.state.scenario_description,
         )
 
     # ---- render ----
