@@ -1,30 +1,25 @@
-"""In-game screen — five-panel grid mirroring the room layout.
+"""In-game screen — four-panel grid.
 
     ┌────────────┬─────────┐
     │   Map      │ Player  │
-    │            ├─────────┤
-    │            │ Actions │
+    │            │         │
     ├────────────┼─────────┤
     │ Reasoning  │ Coach   │
     └────────────┴─────────┘
 
-Tab cycles focus across focusable panels (Map / Actions / Reasoning /
-Coach). Arrows / j-k / Enter dispatch to the focused panel only.
+Tab cycles focus across panels. Arrows / j-k / Enter dispatch to the
+focused panel only.
 
-  - Map (focused): tile cursor with ←↑↓→. Enter on a unit opens its
-    UnitCard with full stats / tags / abilities / inventory.
+  - Map (focused): tile cursor with ←↑↓→ / h j k l. Enter on a unit
+    opens its UnitCard with description / stats / tags / abilities.
+  - Player (focused): scrollable roster of both teams — HP, class,
+    dead units rendered strikethrough.
   - Reasoning (focused): up/down scroll the agent-thought log.
-  - Coach (focused): type freely — Enter sends, Esc clears the buffer.
-  - Actions (focused): button list — Quit (the only player-side
-    action; end-turn / concede are issued by the agent).
+  - Coach (focused): type freely — Enter sends, Esc clears buffer.
 
-Two sources of game actions:
-
-  1. **Agent-driven**: NetworkedAgent runs on every poll where the
-     active player matches the viewer's team and no agent task is
-     already running. The TUI just renders + surfaces reasoning.
-  2. **Manual**: the human focuses the Actions panel and hits Enter
-     on `End Turn` / `Concede`. Useful for hybrid / kibitzing modes.
+There's no Actions panel during gameplay: end-turn and concede are
+agent-driven via MCP tools, and `q` in the footer is the only
+player-side command (opens a confirm before quitting).
 """
 
 from __future__ import annotations
@@ -32,7 +27,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import deque
-from dataclasses import dataclass
 from typing import Any
 
 from rich.align import Align
@@ -168,75 +162,6 @@ class PlayerPanel(Panel):
             border_style=border_style(focused),
             padding=(0, 1),
         )
-
-
-# ---- panel: Actions (quit only — gameplay is agent-driven) ----
-
-
-@dataclass
-class _Btn:
-    label: str
-    action: str
-    enabled: bool = True
-
-
-class ActionsPanel(Panel):
-    title = "Actions"
-
-    def __init__(self, screen: "GameScreen") -> None:
-        self.screen = screen
-        self.focus = 0
-
-    def key_hints(self) -> str:
-        return "↑/↓ select   Enter activate"
-
-    def _buttons(self) -> list[_Btn]:
-        # End-turn and concede are agent-driven actions: the running
-        # NetworkedAgent calls them through MCP tools as part of its
-        # play loop. Exposing buttons here would let the human race
-        # the agent and skip moves that haven't been decided yet.
-        # Quit (close the TUI) stays — it's how the human leaves.
-        return [
-            _Btn(label="Quit", action="quit"),
-        ]
-
-    def render(self, focused: bool) -> RenderableType:
-        buttons = self._buttons()
-        self.focus = max(0, min(self.focus, len(buttons) - 1))
-        lines: list[Text] = []
-        for i, btn in enumerate(buttons):
-            is_focused = focused and i == self.focus
-            marker = "➤ " if is_focused else "  "
-            if not btn.enabled:
-                style = "dim strike" if is_focused else "dim"
-            elif is_focused:
-                style = "bold cyan"
-            else:
-                style = "white"
-            lines.append(Text(f"{marker}{btn.label}", style=style))
-        return RichPanel(
-            Group(*lines),
-            title=self.title,
-            border_style=border_style(focused),
-            padding=(0, 1),
-        )
-
-    async def handle_key(self, key: str) -> Screen | None:
-        buttons = self._buttons()
-        if not buttons:
-            return None
-        if key in ("down", "j"):
-            self.focus = (self.focus + 1) % len(buttons)
-            return None
-        if key in ("up", "k"):
-            self.focus = (self.focus - 1) % len(buttons)
-            return None
-        if key == "enter":
-            btn = buttons[self.focus]
-            if not btn.enabled:
-                return None
-            return await self.screen.run_action(btn.action)
-        return None
 
 
 # ---- panel: Map (cursor + unit card on Enter) ----
@@ -548,13 +473,15 @@ class GameScreen(Screen):
         self._confirm: ConfirmModal | None = None
 
         self.map_panel = GameMapPanel(self)
-        self.actions_panel = ActionsPanel(self)
         self.reasoning_panel = ReasoningPanel(self)
         self.coach_panel = CoachPanel(self)
+        # No Actions panel during gameplay: end-turn / concede are
+        # agent-driven, and Quit lives in the footer as `q`. Skipping
+        # Actions frees the full right column for the Player panel's
+        # unit roster.
         self._panels: list[Panel] = [
             self.map_panel,
             PlayerPanel(self),
-            self.actions_panel,
             self.reasoning_panel,
             self.coach_panel,
         ]
@@ -662,16 +589,7 @@ class GameScreen(Screen):
         )
         body["top"].split_row(
             Layout(name="map", ratio=2),
-            Layout(name="right", ratio=1),
-        )
-        # Actions is just one Quit button now; a ratio'd split wastes
-        # most of its rows. Pin Actions to a fixed height and let
-        # Player soak up the rest so the roster (both teams, each
-        # unit on its own line) has room to display without
-        # clipping.
-        body["top"]["right"].split_column(
-            Layout(name="player"),
-            Layout(name="actions", size=4),
+            Layout(name="player", ratio=1),
         )
         body["bottom"].split_row(
             Layout(name="reasoning", ratio=2),
@@ -680,11 +598,8 @@ class GameScreen(Screen):
 
         focused = self._panels[self._focus_idx]
         body["top"]["map"].update(self.map_panel.render(focused is self.map_panel))
-        body["top"]["right"]["player"].update(
+        body["top"]["player"].update(
             self._panels[1].render(focused is self._panels[1])
-        )
-        body["top"]["right"]["actions"].update(
-            self.actions_panel.render(focused is self.actions_panel)
         )
         body["bottom"]["reasoning"].update(
             self.reasoning_panel.render(focused is self.reasoning_panel)
@@ -762,18 +677,6 @@ class GameScreen(Screen):
             self.app.state.scenario_description or {}
         ).get("unit_classes") or {}
         self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes)
-
-    async def run_action(self, action: str) -> Screen | None:
-        if action == "quit":
-            async def _quit(yes: bool) -> None:
-                if yes:
-                    self.app.exit()
-
-            self._confirm = ConfirmModal(
-                prompt="Quit Clash of Odin?", on_confirm=_quit,
-            )
-            return None
-        return None
 
     async def send_coach_message(self, text: str) -> None:
         gs = self.state or {}

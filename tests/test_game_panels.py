@@ -61,13 +61,13 @@ def test_player_panel_scrolls_when_focused():
     assert panel.scroll == 0
 
 
-def test_tab_cycles_through_all_five_panels_in_order():
+def test_tab_cycles_through_four_panels_in_order():
     app = _FakeApp()
     screen = GameScreen(app)
     _stub_state(app)
     screen.state = app.state.last_game_state
     assert screen._panels[screen._focus_idx] is screen.map_panel
-    expected = ["PlayerPanel", "ActionsPanel", "ReasoningPanel", "CoachPanel", "GameMapPanel"]
+    expected = ["PlayerPanel", "ReasoningPanel", "CoachPanel", "GameMapPanel"]
     for want in expected:
         asyncio.run(screen.handle_key("\t"))
         assert type(screen._panels[screen._focus_idx]).__name__ == want
@@ -118,8 +118,8 @@ def test_coach_panel_captures_typing_when_focused():
     screen = GameScreen(app)
     _stub_state(app)
     screen.state = app.state.last_game_state
-    # Tab to coach (Map → Player → Actions → Reasoning → Coach).
-    for _ in range(4):
+    # Tab to coach (Map → Player → Reasoning → Coach).
+    for _ in range(3):
         asyncio.run(screen.handle_key("\t"))
     assert screen._panels[screen._focus_idx] is screen.coach_panel
     for ch in "push the cavalry":
@@ -142,7 +142,7 @@ def test_coach_tab_only_releases_when_buffer_empty():
     screen = GameScreen(app)
     _stub_state(app)
     screen.state = app.state.last_game_state
-    for _ in range(4):
+    for _ in range(3):
         asyncio.run(screen.handle_key("\t"))
     # Type something, then try to Tab away → no-op while buffer non-empty.
     for ch in "hi":
@@ -167,8 +167,8 @@ def test_reasoning_panel_scroll_is_focus_gated():
     before = screen.reasoning_panel.offset
     asyncio.run(screen.handle_key("up"))
     assert screen.reasoning_panel.offset == before
-    # Tab Map→Player→Actions→Reasoning.
-    for _ in range(3):
+    # Tab Map→Player→Reasoning.
+    for _ in range(2):
         asyncio.run(screen.handle_key("\t"))
     asyncio.run(screen.handle_key("up"))
     assert screen.reasoning_panel.offset == before + 1

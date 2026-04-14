@@ -225,23 +225,24 @@ def test_player_panel_uses_neutral_color_when_team_random():
             assert "\x1b[1;31m" not in line, f"alice/bob colored red: {line!r}"
 
 
-def test_game_actions_panel_does_not_expose_end_turn_or_concede():
-    """End-turn and concede are agent-driven via MCP; the player
-    shouldn't be able to race the agent through the UI."""
-    from clash_of_odin.client.tui.screens.game import ActionsPanel as GameActions
+def test_game_screen_has_no_actions_panel():
+    """Regression: the Actions panel was removed from gameplay —
+    end-turn/concede are agent-driven and Quit lives in the footer
+    as `q`. Panels should be Map / Player / Reasoning / Coach."""
     from clash_of_odin.client.tui.app import SharedState
+    from clash_of_odin.client.tui.screens.game import GameScreen
 
-    class _S:
-        state = None
-        app = type("App", (), {"state": SharedState()})()
+    class _FakeGameApp:
+        def __init__(self):
+            self.state = SharedState()
+            self.client = None
 
-    s = _S()
-    s.state = {"active_player": "blue", "you": "blue", "status": "in_progress"}
-    panel = GameActions(s)
-    actions = [b.action for b in panel._buttons()]
-    assert "end_turn" not in actions
-    assert "concede" not in actions
-    assert "quit" in actions
+        def exit(self): pass
+
+    screen = GameScreen(_FakeGameApp())
+    titles = [type(p).__name__ for p in screen._panels]
+    assert "ActionsPanel" not in titles
+    assert titles == ["GameMapPanel", "PlayerPanel", "ReasoningPanel", "CoachPanel"]
 
 
 def test_dropdown_modal_width_is_stable_across_option_descriptions():
