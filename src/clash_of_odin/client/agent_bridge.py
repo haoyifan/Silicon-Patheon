@@ -41,18 +41,19 @@ def _slim_tool_response(tool_name: str, payload: dict) -> dict:
     The TUI's own `get_state` call path doesn't go through this — it
     uses `ServerClient.call` directly for rendering, so art_frames,
     display_name, etc. stay available. Agent-bound responses get the
-    same combat-only unit shape the per-turn prompt uses.
+    same turn-dynamic unit shape the per-turn prompt uses.
+
+    Only `get_state` needs slimming today:
+      - get_unit already returns a lean flat combat dict (no wrapping
+        under a "unit" key, so the old branch never matched anyway).
+      - get_legal_actions / simulate_attack / get_threat_map return
+        action / tile data with no unit records.
+      - get_history entries are action dicts, already small.
     """
     if not isinstance(payload, dict):
         return payload
     if tool_name == "get_state" and isinstance(payload.get("units"), list):
-        payload = {**payload, "units": [_slim_unit(u) for u in payload["units"]]}
-    if tool_name == "get_unit" and isinstance(payload.get("unit"), dict):
-        payload = {**payload, "unit": _slim_unit(payload["unit"])}
-    if tool_name == "get_history" and isinstance(payload.get("history"), list):
-        # History entries are action dicts, not units — they're
-        # already small. Nothing to trim here.
-        pass
+        return {**payload, "units": [_slim_unit(u) for u in payload["units"]]}
     return payload
 
 
@@ -325,7 +326,14 @@ class NetworkedAgent:
             if spec is None:
                 return {"error": {"code": "not_found",
                                   "message": f"unknown class {slug!r}"}}
-            return {"class": slug, "spec": spec}
+            # Strip render-only fields from the response. The agent
+            # uses describe_class to check stats when it forgets;
+            # ASCII portrait frames are ~500 bytes of no-value bulk.
+            slim_spec = {
+                k: v for k, v in spec.items()
+                if k not in ("art_frames", "glyph", "color")
+            }
+            return {"class": slug, "spec": slim_spec}
         if name == "describe_scenario":
             return self._scenario_bundle or {}
         result = await self.client.call(name, **args)

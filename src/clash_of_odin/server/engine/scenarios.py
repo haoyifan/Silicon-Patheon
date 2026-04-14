@@ -57,7 +57,7 @@ def _copy_stats(src: UnitStats) -> UnitStats:
     )
 
 
-def _build_unit_stats(name: str, spec: dict) -> UnitStats:
+def build_unit_stats(name: str, spec: dict) -> UnitStats:
     """Construct a UnitStats from a scenario YAML unit_classes entry.
 
     All fields optional. Core combat stats (hp_max / atk / defense /
@@ -304,7 +304,7 @@ def build_state(cfg: dict) -> GameState:
         cls.value: make_stats(cls) for cls in UnitClass
     }
     for name, spec in (cfg.get("unit_classes") or {}).items():
-        class_table[name] = _build_unit_stats(name, spec)
+        class_table[name] = build_unit_stats(name, spec)
 
     units: dict[str, Unit] = {}
     occupied_positions: dict[Pos, str] = {}

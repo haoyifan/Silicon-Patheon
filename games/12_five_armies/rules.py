@@ -18,7 +18,7 @@ from clash_of_odin.server.engine.state import (
     Unit,
     UnitStatus,
 )
-from clash_of_odin.server.engine.scenarios import _build_unit_stats
+from clash_of_odin.server.engine.scenarios import build_unit_stats
 
 
 def second_goblin_wave(state, turn: int, team: str, **_):
@@ -38,7 +38,7 @@ def second_goblin_wave(state, turn: int, team: str, **_):
         uid = f"u_r_goblin_warrior_{idx}"
         if uid in state.units:
             continue
-        stats = _build_unit_stats("goblin_warrior", spec)
+        stats = build_unit_stats("goblin_warrior", spec)
         state.units[uid] = Unit(
             id=uid, owner=Team.RED, class_="goblin_warrior",
             pos=Pos(x, y), hp=stats.hp_max,
@@ -56,7 +56,7 @@ def eagles_arrive(state, turn: int, team: str, **_):
         uid = f"u_b_eagle_{i}"
         if uid in state.units:
             continue
-        stats = _build_unit_stats("eagle", spec)
+        stats = build_unit_stats("eagle", spec)
         state.units[uid] = Unit(
             id=uid, owner=Team.BLUE, class_="eagle",
             pos=Pos(x, y), hp=stats.hp_max,
@@ -72,7 +72,7 @@ def beorn_arrives(state, turn: int, team: str, **_):
     uid = "u_b_beorn_bear_1"
     if uid in state.units:
         return
-    stats = _build_unit_stats("beorn_bear", spec)
+    stats = build_unit_stats("beorn_bear", spec)
     state.units[uid] = Unit(
         id=uid, owner=Team.BLUE, class_="beorn_bear",
         pos=Pos(9, 12), hp=stats.hp_max,

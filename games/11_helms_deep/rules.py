@@ -25,7 +25,7 @@ from clash_of_odin.server.engine.state import (
     UnitStatus,
 )
 from clash_of_odin.server.engine.units import make_stats
-from clash_of_odin.server.engine.scenarios import _build_unit_stats
+from clash_of_odin.server.engine.scenarios import build_unit_stats
 
 
 def explode_culvert(state, turn: int, team: str, **_):
@@ -87,7 +87,7 @@ def gandalf_arrives(state, turn: int, team: str, **_):
         # Skip if a unit with that id already exists (replay safety).
         if uid in state.units:
             continue
-        stats = _build_unit_stats(cname, spec)
+        stats = build_unit_stats(cname, spec)
         state.units[uid] = Unit(
             id=uid,
             owner=Team.BLUE,

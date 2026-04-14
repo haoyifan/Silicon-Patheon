@@ -224,6 +224,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 "res": s.res, "spd": s.spd, "move": s.move,
                 "rng_min": s.rng_min, "rng_max": s.rng_max,
                 "is_magic": s.is_magic, "can_heal": s.can_heal,
+                # Terrain restrictions — matter for agent planning
+                # (Cavalry can't enter forest, some classes can enter
+                # mountain). Without these the built-in class entries
+                # in describe_scenario dropped the flag entirely and
+                # the agent's class catalog omitted the restriction.
+                "can_enter_forest": s.can_enter_forest,
+                "can_enter_mountain": s.can_enter_mountain,
                 "tags": list(s.tags),
                 "display_name": s.display_name or cls.value.title(),
                 "description": _BUILTIN_DESCRIPTIONS.get(cls.value, ""),

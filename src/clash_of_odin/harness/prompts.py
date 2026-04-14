@@ -380,23 +380,24 @@ def build_turn_prompt(session: Session, viewer: Team) -> str:
 
 
 _AGENT_UNIT_KEYS = (
-    # Core identity / position.
-    "id", "owner", "class", "pos", "status", "alive",
-    # Combat stats the agent actually reasons over.
-    "hp", "hp_max", "atk", "def", "res", "spd", "move", "rng",
-    "is_magic", "can_heal",
+    # Only fields that change during a match. Class invariants
+    # (atk, def, res, spd, move, rng, is_magic, can_heal, hp_max)
+    # live in the system prompt's class catalog — the agent can
+    # look them up there or via describe_class. Keeping them per-
+    # turn duplicates information on every call.
+    "id", "owner", "class", "pos", "hp", "status", "alive",
 )
 
 
 def _slim_unit(u: dict) -> dict:
-    """Strip the per-unit dict down to combat-relevant fields for the
-    agent prompt. The full record carries ASCII art, class-level
-    descriptions, and reserved-v2 metadata (tags, MP, abilities,
-    damage_profile, etc.) that cost many hundreds of tokens per unit
-    and add nothing the agent uses for move decisions.
+    """Strip the per-unit dict down to TURN-DYNAMIC fields only.
 
-    For a 13-unit scenario (JTTW) this cuts per-turn prompt length
-    from ~21 KB to ~6 KB — noticeably faster LLM turnaround."""
+    Drops ASCII art, class descriptions, reserved-v2 metadata
+    (tags, MP, abilities, damage_profile, etc.) AND class-invariant
+    combat stats — the agent has those in its system prompt catalog
+    and can call describe_class to re-check. Per-turn unit entries
+    are now ~7 keys instead of ~30; per-turn JTTW prompt drops from
+    ~21 KB (pre-slim) to roughly 1.5 KB."""
     return {k: u.get(k) for k in _AGENT_UNIT_KEYS if k in u}
 
 
