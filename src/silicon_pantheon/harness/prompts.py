@@ -92,7 +92,17 @@ history but they can't be moved, attacked, healed, or countered.
    unexpectedly (e.g. a plugin mutated the board).
 3. For each ready unit, decide what to do:
    - `get_legal_actions(unit_id)` shows moves / attacks / heals available.
-     Requires it to be your turn and the unit to be yours.
+     Requires it to be your turn and the unit to be yours. **Call this
+     whenever you are unsure where a unit can go or whom it can hit.**
+     Do NOT reason about reachability by hand — the server's BFS knows
+     about terrain costs (e.g. mud cost 3, forest cost 1), friendly
+     units blocking tiles, edge-of-board, impassable tiles, and unit-
+     specific move budgets. Computing this in your head is tedious
+     and a frequent source of "all my units are stuck" mistakes.
+     Friendly units block their own tile, but the BFS routes AROUND
+     them — a unit boxed in by friendlies on its 4 immediate neighbours
+     can still have legal moves further out, as long as a path within
+     its move budget exists.
    - `simulate_attack(attacker_id, target_id, from_tile?)` PREDICTS the
      outcome but does NOT change the board. Its response is clearly
      marked (`kind: "prediction"`, `predicted_*` fields). If you want
@@ -123,7 +133,32 @@ it belongs to.
 
 {strategy_section}
 {lessons_section}
-When you're done with your turn, call `end_turn` and stop issuing tool calls."""
+## How to pace your turn
+
+You are NOT required to plan and emit your entire turn as a single batch
+of tool calls. The opposite is preferred: think in short rounds. After
+each round of tool calls you'll receive their results, then decide the
+next round. There's no penalty for taking many small rounds — only for
+emitting a giant batch you can't react to.
+
+A healthy pattern is:
+  round 1: `get_coach_messages`, then `get_legal_actions(unit_id)` for the
+           unit you're considering moving.
+  round 2: based on what came back, `move(...)` then
+           `simulate_attack(...)` if a target is now in range.
+  round 3: based on the simulate_attack result, `attack(...)` or `wait(...)`
+           on that unit.
+  ...repeat for each unit you want to act this turn.
+  final round: `end_turn`.
+
+Avoid emitting a long sequence like `[move, wait, move, wait, ..., end_turn]`
+in one assistant message — when one of those calls fails (e.g. the
+destination wasn't actually legal), you can't react and the rest of
+the batch goes to waste. One unit at a time, observe, then decide.
+
+When the turn really is finished, call `end_turn`. Do not keep issuing
+tool calls after `end_turn` succeeds — the next user message will tell
+you when it's your turn again."""
 
 
 STRATEGY_SECTION_TEMPLATE = """## Your coach's strategy playbook
