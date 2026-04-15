@@ -17,3 +17,9 @@ runs-server/
 coach_*.txt
 
 .env
+
+# Personal deployment notes — keep real IPs / domains / hostnames OUT of repo.
+# See docs/DEPLOY_HETZNER.md for the generic guide.
+Silicon-Pantheon-Deployment.md
+*-Deployment.md
+.silicon-pantheon/
