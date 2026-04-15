@@ -117,49 +117,78 @@ class OpenAIAdapter:
             total += len(json.dumps(m, default=str))
         return total // 4
 
+    # Replacement string for trimmed tool results. Short on purpose
+    # — long enough to be unambiguous if it surfaces in logs, short
+    # enough not to add up at scale.
+    _STUB_TOOL_RESULT = "[result trimmed for context bound]"
+    # Cap on assistant prose length per message in compacted form.
+    # Long chain-of-thought from prior turns rarely matters now;
+    # a few hundred chars preserves the gist.
+    _ASST_CONTENT_CAP = 1500
+
     def _compact_prior_turns(self) -> None:
-        """Shrink completed turns down to their reasoning so the
-        context window doesn't grow without bound.
+        """Shrink completed turns to bound the context window without
+        destroying the conversation's structural cues.
 
         Called at the START of each new turn's play_turn — every
         message already in self._messages is from a completed turn
-        and safe to rewrite. Strategy:
+        and safe to rewrite. Earlier strategy was "drop tool_calls
+        and tool messages, keep prose only" but that broke xAI /
+        Grok: with no `tool_calls` examples in their own conversation
+        history, those models fell back to emitting
+        `<function_call>...</function_call>` in plain text.
 
-          - keep the system message verbatim
-          - keep user (turn-prompt) messages — they're small and
-            carry useful "here's what turn N looked like" context
-          - keep assistant messages' `content` text (the reasoning
-            the LLM emitted in prose) but drop their `tool_calls`
-            field; cross-turn reasoning needs the prose, not the
-            per-tool payload
-          - drop `tool` role messages entirely — the 10-20 KB
-            get_state dumps are the main context-window offender
-            and the model doesn't need them to remember what
-            happened (the next turn's fresh user prompt carries
-            the current state)
-          - drop assistants whose content was empty after stripping
-            (they were tool_calls-only — nothing left to contribute).
+        Current strategy preserves the SHAPE of the conversation:
 
-        Problem this solves: a Grok match at turn 5-6 hit
-        'maximum prompt length is 131072 but request contains 351186'
-        because self._messages grew linearly with every tool round-
-        trip. Compacting at turn boundaries keeps growth flat."""
+          - system / user — kept verbatim.
+          - assistant — keep content (capped to _ASST_CONTENT_CAP)
+            AND keep tool_calls field as-is. The model needs to
+            see "I called these tools last turn" so it knows the
+            native tool_calls protocol is the right way.
+          - tool — keep the message structure (role + tool_call_id)
+            but replace .content with a small stub. This keeps the
+            transcript valid (every assistant.tool_calls has its
+            matching tool result) AND drops the heavy payload that
+            was the actual problem (get_state dumps were the main
+            offender).
+
+        The token cost per "stubbed" tool round-trip drops from
+        ~5KB to ~80 bytes while the model still sees both halves
+        of the conversation, including the proper tool-call shape.
+        """
         if len(self._messages) <= 1:
             return  # just the system prompt; nothing to compact
 
         compacted: list[dict] = []
         for m in self._messages:
             role = m.get("role")
-            if role == "system" or role == "user":
+            if role in ("system", "user"):
                 compacted.append(m)
                 continue
             if role == "tool":
+                # Preserve the structural pairing (assistant.tool_calls
+                # → matching tool result) but drop the heavy payload.
+                # OpenAI rejects orphaned tool_calls, so we MUST keep
+                # the message — just empty its content.
+                compacted.append({
+                    "role": "tool",
+                    "tool_call_id": m.get("tool_call_id", ""),
+                    "content": self._STUB_TOOL_RESULT,
+                })
                 continue
             if role == "assistant":
                 content = m.get("content") or ""
-                if not content.strip():
-                    continue
-                compacted.append({"role": "assistant", "content": content})
+                if len(content) > self._ASST_CONTENT_CAP:
+                    content = content[: self._ASST_CONTENT_CAP] + "…[truncated]"
+                new_m: dict = {"role": "assistant", "content": content}
+                if m.get("tool_calls"):
+                    # Keep the tool_calls metadata so the model sees
+                    # the right protocol from its own history. The
+                    # paired tool result above is now a stub but the
+                    # API still validates the pairing.
+                    new_m["tool_calls"] = m["tool_calls"]
+                compacted.append(new_m)
+                continue
         self._messages = compacted
 
     async def play_turn(
@@ -362,12 +391,42 @@ class OpenAIAdapter:
                     result_text = json.dumps(result, default=str)
                 except Exception as e:
                     result_text = json.dumps({"error": str(e)})
+                # Cap individual tool-result size before appending so
+                # one runaway response (a giant get_state, an oversized
+                # threat map) can't single-handedly blow the context.
+                # 8KB per result is generous — get_state after our
+                # _slim_tool_response shedding board.tiles fits well
+                # under this for typical board sizes.
+                MAX_RESULT_BYTES = 8000
+                if len(result_text) > MAX_RESULT_BYTES:
+                    log.warning(
+                        "tool result for %s is %d bytes (cap %d) — "
+                        "truncating to keep context bound; if this "
+                        "fires repeatedly tighten _slim_tool_response",
+                        tc.function.name, len(result_text), MAX_RESULT_BYTES,
+                    )
+                    result_text = (
+                        result_text[:MAX_RESULT_BYTES]
+                        + "...[truncated; full payload in client log]"
+                    )
                 self._messages.append(
                     {
                         "role": "tool",
                         "tool_call_id": tc.id,
                         "content": result_text,
                     }
+                )
+
+            # Mid-turn growth check: log when est_tokens crosses 60k
+            # so operators see the trajectory before we hit the
+            # provider's hard limit (typically 128-200k).
+            est = self._estimate_tokens(self._messages)
+            if est > 60_000:
+                log.warning(
+                    "transcript at %d est_tokens mid-turn (iter=%d, "
+                    "messages=%d) — consider lowering max_iterations "
+                    "or tightening tool-result slimming",
+                    est, _iter, len(self._messages),
                 )
 
     async def summarize_match(

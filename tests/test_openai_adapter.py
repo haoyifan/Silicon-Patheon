@@ -252,21 +252,39 @@ async def test_transcript_compacts_between_turns() -> None:
     after_tokens = adapter._estimate_tokens(adapter._messages)
     roles = [m["role"] for m in adapter._messages]
 
-    # No 'tool' messages survive from the prior turn.
-    # The only 'tool' messages allowed would be from the current turn,
-    # but this test's turn 2 didn't call any tools.
-    assert "tool" not in roles, f"tool role survived compaction: {roles}"
     # The transcript shrank substantially (the 20KB dump was the
-    # majority of tokens).
-    assert after_tokens < before_tokens // 2, (
+    # majority of tokens). Compaction now stubs out tool result
+    # CONTENT but keeps the message structure so xAI / Grok models
+    # still see the proper tool-call protocol in their history.
+    assert after_tokens < before_tokens // 4, (
         f"compaction didn't shrink meaningfully: {before_tokens}→{after_tokens}"
     )
-    # System prompt is preserved.
+    # Tool messages survive structurally (with stub content) so the
+    # paired assistant.tool_calls isn't orphaned.
+    tool_msgs = [m for m in adapter._messages if m.get("role") == "tool"]
+    assert tool_msgs, "tool messages must survive structurally"
+    for tm in tool_msgs:
+        # Either the stub or the legitimate (small) current-turn one.
+        # The injected 20KB dump must NOT be intact.
+        assert len(tm.get("content", "")) < 200, (
+            f"tool result content not stubbed: {tm.get('content', '')[:60]}..."
+        )
+    # System prompt preserved.
     assert roles[0] == "system"
     # Prior turn's assistant reasoning text survives.
     assert any(
         m.get("role") == "assistant" and "Plan turn 1" in (m.get("content") or "")
         for m in adapter._messages
+    )
+    # AND the tool_calls metadata on a prior assistant survives, so
+    # the model sees the format pattern.
+    assert any(
+        m.get("role") == "assistant" and m.get("tool_calls")
+        for m in adapter._messages
+    ), (
+        "no assistant.tool_calls survived compaction — xAI / Grok "
+        "models lose the format pattern and start hallucinating "
+        "<function_call> XML in plain text"
     )
 
 

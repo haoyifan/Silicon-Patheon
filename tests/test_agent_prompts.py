@@ -128,3 +128,48 @@ def test_turn_prompt_only_carries_dynamic_state():
     assert "hp" in p
     assert "art_frames" not in p
     assert "should not appear" not in p
+
+
+def test_slim_tool_response_drops_board_tiles_from_get_state():
+    """Regression: get_state's board.tiles array (180+ entries on
+    an 18x10 board, ~5KB per call) was the dominant within-turn
+    token sink. Agents call get_state many times per turn and the
+    terrain map is invariant — they have it from the system prompt's
+    map_grid. _slim_tool_response must drop it for the agent
+    payload while keeping it intact for the TUI's own get_state
+    call path (which doesn't go through this slimmer)."""
+    from silicon_pantheon.client.agent_bridge import _slim_tool_response
+
+    raw = {
+        "turn": 3,
+        "active_player": "blue",
+        "you": "blue",
+        "board": {
+            "width": 18,
+            "height": 10,
+            "tiles": [{"x": x, "y": y, "type": "plain"} for x in range(18) for y in range(10)],
+            "forts": [{"x": 0, "y": 0, "owner": "blue"}],
+        },
+        "units": [
+            {"id": "u_b_x_1", "owner": "blue", "class": "knight",
+             "pos": {"x": 1, "y": 1}, "hp": 22, "hp_max": 22,
+             "status": "ready", "alive": True},
+        ],
+        "_visible_tiles": [[0, 0], [1, 1]],
+    }
+    slim = _slim_tool_response("get_state", raw)
+    # Tiles dropped → savings.
+    assert "tiles" not in slim["board"], (
+        "board.tiles must be dropped from agent-bound get_state — "
+        "it's invariant during a match and the system prompt's "
+        "map_grid already shows it"
+    )
+    # Forts and dimensions retained.
+    assert slim["board"]["width"] == 18
+    assert slim["board"]["forts"]
+    # Visibility annotation also dropped.
+    assert "_visible_tiles" not in slim
+    # Other state still there.
+    assert slim["turn"] == 3
+    assert slim["active_player"] == "blue"
+    assert slim["units"]

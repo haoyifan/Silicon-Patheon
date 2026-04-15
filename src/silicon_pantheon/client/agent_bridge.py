@@ -46,17 +46,38 @@ def _slim_tool_response(tool_name: str, payload: dict) -> dict:
     display_name, etc. stay available. Agent-bound responses get the
     same turn-dynamic unit shape the per-turn prompt uses.
 
-    Only `get_state` needs slimming today:
-      - get_unit already returns a lean flat combat dict (no wrapping
-        under a "unit" key, so the old branch never matched anyway).
-      - get_legal_actions / simulate_attack / get_threat_map return
-        action / tile data with no unit records.
-      - get_history entries are action dicts, already small.
+    Slimming targets:
+      - get_state.units → strip per-unit static stats (handled
+        by _slim_unit) — keeps id/owner/class/pos/hp/status/alive.
+      - get_state.board.tiles → DROPPED entirely. The terrain map
+        is invariant during a match (plugin mutations are rare and
+        scenario-announced) and is already shipped in the system
+        prompt's map_grid section. Re-shipping all 180+ tiles on
+        every get_state call was the dominant within-turn token
+        sink — the agent would call get_state 10+ times mid-turn
+        and each call cost ~5KB of redundant terrain. Removing it
+        cuts a typical 18×10 board's per-call payload by ~70%.
+      - _visible_tiles annotation → DROPPED. Same reason — agent
+        already knows the board shape from the system prompt and
+        can reason about visibility from unit positions.
+      - get_unit / get_legal_actions / simulate_attack /
+        get_threat_map — already lean.
+      - get_history — entries are small action dicts.
     """
     if not isinstance(payload, dict):
         return payload
-    if tool_name == "get_state" and isinstance(payload.get("units"), list):
-        return {**payload, "units": [_slim_unit(u) for u in payload["units"]]}
+    if tool_name == "get_state":
+        slim: dict = dict(payload)
+        if isinstance(slim.get("units"), list):
+            slim["units"] = [_slim_unit(u) for u in slim["units"]]
+        # Drop the bulky board.tiles array; keep board dimensions
+        # + forts (forts mutate during play; shape doesn't).
+        if isinstance(slim.get("board"), dict):
+            board = dict(slim["board"])
+            board.pop("tiles", None)
+            slim["board"] = board
+        slim.pop("_visible_tiles", None)
+        return slim
     return payload
 
 
