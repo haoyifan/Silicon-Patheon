@@ -145,16 +145,34 @@ class PostMatchScreen(Screen):
     # ---- actions ----
 
     async def _download_replay(self) -> None:
+        import logging as _logging
+
+        _dlog = _logging.getLogger("silicon.tui.post_match")
         if self.app.client is None:
             self._download_error = "not connected"
+            _dlog.warning("download_replay: app.client is None")
             return
+        # Log the cid we're about to use so it can be cross-referenced
+        # with the server-side download_replay log line that prints
+        # the connection's actual state. If these don't match we know
+        # the TUI is using a stale/fresh cid.
+        _dlog.info(
+            "download_replay: pressing d cid=%s room_id=%s",
+            self.app.client.connection_id,
+            self.app.state.room_id,
+        )
         try:
             r = await self.app.client.call("download_replay")
         except Exception as e:
             self._download_error = str(e)
+            _dlog.exception("download_replay: transport raised")
             return
         if not r.get("ok"):
             self._download_error = r.get("error", {}).get("message", "rejected")
+            _dlog.warning(
+                "download_replay: server rejected cid=%s err=%s",
+                self.app.client.connection_id, r.get("error"),
+            )
             return
         body = r.get("replay_jsonl", "")
         dir_ = _default_download_dir()

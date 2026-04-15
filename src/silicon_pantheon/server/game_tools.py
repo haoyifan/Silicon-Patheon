@@ -477,8 +477,33 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         """
         conn = app.get_connection(connection_id)
         if conn is None:
+            log.warning(
+                "download_replay rejected: unknown cid=%s "
+                "(known_cids=%d, conn_to_room_keys=%s)",
+                connection_id, len(app._connections),
+                list(app.conn_to_room.keys())[:5],
+            )
             return _error(ErrorCode.TOKEN_INVALID, "unknown connection_id")
         if conn.state != ConnectionState.IN_GAME:
+            # Diagnostic for the "winner pressed d on post-match,
+            # got download_replay requires state=in_game" report.
+            # We need to see (a) what state the conn IS in, (b)
+            # whether it's still seated in a room, (c) whether the
+            # session still exists. Together those pin down which
+            # transition (leave_room / hard_disconnect / TUI re-
+            # connect with a fresh cid) actually happened.
+            seated = app.conn_to_room.get(connection_id)
+            sess_present = (
+                seated is not None and seated[0] in app.sessions
+            )
+            log.warning(
+                "download_replay rejected: cid=%s state=%s "
+                "(expected in_game) seated=%s session_present=%s "
+                "player=%s",
+                connection_id, conn.state.value, seated,
+                sess_present,
+                getattr(conn, "player", None),
+            )
             return _error(
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
                 "download_replay requires state=in_game",
