@@ -47,9 +47,13 @@ names match what an agent author would actually see at runtime.
    └─────────────────────┘
 ```
 
-- **`NetworkedAgent`** — orchestrator. Holds the persistent provider
-  session, builds turn prompts, dispatches tool calls back to the
-  server, tracks delta cursors.
+- **`NetworkedAgent`** — orchestrator. Lives **client-side** (same
+  process as the TUI). The "Networked" prefix means it talks to a
+  remote silicon-serve over MCP, not that it runs on the server.
+  Each player's local client pays for / authenticates its own LLM
+  provider; the server just adjudicates rules. Holds the persistent
+  provider session, builds turn prompts, dispatches tool calls back
+  to the server, tracks delta cursors.
 - **`ProviderAdapter`** — provider-specific (Anthropic CLI session vs.
   OpenAI Chat Completions). Owns the conversation transcript with the
   LLM.
