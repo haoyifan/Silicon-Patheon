@@ -545,19 +545,38 @@ class NetworkedAgent:
             time_budget_s=self.time_budget_s,
         )
 
-        # Advance the delta cursors AFTER the adapter call returns, so
-        # a mid-turn exception (retry / concede path) doesn't leave us
-        # with a cursor pointing past events the agent never saw.
-        self._turns_played += 1
-        try:
-            r = await self.client.call("get_history", last_n=0)
-            self._history_cursor = len(
-                (r.get("result") or {}).get("history") or []
+        # Only advance the delta bookkeeping if the agent actually
+        # ended the turn (active_player has flipped to the opponent).
+        # If it's still us on the clock, the adapter hit max_iterations
+        # / a time budget / a provider error without calling end_turn,
+        # and the TUI will retrigger play_turn on the next poll. In
+        # that case we must NOT advance _turns_played (next prompt
+        # should still be the same shape) and must NOT advance the
+        # history cursor (there's nothing new for the agent to see
+        # anyway; their own partial actions are shown through unit
+        # statuses). Without this guard the re-entry would silently
+        # switch the agent from bootstrap to delta mid-turn and show
+        # "Opponent did not act" when the agent is actually resuming
+        # their own incomplete turn.
+        post_state = await self._fetch_state()
+        turn_ended = post_state.get("active_player") != viewer.value
+        if turn_ended:
+            self._turns_played += 1
+            try:
+                r = await self.client.call("get_history", last_n=0)
+                self._history_cursor = len(
+                    (r.get("result") or {}).get("history") or []
+                )
+            except Exception:
+                log.exception("get_history failed; delta cursor not advanced")
+        else:
+            log.info(
+                "play_turn returned without end_turn (active still %s); "
+                "delta bookkeeping held, will retry on next trigger",
+                viewer.value,
             )
-        except Exception:
-            log.exception("get_history failed; delta cursor not advanced")
 
-        return await self._fetch_state()
+        return post_state
 
     async def summarize_match(self, viewer: Team) -> Lesson | None:
         """Post-match lesson writer. Saves to LessonStore if configured."""

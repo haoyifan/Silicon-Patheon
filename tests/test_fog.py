@@ -16,6 +16,7 @@ from silicon_pantheon.shared.fog import visible_tiles
 from silicon_pantheon.shared.viewer_filter import (
     ViewerContext,
     currently_visible,
+    filter_history,
     filter_state,
     filter_threat_map,
     filter_unit,
@@ -146,3 +147,53 @@ def test_currently_visible_matches_visible_tiles() -> None:
     state = load_scenario("01_tiny_skirmish")
     ctx = _ctx(Team.BLUE, "classic")
     assert currently_visible(state, ctx) == visible_tiles(state, Team.BLUE)
+
+
+def test_filter_history_drops_hidden_enemy_actions() -> None:
+    """Regression: get_history was not fog-filtered, so the delta
+    turn prompt surfaced enemy actions (with unit_ids + destination
+    tiles) that fog should have hidden. Leaks both the existence of
+    the unit and its movement pattern."""
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    ctx = _ctx(Team.BLUE, "classic")
+    red = next(iter(state.units_of(Team.RED)))
+
+    history = {
+        "history": [
+            # Our own action — must always pass through.
+            {"type": "move", "unit_id": "u_b_knight_1",
+             "dest": {"x": 0, "y": 0}},
+            # Enemy action on a hidden tile — must be dropped.
+            {"type": "move", "unit_id": red.id,
+             "dest": {"x": state.board.width - 1, "y": state.board.height - 1}},
+            # end_turn: carries no position, always passes.
+            {"type": "end_turn", "by": "red"},
+        ],
+        "last_action": {"type": "move", "unit_id": red.id,
+                        "dest": {"x": state.board.width - 1,
+                                 "y": state.board.height - 1}},
+    }
+    out = filter_history(history, state, ctx)
+    kept_types = [(e.get("type"), e.get("unit_id")) for e in out["history"]]
+    assert ("move", "u_b_knight_1") in kept_types, "own action missing"
+    assert ("move", red.id) not in kept_types, (
+        "hidden enemy move leaked through — " + str(kept_types)
+    )
+    assert ("end_turn", None) in kept_types, "end_turn should pass through"
+    # Redacted last_action since its actor isn't visible.
+    assert out["last_action"] is None
+
+
+def test_filter_history_passes_through_when_fog_none() -> None:
+    """fog=none short-circuit."""
+    state = load_scenario("01_tiny_skirmish")
+    ctx = _ctx(Team.BLUE, "none")
+    history = {
+        "history": [
+            {"type": "move", "unit_id": "u_r_knight_1",
+             "dest": {"x": 99, "y": 99}},
+        ],
+        "last_action": None,
+    }
+    assert filter_history(history, state, ctx) is history

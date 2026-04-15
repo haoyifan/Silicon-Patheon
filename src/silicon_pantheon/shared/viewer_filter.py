@@ -126,6 +126,71 @@ def filter_unit(
     return None
 
 
+def filter_history(
+    history_result: dict[str, Any], state: GameState, ctx: ViewerContext
+) -> dict[str, Any]:
+    """Filter action history so fog-of-war doesn't leak through.
+
+    The raw history records every action by both sides verbatim,
+    including enemy unit ids and destination tiles. Under fog modes
+    a viewer should only see enemy actions whose relevant position
+    was visible WHEN the action happened — but that per-turn
+    visibility isn't preserved in the record, so we apply the
+    conservative rule: show an enemy action only if the tile it
+    references is currently visible.
+
+    Own-team actions always pass through (you saw yourself act).
+    end_turn events are surfaced verbatim — they carry no position.
+
+    Concretely this stops an agent from reading "u_r_stealth_1 moved
+    to (10, 4)" in the delta prompt when that unit is otherwise
+    hidden under fog.
+    """
+    if ctx.fog_mode == "none":
+        return history_result
+
+    visible = currently_visible(state, ctx)
+    team = ctx.team.value
+    enemy_ids_currently_visible = {
+        u.id for u in state.units_of(ctx.team.other()) if u.pos in visible
+    }
+
+    def _event_visible(ev: dict) -> bool:
+        if not isinstance(ev, dict):
+            return True
+        t = ev.get("type")
+        # Own actions always surface.
+        actor_id = ev.get("unit_id") or ev.get("by")
+        if isinstance(actor_id, str) and actor_id.startswith(f"u_{team[0]}_"):
+            return True
+        if ev.get("by") == team:
+            return True
+        # Position-free events (end_turn, etc.) pass through.
+        if t == "end_turn":
+            return True
+        # Enemy action: show only if actor currently visible OR the
+        # referenced tile is visible. "Currently visible" is a proxy
+        # for "the player saw this happen"; imperfect but doesn't
+        # leak fresh intel.
+        if isinstance(actor_id, str) and actor_id in enemy_ids_currently_visible:
+            return True
+        dest = ev.get("dest")
+        if isinstance(dest, dict):
+            from silicon_pantheon.server.engine.state import Pos as _Pos
+            if _Pos(int(dest.get("x", -1)), int(dest.get("y", -1))) in visible:
+                return True
+        return False
+
+    filtered = [ev for ev in (history_result.get("history") or []) if _event_visible(ev)]
+    out = dict(history_result)
+    out["history"] = filtered
+    # last_action: redact if not visible under the same rule.
+    la = out.get("last_action")
+    if isinstance(la, dict) and not _event_visible(la):
+        out["last_action"] = None
+    return out
+
+
 def filter_threat_map(
     threats: dict[str, Any], state: GameState, ctx: ViewerContext
 ) -> dict[str, Any]:

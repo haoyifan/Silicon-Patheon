@@ -183,6 +183,104 @@ def test_networked_agent_skips_turn_when_not_active() -> None:
     )
 
 
+def test_networked_agent_holds_delta_cursor_when_turn_not_ended() -> None:
+    """Edge case: adapter.play_turn returns WITHOUT the agent having
+    called end_turn (max_iterations hit, time budget exhausted, etc.).
+    On the next TUI poll we retrigger play_turn for the same half-
+    turn. The delta bookkeeping (_turns_played, _history_cursor) must
+    NOT advance in that case — otherwise the retry ships a delta
+    prompt saying 'Opponent did not act' when the agent is actually
+    resuming their own incomplete turn."""
+    from silicon_pantheon.client.agent_bridge import NetworkedAgent
+
+    class _StubClient:
+        async def call(self, tool: str, **kw):
+            if tool == "get_state":
+                # active_player STAYS blue — our agent didn't end_turn.
+                return {"ok": True, "result": _state("blue", turn=2)}
+            if tool == "get_history":
+                return {"ok": True, "result": {"history": []}}
+            return {"ok": True, "result": {}}
+
+    class _StubAdapter:
+        async def play_turn(self, **kwargs):
+            # No-op: simulates an adapter that returned without
+            # calling end_turn.
+            return
+
+        async def close(self) -> None:
+            return None
+
+    agent = NetworkedAgent(
+        client=_StubClient(),
+        model="fake",
+        scenario="01_tiny_skirmish",
+        adapter=_StubAdapter(),
+    )
+
+    # First call (bootstrap). Adapter returns without end_turn; cursor
+    # must stay at 0 and turns_played at 0.
+    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
+    assert agent._turns_played == 0, (
+        "turns_played advanced despite agent not ending turn"
+    )
+    assert agent._history_cursor == 0, (
+        "history cursor advanced despite agent not ending turn"
+    )
+
+    asyncio.run(agent.close())
+
+
+def test_networked_agent_advances_cursor_when_turn_ends() -> None:
+    """Positive case: adapter returns and active_player has flipped
+    → bookkeeping advances normally."""
+    from silicon_pantheon.client.agent_bridge import NetworkedAgent
+
+    state_stream = iter([
+        _state("blue", turn=2),  # pre: our turn
+        # post-play: opponent is now active; cursor should advance.
+        {**_state("red", turn=2), "you": "blue"},
+    ])
+
+    class _StubClient:
+        async def call(self, tool: str, **kw):
+            if tool == "get_state":
+                return {"ok": True, "result": next(state_stream)}
+            if tool == "get_history":
+                # History has 3 events (our move, attack, end_turn).
+                return {
+                    "ok": True,
+                    "result": {
+                        "history": [
+                            {"type": "move", "unit_id": "u_b_x",
+                             "dest": {"x": 1, "y": 1}},
+                            {"type": "attack", "unit_id": "u_b_x",
+                             "target_id": "u_r_y"},
+                            {"type": "end_turn", "by": "blue"},
+                        ]
+                    },
+                }
+            return {"ok": True, "result": {}}
+
+    class _StubAdapter:
+        async def play_turn(self, **kwargs):
+            return
+
+        async def close(self) -> None:
+            return None
+
+    agent = NetworkedAgent(
+        client=_StubClient(),
+        model="fake",
+        scenario="01_tiny_skirmish",
+        adapter=_StubAdapter(),
+    )
+    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
+    assert agent._turns_played == 1
+    assert agent._history_cursor == 3
+    asyncio.run(agent.close())
+
+
 def test_networked_agent_skips_turn_when_game_over() -> None:
     """Game already ended → no prompt, no adapter call."""
     from silicon_pantheon.client.agent_bridge import NetworkedAgent

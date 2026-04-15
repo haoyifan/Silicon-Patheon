@@ -33,6 +33,7 @@ from silicon_pantheon.server.tools import ToolError, call_tool
 from silicon_pantheon.shared.protocol import ConnectionState, ErrorCode
 from silicon_pantheon.shared.viewer_filter import (
     ViewerContext,
+    filter_history,
     filter_state,
     filter_threat_map,
     filter_unit,
@@ -45,6 +46,7 @@ from silicon_pantheon.shared.viewer_filter import (
 _FILTERED_STATE_TOOLS = frozenset({"get_state"})
 _FILTERED_UNIT_TOOLS = frozenset({"get_unit"})
 _FILTERED_THREAT_TOOLS = frozenset({"get_threat_map"})
+_FILTERED_HISTORY_TOOLS = frozenset({"get_history"})
 
 
 def _viewer_context(session: Session, viewer: Team) -> ViewerContext:
@@ -74,6 +76,8 @@ def _apply_filter(
         return filtered if filtered is not None else {"error": "unit not visible"}
     if tool_name in _FILTERED_THREAT_TOOLS:
         return filter_threat_map(result, session.state, ctx)
+    if tool_name in _FILTERED_HISTORY_TOOLS:
+        return filter_history(result, session.state, ctx)
     return result
 
 
