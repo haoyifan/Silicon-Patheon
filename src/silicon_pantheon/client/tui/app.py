@@ -144,6 +144,7 @@ class TUIApp:
         # can still take its turn.
         self._help_visible = False
         self._help_scroll = 0
+        self._help_gg = False
 
     # ---- lifecycle ----
 
@@ -337,30 +338,38 @@ class TUIApp:
         """Toggle / scroll the help overlay. Returns True if the key
         was consumed.
 
-        F2 toggles. While the overlay is up, ↑/↓/k/j scroll, Esc/q/F2
-        dismiss; everything else is swallowed so it doesn't leak to
-        the underlying screen and accidentally end a turn."""
+        F2 toggles. While the overlay is up, full vim-style scroll
+        keys are accepted (j/k, ^f/^b, ^d/^u, gg, G, home/end,
+        pgup/pgdown). Esc/q/F2 dismiss; everything else is swallowed
+        so it doesn't leak to the underlying screen and accidentally
+        end a turn."""
         if key in ("f2", "?"):
             self._help_visible = not self._help_visible
             self._help_scroll = 0
+            self._help_gg = False
             return True
         if not self._help_visible:
             return False
         if key in ("esc", "q"):
             self._help_visible = False
             self._help_scroll = 0
+            self._help_gg = False
             return True
-        if key in ("up", "k"):
-            self._help_scroll = max(0, self._help_scroll - 1)
+        from silicon_pantheon.client.tui.panels import apply_vim_scroll
+
+        # Stash gg latch as a list so apply_vim_scroll can mutate it.
+        gg_state = [getattr(self, "_help_gg", False)]
+        nxt = apply_vim_scroll(
+            key, current=self._help_scroll, gg_state=gg_state
+        )
+        self._help_gg = gg_state[0]
+        if nxt is not None:
+            self._help_scroll = nxt
             return True
-        if key in ("down", "j"):
-            self._help_scroll += 1
-            return True
-        if key == "pgup":
-            self._help_scroll = max(0, self._help_scroll - 10)
-            return True
-        if key in ("pgdn", " "):
-            self._help_scroll += 10
+        # Spacebar is the classic page-down for help-style overlays;
+        # keep that compatibility.
+        if key == " ":
+            self._help_scroll += 12
             return True
         # While help is open, swallow everything else so 'e', 'x', etc.
         # don't reach the game screen and end the turn / concede.
@@ -567,6 +576,16 @@ def _read_key_blocking() -> str:
                         return "f3"
                     if params == "14":
                         return "f4"
+                    # Page Up / Page Down (standard CSI).
+                    if params == "5":
+                        return "pgup"
+                    if params == "6":
+                        return "pgdown"
+                    # Home / End (CSI variants).
+                    if params in ("1", "7"):
+                        return "home"
+                    if params in ("4", "8"):
+                        return "end"
             return "esc"
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
@@ -577,6 +596,23 @@ def _read_key_blocking() -> str:
         return "q"
     if ch == "\x7f":  # backspace
         return "backspace"
+    # Ctrl-letter shortcuts (vim-style scrollers). Emit named tokens
+    # so screens match on intent rather than raw control bytes. We
+    # avoid ctrl-c (0x03 above → "q") and ctrl-j / ctrl-m which
+    # collide with enter.
+    _CTRL = {
+        "\x02": "ctrl-b",  # vim page up
+        "\x04": "ctrl-d",  # vim half-page down
+        "\x06": "ctrl-f",  # vim page down
+        "\x15": "ctrl-u",  # vim half-page up
+    }
+    if ch in _CTRL:
+        return _CTRL[ch]
+    # Preserve 'G' (shift-g) as a distinct token so "G = bottom /
+    # gg = top" works. Other uppercase letters fall through to
+    # lowercase so existing handlers keep working.
+    if ch == "G":
+        return "shift-g"
     return ch.lower()
 
 

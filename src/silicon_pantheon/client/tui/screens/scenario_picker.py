@@ -70,6 +70,7 @@ class ScenarioPicker:
         self.focus: str = "list"
         self.cursor = (0, 0)
         self.desc_scroll = 0
+        self._desc_gg: list[bool] = [False]
         self.unit_card: UnitCard | None = None
 
     # ---- async bridge ----
@@ -154,7 +155,7 @@ class ScenarioPicker:
                 style="dim",
             )
         return Text(
-            "[Description] ↑/↓ scroll   "
+            "[Description] j/k ↕  ^f/^b page  ^d/^u ½page  gg/G top/bot   "
             "Tab → scenario list   Esc cancel",
             style="dim",
         )
@@ -431,10 +432,13 @@ class ScenarioPicker:
         return self._handle_desc_key(key)
 
     def _handle_desc_key(self, key: str) -> bool:
-        if key in ("down", "j"):
-            self.desc_scroll += 1
-        elif key in ("up", "k"):
-            self.desc_scroll = max(0, self.desc_scroll - 1)
+        from silicon_pantheon.client.tui.panels import apply_vim_scroll
+
+        nxt = apply_vim_scroll(
+            key, current=self.desc_scroll, gg_state=self._desc_gg
+        )
+        if nxt is not None:
+            self.desc_scroll = nxt
         return False
 
     async def _handle_list_key(self, key: str) -> bool:

@@ -201,6 +201,55 @@ def test_coach_tab_only_releases_when_buffer_empty():
     assert screen._panels[screen._focus_idx] is screen.map_panel
 
 
+def test_reasoning_panel_vim_keys_route_correctly():
+    """Vim-style scroll keys on a read-only panel: ctrl-f/ctrl-b for
+    page, ctrl-d/ctrl-u for half-page, shift-g for tail (here = 0
+    because ReasoningPanel is tail-anchored), gg for oldest."""
+    app = _FakeApp()
+    app.console = Console(width=120, height=30)
+    _stub_state(app)
+    screen = GameScreen(app)
+    screen.state = app.state.last_game_state
+    panel = screen.reasoning_panel
+
+    # Seed enough thoughts to give max_back room.
+    app.state.thoughts.extend(
+        [(f"00:00:0{i}", "blue", f"line {i}") for i in range(20)]
+    )
+
+    # Tail anchor: line_offset starts at 0.
+    assert panel.line_offset == 0
+
+    # ctrl-b: page back into history (offset increases).
+    asyncio.run(panel.handle_key("ctrl-b"))
+    assert panel.line_offset == 12
+
+    # ctrl-f: page forward toward tail (offset decreases).
+    asyncio.run(panel.handle_key("ctrl-f"))
+    assert panel.line_offset == 0
+
+    # ctrl-u from tail does nothing useful (we go BACK 6, into history).
+    asyncio.run(panel.handle_key("ctrl-u"))
+    assert panel.line_offset == 6
+
+    # ctrl-d: half-page forward toward tail (decreases offset by 6).
+    asyncio.run(panel.handle_key("ctrl-d"))
+    assert panel.line_offset == 0
+
+    # gg: two-press latch jumps to oldest. line_offset gets a huge
+    # value that render() will clamp.
+    asyncio.run(panel.handle_key("g"))
+    assert panel._gg_primed is True
+    assert panel.line_offset == 0  # first g is no-op
+    asyncio.run(panel.handle_key("g"))
+    assert panel._gg_primed is False
+    assert panel.line_offset > 100  # large; render clamps
+
+    # G (shift-g) snaps back to tail.
+    asyncio.run(panel.handle_key("shift-g"))
+    assert panel.line_offset == 0
+
+
 def test_reasoning_panel_pins_view_while_user_scrolled_up():
     """Default: panel tails the latest thought, so k/j at offset 0 is
     reading newest-first on every render. Once the user scrolls up
@@ -262,3 +311,49 @@ def test_reasoning_panel_scroll_is_focus_gated():
     asyncio.run(screen.handle_key("up"))
     # k/j now move by 3 logical lines (not 1 entry).
     assert screen.reasoning_panel.line_offset == before + 3
+
+
+def test_apply_vim_scroll_helper_covers_all_keys():
+    """The shared helper used by every read-only scrollable panel."""
+    from silicon_pantheon.client.tui.panels import apply_vim_scroll
+
+    # j / down → +1, k / up → -1
+    assert apply_vim_scroll("j", current=5) == 6
+    assert apply_vim_scroll("down", current=5) == 6
+    assert apply_vim_scroll("k", current=5) == 4
+    assert apply_vim_scroll("up", current=5) == 4
+
+    # Half-page (default page_size=12 → half=6)
+    assert apply_vim_scroll("ctrl-d", current=10) == 16
+    assert apply_vim_scroll("ctrl-u", current=10) == 4
+
+    # Full page
+    assert apply_vim_scroll("ctrl-f", current=10) == 22
+    assert apply_vim_scroll("pgdown", current=10) == 22
+    assert apply_vim_scroll("ctrl-b", current=20) == 8
+    assert apply_vim_scroll("pgup", current=20) == 8
+
+    # G / end / home
+    assert apply_vim_scroll("shift-g", current=5, bottom=99) == 99
+    assert apply_vim_scroll("end", current=5, bottom=99) == 99
+    assert apply_vim_scroll("home", current=5) == 0
+
+    # gg latch: first 'g' primes, second 'g' jumps to top.
+    gg = [False]
+    assert apply_vim_scroll("g", current=42, gg_state=gg) == 42  # primed
+    assert gg == [True]
+    assert apply_vim_scroll("g", current=42, gg_state=gg) == 0  # fired
+    assert gg == [False]
+
+    # gg latch resets on any other key.
+    gg = [True]
+    assert apply_vim_scroll("j", current=5, gg_state=gg) == 6
+    assert gg == [False]
+
+    # Lower-bound clamp: can't go below 0.
+    assert apply_vim_scroll("k", current=0) == 0
+    assert apply_vim_scroll("ctrl-u", current=2) == 0
+
+    # Unrecognized keys → None (caller falls through).
+    assert apply_vim_scroll("enter", current=5) is None
+    assert apply_vim_scroll("q", current=5) is None

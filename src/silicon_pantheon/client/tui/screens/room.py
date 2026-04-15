@@ -441,17 +441,17 @@ class DescriptionPanel(Panel):
     def __init__(self, app: TUIApp) -> None:
         self.app = app
         self.scroll = 0  # number of rows scrolled down from the top
+        self._gg: list[bool] = [False]
 
     def key_hints(self) -> str:
-        return "↑/↓ (or k/j) scroll"
+        return "j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom"
 
     async def handle_key(self, key: str) -> "Screen | None":
-        if key in ("down", "j"):
-            self.scroll += 1
-            return None
-        if key in ("up", "k"):
-            self.scroll = max(0, self.scroll - 1)
-            return None
+        from silicon_pantheon.client.tui.panels import apply_vim_scroll
+
+        nxt = apply_vim_scroll(key, current=self.scroll, gg_state=self._gg)
+        if nxt is not None:
+            self.scroll = nxt
         return None
 
     def render(self, focused: bool) -> RenderableType:

@@ -33,6 +33,86 @@ def border_style(focused: bool) -> str:
     return FOCUSED_BORDER_STYLE if focused else IDLE_BORDER_STYLE
 
 
+def apply_vim_scroll(
+    key: str,
+    *,
+    current: int,
+    step_forward: int = 1,
+    step_backward: int = 1,
+    page_size: int = 12,
+    bottom: int = 10**9,
+    gg_state: list[bool] | None = None,
+) -> int | None:
+    """Map a key to an updated scroll offset for a read-only panel.
+
+    Returns the new offset when the key was a scroll key (caller
+    should assign it back), or None when the key wasn't recognized
+    — caller should fall through to its own handling.
+
+    Scroll offset semantics are panel-dependent: most panels treat
+    0 as "top of content" and grow forward as you read further
+    down. ReasoningPanel inverts (0 = tail / newest, growing means
+    "back in time"), so it should pass step_backward+step_forward
+    swapped — or just reinterpret up/down to suit its semantics.
+
+    Shortcuts covered (only relevant when the panel has focus and
+    the panel takes no text input):
+      - j / ↓ / down         → step_forward
+      - k / ↑ / up           → step_backward
+      - ctrl-d               → half page forward
+      - ctrl-u               → half page backward
+      - ctrl-f / pgdown      → full page forward
+      - ctrl-b / pgup        → full page backward
+      - shift-g / end        → bottom
+      - home                 → top
+      - g (when `gg_state` is a primed [True]) → top
+        `gg_state` is a single-element list used as a one-shot
+        latch: on first 'g' the caller should set it to [True] and
+        call us again; on the second 'g' we jump to top and reset
+        it. Pass None to disable gg; in that case single 'g' is
+        ignored.
+
+    `bottom` caps the maximum offset — readers don't need to pass
+    the real max if they'd prefer to clamp themselves.
+    """
+    # Clear the gg latch eagerly for ANY non-g key. The recognized
+    # scroll keys below all return early so we'd never reach a tail
+    # check; do it up front so the latch behaves like vim's.
+    if key != "g" and gg_state is not None and gg_state[0]:
+        gg_state[0] = False
+    half = max(1, page_size // 2)
+    if key in ("down", "j"):
+        return min(bottom, current + step_forward)
+    if key in ("up", "k"):
+        return max(0, current - step_backward)
+    if key == "ctrl-d":
+        return min(bottom, current + half)
+    if key == "ctrl-u":
+        return max(0, current - half)
+    if key in ("ctrl-f", "pgdown"):
+        return min(bottom, current + page_size)
+    if key in ("ctrl-b", "pgup"):
+        return max(0, current - page_size)
+    if key in ("shift-g", "end"):
+        return bottom
+    if key == "home":
+        return 0
+    if key == "g":
+        if gg_state is None:
+            return None
+        if gg_state[0]:
+            # Second 'g': reset latch and jump to top.
+            gg_state[0] = False
+            return 0
+        # First 'g': latch and stay put.
+        gg_state[0] = True
+        return current
+    # Any non-g key clears the gg latch — standard vim behaviour.
+    if gg_state is not None and gg_state[0]:
+        gg_state[0] = False
+    return None
+
+
 def wrap_rows_to_width(rows: list, inner_width: int) -> list:
     """Flatten scroll rows so each entry is one visible display line.
 

@@ -104,17 +104,21 @@ class PlayerPanel(Panel):
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
         self.scroll = 0
+        self._gg: list[bool] = [False]
 
     def key_hints(self) -> str:
-        return "↑/↓ (or k/j) scroll"
+        return "j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom"
 
     async def handle_key(self, key: str) -> "Screen | None":
-        if key in ("down", "j"):
-            self.scroll += 1
-            return None
-        if key in ("up", "k"):
-            self.scroll = max(0, self.scroll - 1)
-            return None
+        from silicon_pantheon.client.tui.panels import apply_vim_scroll
+
+        nxt = apply_vim_scroll(
+            key,
+            current=self.scroll,
+            gg_state=self._gg,
+        )
+        if nxt is not None:
+            self.scroll = nxt
         return None
 
     def render(self, focused: bool) -> RenderableType:
@@ -421,9 +425,12 @@ class ReasoningPanel(Panel):
         # Line offset from the END of the text. 0 = pinned to newest.
         self.line_offset = 0
         self._last_total_lines = 0
+        # One-shot latch for the vim `gg` shortcut (press g twice
+        # → go to top). Also reset any time a non-g key comes in.
+        self._gg_primed = False
 
     def key_hints(self) -> str:
-        return "k up   j down   0 latest"
+        return "j/k ↕   ^f/^b page   ^d/^u ½page   G tail   gg top   0 tail"
 
     def _build_all_lines(self) -> list[tuple[str, str]]:
         """Flatten thoughts into (style, text) line tuples, oldest
@@ -541,18 +548,59 @@ class ReasoningPanel(Panel):
         )
 
     async def handle_key(self, key: str) -> Screen | None:
-        # k/j move by 3 lines at a time — enough to feel snappy
-        # without overshooting paragraph breaks. The reader
-        # lowercases everything so shift-variants aren't
-        # distinguishable here.
-        if key in ("up", "k"):
-            self.line_offset += 3
-            return None
+        # ReasoningPanel has INVERTED scroll: offset 0 = tail (newest),
+        # higher offset = further back into history. So vim's
+        # "forward/down" keys DECREASE offset (toward newer); "back/
+        # up" keys INCREASE offset (toward older). The panel helper
+        # assumes the opposite convention so we handle the keys
+        # inline here.
+        PAGE = 12
+        HALF = PAGE // 2
+        BACK_STEP = 3
+        FORWARD_STEP = 3
+        # Upper-bound clamp deferred to render(); we only floor at 0
+        # here so the panel's "scroll back" still works on the first
+        # render before _last_total_lines is populated.
+        was_gg_primed = self._gg_primed
+        if key != "g":
+            self._gg_primed = False
+
+        # Toward-newer (visual "down").
         if key in ("down", "j"):
-            self.line_offset = max(0, self.line_offset - 3)
+            self.line_offset = max(0, self.line_offset - FORWARD_STEP)
             return None
-        if key == "0":
+        if key == "ctrl-d":
+            self.line_offset = max(0, self.line_offset - HALF)
+            return None
+        if key in ("ctrl-f", "pgdown"):
+            self.line_offset = max(0, self.line_offset - PAGE)
+            return None
+        # Toward-older (visual "up"). Render clamps to oldest line.
+        if key in ("up", "k"):
+            self.line_offset += BACK_STEP
+            return None
+        if key == "ctrl-u":
+            self.line_offset += HALF
+            return None
+        if key in ("ctrl-b", "pgup"):
+            self.line_offset += PAGE
+            return None
+        # Jumps.
+        if key in ("shift-g", "end", "0"):
+            # Tail (newest). '0' kept for the legacy hotkey the
+            # key_hints string used to advertise.
             self.line_offset = 0
+            return None
+        if key == "home":
+            # Top / oldest. Use a large value; render clamps.
+            self.line_offset = 10**9
+            return None
+        if key == "g":
+            if was_gg_primed:
+                self.line_offset = 10**9  # render clamps to oldest
+                self._gg_primed = False
+            else:
+                self._gg_primed = True
             return None
         return None
 
