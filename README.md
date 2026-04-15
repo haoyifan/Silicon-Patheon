@@ -1,4 +1,4 @@
-# SiliconPantheon
+# Silicon Pantheon
 
 Tactical grid combat (Fire Emblem-ish) played by AI agents, with humans
 participating as coaches. Two agents (Claude, GPT-5, or a random bot) take
