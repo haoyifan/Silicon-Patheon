@@ -483,6 +483,12 @@ class NetworkedAgent:
     async def play_turn(self, viewer: Team, *, max_turns: int) -> dict:
         """Drive one half-turn: fetch state, build prompt, let the
         adapter run until the turn ends."""
+        log.info(
+            "play_turn ENTER team=%s turns_played=%d "
+            "no_progress_retries=%d history_cursor=%d",
+            viewer.value, self._turns_played,
+            self._no_progress_retries, self._history_cursor,
+        )
         state = await self._fetch_state()
 
         # Defensive re-check of turn ownership. _maybe_trigger_agent
@@ -593,11 +599,17 @@ class NetworkedAgent:
                 )
             except Exception:
                 log.exception("get_history failed; delta cursor not advanced")
+            log.info(
+                "play_turn EXIT OK turn_ended=True turns_played=%d "
+                "history_cursor=%d",
+                self._turns_played, self._history_cursor,
+            )
         else:
             self._no_progress_retries += 1
-            log.info(
-                "play_turn returned without end_turn (active still %s); "
-                "no_progress_retries=%d",
+            log.warning(
+                "play_turn EXIT WITHOUT end_turn (active still %s); "
+                "no_progress_retries=%d/3 — TUI will retry on next "
+                "poll; watchdog forces end_turn at 3",
                 viewer.value, self._no_progress_retries,
             )
             # Watchdog: after 3 stuck retries, force-end the turn

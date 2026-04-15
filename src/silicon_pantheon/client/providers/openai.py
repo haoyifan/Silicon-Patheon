@@ -92,9 +92,14 @@ class OpenAIAdapter:
         *,
         api_key: str,
         base_url: str | None = None,
-        max_iterations_per_turn: int = 40,
+        max_iterations_per_turn: int = 20,
     ):
         self.model = model
+        # Lowered from 40 → 20: a healthy turn needs maybe 8-12 tool
+        # round-trips. 40 was a generous safety margin that turned
+        # into a footgun — a stuck/looping model could fill the
+        # transcript with 40 iterations of garbage in a single turn
+        # before the loop exited.
         self.max_iterations = max_iterations_per_turn
         self._client = AsyncOpenAI(api_key=api_key, base_url=base_url)
         self._messages: list[dict] = []
@@ -160,9 +165,25 @@ class OpenAIAdapter:
             return  # just the system prompt; nothing to compact
 
         compacted: list[dict] = []
+        # Track how many "system" messages we've kept so far. The
+        # FIRST one is the canonical system prompt and always stays.
+        # Every subsequent system message is one of OUR per-turn
+        # corrective injections (e.g. "your previous message used
+        # XML function-call tags — use the native protocol"). Those
+        # were turn-scoped nudges; carrying them forever pollutes
+        # the transcript and inflates token count linearly with the
+        # number of stuck turns we've recovered from.
+        system_kept = 0
         for m in self._messages:
             role = m.get("role")
-            if role in ("system", "user"):
+            if role == "system":
+                system_kept += 1
+                if system_kept == 1:
+                    compacted.append(m)
+                # Drop subsequent systems (corrective reminders from
+                # prior turns).
+                continue
+            if role == "user":
                 compacted.append(m)
                 continue
             if role == "tool":
@@ -233,10 +254,53 @@ class OpenAIAdapter:
         openai_tools = [_as_openai_tool(s) for s in tools]
         start = time.time()
 
+        # Hard ceilings to keep the transcript bounded mid-turn.
+        # If the soft limit is crossed we inject a "wrap up and call
+        # end_turn" hint and then BREAK on the very next iteration —
+        # the hard limit is for paranoia.
+        SOFT_TOKEN_LIMIT = 90_000
+        HARD_TOKEN_LIMIT = 120_000
+        warned_soft = False
+
         for _iter in range(self.max_iterations):
             if time.time() - start > time_budget_s:
-                log.info("OpenAI adapter: turn time budget exhausted")
+                log.info(
+                    "loop exit: time budget exhausted (iter=%d, "
+                    "elapsed=%.1fs, budget=%.1fs)",
+                    _iter, time.time() - start, time_budget_s,
+                )
                 break
+            est_now = self._estimate_tokens(self._messages)
+            if est_now >= HARD_TOKEN_LIMIT:
+                log.warning(
+                    "loop exit: HARD token limit %d reached at iter=%d "
+                    "(messages=%d) — force-breaking to avoid 400 from "
+                    "provider; the no-progress watchdog should pick up",
+                    HARD_TOKEN_LIMIT, _iter, len(self._messages),
+                )
+                break
+            if est_now >= SOFT_TOKEN_LIMIT and not warned_soft:
+                warned_soft = True
+                log.warning(
+                    "soft token limit %d crossed at iter=%d (messages=%d, "
+                    "est=%d) — injecting end_turn nudge",
+                    SOFT_TOKEN_LIMIT, _iter, len(self._messages), est_now,
+                )
+                self._messages.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are approaching the model's context "
+                            "limit. Wrap up your turn now: skip "
+                            "non-essential planning, finish whatever "
+                            "unit you're moving, and call end_turn."
+                        ),
+                    }
+                )
+            log.info(
+                "iter %d: messages=%d est_tokens=%d",
+                _iter, len(self._messages), est_now,
+            )
             try:
                 resp = await self._client.chat.completions.create(
                     model=self.model,
@@ -353,13 +417,20 @@ class OpenAIAdapter:
                     or "</function_call" in content
                     or "<tool_call" in content
                 )
-                if hallucinated_xml and self._corrections_this_turn < 2:
+                if hallucinated_xml and self._corrections_this_turn < 1:
+                    # One correction attempt only. Models trained on
+                    # XML tool-call demos rarely flip protocols mid-
+                    # turn; if they do, great, otherwise let the
+                    # NetworkedAgent watchdog force end_turn after
+                    # 3 stuck retries. Two corrections per stuck turn
+                    # × multiple stuck turns was just inflating the
+                    # transcript.
                     self._corrections_this_turn += 1
                     log.warning(
                         "model emitted XML-style function-call text "
-                        "instead of using the API tool_calls field; "
-                        "injecting corrective reminder (attempt %d/2)",
-                        self._corrections_this_turn,
+                        "instead of using API tool_calls; injecting "
+                        "single corrective reminder (model=%s iter=%d)",
+                        self.model, _iter,
                     )
                     self._messages.append(
                         {
@@ -378,6 +449,12 @@ class OpenAIAdapter:
                         }
                     )
                     continue
+                log.info(
+                    "loop exit: no tool_calls (iter=%d, hallucinated_xml=%s, "
+                    "corrections=%d, content_len=%d)",
+                    _iter, hallucinated_xml,
+                    self._corrections_this_turn, len(content),
+                )
                 break
 
             # Dispatch each tool call and append results.
@@ -391,42 +468,39 @@ class OpenAIAdapter:
                     result_text = json.dumps(result, default=str)
                 except Exception as e:
                     result_text = json.dumps({"error": str(e)})
-                # Cap individual tool-result size before appending so
-                # one runaway response (a giant get_state, an oversized
-                # threat map) can't single-handedly blow the context.
-                # 8KB per result is generous — get_state after our
-                # _slim_tool_response shedding board.tiles fits well
-                # under this for typical board sizes.
-                MAX_RESULT_BYTES = 8000
-                if len(result_text) > MAX_RESULT_BYTES:
+                # Cap individual tool-result size. Tightened from
+                # 8KB → 4KB. After our _slim_tool_response strips
+                # board.tiles, get_state typically lands around
+                # 2-3KB — anything bigger is a runaway tool that
+                # we'd rather truncate than ship.
+                MAX_RESULT_BYTES = 4000
+                orig_len = len(result_text)
+                if orig_len > MAX_RESULT_BYTES:
                     log.warning(
                         "tool result for %s is %d bytes (cap %d) — "
-                        "truncating to keep context bound; if this "
-                        "fires repeatedly tighten _slim_tool_response",
-                        tc.function.name, len(result_text), MAX_RESULT_BYTES,
+                        "truncating",
+                        tc.function.name, orig_len, MAX_RESULT_BYTES,
                     )
                     result_text = (
                         result_text[:MAX_RESULT_BYTES]
                         + "...[truncated; full payload in client log]"
                     )
+                # Log every tool dispatch so the harness flow is
+                # reconstructible from the log alone.
+                log.info(
+                    "tool dispatch: name=%s args_keys=%s "
+                    "result_bytes=%d (capped=%d)",
+                    tc.function.name,
+                    list(args.keys()) if isinstance(args, dict) else type(args).__name__,
+                    orig_len,
+                    len(result_text),
+                )
                 self._messages.append(
                     {
                         "role": "tool",
                         "tool_call_id": tc.id,
                         "content": result_text,
                     }
-                )
-
-            # Mid-turn growth check: log when est_tokens crosses 60k
-            # so operators see the trajectory before we hit the
-            # provider's hard limit (typically 128-200k).
-            est = self._estimate_tokens(self._messages)
-            if est > 60_000:
-                log.warning(
-                    "transcript at %d est_tokens mid-turn (iter=%d, "
-                    "messages=%d) — consider lowering max_iterations "
-                    "or tightening tool-result slimming",
-                    est, _iter, len(self._messages),
                 )
 
     async def summarize_match(

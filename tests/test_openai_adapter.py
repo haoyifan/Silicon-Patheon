@@ -289,6 +289,63 @@ async def test_transcript_compacts_between_turns() -> None:
 
 
 @pytest.mark.asyncio
+async def test_compaction_drops_corrective_system_messages() -> None:
+    """Corrective system messages we inject mid-turn ("use proper
+    tool_calls") MUST evict at the next compaction. Otherwise every
+    stuck turn permanently bloats the transcript with one or two
+    extra system messages — over many turns this is what kept the
+    context blowing up even after the per-turn compaction fix.
+
+    Only the FIRST system message (the canonical system prompt) is
+    kept across compactions."""
+
+    bad_resp = _FakeResp(
+        _FakeMessage(
+            content="<function_call>get_state()</function_call>",
+            tool_calls=None,
+        )
+    )
+    # After the corrective injection the model still emits no tool
+    # calls so the loop exits.
+    fixed_resp = _FakeResp(_FakeMessage(content="OK done", tool_calls=None))
+
+    adapter = _make_adapter_with_mock_client(
+        [bad_resp, fixed_resp,  # turn 1: hallucinate, give up
+         _FakeResp(_FakeMessage(content="t2", tool_calls=None))]  # turn 2
+    )
+
+    await adapter.play_turn(
+        system_prompt="canonical system prompt",
+        user_prompt="turn 1 state",
+        tools=[],
+        tool_dispatcher=None,
+        on_thought=None,
+    )
+    # After turn 1 we expect at least one corrective system message
+    # in the transcript.
+    sys_msgs_after_t1 = [m for m in adapter._messages if m.get("role") == "system"]
+    assert len(sys_msgs_after_t1) >= 2, (
+        f"correction wasn't injected: roles={[m.get('role') for m in adapter._messages]}"
+    )
+
+    # Turn 2 — compaction runs at entry.
+    await adapter.play_turn(
+        system_prompt="canonical system prompt",
+        user_prompt="turn 2 state",
+        tools=[],
+        tool_dispatcher=None,
+        on_thought=None,
+    )
+
+    sys_msgs_after_t2 = [m for m in adapter._messages if m.get("role") == "system"]
+    assert len(sys_msgs_after_t2) == 1, (
+        f"corrective system messages survived compaction: "
+        f"{[m.get('content', '')[:40] for m in sys_msgs_after_t2]}"
+    )
+    assert sys_msgs_after_t2[0]["content"] == "canonical system prompt"
+
+
+@pytest.mark.asyncio
 async def test_xml_function_call_hallucination_triggers_correction() -> None:
     """Regression: a Grok match looped forever because the model
     emitted "<function_call>get_legal_actions(...)</function_call>"
