@@ -204,8 +204,53 @@ def move(session: Session, viewer: Team, unit_id: str, dest: dict) -> dict:
         result = apply(session.state, MoveAction(unit_id=unit_id, dest=Pos.from_dict(dest)))
     except IllegalAction as e:
         raise ToolError(_enrich_move_error(session.state, unit_id, e)) from e
+    # Post-move hint: enumerate the follow-up actions the agent can
+    # still take on this unit this turn, with concrete target IDs. A
+    # typical move was previously followed by a get_legal_actions call
+    # (at best) or guessing-then-erroring (at worst); this folds that
+    # information into the move response so the next assistant message
+    # can go straight to attack/heal/wait.
+    result["next_actions"] = _post_move_next_actions(session.state, unit_id)
     _record_action(session, result)
     return result
+
+
+def _post_move_next_actions(state: GameState, unit_id: str) -> dict:
+    """Compact summary of valid follow-ups after a move lands.
+
+    Fields:
+      status: "moved" (model occasionally loses track; spell it out)
+      attack_targets: IDs of enemies in range from the new position
+      heal_targets: IDs of wounded adjacent friendlies (only if the
+                    unit has can_heal; empty otherwise)
+      must_resolve: True if the unit MUST still act before end_turn
+                    (always True after a successful move; included so
+                    the model has an unambiguous flag rather than
+                    having to derive it from `status`)
+    """
+    unit = state.units.get(unit_id)
+    if unit is None:
+        return {}
+    # Enemies currently in range from the new position.
+    in_range = [
+        u.id for u in state.units.values()
+        if u.alive and u.owner is not unit.owner
+        and in_attack_range(unit.pos, u.pos, unit.stats)
+    ]
+    heal_tgts: list[str] = []
+    if unit.stats.can_heal:
+        heal_tgts = [
+            u.id for u in state.units_of(unit.owner)
+            if u.alive and u.id != unit.id
+            and unit.pos.manhattan(u.pos) == 1
+            and u.hp < u.stats.hp_max
+        ]
+    return {
+        "status": "moved",
+        "must_resolve": True,
+        "attack_targets": in_range,
+        "heal_targets": heal_tgts,
+    }
 
 
 def _enrich_move_error(

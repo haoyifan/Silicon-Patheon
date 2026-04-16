@@ -101,6 +101,26 @@ def test_attack_out_of_range_error_lists_in_range_targets():
     assert "Enemies in range right now" in msg
 
 
+def test_move_success_includes_next_actions_hint():
+    """B1: every successful move response includes the follow-up
+    action menu so the agent doesn't need a get_legal_actions call
+    to pick attack vs heal vs wait. Saves one round-trip per move."""
+    s = _session()
+    out = call_tool(
+        s, Team.BLUE, "move",
+        {"unit_id": "u_b_knight_1", "dest": {"x": 0, "y": 3}},
+    )
+    assert out["type"] == "move"
+    hint = out["next_actions"]
+    assert hint["status"] == "moved"
+    assert hint["must_resolve"] is True
+    # Both target lists present (possibly empty).
+    assert "attack_targets" in hint
+    assert "heal_targets" in hint
+    # Knight isn't a healer → heal_targets must be empty.
+    assert hint["heal_targets"] == []
+
+
 def test_move_unreachable_error_points_at_get_legal_actions():
     """Agent picks an unreachable tile; error should include the
     unit's current pos + move budget and tell it to call
