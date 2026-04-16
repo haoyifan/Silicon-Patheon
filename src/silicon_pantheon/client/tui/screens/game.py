@@ -854,8 +854,6 @@ class GameScreen(Screen):
         if self._confirm is not None:
             return self._confirm.render()
         if self._scenario_overlay is not None:
-            from rich.align import Align as _Align
-
             inner = self._scenario_overlay.render(focused=True)
             footer = Text(
                 "F3/Esc/q close   j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom",
@@ -866,7 +864,11 @@ class GameScreen(Screen):
                 Layout(name="body"),
                 Layout(name="ftr", size=1),
             )
-            root["body"].update(_Align.center(inner, vertical="middle"))
+            # No Align.center — the Panel must fill the body slot so
+            # scrolling doesn't cause the panel to shrink with the
+            # visible-row count. Align was the visible-shrinking bug
+            # the user hit when holding `j`.
+            root["body"].update(inner)
             root["ftr"].update(footer)
             return root
         gs = self.state or {}

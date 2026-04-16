@@ -554,13 +554,21 @@ class DescriptionPanel(Panel):
         # slot; approximate inner width off the console width.
         try:
             cw = self.app.console.width
+            ch = self.app.console.height
         except Exception:
             cw = 100
+            ch = 30
         rows = wrap_rows_to_width(rows, max(20, int(cw * 2 / 3) - 6))
-        # Simple line-based scroll: drop the first `scroll` rows. Clamp
-        # so scrolling past the end doesn't produce an empty panel.
+        # Clamp scroll to keep a FULL visible window at the end —
+        # without this the panel shrinks to 1 row when you scroll
+        # past the content. Visible-window estimate: console height
+        # minus the borders (2), title line (1), footer (1), and a
+        # bit of slack (1). Floor at 1 so tiny terminals still work.
+        visible_window = max(1, ch - 5)
+        max_scroll = max(0, len(rows) - visible_window)
+        if self.scroll > max_scroll:
+            self.scroll = max_scroll
         if self.scroll > 0 and rows:
-            self.scroll = min(self.scroll, max(0, len(rows) - 1))
             rows = rows[self.scroll :]
         return RichPanel(
             Group(*rows),
