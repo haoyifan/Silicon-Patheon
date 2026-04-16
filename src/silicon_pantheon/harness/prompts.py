@@ -490,10 +490,7 @@ Your own tool-call history in this conversation shows which actions \
 you already took. Look at it, identify the units that still need to \
 act, finish them, and call `end_turn` to pass control to the opponent.
 
-{your_units_section}\
-Retry attempt {retry_n} of 3. If you run out of attempts, the server \
-will force-end your turn and you will lose this turn's remaining \
-opportunities."""
+{your_units_section}"""
 
 
 _TURN_PROMPT_MISMATCH_WARNING = """\
@@ -661,7 +658,6 @@ def build_turn_prompt_from_state_dict(
         prompt = TURN_PROMPT_TEMPLATE_RETRY.format(
             turn=state_dict.get("turn", "?"),
             your_units_section=_build_own_units_section(state_dict, team),
-            retry_n=retry_n,
         )
         active = state_dict.get("active_player")
         if active is not None and active != team:

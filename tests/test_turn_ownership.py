@@ -281,17 +281,18 @@ def test_networked_agent_advances_cursor_when_turn_ends() -> None:
     asyncio.run(agent.close())
 
 
-def test_no_progress_watchdog_forces_end_turn() -> None:
-    """Watchdog: after 3 consecutive play_turn returns without
-    end_turn, force-call end_turn server-side so a stuck/looping
-    model doesn't livelock the match. Without this, the TUI poll
-    loop kept re-triggering play_turn forever — the user reported
-    'agent reasoning panel reprints the same line for tens of
-    messages'."""
+def test_no_progress_does_not_force_end_turn_client_side() -> None:
+    """Historically the client-side watchdog force-called end_turn
+    after 3 consecutive play_turn returns without end_turn. That was
+    removed in favor of trusting the server's turn_time_limit_s
+    forfeit — the client never force-ends on the player's behalf;
+    the model retains full freedom to retry (with a continuation
+    prompt) until the server decides the turn is over.
+
+    This regression guards against the client-side cap coming back."""
     from silicon_pantheon.client.agent_bridge import NetworkedAgent
 
     end_turn_calls: list[dict] = []
-    # State stream: stays "blue active" until end_turn is called.
     state_box = {"active": "blue"}
 
     class _StubClient:
@@ -308,9 +309,8 @@ def test_no_progress_watchdog_forces_end_turn() -> None:
 
     class _StuckAdapter:
         async def play_turn(self, **kwargs):
-            # Simulates the hallucination case: adapter returns
-            # without dispatching a real end_turn through any tool
-            # call.
+            # Adapter never dispatches end_turn — simulates a model
+            # that exited its loop without finishing the turn.
             return
 
         async def close(self):
@@ -323,19 +323,17 @@ def test_no_progress_watchdog_forces_end_turn() -> None:
         adapter=_StuckAdapter(),
     )
 
-    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
-    assert end_turn_calls == []
-    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
-    assert end_turn_calls == []
-    # Reset active so the third call passes the ownership check
-    # (after our previous force, state would be red and we'd bail).
-    state_box["active"] = "blue"
-    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
-    assert len(end_turn_calls) == 1, (
-        f"watchdog didn't fire after 3 retries; end_turn_calls={end_turn_calls}"
+    # Run several play_turn attempts — state never flips; client MUST
+    # NOT force end_turn regardless of retry count.
+    for _ in range(5):
+        asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
+    assert end_turn_calls == [], (
+        f"client-side watchdog regressed: end_turn_calls={end_turn_calls}"
     )
-    # Counter resets after the forced flip.
-    assert agent._no_progress_retries == 0
+    # The counter keeps climbing so operators can see from the log
+    # how many attempts have happened, but it never triggers a
+    # force-end.
+    assert agent._no_progress_retries == 5
     asyncio.run(agent.close())
 
 

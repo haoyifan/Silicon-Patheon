@@ -643,42 +643,25 @@ class NetworkedAgent:
                 self._turns_played, self._history_cursor,
             )
         else:
+            # Turn didn't end — the TUI will retry on the next poll
+            # with a continuation-framed prompt. No client-side
+            # watchdog: if the model truly can't finish, the server's
+            # turn_time_limit_s is the ultimate bound (currently 30
+            # min default, configurable per room). Model freedom over
+            # client-side handholding.
+            #
+            # The counter is kept only so the retry prompt knows
+            # retry_n > 0 (triggers continuation framing) and so
+            # operators can see from the log how many attempts a
+            # stuck turn is running through.
             self._no_progress_retries += 1
             log.warning(
                 "play_turn EXIT WITHOUT end_turn (active still %s); "
-                "no_progress_retries=%d/3 — TUI will retry on next "
-                "poll; watchdog forces end_turn at 3",
+                "no_progress_retries=%d — TUI will retry on next poll "
+                "with continuation prompt; no client-side cap (server "
+                "turn_time_limit_s is the forfeit bound)",
                 viewer.value, self._no_progress_retries,
             )
-            # Watchdog: after 3 stuck retries, force-end the turn
-            # server-side so the game advances. Otherwise the TUI
-            # poll loop would keep calling play_turn → adapter →
-            # same hallucination → same broken response → forever.
-            # The model wasted its turn but at least the match
-            # progresses (and the log explains why).
-            if self._no_progress_retries >= 3:
-                log.warning(
-                    "agent stuck (no end_turn after %d retries); "
-                    "forcing end_turn server-side",
-                    self._no_progress_retries,
-                )
-                try:
-                    await self.client.call("end_turn")
-                except Exception:
-                    log.exception("forced end_turn failed")
-                self._no_progress_retries = 0
-                # Re-fetch state so the post_state we return reflects
-                # the forced flip.
-                post_state = await self._fetch_state()
-                if post_state.get("active_player") != viewer.value:
-                    self._turns_played += 1
-                    try:
-                        r = await self.client.call("get_history", last_n=0)
-                        self._history_cursor = len(
-                            (r.get("result") or {}).get("history") or []
-                        )
-                    except Exception:
-                        log.exception("get_history failed after forced end_turn")
 
         return post_state
 
