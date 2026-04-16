@@ -256,6 +256,37 @@ current symptom warrants.
       one bool on the connection + a check at the top of each mutating
       handler. Defer until we have an actual abuse case.
 
+- [ ] **Mid-turn compaction pass.** `_compact_prior_turns` only runs
+      at turn boundaries. Within a single turn with many tool calls
+      the transcript can still grow unboundedly between compactions —
+      a pathological turn today can accumulate 30+ tool results before
+      the HARD_TOKEN_LIMIT (180k) force-breaks the loop. A mid-turn
+      pass that stubs completed tool results once they're ~2 iterations
+      old would bound per-turn growth. Needs care: the model sometimes
+      reasons off the exact result of its last call or two, so the
+      stubbing window matters. Estimate: half a day + a test that pins
+      which tool-results are load-bearing within the current turn.
+
+- [ ] **Cache-friendly compaction cadence.** Every cross-turn
+      compaction rewrites prior messages in place, which invalidates
+      Anthropic's (and OpenAI's newer-SDKs') prompt cache from the
+      first rewritten item onward. We pay one cache miss per turn,
+      rebuilding the cached prefix from there. Could compact only at
+      coarser thresholds (e.g. every 3 turns, or when est tokens
+      cross a watermark), trading some transient bloat for a stable
+      prefix that the cache can hold. Measure before optimizing —
+      the current scheme is cheap enough at ≤30-turn matches that
+      this may not matter in practice.
+
+- [ ] **Explicit `cache_control` hints.** We benefit from opportunistic
+      provider-side prompt caching but don't annotate cache boundaries.
+      Adding an `"cache_control": {"type": "ephemeral"}` marker on
+      the system prompt block (and maybe on the compacted prior-turns
+      block) tells Anthropic "cache everything up to here" and lets
+      them hold the prefix more aggressively. Should be a single-line
+      addition per adapter once we've verified the SDK version we
+      use supports it. Low-priority; measure cache hit rate first.
+
 - [ ] **Ported `silicon-server` (stdio MCP wrapper)** — the legacy
       stdio variant hasn't been touched in a while; confirm it
       still works or deprecate it. Current stance: quietly works but
