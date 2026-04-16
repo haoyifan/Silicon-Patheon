@@ -328,13 +328,19 @@ class OpenAIAdapter:
         mutates_by_name: dict[str, bool] = {s.name: s.mutates for s in tools}
         start = time.time()
 
-        # Hard ceilings to keep the transcript bounded mid-turn.
-        # If the soft limit is crossed we inject a "wrap up and call
-        # end_turn" hint and then BREAK on the very next iteration —
-        # the hard limit is for paranoia.
-        SOFT_TOKEN_LIMIT = 90_000
-        HARD_TOKEN_LIMIT = 120_000
-        warned_soft = False
+        # No mid-turn nudges: the soft-token "wrap up" system message
+        # was removed because it made the model give up and call
+        # end_turn immediately, hiding real strategic failures behind
+        # a context-limit excuse. Now the model is free to reason as
+        # long as it wants within its turn; if it runs past the
+        # server-side turn_time_limit_s it forfeits naturally — which
+        # is a legible signal to improve, not noise.
+        #
+        # The one remaining safety net is a hard break on pathological
+        # transcript growth — the provider will hard-400 past its
+        # context window anyway, so a cheap client-side check saves
+        # a round-trip and logs a useful diagnostic.
+        HARD_TOKEN_LIMIT = 180_000
 
         for _iter in range(self.max_iterations):
             if time.time() - start > time_budget_s:
@@ -353,25 +359,6 @@ class OpenAIAdapter:
                     self._transcript_breakdown(self._messages),
                 )
                 break
-            if est_now >= SOFT_TOKEN_LIMIT and not warned_soft:
-                warned_soft = True
-                log.warning(
-                    "soft token limit %d crossed at iter=%d (messages=%d, "
-                    "est=%d) — injecting end_turn nudge; breakdown: %s",
-                    SOFT_TOKEN_LIMIT, _iter, len(self._messages), est_now,
-                    self._transcript_breakdown(self._messages),
-                )
-                self._messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are approaching the model's context "
-                            "limit. Wrap up your turn now: skip "
-                            "non-essential planning, finish whatever "
-                            "unit you're moving, and call end_turn."
-                        ),
-                    }
-                )
             log.info(
                 "iter %d: messages=%d est_tokens=%d",
                 _iter, len(self._messages), est_now,

@@ -194,10 +194,12 @@ class CodexAdapter:
         responses_tools = [to_responses_tool(s) for s in tools]
         start = time.time()
 
-        # Hard ceilings (parallel to openai.py).
-        SOFT_TOKEN_LIMIT = 90_000
-        HARD_TOKEN_LIMIT = 120_000
-        warned_soft = False
+        # No mid-turn nudges — see openai.py for the rationale. The
+        # soft-token "wrap up" system message was removed; model is
+        # free to reason as long as it wants until the server-side
+        # turn timer forfeits. HARD token limit is a cheap safety
+        # check so we don't send a request the provider will hard-400.
+        HARD_TOKEN_LIMIT = 180_000
 
         for _iter in range(self.max_iterations):
             if time.time() - start > time_budget_s:
@@ -213,17 +215,6 @@ class CodexAdapter:
                     HARD_TOKEN_LIMIT, _iter,
                 )
                 break
-            if est >= SOFT_TOKEN_LIMIT and not warned_soft:
-                warned_soft = True
-                log.warning(
-                    "soft token limit %d crossed at iter=%d; nudging end_turn",
-                    SOFT_TOKEN_LIMIT, _iter,
-                )
-                self._input.append(system_to_input_item(
-                    "You are approaching the model's context limit. Wrap up "
-                    "your turn now: skip non-essential planning, finish "
-                    "whatever unit you're moving, and call end_turn."
-                ))
 
             log.info(
                 "codex iter %d: input_items=%d est_tokens=%d",
