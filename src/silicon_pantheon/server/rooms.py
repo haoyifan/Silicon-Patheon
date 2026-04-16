@@ -56,7 +56,13 @@ class RoomConfig:
     team_assignment: TeamAssignment = "fixed"
     host_team: HostTeam = "blue"
     fog_of_war: FogMode = "none"  # easier onboarding; bump to "classic" per-room
-    turn_time_limit_s: int = 180
+    # Default is deliberately huge so neither the client-side agent
+    # loop nor the server-side forfeit interferes with reasoning-model
+    # debugging. Hosts can dial it down to blitz-game values from the
+    # room Actions panel; 1800s (30 min) is a reasonable upper ceiling
+    # for a single turn where a weak model with many units needs the
+    # full observe-act-observe cycle plus ample reasoning tokens.
+    turn_time_limit_s: int = 1800
 
 
 @dataclass

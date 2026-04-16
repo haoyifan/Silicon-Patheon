@@ -468,7 +468,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         team_assignment: str = "fixed",
         host_team: str = "blue",
         fog_of_war: str = "none",
-        turn_time_limit_s: int = 180,
+        turn_time_limit_s: int = 1800,
     ) -> dict:
         """Create a new room, seating the caller in slot A as the host.
 

@@ -831,9 +831,9 @@ class GameScreen(Screen):
         # anyway, so we don't burn requests past that point.
         room_state = app.state.last_room_state or {}
         turn_budget = room_state.get("turn_time_limit_s")
-        # Fall back to 180.0 if the room state didn't carry it (older
-        # server, or the field was dropped from the preview).
-        time_budget_s = float(turn_budget) if turn_budget else 180.0
+        # Fall back to 1800.0 (30 min) if the room state didn't carry
+        # it (older server, or the field was dropped from the preview).
+        time_budget_s = float(turn_budget) if turn_budget else 1800.0
         app.state.agent = NetworkedAgent(
             client=app.client,
             model=app.state.model,

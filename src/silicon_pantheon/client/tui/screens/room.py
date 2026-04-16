@@ -779,22 +779,20 @@ _HOST_TEAM_OPTIONS = ("blue", "red")
 # Short values punish weak models; long values are necessary for
 # scenarios with many units or reasoning models that take ~15-20s
 # per tool call.
-_TURN_TIME_OPTIONS = ("60", "120", "180", "300", "600", "1200")
+_TURN_TIME_OPTIONS = ("60", "180", "600", "1800", "3600")
 _TURN_TIME_DESCRIPTIONS = {
-    "60":   "1 minute. Fast / blitz games. AI players with many units "
-            "or slow reasoning models will run out of time — most "
-            "useful for humans-only matches or tiny scenarios.",
-    "120":  "2 minutes. OK for small/mid scenarios with strong AI "
-            "models (Claude Sonnet, GPT-5). Tight for weak models.",
-    "180":  "3 minutes. Default. Comfortable for most AI + scenario "
-            "combos; gives the model room to observe multiple units "
-            "before committing to an action.",
-    "300":  "5 minutes. Good for reasoning models (grok-3-mini, "
-            "o-series) on large scenarios (Agincourt, Troy).",
-    "600":  "10 minutes. Weak models + large rosters + deep "
-            "analysis. Matches take real time at this setting.",
-    "1200": "20 minutes. Debugging / demo settings only; a full "
-            "match can take several hours.",
+    "60":   "1 minute. Blitz. AI players with many units or slow "
+            "reasoning models will run out of time — most useful for "
+            "humans-only matches or tiny scenarios.",
+    "180":  "3 minutes. Fast AI games with strong models (Claude "
+            "Sonnet, GPT-5) on small rosters.",
+    "600":  "10 minutes. Reasonable for reasoning models on mid-size "
+            "scenarios.",
+    "1800": "30 minutes. Default. Large safety margin so weak models "
+            "can reason at length without the turn timer being the "
+            "bottleneck for debugging.",
+    "3600": "1 hour. Effectively unlimited — only the hard token "
+            "cap will stop a turn.",
 }
 
 _FOG_DESCRIPTIONS = {
@@ -1552,12 +1550,12 @@ class RoomScreen(Screen):
 
     def _open_turn_time_modal(self) -> None:
         current = str(
-            (self.app.state.last_room_state or {}).get("turn_time_limit_s", 180)
+            (self.app.state.last_room_state or {}).get("turn_time_limit_s", 1800)
         )
         idx = (
             _TURN_TIME_OPTIONS.index(current)
             if current in _TURN_TIME_OPTIONS
-            else _TURN_TIME_OPTIONS.index("180")
+            else _TURN_TIME_OPTIONS.index("1800")
         )
 
         async def _on_confirm(v: str) -> None:
