@@ -385,6 +385,47 @@ async def test_transcript_compacts_between_turns() -> None:
 
 
 @pytest.mark.asyncio
+async def test_compaction_truncates_oversize_bootstrap_user_message() -> None:
+    """The turn-1 bootstrap user message is 5-10 KB of full state
+    JSON and lives in the transcript forever. Compaction on turn 2+
+    should truncate it to a stub so long matches don't accumulate the
+    first-turn weight indefinitely. Delta prompts (small) pass
+    through unchanged."""
+    turn1_resp = _FakeResp(_FakeMessage(content="ok turn 1", tool_calls=None))
+    turn2_resp = _FakeResp(_FakeMessage(content="ok turn 2", tool_calls=None))
+    adapter = _make_adapter_with_mock_client([turn1_resp, turn2_resp])
+
+    # Turn 1: huge bootstrap prompt (10 KB simulating a full state dump).
+    big_bootstrap = "TURN 1 BOOTSTRAP: " + ("x" * 10_000)
+    await adapter.play_turn(
+        system_prompt="sys", user_prompt=big_bootstrap,
+        tools=[], tool_dispatcher=None, on_thought=None,
+    )
+    # Bootstrap is present intact pre-turn-2.
+    user_msgs_after_t1 = [
+        m for m in adapter._messages if m.get("role") == "user"
+    ]
+    assert big_bootstrap in user_msgs_after_t1[0]["content"]
+
+    # Turn 2: small delta prompt. _compact_prior_turns runs at entry.
+    small_delta = "turn 2 delta: Your units:\n- u_b_1 hp 10 ready\n"
+    await adapter.play_turn(
+        system_prompt="sys", user_prompt=small_delta,
+        tools=[], tool_dispatcher=None, on_thought=None,
+    )
+
+    user_msgs = [m for m in adapter._messages if m.get("role") == "user"]
+    # Bootstrap was truncated — 10KB down to ~3KB + suffix.
+    bootstrap_msg = user_msgs[0]["content"]
+    assert len(bootstrap_msg) < 4000, (
+        f"bootstrap didn't shrink: {len(bootstrap_msg)} chars"
+    )
+    assert "bootstrap snapshot truncated" in bootstrap_msg
+    # Delta prompt passed through intact (it's under the cap).
+    assert any(small_delta.strip() in m["content"] for m in user_msgs)
+
+
+@pytest.mark.asyncio
 async def test_compaction_drops_corrective_system_messages() -> None:
     """Corrective system messages we inject mid-turn ("use proper
     tool_calls") MUST evict at the next compaction. Otherwise every

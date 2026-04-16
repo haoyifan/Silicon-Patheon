@@ -181,6 +181,13 @@ class OpenAIAdapter:
     # Long chain-of-thought from prior turns rarely matters now;
     # a few hundred chars preserves the gist.
     _ASST_CONTENT_CAP = 1500
+    # Cap on user-message content in compacted form. The bootstrap
+    # (turn-1 full state snapshot) weighs 5-10 KB and stays in the
+    # transcript forever; by turn 2+ the model has either absorbed
+    # that info or can re-fetch via get_state. Delta turn prompts
+    # are small (~1-2 KB) and fit comfortably under this cap, so
+    # they pass through unchanged.
+    _USER_CONTENT_CAP = 3000
 
     def _compact_prior_turns(self) -> None:
         """Shrink completed turns to bound the context window without
@@ -235,7 +242,17 @@ class OpenAIAdapter:
                 # prior turns).
                 continue
             if role == "user":
-                compacted.append(m)
+                # Truncate oversize user messages (specifically the
+                # turn-1 bootstrap snapshot). Delta prompts fit under
+                # the cap and pass through unchanged.
+                content = m.get("content") or ""
+                if len(content) > self._USER_CONTENT_CAP:
+                    content = (
+                        content[: self._USER_CONTENT_CAP]
+                        + "…[bootstrap snapshot truncated; call "
+                        "`get_state` if you need fresh board data]"
+                    )
+                compacted.append({"role": "user", "content": content})
                 continue
             if role == "tool":
                 # Preserve the structural pairing (assistant.tool_calls
