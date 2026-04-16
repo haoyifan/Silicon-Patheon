@@ -504,6 +504,15 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 ErrorCode.BAD_INPUT,
                 "fog_of_war must be 'none' | 'classic' | 'line_of_sight'",
             )
+        # Match the range update_room_config accepts so an attacker
+        # can't create a room with turn_time_limit_s=-1 or an absurd
+        # 10h value. Same bounds in both places so a client that
+        # validates-before-calling uses one set of rules.
+        if turn_time_limit_s < 10 or turn_time_limit_s > 3600:
+            return _error(
+                ErrorCode.BAD_INPUT,
+                "turn_time_limit_s must be between 10 and 3600",
+            )
         try:
             scenario_state = load_scenario(scenario)
         except Exception as e:
