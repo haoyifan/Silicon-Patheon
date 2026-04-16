@@ -173,6 +173,69 @@ class ProtectUnit:
         return f"Enemy VIP {self.unit_id} is DEAD — you win at end_turn"
 
 
+@register("protect_unit_survives")
+@dataclass
+class ProtectUnitSurvives:
+    """The protector wins if the VIP is still alive when the turn
+    cap is reached.
+
+    Complement to `protect_unit` (which handles the VIP-dies loss
+    case). Scenarios where "hold out until time runs out" is victory
+    should declare BOTH rules: `protect_unit` catches the early loss,
+    `protect_unit_survives` catches the late win. The turn-cap draw
+    (`max_turns_draw`) should remain last as a fallthrough so
+    scenarios that don't declare this rule still draw normally —
+    which is the point: this rule is purely opt-in.
+
+    Fires only at end_turn when state.turn > cap. If the VIP died
+    earlier, `protect_unit` has already fired and the match is over;
+    this rule is a no-op in that case.
+    """
+
+    unit_id: str = ""
+    owning_team: str = "blue"
+    turns: int | None = None  # override; if None, use state.max_turns
+    trigger: str = "end_turn"
+
+    def check(self, state, hook, **_) -> WinResult | None:
+        if hook != "end_turn":
+            return None
+        cap = self.turns if self.turns is not None else state.max_turns
+        if state.turn <= cap:
+            return None
+        u = state.units.get(self.unit_id)
+        if u is not None and u.alive:
+            return WinResult(
+                winner=self.owning_team,
+                reason="protect_survived",
+                details={"vip": self.unit_id, "turns": cap},
+            )
+        return None
+
+    def describe_progress(self, state, viewer) -> str | None:
+        cap = self.turns if self.turns is not None else state.max_turns
+        remaining = max(0, cap - state.turn + 1)
+        u = state.units.get(self.unit_id)
+        vip_alive = u is not None and u.alive
+        if not vip_alive:
+            # protect_unit's describe covers the dead-VIP case; stay
+            # silent here so we don't duplicate.
+            return None
+        is_protector = viewer.value == self.owning_team
+        if is_protector:
+            return (
+                f"HOLD OUT TO WIN: if {self.unit_id} survives to the "
+                f"turn cap, you win. {remaining} turn(s) remain "
+                "(including this one)."
+            )
+        return (
+            f"BREAK THROUGH BEFORE TIME RUNS OUT: you must kill "
+            f"{self.unit_id} (or eliminate all enemies) within "
+            f"{remaining} turn(s); otherwise {self.owning_team} "
+            "wins at the turn cap."
+        )
+
+
 @register("reach_tile")
 @dataclass
 class ReachTile:

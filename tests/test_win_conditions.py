@@ -186,6 +186,116 @@ def test_reach_goal_line_fires_on_axis():
     assert result["reason"] == "reach_goal_line"
 
 
+def test_protect_unit_survives_fires_at_turn_cap_when_vip_alive():
+    """If the VIP is still alive when turn > max_turns, the protector
+    wins (NOT a draw). Complement to protect_unit's VIP-dies-loss."""
+    blue = _mkunit("u_b_henry", Team.BLUE, Pos(0, 0))
+    red = _mkunit("u_r_1", Team.RED, Pos(5, 5))
+    state = _make_state({blue.id: blue, red.id: red})
+    state.max_turns = 3
+    state.turn = 4  # already past the cap
+    state._win_conditions = build_conditions([
+        {"type": "protect_unit_survives",
+         "unit_id": "u_b_henry", "owning_team": "blue"},
+        {"type": "max_turns_draw"},  # backstop — must not fire first
+    ])
+    result = apply(state, EndTurnAction())
+    assert result["winner"] == "blue"
+    assert result["reason"] == "protect_survived"
+    assert state.status is GameStatus.GAME_OVER
+
+
+def test_protect_unit_survives_silent_before_cap():
+    """Pre-cap the rule must NOT fire — match continues."""
+    blue = _mkunit("u_b_henry", Team.BLUE, Pos(0, 0))
+    red = _mkunit("u_r_1", Team.RED, Pos(5, 5))
+    state = _make_state({blue.id: blue, red.id: red})
+    state.max_turns = 10
+    state.turn = 3
+    state._win_conditions = build_conditions([
+        {"type": "protect_unit_survives",
+         "unit_id": "u_b_henry", "owning_team": "blue"},
+    ])
+    result = apply(state, EndTurnAction())
+    assert result["winner"] is None
+    assert state.status is not GameStatus.GAME_OVER
+
+
+def test_scenario_without_protect_unit_survives_still_draws_at_cap():
+    """Guard: scenarios that don't opt in to the new rule keep the
+    legacy max_turns_draw behavior. A future refactor must NOT
+    change that."""
+    blue = _mkunit("u_b_1", Team.BLUE, Pos(0, 0))
+    red = _mkunit("u_r_1", Team.RED, Pos(5, 5))
+    state = _make_state({blue.id: blue, red.id: red})
+    state.max_turns = 3
+    state.turn = 4  # past cap
+    state._win_conditions = build_conditions([
+        {"type": "eliminate_all_enemy_units"},
+        {"type": "max_turns_draw"},
+    ])
+    result = apply(state, EndTurnAction())
+    assert result["winner"] is None  # draw
+    assert result["reason"] == "max_turns"
+
+
+def test_protect_unit_survives_order_matters_before_max_turns_draw():
+    """When both rules are declared, survives must come FIRST in the
+    YAML or max_turns_draw fires first (returns draw) and wins the
+    race. Pin the ordering contract."""
+    blue = _mkunit("u_b_henry", Team.BLUE, Pos(0, 0))
+    red = _mkunit("u_r_1", Team.RED, Pos(5, 5))
+    state = _make_state({blue.id: blue, red.id: red})
+    state.max_turns = 3
+    state.turn = 4
+
+    # WRONG order — draw beats survives → scenario authors who mis-
+    # order get a draw, not a survive-win.
+    state._win_conditions = build_conditions([
+        {"type": "max_turns_draw"},
+        {"type": "protect_unit_survives",
+         "unit_id": "u_b_henry", "owning_team": "blue"},
+    ])
+    result = apply(state, EndTurnAction())
+    assert result["winner"] is None  # max_turns_draw beat it
+
+    # Reset and try with CORRECT order.
+    blue2 = _mkunit("u_b_henry", Team.BLUE, Pos(0, 0))
+    red2 = _mkunit("u_r_2", Team.RED, Pos(5, 5))
+    state2 = _make_state({blue2.id: blue2, red2.id: red2})
+    state2.max_turns = 3
+    state2.turn = 4
+    state2._win_conditions = build_conditions([
+        {"type": "protect_unit_survives",
+         "unit_id": "u_b_henry", "owning_team": "blue"},
+        {"type": "max_turns_draw"},
+    ])
+    result2 = apply(state2, EndTurnAction())
+    assert result2["winner"] == "blue"
+
+
+def test_agincourt_scenario_uses_protect_unit_survives():
+    """The 06_agincourt scenario must declare protect_unit_survives
+    before max_turns_draw. Smoke-test that the YAML change stuck."""
+    from silicon_pantheon.server.engine.scenarios import load_scenario
+    from silicon_pantheon.server.engine.win_conditions.rules import (
+        ProtectUnitSurvives, MaxTurnsDraw,
+    )
+
+    state = load_scenario("06_agincourt")
+    types = [type(r).__name__ for r in state._win_conditions]
+    assert "ProtectUnitSurvives" in types, (
+        f"agincourt missing ProtectUnitSurvives: got {types}"
+    )
+    # Ordering: survives must appear before max_turns_draw or the
+    # draw fires first.
+    i_survives = types.index("ProtectUnitSurvives")
+    i_draw = types.index("MaxTurnsDraw")
+    assert i_survives < i_draw, (
+        "protect_unit_survives must come before max_turns_draw"
+    )
+
+
 def test_scenario_load_sets_win_conditions_attribute():
     """load_scenario should attach _win_conditions to the state."""
     from silicon_pantheon.server.engine.scenarios import load_scenario

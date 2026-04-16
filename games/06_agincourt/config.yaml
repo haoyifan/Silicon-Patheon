@@ -284,6 +284,10 @@ win_conditions:
   # French win by reaching Henry's camp line — y=13.
   - {type: reach_goal_line, team: red, axis: y, value: 13}
   - {type: eliminate_all_enemy_units}
+  # Historical: if the French fail to break the English line by the
+  # turn cap, the English successfully defend and win (not a draw).
+  # Checked BEFORE max_turns_draw so this rule fires first.
+  - {type: protect_unit_survives, unit_id: u_b_henry_v_1, owning_team: blue}
   - {type: max_turns_draw}
 
 narrative:
