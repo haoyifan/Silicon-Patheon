@@ -1,0 +1,215 @@
+schema_version: 1
+name: Astronomy Tower
+description: |
+  Hogwarts, June 1997. Death Eaters breach the castle through a
+  Vanishing Cabinet. Draco Malfoy confronts a weakened Dumbledore
+  atop the Astronomy Tower while dark wizards and a werewolf fight
+  through the corridors below. The Order guards must hold long
+  enough for Dumbledore to escape — or fall trying.
+
+board:
+  width: 10
+  height: 8
+  terrain:
+    # Stone walls creating corridor chokepoints
+    # Left corridor wall
+    - {x: 2, y: 2, type: stone_wall}
+    - {x: 2, y: 3, type: stone_wall}
+    - {x: 2, y: 5, type: stone_wall}
+    - {x: 2, y: 6, type: stone_wall}
+    # Right corridor wall
+    - {x: 7, y: 2, type: stone_wall}
+    - {x: 7, y: 3, type: stone_wall}
+    - {x: 7, y: 5, type: stone_wall}
+    - {x: 7, y: 6, type: stone_wall}
+    # Internal walls for chokepoints
+    - {x: 4, y: 3, type: stone_wall}
+    - {x: 6, y: 3, type: stone_wall}
+    - {x: 4, y: 5, type: stone_wall}
+    - {x: 6, y: 5, type: stone_wall}
+  forts: []
+
+terrain_types:
+  stone_wall:
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: white
+    description: |
+      Hogwarts castle stone walls. Ancient and impassable.
+
+unit_classes:
+  dumbledore:
+    display_name: Albus Dumbledore
+    description: |
+      The greatest wizard of the age — but weakened by a cursed
+      ring and the potion in the cave. His wand hand is blackened
+      and dying. Even diminished, he is formidable.
+    hp_max: 20
+    atk: 14
+    defense: 4
+    res: 10
+    spd: 4
+    move: 2
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "D"
+    color: bright_yellow
+
+  order_guard:
+    display_name: Order Guard
+    description: |
+      Members of the Order of the Phoenix patrolling the castle
+      corridors. Experienced adult witches and wizards.
+    hp_max: 22
+    atk: 9
+    defense: 4
+    res: 6
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "o"
+    color: white
+
+  da_student:
+    display_name: DA Student
+    description: |
+      Young members of Dumbledore's Army. Brave beyond their years,
+      patrolling the corridors with Felix Felicis in their veins.
+    hp_max: 16
+    atk: 7
+    defense: 3
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "d"
+    color: cyan
+
+  draco:
+    display_name: Draco Malfoy
+    description: |
+      The conflicted boy with the Dark Mark. Tasked with killing
+      Dumbledore but unable to do it. His heart isn't in the fight.
+    hp_max: 18
+    atk: 7
+    defense: 3
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "X"
+    color: dim
+
+  fenrir:
+    display_name: Fenrir Greyback
+    description: |
+      The savage werewolf. Not a Death Eater by ideology — just a
+      monster who enjoys the violence. Melee beast, not a wizard.
+    hp_max: 28
+    atk: 12
+    defense: 5
+    res: 2
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "F"
+    color: bright_red
+
+  death_eater:
+    display_name: Death Eater
+    description: |
+      Dark wizards who infiltrated Hogwarts through the Vanishing
+      Cabinet. Masked and ruthless.
+    hp_max: 20
+    atk: 9
+    defense: 3
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "x"
+    color: bright_black
+
+armies:
+  blue:
+    # Dumbledore — atop the tower
+    - {class: dumbledore, pos: {x: 5, y: 0}}
+    # Order guards — defending corridors
+    - {class: order_guard, pos: {x: 3, y: 1}}
+    - {class: order_guard, pos: {x: 5, y: 2}}
+    - {class: order_guard, pos: {x: 8, y: 1}}
+    # DA students — scattered through the tower
+    - {class: da_student, pos: {x: 4, y: 1}}
+    - {class: da_student, pos: {x: 6, y: 1}}
+    - {class: da_student, pos: {x: 5, y: 4}}
+    - {class: da_student, pos: {x: 3, y: 4}}
+
+  red:
+    # Draco — leading the assault
+    - {class: draco, pos: {x: 5, y: 7}}
+    # Fenrir — the werewolf
+    - {class: fenrir, pos: {x: 3, y: 7}}
+    # Death Eaters — main force pushing upward
+    - {class: death_eater, pos: {x: 1, y: 7}}
+    - {class: death_eater, pos: {x: 4, y: 6}}
+    - {class: death_eater, pos: {x: 6, y: 6}}
+    - {class: death_eater, pos: {x: 8, y: 7}}
+    - {class: death_eater, pos: {x: 9, y: 7}}
+    - {class: death_eater, pos: {x: 3, y: 6}}
+    - {class: death_eater, pos: {x: 8, y: 6}}
+    - {class: death_eater, pos: {x: 5, y: 6}}
+
+rules:
+  max_turns: 14
+  first_player: red
+
+win_conditions:
+  # Dumbledore dies -> blue loses.
+  - {type: protect_unit, unit_id: u_b_dumbledore_1, owning_team: blue}
+  # Dumbledore survives the turn cap -> blue wins (he escapes).
+  - {type: protect_unit_survives, unit_id: u_b_dumbledore_1, owning_team: blue}
+  # Either side wins by total elimination.
+  - {type: eliminate_all_enemy_units}
+  # Backstop.
+  - {type: max_turns_draw}
+
+narrative:
+  title: The Astronomy Tower
+  description: |
+    Hogwarts, June 1997. Death Eaters have breached the castle
+    through a Vanishing Cabinet. Dumbledore, weakened from
+    retrieving a Horcrux, faces Draco Malfoy on the tower.
+  intro: |
+    The Dark Mark hangs over the Astronomy Tower. Spells flash
+    in the corridors below. Dumbledore stands at the parapet,
+    his cursed hand hidden beneath his robes. Draco's wand hand
+    trembles.
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        Fenrir Greyback howls through the corridors. The sound
+        of breaking stone echoes as spells blow holes in the
+        castle walls.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        The fighting grows desperate. Order members fall back
+        toward the tower stairs, buying time.
+    - trigger: on_unit_killed
+      unit_id: u_b_dumbledore_1
+      text: |
+        The greatest wizard of the age falls from the tower.
+        The defenders' morale shatters.

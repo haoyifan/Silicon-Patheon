@@ -1,0 +1,452 @@
+schema_version: 1
+name: Marineford — Summit War
+description: |
+  Marineford, the Marine Headquarters. Whitebeard and his pirate
+  alliance assault the stronghold to rescue Portgas D. Ace from
+  execution. Three admirals, the Fleet Admiral, and the world's
+  greatest swordsman stand in their way. The Whitebeard Pirates
+  must reach the execution platform before time runs out.
+
+board:
+  width: 18
+  height: 14
+  terrain:
+    # Execution platform marker at (9, 1)
+    - {x: 9, y: 1, type: platform}
+    # Scattered buildings in the plaza (y=2-9)
+    - {x: 3, y: 3, type: building}
+    - {x: 4, y: 3, type: building}
+    - {x: 8, y: 3, type: building}
+    - {x: 10, y: 3, type: building}
+    - {x: 14, y: 3, type: building}
+    - {x: 15, y: 3, type: building}
+    - {x: 2, y: 5, type: building}
+    - {x: 6, y: 5, type: building}
+    - {x: 12, y: 5, type: building}
+    - {x: 16, y: 5, type: building}
+    - {x: 4, y: 7, type: building}
+    - {x: 5, y: 7, type: building}
+    - {x: 9, y: 7, type: building}
+    - {x: 13, y: 7, type: building}
+    - {x: 14, y: 7, type: building}
+    # Ice terrain — frozen bay (y=10-13)
+    - {x: 0, y: 10, type: ice}
+    - {x: 1, y: 10, type: ice}
+    - {x: 2, y: 10, type: ice}
+    - {x: 3, y: 10, type: ice}
+    - {x: 4, y: 10, type: ice}
+    - {x: 5, y: 10, type: ice}
+    - {x: 6, y: 10, type: ice}
+    - {x: 7, y: 10, type: ice}
+    - {x: 8, y: 10, type: ice}
+    - {x: 9, y: 10, type: ice}
+    - {x: 10, y: 10, type: ice}
+    - {x: 11, y: 10, type: ice}
+    - {x: 12, y: 10, type: ice}
+    - {x: 13, y: 10, type: ice}
+    - {x: 14, y: 10, type: ice}
+    - {x: 15, y: 10, type: ice}
+    - {x: 16, y: 10, type: ice}
+    - {x: 17, y: 10, type: ice}
+    - {x: 0, y: 11, type: ice}
+    - {x: 1, y: 11, type: ice}
+    - {x: 2, y: 11, type: ice}
+    - {x: 3, y: 11, type: ice}
+    - {x: 4, y: 11, type: ice}
+    - {x: 5, y: 11, type: ice}
+    - {x: 6, y: 11, type: ice}
+    - {x: 7, y: 11, type: ice}
+    - {x: 8, y: 11, type: ice}
+    - {x: 9, y: 11, type: ice}
+    - {x: 10, y: 11, type: ice}
+    - {x: 11, y: 11, type: ice}
+    - {x: 12, y: 11, type: ice}
+    - {x: 13, y: 11, type: ice}
+    - {x: 14, y: 11, type: ice}
+    - {x: 15, y: 11, type: ice}
+    - {x: 16, y: 11, type: ice}
+    - {x: 17, y: 11, type: ice}
+    - {x: 0, y: 12, type: ice}
+    - {x: 1, y: 12, type: ice}
+    - {x: 2, y: 12, type: ice}
+    - {x: 3, y: 12, type: ice}
+    - {x: 4, y: 12, type: ice}
+    - {x: 5, y: 12, type: ice}
+    - {x: 6, y: 12, type: ice}
+    - {x: 7, y: 12, type: ice}
+    - {x: 8, y: 12, type: ice}
+    - {x: 9, y: 12, type: ice}
+    - {x: 10, y: 12, type: ice}
+    - {x: 11, y: 12, type: ice}
+    - {x: 12, y: 12, type: ice}
+    - {x: 13, y: 12, type: ice}
+    - {x: 14, y: 12, type: ice}
+    - {x: 15, y: 12, type: ice}
+    - {x: 16, y: 12, type: ice}
+    - {x: 17, y: 12, type: ice}
+    - {x: 0, y: 13, type: ice}
+    - {x: 1, y: 13, type: ice}
+    - {x: 2, y: 13, type: ice}
+    - {x: 3, y: 13, type: ice}
+    - {x: 4, y: 13, type: ice}
+    - {x: 5, y: 13, type: ice}
+    - {x: 6, y: 13, type: ice}
+    - {x: 7, y: 13, type: ice}
+    - {x: 8, y: 13, type: ice}
+    - {x: 9, y: 13, type: ice}
+    - {x: 10, y: 13, type: ice}
+    - {x: 11, y: 13, type: ice}
+    - {x: 12, y: 13, type: ice}
+    - {x: 13, y: 13, type: ice}
+    - {x: 14, y: 13, type: ice}
+    - {x: 15, y: 13, type: ice}
+    - {x: 16, y: 13, type: ice}
+    - {x: 17, y: 13, type: ice}
+  forts: []
+
+terrain_types:
+  building:
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "#"
+    color: yellow
+    description: |
+      Marineford plaza structures. Provide solid cover during
+      the chaotic battle.
+  ice:
+    move_cost: 1
+    defense_bonus: -1
+    glyph: "="
+    color: bright_blue
+    description: |
+      Frozen bay created by Admiral Aokiji. Slippery surface
+      offers no cover — but the pirates can cross it.
+  platform:
+    move_cost: 1
+    defense_bonus: 2
+    glyph: "^"
+    color: bright_yellow
+    description: |
+      The execution platform where Portgas D. Ace awaits death.
+      Reaching this tile means freedom.
+
+unit_classes:
+  whitebeard:
+    display_name: Edward Newgate (Whitebeard)
+    description: |
+      The Strongest Man in the World. His Gura Gura no Mi can
+      shatter the air itself and create tsunamis. Old and sick,
+      but still terrifying. One punch can crack the world.
+    hp_max: 55
+    atk: 15
+    defense: 7
+    res: 5
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 2
+    glyph: "W"
+    color: white
+
+  marco:
+    display_name: Marco the Phoenix
+    description: |
+      First Division Commander. His phoenix flames heal his wounds
+      and allies alike. Nearly impossible to kill — blue fire
+      regenerates any damage.
+    hp_max: 26
+    atk: 10
+    defense: 4
+    res: 7
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    can_heal: true
+    heal_amount: 5
+    glyph: "M"
+    color: bright_cyan
+
+  jozu:
+    display_name: Diamond Jozu
+    description: |
+      Third Division Commander. His body turns to diamond,
+      making him nearly indestructible. The ultimate tank.
+    hp_max: 35
+    atk: 10
+    defense: 12
+    res: 2
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "J"
+    color: cyan
+
+  vista:
+    display_name: Vista
+    description: |
+      Fifth Division Commander. The Flower Swordsman who can
+      match even Mihawk blade for blade. Fast and elegant.
+    hp_max: 24
+    atk: 11
+    defense: 6
+    res: 4
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "V"
+    color: cyan
+
+  whitebeard_commander:
+    display_name: WB Commander
+    description: |
+      Division commanders of the Whitebeard Pirates. Each one
+      is a formidable pirate captain in their own right.
+    hp_max: 22
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "p"
+    color: cyan
+
+  whitebeard_pirate:
+    display_name: WB Pirate
+    description: |
+      Rank-and-file members of the Whitebeard fleet. Loyal to
+      the old man unto death.
+    hp_max: 18
+    atk: 7
+    defense: 4
+    res: 2
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "q"
+    color: cyan
+
+  akainu:
+    display_name: Admiral Akainu
+    description: |
+      Sakazuki, the Magma Admiral. Absolute justice incarnate.
+      His lava fists can burn through anything — even fire itself.
+      The deadliest offensive force the Marines possess.
+    hp_max: 38
+    atk: 15
+    defense: 6
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "A"
+    color: bright_red
+
+  aokiji:
+    display_name: Admiral Aokiji
+    description: |
+      Kuzan, the Ice Admiral. Froze the entire bay so the pirates
+      could cross — and the Marines could fight them on it. Lazy
+      but lethally powerful at range.
+    hp_max: 34
+    atk: 12
+    defense: 5
+    res: 8
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "O"
+    color: bright_blue
+
+  kizaru:
+    display_name: Admiral Kizaru
+    description: |
+      Borsalino, the Light Admiral. Moves at the speed of light.
+      The fastest man alive, firing laser beams from his fingertips
+      with a bored expression.
+    hp_max: 32
+    atk: 11
+    defense: 4
+    res: 6
+    spd: 9
+    move: 5
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "K"
+    color: bright_yellow
+
+  sengoku:
+    display_name: Fleet Admiral Sengoku
+    description: |
+      Sengoku the Buddha. The man who orchestrated Ace's execution
+      to draw out Whitebeard. A strategic genius with the power
+      of the Human-Human Fruit, Model: Buddha.
+    hp_max: 30
+    atk: 10
+    defense: 7
+    res: 7
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "S"
+    color: red
+
+  mihawk:
+    display_name: Dracule Mihawk
+    description: |
+      The Greatest Swordsman in the World. Wields Yoru, the
+      strongest black blade. Cuts through everything with casual
+      elegance. Here as a Warlord, not by choice.
+    hp_max: 28
+    atk: 14
+    defense: 5
+    res: 4
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    glyph: "X"
+    color: bright_black
+
+  marine_captain:
+    display_name: Marine Captain
+    description: |
+      Marine officers defending Marineford. Well-trained and
+      disciplined, but outclassed by the New World pirates.
+    hp_max: 20
+    atk: 7
+    defense: 6
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "m"
+    color: red
+
+  marine_soldier:
+    display_name: Marine Soldier
+    description: |
+      Rank-and-file Marines. Brave but ordinary men facing
+      monsters with Devil Fruit powers.
+    hp_max: 16
+    atk: 6
+    defense: 5
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "n"
+    color: red
+
+armies:
+  blue:
+    # Whitebeard — center of the pirate charge
+    - {class: whitebeard, pos: {x: 9, y: 10}}
+    # Marco — flying ahead
+    - {class: marco, pos: {x: 8, y: 9}}
+    # Jozu — front line tank
+    - {class: jozu, pos: {x: 6, y: 10}}
+    # Vista — flanking
+    - {class: vista, pos: {x: 12, y: 9}}
+    # WB Commanders — spread across the charge
+    - {class: whitebeard_commander, pos: {x: 3, y: 11}}
+    - {class: whitebeard_commander, pos: {x: 5, y: 11}}
+    - {class: whitebeard_commander, pos: {x: 7, y: 11}}
+    - {class: whitebeard_commander, pos: {x: 10, y: 11}}
+    - {class: whitebeard_commander, pos: {x: 11, y: 10}}
+    - {class: whitebeard_commander, pos: {x: 13, y: 11}}
+    - {class: whitebeard_commander, pos: {x: 15, y: 11}}
+    - {class: whitebeard_commander, pos: {x: 4, y: 10}}
+    # WB Pirates — rear guard
+    - {class: whitebeard_pirate, pos: {x: 2, y: 12}}
+    - {class: whitebeard_pirate, pos: {x: 6, y: 12}}
+    - {class: whitebeard_pirate, pos: {x: 11, y: 12}}
+    - {class: whitebeard_pirate, pos: {x: 16, y: 12}}
+
+  red:
+    # Akainu — guarding the plaza
+    - {class: akainu, pos: {x: 9, y: 4}}
+    # Aokiji — ranged support
+    - {class: aokiji, pos: {x: 5, y: 2}}
+    # Kizaru — fast flanker
+    - {class: kizaru, pos: {x: 14, y: 2}}
+    # Sengoku — near the execution platform
+    - {class: sengoku, pos: {x: 9, y: 2}}
+    # Mihawk — forward attacker
+    - {class: mihawk, pos: {x: 9, y: 6}}
+    # Marine captains — defensive line
+    - {class: marine_captain, pos: {x: 2, y: 4}}
+    - {class: marine_captain, pos: {x: 4, y: 4}}
+    - {class: marine_captain, pos: {x: 7, y: 4}}
+    - {class: marine_captain, pos: {x: 11, y: 4}}
+    - {class: marine_captain, pos: {x: 13, y: 4}}
+    - {class: marine_captain, pos: {x: 15, y: 4}}
+    - {class: marine_captain, pos: {x: 3, y: 6}}
+    - {class: marine_captain, pos: {x: 15, y: 6}}
+    # Marine soldiers — front line
+    - {class: marine_soldier, pos: {x: 5, y: 8}}
+    - {class: marine_soldier, pos: {x: 8, y: 8}}
+    - {class: marine_soldier, pos: {x: 11, y: 8}}
+    - {class: marine_soldier, pos: {x: 14, y: 8}}
+    - {class: marine_soldier, pos: {x: 7, y: 6}}
+
+rules:
+  max_turns: 20
+  first_player: blue
+
+win_conditions:
+  # A blue unit reaches the execution platform -> Ace is freed!
+  - {type: reach_tile, team: blue, pos: {x: 9, y: 1}}
+  # Whitebeard dies -> blue loses.
+  - {type: protect_unit, unit_id: u_b_whitebeard_1, owning_team: blue}
+  # Sengoku survives the turn cap -> Marines hold. Red wins.
+  - {type: protect_unit_survives, unit_id: u_r_sengoku_1, owning_team: red}
+  # Either side wins by total elimination.
+  - {type: eliminate_all_enemy_units}
+  # Backstop.
+  - {type: max_turns_draw}
+
+narrative:
+  title: Marineford — Summit War
+  description: |
+    Marineford, the seat of Marine power. Whitebeard's fleet appears
+    in the bay. The Summit War — the greatest battle of the era — begins.
+  intro: |
+    The frozen bay cracks and groans. Whitebeard's bisento slashes
+    the air and the sea itself splits. Across the ice, the pirate
+    fleet charges toward the execution platform where Ace kneels
+    in chains. Three admirals rise to meet them.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        Whitebeard tilts his bisento and punches the air. The
+        quake ripples across Marineford — buildings crack, the
+        ground splits. The Strongest Man in the World has entered
+        the fray.
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        The plaza is chaos. Pirates and Marines clash across
+        every inch of frozen bay and crumbling stone. The
+        execution platform looms above it all.
+    - trigger: on_unit_killed
+      unit_id: u_b_whitebeard_1
+      text: |
+        The old man falls — but standing, his back unbowed. Even
+        in death, Edward Newgate does not retreat a single step.
