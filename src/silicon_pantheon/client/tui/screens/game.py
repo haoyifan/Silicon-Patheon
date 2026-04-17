@@ -279,11 +279,16 @@ class PlayerPanel(Panel):
                 roster_idx += 1
 
         # Auto-scroll: ensure the cursor row is always visible.
+        # The PlayerPanel occupies the top-right cell of a 2×2 layout:
+        #   top row = ratio 3 out of (3+2)=5 → ~60% of screen height
+        #   minus panel border (2 lines) + header/footer (2 lines)
+        # Using ch * 3/5 - 4 as the estimate. Conservative is better
+        # than generous — a too-large `visible` prevents scrolling.
         try:
             ch = self.screen.app.console.height
         except Exception:
             ch = 30
-        visible = max(1, ch - 5)
+        visible = max(1, int(ch * 3 / 5) - 4)
         if cursor_row_idx is not None:
             # Scroll so cursor is within the visible window.
             if cursor_row_idx < self.scroll:
