@@ -25,6 +25,7 @@ from rich.layout import Layout
 from rich.panel import Panel as RichPanel
 from rich.text import Text
 
+from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.panels import border_style, wrap_rows_to_width
 from silicon_pantheon.client.tui.terrain import terrain_cell as _terrain_cell
 
@@ -53,11 +54,13 @@ class ScenarioPicker:
         client,  # ServerClient | None
         on_confirm: Callable[[str], Awaitable[None]],
         on_cancel: Callable[[], None] = lambda: None,
+        locale: str = "en",
     ) -> None:
         self.scenarios = scenarios or [current]
         self.on_confirm = on_confirm
         self.on_cancel = on_cancel
         self.client = client
+        self.locale = locale
         self.selected_idx = (
             self.scenarios.index(current) if current in self.scenarios else 0
         )
@@ -122,8 +125,9 @@ class ScenarioPicker:
             Layout(name="body"),
             Layout(name="ftr", size=1),
         )
+        lc = self.locale
         root["hdr"].update(
-            Text("Change Scenario — Tab switch panel · Enter select · Esc cancel",
+            Text(f"{t('scenario_pick.header', lc)} — {t('scenario_pick.tab_switch', lc)} · {t('scenario_pick.enter_select', lc)} · {t('scenario_pick.esc_cancel', lc)}",
                  style="bold yellow")
         )
         body = Layout()
@@ -143,21 +147,23 @@ class ScenarioPicker:
         return root
 
     def _footer_hint(self) -> RenderableType:
+        lc = self.locale
         if self.focus == "list":
             return Text(
-                "[Scenarios] ↑/↓ browse   Enter select   "
-                "Tab → preview map   Esc cancel",
+                f"[{t('scenario_picker.title', lc)}] {t('scenario_pick.browse', lc)}   "
+                f"{t('scenario_pick.enter_select', lc)}   "
+                f"{t('scenario_picker.tab_preview', lc)}",
                 style="dim",
             )
         if self.focus == "map":
             return Text(
-                "[Map preview] ←↑↓→ / h j k l move cursor   "
-                "Enter unit stats   Tab → description   Esc cancel",
+                f"[{t('scenario_picker.map', lc)}] {t('scenario_pick.map_cursor', lc)}   "
+                f"{t('scenario_picker.enter_unit', lc)}",
                 style="dim",
             )
         return Text(
-            "[Description] j/k ↕  ^f/^b page  ^d/^u ½page  gg/G top/bot   "
-            "Tab → scenario list   Esc cancel",
+            f"[{t('panel.description', lc)}] {t('scenario_pick.desc_scroll', lc)}   "
+            f"{t('scenario_picker.tab_list', lc)}",
             style="dim",
         )
 
@@ -177,7 +183,7 @@ class ScenarioPicker:
             lines.append(Text(f"  {marker} {display}", style=style))
         return RichPanel(
             Group(*lines),
-            title="Scenarios",
+            title=t("scenario_picker.title", self.locale),
             border_style=border_style(self.focus == "list"),
             padding=(0, 1),
         )
@@ -190,14 +196,14 @@ class ScenarioPicker:
         if self.unit_card is not None:
             return RichPanel(
                 self.unit_card.render(),
-                title="Map",
+                title=t("scenario_picker.map", self.locale),
                 border_style=border_style(focused),
                 padding=(0, 1),
             )
         if desc is None:
             return RichPanel(
-                Text("(loading scenario preview…)", style="dim italic"),
-                title="Map",
+                Text(t("scenario_pick.loading_preview", self.locale), style="dim italic"),
+                title=t("scenario_picker.map", self.locale),
                 border_style=border_style(focused),
                 padding=(0, 1),
             )
@@ -212,8 +218,8 @@ class ScenarioPicker:
         scenario_terrain_types = desc.get("terrain_types") or {}
 
         tile_type: dict[tuple[int, int], str] = {}
-        for t in terrain_entries:
-            tile_type[(int(t["x"]), int(t["y"]))] = str(t["type"])
+        for te in terrain_entries:
+            tile_type[(int(te["x"]), int(te["y"]))] = str(te["type"])
         for f in board.get("forts") or []:
             tile_type[(int(f["x"]), int(f["y"]))] = "fort"
 
@@ -273,7 +279,7 @@ class ScenarioPicker:
         terrain = tile_type.get((cx, cy), "plain")
         line = Text()
         line.append(f"({cx}, {cy}) ", style="dim")
-        line.append(f"terrain: {terrain}", style="yellow")
+        line.append(f"{t('scenario_pick.terrain_label', self.locale)}: {terrain}", style="yellow")
         summary = _terrain_effect_summary(self._current_desc(), terrain)
         if summary:
             line.append(f" — {summary}", style="dim")
@@ -284,7 +290,7 @@ class ScenarioPicker:
             name = _unit_display_name(u, self._current_desc())
             line.append("   ")
             line.append(f"{name} ({owner})", style=f"bold {color}")
-            line.append("   Enter for details", style="dim italic")
+            line.append(f"   {t('game_map.enter_details', self.locale)}", style="dim italic")
         return line
 
     def _render_description(self) -> RenderableType:
@@ -293,7 +299,7 @@ class ScenarioPicker:
         focused = self.focus == "desc"
         if desc is None:
             return RichPanel(
-                Text("(loading…)", style="dim italic"),
+                Text(t("scenario_pick.loading", self.locale), style="dim italic"),
                 title=_slug_to_title(name),
                 border_style=border_style(focused),
                 padding=(0, 1),
@@ -310,13 +316,13 @@ class ScenarioPicker:
             rows.append(Text(story))
         if wcs:
             rows.append(Text(""))
-            rows.append(Text("How to win:", style="bold"))
+            rows.append(Text(t("section.how_to_win", self.locale), style="bold"))
             for wc in wcs:
                 rows.append(
-                    Text(f"  • {_describe_win_condition(wc, desc)}", style="dim")
+                    Text(f"  • {_describe_win_condition(wc, desc, self.locale)}", style="dim")
                 )
         rows.append(Text(""))
-        rows.append(Text("Armies:", style="bold"))
+        rows.append(Text(t("section.armies", self.locale), style="bold"))
         for owner in ("blue", "red"):
             units = armies.get(owner, [])
             if not units:
@@ -350,7 +356,7 @@ class ScenarioPicker:
         ]
         if described:
             rows.append(Text(""))
-            rows.append(Text("Units:", style="bold"))
+            rows.append(Text(t("section.units", self.locale), style="bold"))
             for slug, spec in described:
                 name_str = spec.get("display_name") or slug
                 teams = class_teams.get(slug, set())
@@ -367,7 +373,7 @@ class ScenarioPicker:
         max_turns = rules.get("max_turns")
         if max_turns:
             rows.append(Text(""))
-            rows.append(Text(f"Max turns: {max_turns}", style="dim"))
+            rows.append(Text(f"{t('section.max_turns', self.locale)}: {max_turns}", style="dim"))
         # Pre-wrap every row to the panel's inner width so scrolling
         # advances one visible display line per step — previously a
         # single long-paragraph row was atomic and disappeared in one
@@ -516,6 +522,7 @@ class ScenarioPicker:
                     units=navigable,
                     index=target_idx,
                     unit_classes=unit_classes,
+                    locale=self.locale,
                 )
         self.cursor = (cx, cy)
         return False

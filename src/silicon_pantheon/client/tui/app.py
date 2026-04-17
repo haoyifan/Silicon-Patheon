@@ -255,7 +255,7 @@ class TUIApp:
         base = self._screen.render()
         if not self._help_visible:
             return base
-        return _HelpOverlay(self._help_scroll).render()
+        return _HelpOverlay(self._help_scroll, self.state.locale).render()
 
     def _refresh(self) -> None:
         """Repaint the screen immediately.
@@ -686,124 +686,9 @@ def _read_key_blocking() -> str:
 # ---- help overlay ----
 
 
-HELP_TEXT = """\
-Welcome to SiliconPantheon
-========================
-
-Tactical grid combat played by AI agents. You watch (and optionally
-coach) while two LLM-driven players move units across a board to
-satisfy the scenario's win conditions.
-
-This help screen never blocks the game — turns, polls, and the
-agent (if you're hosting one) keep running while you read.
-
-Navigation
-----------
-
-  Tab            cycle focus through the panels in this screen
-  ↑ ↓ ← →        move within the focused panel (cursor / scroll /
-                 button select / typing)
-  h j k l        same as ← ↓ ↑ → (vim bindings)
-  Enter          activate the focused thing (button / unit on map /
-                 scenario in picker)
-  Esc            close a modal / dropdown / unit card
-  q              quit (or close a unit card)
-  F2 / ?         toggle this help overlay
-  Esc            (when help is open) close it
-
-Each panel shows its own keys in the footer when focused —
-"[PanelName] panel-specific keys   Tab next panel   q quit".
-
-The Map panel
--------------
-
-When focused, the Map panel shows a tile cursor. Move it with the
-arrows (or h/j/k/l). The footer reports the tile's terrain type,
-movement cost, defense bonus, and any HP-affecting effects.
-
-Press Enter on a unit's tile to open its stat card. Inside the
-card:
-
-  ← / h         previous unit
-  → / l         next unit
-  Esc / Enter   close (cursor lands on the displayed unit)
-
-The card cycles through the unit's ASCII portrait frames if the
-scenario shipped any (1 frame every 2 seconds).
-
-Reading the unit stats
-----------------------
-
-  HP            current hit points / maximum
-  ATK           attack value (versus enemy DEF for physical units,
-                or enemy RES for magical ones)
-  DEF           defense versus physical attacks
-  RES           defense versus magical attacks
-  SPD           speed — affects who counter-attacks (faster
-                attackers may double-strike)
-  MOVE          how far the unit can travel in one turn
-  RANGE         min–max attack distance
-  type=magic    attack uses RES instead of DEF
-  can_heal      may heal an adjacent ally instead of attacking
-  tags          flavor / future-mechanics labels
-                (vip, monk, demon, mount, …)
-
-Reading the map
----------------
-
-  K A C M       built-in classes: Knight / Archer / Cavalry / Mage
-                Uppercase = blue team, lowercase = red team.
-  *             fort tile (seizing the enemy fort wins by default)
-  f             forest (cover, +DEF, costs 2 to enter)
-  ^             mountain (high cover, most classes can't enter)
-  .             plain
-  custom glyphs scenarios may define their own letter + color
-                per class (e.g. T = Tang Monk in Journey to the West)
-
-How a turn plays out
---------------------
-
-The active player's units act one at a time:
-
-  1. Move:    pick a destination within MOVE range, paying the
-              terrain's move_cost on each tile entered.
-  2. Action:  attack an enemy in RANGE, heal an adjacent ally
-              (Mage / scenario healers only), or wait.
-  3. End turn: hand over to the opponent.
-
-A defender that survives an attack and is in range may
-counter-attack in the same exchange.
-
-Win conditions
---------------
-
-Each scenario lists its own. Built-ins:
-
-  Either side wins by moving onto the opponent's fort.
-  Either side wins by eliminating every enemy unit.
-  Match ends in a draw at the turn cap.
-
-Scenarios may add their own:
-
-  protect_unit       a side loses if a specific unit dies
-  reach_tile         a side wins if a unit ends a turn on a tile
-  hold_tile          a side wins by holding a tile for N turns
-  reach_goal_line    a side wins by crossing a row / column
-
-The Description panel always lists the active scenario's actual
-rules in plain prose, side-explicit ("Red wins if Tang Monk dies").
-
-Coaching the agent (game screen)
---------------------------------
-
-Tab to the Coach panel and just type. Enter sends the message to
-your own agent's coach queue; it'll see your message at the start
-of its next turn and may incorporate the advice.
-
-Press Esc to clear the buffer; Tab leaves the panel only if the
-buffer is empty (so you can't accidentally cycle away mid-message).
-
-Press F2 again or Esc to close this help."""
+def _t_help(overlay):
+    from silicon_pantheon.client.locale import t
+    return t("help.title", getattr(overlay, "locale", "en"))
 
 
 class _HelpOverlay:
@@ -811,11 +696,14 @@ class _HelpOverlay:
     the current screen; the underlying screen's tick loop keeps
     running so the heartbeat and any agent turns proceed normally."""
 
-    def __init__(self, scroll: int) -> None:
+    def __init__(self, scroll: int, locale: str = "en") -> None:
         self.scroll = scroll
+        self.locale = locale
 
     def render(self) -> RenderableType:
-        lines = HELP_TEXT.split("\n")
+        from silicon_pantheon.client.locale import t as _tl
+        help_body = _tl("help.body", self.locale).rstrip()
+        lines = help_body.split("\n")
         if self.scroll > 0:
             self.scroll = min(self.scroll, max(0, len(lines) - 1))
             lines = lines[self.scroll:]
@@ -827,7 +715,7 @@ class _HelpOverlay:
         return Align.center(
             RichPanel(
                 Group(body, Text(""), footer),
-                title="Help — SiliconPantheon",
+                title=_t_help(self),
                 border_style="yellow",
                 padding=(1, 3),
             ),

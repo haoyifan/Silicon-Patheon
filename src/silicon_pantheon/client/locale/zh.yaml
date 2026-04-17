@@ -171,3 +171,312 @@ room_buttons:
   change_teams_title: "更换队伍分配"
   change_host_title: "更换主队"
   turn_time_title: "每回合时间限制（秒）"
+
+# 房间面板标题
+# 房间头部/状态
+room_status:
+  room_label: "房间"
+  fog_label: "迷雾"
+  teams_label: "队伍"
+  match_starting: "比赛将在 {s}s 后开始"
+  waiting_opponent: "等待对手…"
+  ready_up: "准备好即可开始"
+  confirm: "确认"
+
+# 章节标题
+section:
+  how_to_win: "胜利条件："
+  armies: "军队："
+  units: "单位："
+  tags: "标签"
+  abilities: "技能"
+  inventory: "道具"
+  max_turns: "最大回合数"
+
+room_panels:
+  player: "玩家"
+  description: "说明"
+  chat: "聊天"
+  actions: "操作"
+  map: "地图"
+  chat_placeholder: "玩家可以在这里互相聊天"
+
+# 剧本选择器
+scenario_picker:
+  title: "剧本"
+  map: "地图"
+  tab_preview: "Tab → 预览地图   Esc 取消"
+  tab_description: "Tab → 说明   Esc 取消"
+  tab_list: "Tab → 剧本列表   Esc 取消"
+  enter_unit: "Enter 单位详情   Tab → 说明   Esc 取消"
+
+# 供应商认证补充
+provider_extra:
+  unknown_provider: "未知供应商"
+  empty_key: "密钥为空"
+  keep_creds: "使用已保存的凭据"
+  reauth_creds: "重新认证（输入新密钥）"
+  esc_back: "Esc 返回   q 退出"
+  provider_missing: "缺少供应商"
+  nav_pick_quit: "↑/k ↓/j 导航   Enter 选择   q 退出"
+  nav_switch_confirm: "↑/k ↓/j 切换   Enter 确认   Esc 返回   q 退出"
+  nav_switch_option: "↑/k ↓/j 切换选项   Enter 确认   Esc 返回   q 退出"
+  paste_hint: "（粘贴或输入密钥，Enter 验证+保存，Esc 取消）"
+  auth_title: "认证"
+  model_title: "模型"
+  authentication: "认证"
+  pick_model: "选择模型"
+  env_label: "使用环境变量 {var}"
+  env_label_missing: "使用环境变量 {var}（未设置）"
+  paste_label: "粘贴 API 密钥（保存到密钥环）"
+  no_env_var: "供应商没有环境变量"
+  env_not_set: "{var} 未设置；请使用粘贴选项"
+  validating_key: "正在验证密钥…"
+  stored_key: "已保存的密钥"
+  unresolvable: "（无法解析）"
+
+# 帮助界面
+help:
+  title: "帮助 — SiliconPantheon"
+  body: |
+    欢迎来到 SiliconPantheon
+    ========================
+
+    AI代理之间的回合制战术棋盘对战。你可以观战（并可选择性地指导）
+    两个由大语言模型驱动的玩家在棋盘上移动单位，以达成剧本的胜利条件。
+
+    帮助界面不会阻塞游戏——回合、轮询和AI代理（如果你在托管）会在
+    你阅读时继续运行。
+
+    导航
+    ----------
+
+      Tab            在当前屏幕的面板之间循环切换焦点
+      ↑ ↓ ← →        在焦点面板内移动（光标/滚动/按钮选择/输入）
+      h j k l        同 ← ↓ ↑ →（vim 快捷键）
+      Enter          激活焦点元素（按钮/地图上的单位/选择器中的剧本）
+      Esc            关闭弹窗/下拉框/单位卡片
+      q              退出（或关闭单位卡片）
+      F2 / ?         切换帮助界面
+      Esc            （帮助界面打开时）关闭
+
+    每个面板在获得焦点时会在底部显示自己的快捷键 ——
+    "[面板名] 面板专属快捷键   Tab 下一面板   q 退出"。
+
+    地图面板
+    -------------
+
+    获得焦点时，地图面板会显示一个光标。使用方向键（或 h/j/k/l）移动。
+    底部会显示当前格子的地形类型、移动消耗、防御加成和生命值效果。
+
+    在单位所在的格子上按 Enter 打开其属性卡片。在卡片内：
+
+      ← / h         上一个单位
+      → / l         下一个单位
+      Esc / Enter   关闭（光标停在显示的单位上）
+
+    如果剧本提供了 ASCII 头像帧，卡片会自动播放动画（每2秒1帧）。
+
+    单位属性说明
+    ----------------------
+
+      HP            当前生命值 / 最大生命值
+      ATK           攻击力（物理单位对比敌方DEF，魔法单位对比敌方RES）
+      DEF           物理防御力
+      RES           魔法防御力
+      SPD           速度——影响反击判定（速度快的攻击者可能二连击）
+      MOVE          每回合可移动距离
+      RANGE         最小–最大攻击距离
+      type=magic    攻击使用RES而非DEF
+      can_heal      可以治疗相邻友军而非攻击
+      tags          特性/未来机制标签（vip, monk, demon, mount, …）
+
+    地图符号说明
+    ---------------
+
+      K A C M       内置兵种：骑士/弓箭手/骑兵/法师
+                    大写 = 蓝队，小写 = 红队
+      *             堡垒（默认情况下占领敌方堡垒即获胜）
+      f             森林（掩护，+DEF，进入消耗2点移动力）
+      ^             山地（高掩护，大多数兵种无法进入）
+      .             平原
+      自定义符号    剧本可为每个兵种定义专属字母+颜色
+                    （例如 T = 《西游记》中的唐僧）
+
+    回合流程
+    --------------------
+
+    当前玩家的单位逐个行动：
+
+      1. 移动：   选择MOVE范围内的目标位置，每经过一个格子
+                  支付该地形的移动消耗。
+      2. 行动：   攻击RANGE范围内的敌人，治疗相邻友军
+                  （仅法师/剧本治疗者），或等待。
+      3. 结束回合：交给对手。
+
+    存活的防守方如果在范围内，可以在同一次交战中发起反击。
+
+    胜利条件
+    --------------
+
+    每个剧本有自己的胜利条件。内置条件：
+
+      任一方将单位移动到对方堡垒即获胜。
+      任一方消灭所有敌方单位即获胜。
+      达到回合上限时平局。
+
+    剧本可添加自定义条件：
+
+      protect_unit       特定单位阵亡则该方失败
+      reach_tile         单位在特定格子结束回合则获胜
+      hold_tile          连续占领特定格子N回合则获胜
+      reach_goal_line    越过指定行/列则获胜
+
+    说明面板始终以明确的文字列出当前剧本的实际规则
+    （例如"唐僧阵亡则红方获胜"）。
+
+    指导AI代理（游戏界面）
+    --------------------------------
+
+    Tab切换到教练面板，直接输入即可。Enter发送消息到你方AI的教练队列；
+    AI会在下一回合开始时看到你的消息，并可能采纳建议。
+
+    按 Esc 清除输入缓冲；Tab 只在缓冲为空时离开面板
+    （防止输入消息到一半时意外切走）。
+
+    再次按 F2 或 Esc 关闭帮助。
+
+# 登录字段
+login_fields:
+  server_url: "服务器地址"
+  display_name: "显示名称"
+  kind: "类型"
+  provider: "供应商"
+  model: "模型"
+  required: "必填"
+  optional: "可选"
+  cycle_hint: "左/右键切换"
+  connect_failed: "连接失败"
+  display_name_required: "必须填写显示名称"
+
+# 大厅操作
+lobby_actions:
+  refreshing: "刷新中…"
+
+# 游戏界面 — 玩家面板
+game_player:
+  unit_header: "单位"
+  hp_header: "HP"
+  status_header: "状态"
+  key_hints: "j/k ↕ 选择单位   Enter 详情   ^d/^u 半页"
+
+# 游戏界面 — 地图面板
+game_map:
+  key_hints: "←↑↓→（或 h/j/k/l）移动   Enter 单位详情"
+  loading_map: "（加载地图中…）"
+  terrain_label: "地形"
+  enter_details: "Enter 查看详情"
+
+# 游戏界面 — 推理面板
+game_reasoning:
+  key_hints: "j/k ↕   ^f/^b 翻页   ^d/^u 半页   G 底部   gg 顶部   0 最新"
+  no_reasoning: "（暂无推理内容）"
+  live: "实时"
+  paused: "已暂停 · 已滚动"
+  showing: "显示中"
+  new_below: "条新内容 — 按 0 恢复"
+
+# 游戏界面 — 教练面板
+game_coach:
+  key_hints_focused: "Enter 发送  Esc 清除  Tab 离开面板"
+  key_hints_unfocused: "输入消息   Enter 发送   Esc 清除   Tab 离开（清空时）"
+  tab_prompt: "（Tab 此处输入教练消息）"
+  recent: "最近："
+
+# 游戏界面 — 剧本浮层
+game_overlay:
+  footer: "F3/Esc/q 关闭   j/k ↕   ^f/^b 翻页   ^d/^u 半页   gg 顶部   G 底部"
+
+# 游戏界面 — 退出确认
+game_quit:
+  confirm: "退出SiliconPantheon？"
+
+# 房间界面 — 玩家面板
+room_player:
+  read_only: "（只读）"
+  empty: "（空位）"
+  anonymous: "（匿名）"
+  you_tag: "（你）"
+  model_label: "模型"
+  random: "随机"
+
+# 房间界面 — 说明面板
+room_desc:
+  key_hints: "j/k ↕   ^f/^b 翻页   ^d/^u 半页   gg 顶部   G 底部"
+  no_description: "（暂无剧本说明）"
+
+# 房间界面 — 聊天面板
+room_chat:
+  not_wired: "（聊天功能尚未接入）"
+
+# 房间界面 — 操作面板
+room_actions:
+  key_hints: "↑/↓ 选择   Enter 执行"
+  no_actions: "（无可用操作）"
+
+# 房间界面 — 地图面板
+room_map:
+  key_hints: "←↑↓→（或 h/j/k/l）移动   Enter 单位详情"
+  loading: "（加载地图中…）"
+  enter_details: "Enter 查看详情"
+
+# 房间界面 — 下拉框/弹窗
+room_modal:
+  dropdown_footer: "↑/k 上   ↓/j 下   Enter 选择   Esc 取消"
+  confirm_footer: "← / → 选择   Enter 确认   Esc 取消"
+
+# 房间界面 — 单位卡片
+unit_card:
+  nav_multi: "←/h 上一个 · l/→ 下一个 · Esc/Enter 关闭"
+  nav_single: "Esc / Enter 关闭"
+
+# 房间界面 — 胜利条件描述
+win_desc:
+  max_turns_draw_n: "第{n}回合结束时平局。"
+  custom_plugin: "自定义规则：{fn}。"
+  unknown: "（未知规则）"
+
+# 房间界面 — 策略
+room_strategy:
+  no_playbook: "无策略。AI仅使用默认行为。"
+
+# 剧本选择器
+scenario_pick:
+  header: "更换剧本"
+  tab_switch: "Tab 切换面板"
+  enter_select: "Enter 选择"
+  esc_cancel: "Esc 取消"
+  browse: "↑/↓ 浏览"
+  map_cursor: "←↑↓→ / h j k l 移动光标"
+  desc_scroll: "j/k ↕  ^f/^b 翻页  ^d/^u 半页  gg/G 顶/底"
+  loading_preview: "（加载剧本预览中…）"
+  loading: "（加载中…）"
+  terrain_label: "地形"
+
+# 赛后摘要
+post_match_summary:
+  turns: "回合"
+  blue: "蓝方"
+  red: "红方"
+
+# 登录界面
+login_empty: "（空）"
+
+# 供应商认证 — 订阅CLI
+provider_cli:
+  stored_auth: "已保存认证：{label} CLI 订阅"
+  reauth_cli: "重新认证（再次运行 claude login）"
+
+# 错误消息
+errors:
+  not_connected: "未连接"

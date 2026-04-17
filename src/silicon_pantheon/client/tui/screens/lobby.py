@@ -16,6 +16,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 
 
@@ -31,7 +32,6 @@ class LobbyScreen(Screen):
         await self._refresh_rooms()
 
     def render(self) -> RenderableType:
-        from silicon_pantheon.client.locale import t
         lc = self.app.state.locale
         rooms = self.app.state.last_rooms
 
@@ -99,7 +99,7 @@ class LobbyScreen(Screen):
                 self._selected = (self._selected - 1) % len(rooms)
             return None
         if key == "r":
-            self.app.state.status_message = "refreshing…"
+            self.app.state.status_message = t("lobby_actions.refreshing", self.app.state.locale)
             await self._refresh_rooms()
             self.app.state.status_message = ""
             return None

@@ -17,6 +17,7 @@ from rich.console import Group, RenderableType
 from rich.panel import Panel
 from rich.text import Text
 
+from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import Screen, TUIApp
 
 if TYPE_CHECKING:
@@ -37,31 +38,32 @@ class _Field:
 class LoginScreen(Screen):
     def __init__(self, app: TUIApp):
         self.app = app
+        lc = app.state.locale
         self._fields: list[_Field] = [
-            _Field("server URL", app.state.server_url, hint="http://host:port/mcp/"),
-            _Field("display name", app.state.display_name, hint="required"),
+            _Field(t("login_fields.server_url", lc), app.state.server_url, hint="http://host:port/mcp/"),
+            _Field(t("login_fields.display_name", lc), app.state.display_name, hint=t("login_fields.required", lc)),
             _Field(
-                "kind",
+                t("login_fields.kind", lc),
                 app.state.kind or "ai",
-                hint="left/right to cycle",
+                hint=t("login_fields.cycle_hint", lc),
                 options=_KIND_OPTIONS,
             ),
-            _Field("provider", app.state.provider or "", hint="optional"),
-            _Field("model", app.state.model or "", hint="optional"),
+            _Field(t("login_fields.provider", lc), app.state.provider or "", hint=t("login_fields.optional", lc)),
+            _Field(t("login_fields.model", lc), app.state.model or "", hint=t("login_fields.optional", lc)),
         ]
         self._active = 0
         self._connecting = False
 
     def render(self) -> RenderableType:
         lines: list[Text] = []
-        title = Text("SiliconPantheon — login", style="bold yellow")
+        title = Text(t("login_screen.title", self.app.state.locale), style="bold yellow")
         lines.append(title)
         lines.append(Text(""))
         for i, f in enumerate(self._fields):
             is_active = i == self._active
             marker = "➤" if is_active else " "
             label = Text(f"{marker} {f.label:14}", style="bold" if is_active else "dim")
-            value_text = Text(f.value or "(empty)", style="white" if f.value else "dim italic")
+            value_text = Text(f.value or t("login_empty", self.app.state.locale), style="white" if f.value else "dim italic")
             line = Text.assemble(label, Text("  "), value_text)
             lines.append(line)
             if is_active and f.hint:
@@ -69,7 +71,6 @@ class LoginScreen(Screen):
                 lines.append(hint)
         lines.append(Text(""))
         status = Text("")
-        from silicon_pantheon.client.locale import t
         lc = self.app.state.locale
         if self._connecting:
             status.append(t("login_screen.connecting", lc), style="yellow")
@@ -117,11 +118,11 @@ class LoginScreen(Screen):
     async def _submit(self) -> Screen | None:
         name = self._fields[1].value.strip()
         if not name:
-            self.app.state.error_message = "display name is required"
+            self.app.state.error_message = t("login_fields.display_name_required", self.app.state.locale)
             return None
         self._connecting = True
         self.app.state.error_message = ""
-        self.app.state.status_message = "connecting…"
+        self.app.state.status_message = t("login_screen.connecting", self.app.state.locale)
 
         # Copy field values into shared state.
         self.app.state.server_url = self._fields[0].value.strip()
@@ -137,7 +138,7 @@ class LoginScreen(Screen):
             await _connect_and_declare(self.app)
         except Exception as e:
             self._connecting = False
-            self.app.state.error_message = f"connect failed: {e}"
+            self.app.state.error_message = f"{t('login_fields.connect_failed', self.app.state.locale)}: {e}"
             return None
         # Pipeline: login -> provider-auth -> lobby. ProviderAuthScreen
         # handles the resume-or-pick-fresh logic for LLM credentials.

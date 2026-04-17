@@ -83,6 +83,7 @@ class Dropdown:
     # render no description panel — the list stays minimal for truly
     # self-describing options (e.g. team colors).
     option_descriptions: dict[str, str] | None = None
+    locale: str = "en"
 
     def render(self) -> RenderableType:
         lines: list[Text] = []
@@ -94,7 +95,7 @@ class Dropdown:
             Group(*lines), border_style="dim", padding=(0, 1),
         )
         footer = Text(
-            "↑/k up   ↓/j down   Enter select   Esc cancel", style="dim"
+            t("room_modal.dropdown_footer", self.locale), style="dim"
         )
         body_parts: list[RenderableType] = [list_panel]
         desc = (self.option_descriptions or {}).get(
@@ -159,6 +160,7 @@ class ConfirmModal:
     prompt: str
     on_confirm: Callable[[bool], Awaitable[None]]
     selected_yes: bool = False  # default: No, so accidental Enter cancels
+    locale: str = "en"
 
     def render(self) -> RenderableType:
         # Yes is the destructive option (leave / concede / quit), so
@@ -182,10 +184,10 @@ class ConfirmModal:
             Text(""),
             Align.center(row),
             Text(""),
-            Text("← / → select   Enter confirm   Esc cancel", style="dim"),
+            Text(t("room_modal.confirm_footer", self.locale), style="dim"),
         )
         return Align.center(
-            RichPanel(body, title="Confirm", border_style="yellow", padding=(1, 3)),
+            RichPanel(body, title=t("room_status.confirm", self.locale), border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
@@ -237,6 +239,7 @@ class UnitCard:
     units: list[dict[str, Any]]
     index: int
     unit_classes: dict[str, Any] | None = None
+    locale: str = "en"
     _opened_at: float | None = None
 
     @property
@@ -350,25 +353,25 @@ class UnitCard:
         tags = u.get("tags") or spec.get("tags") or []
         if tags:
             rows.append(Text(""))
-            rows.append(Text("tags: " + ", ".join(tags), style="dim"))
+            rows.append(Text(f"{t('section.tags', self.locale)}: " + ", ".join(tags), style="dim"))
 
         abilities = u.get("abilities") or spec.get("abilities") or []
         if abilities:
             rows.append(Text(""))
-            rows.append(Text("abilities: " + ", ".join(abilities)))
+            rows.append(Text(f"{t('section.abilities', self.locale)}: " + ", ".join(abilities)))
 
         inv = u.get("default_inventory") or spec.get("default_inventory") or []
         if inv:
             rows.append(Text(""))
-            rows.append(Text("inventory: " + ", ".join(inv)))
+            rows.append(Text(f"{t('section.inventory', self.locale)}: " + ", ".join(inv)))
 
         rows.append(Text(""))
         if len(self.units) > 1:
             rows.append(
-                Text("←/h previous · l/→ next · Esc/Enter close", style="dim")
+                Text(t("unit_card.nav_multi", self.locale), style="dim")
             )
         else:
-            rows.append(Text("Esc / Enter to close", style="dim"))
+            rows.append(Text(t("unit_card.nav_single", self.locale), style="dim"))
         return Group(*rows)
 
     def navigate(self, step: int) -> None:
@@ -389,13 +392,15 @@ class UnitCard:
 
 
 class PlayerPanel(Panel):
-    title = "Player"
+    @property
+    def title(self):
+        return t("room_panels.player", self.app.state.locale)
 
     def __init__(self, app: TUIApp) -> None:
         self.app = app
 
     def key_hints(self) -> str:
-        return "(read-only)"
+        return t("room_player.read_only", self.app.state.locale)
 
     def render(self, focused: bool) -> RenderableType:
         s = self.app.state
@@ -411,10 +416,12 @@ class PlayerPanel(Panel):
         for slot_id in ("a", "b"):
             seat = seats.get(slot_id, {})
             player = seat.get("player") or {}
-            name = player.get("display_name") or "(empty)"
-            if slot_id == my_slot and name == "(empty)":
-                name = s.display_name or "(anonymous)"
-            tag = " (you)" if slot_id == my_slot else ""
+            lc = self.app.state.locale
+            _empty = t("room_player.empty", lc)
+            name = player.get("display_name") or _empty
+            if slot_id == my_slot and name == _empty:
+                name = s.display_name or t("room_player.anonymous", lc)
+            tag = f" {t('room_player.you_tag', lc)}" if slot_id == my_slot else ""
             ready = "✓" if seat.get("ready") else "…"
             if team_mode == "random":
                 style = "bold yellow" if slot_id == my_slot else "bold white"
@@ -430,7 +437,7 @@ class PlayerPanel(Panel):
                 Text(f"{slot_id} [{ready}] {name}{tag}", style=style)
             )
         rows.append(Text(""))
-        rows.append(Text(f"model: {s.model or 'random'}", style="dim"))
+        rows.append(Text(f"{t('room_player.model_label', lc)}: {s.model or t('room_player.random', lc)}", style="dim"))
         return RichPanel(
             Group(*rows),
             title=self.title,
@@ -443,7 +450,9 @@ class PlayerPanel(Panel):
 
 
 class DescriptionPanel(Panel):
-    title = "Description"
+    @property
+    def title(self):
+        return t("room_panels.description", self.app.state.locale)
 
     def __init__(self, app: TUIApp) -> None:
         self.app = app
@@ -451,7 +460,7 @@ class DescriptionPanel(Panel):
         self._gg: list[bool] = [False]
 
     def key_hints(self) -> str:
-        return "j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom"
+        return t("room_desc.key_hints", self.app.state.locale)
 
     async def handle_key(self, key: str) -> "Screen | None":
         from silicon_pantheon.client.tui.panels import apply_vim_scroll
@@ -482,11 +491,11 @@ class DescriptionPanel(Panel):
             rows.append(Text(intro, style="italic"))
         if win_conds:
             rows.append(Text(""))
-            rows.append(Text("How to win:", style="bold"))
+            rows.append(Text(t("section.how_to_win", self.app.state.locale), style="bold"))
             for wc in win_conds:
                 rows.append(
                     Text(
-                        f"  • {_describe_win_condition(wc, desc)}",
+                        f"  • {_describe_win_condition(wc, desc, self.app.state.locale)}",
                         style="dim",
                     )
                 )
@@ -496,7 +505,7 @@ class DescriptionPanel(Panel):
         # players read this to plan focus / matchups before ready-up.
         if armies:
             rows.append(Text(""))
-            rows.append(Text("Armies:", style="bold"))
+            rows.append(Text(t("section.armies", self.app.state.locale), style="bold"))
             for owner in ("blue", "red"):
                 units = armies.get(owner) or []
                 if not units:
@@ -537,7 +546,7 @@ class DescriptionPanel(Panel):
         ]
         if described:
             rows.append(Text(""))
-            rows.append(Text("Units:", style="bold"))
+            rows.append(Text(t("section.units", self.app.state.locale), style="bold"))
             for slug, spec in described:
                 name_str = spec.get("display_name") or slug
                 teams = class_teams.get(slug, set())
@@ -553,7 +562,7 @@ class DescriptionPanel(Panel):
                     Text(f"    {spec['description'].strip()}", style="dim")
                 )
         if not (story or intro or win_conds or armies):
-            rows.append(Text("(no scenario description loaded)", style="dim italic"))
+            rows.append(Text(t("room_desc.no_description", self.app.state.locale), style="dim italic"))
         # Pre-wrap long logical lines (scenario story / multi-line
         # plugin win-rule descriptions / unit blurbs) into one Text
         # per visible row so scroll advances per-line, not per-block.
@@ -688,6 +697,7 @@ def _other(team: str) -> str:
 def _describe_win_condition(
     wc: dict[str, Any],
     scenario_description: dict[str, Any] | None = None,
+    locale: str = "en",
 ) -> str:
     """Return a one-line, side-explicit explanation of a win condition.
 
@@ -698,80 +708,81 @@ def _describe_win_condition(
     perspective, but a red player reading the same line wouldn't know
     they win when the monk dies.
     """
-    t = wc.get("type", "")
-    if t == "seize_enemy_fort":
-        return "Either side wins by moving a unit onto the opponent's fort."
-    if t == "eliminate_all_enemy_units":
-        return "Either side wins by eliminating every enemy unit."
-    if t == "max_turns_draw":
+    wc_type = wc.get("type", "")
+    if wc_type == "seize_enemy_fort":
+        return t("win.seize_enemy_fort", locale)
+    if wc_type == "eliminate_all_enemy_units":
+        return t("win.eliminate_all", locale)
+    if wc_type == "max_turns_draw":
         n = wc.get("turns")
-        return (
-            f"Match ends in a draw at turn {n}."
-            if n
-            else "Match ends in a draw at the turn cap."
-        )
-    if t == "protect_unit":
+        if n:
+            return t("win_desc.max_turns_draw_n", locale).replace("{n}", str(n))
+        return t("win.max_turns_draw", locale)
+    if wc_type == "protect_unit":
         name = _humanize_unit_id(wc.get("unit_id", ""), scenario_description)
         loser = wc.get("owning_team", "?")
         winner = _other(loser)
-        return f"{winner.capitalize()} wins if {name} dies (protected by {loser})."
-    if t == "protect_unit_survives":
+        return (t("win.protect_unit", locale)
+                .replace("{winner}", winner.capitalize())
+                .replace("{name}", name)
+                .replace("{loser}", loser))
+    if wc_type == "protect_unit_survives":
         name = _humanize_unit_id(wc.get("unit_id", ""), scenario_description)
         protector = wc.get("owning_team", "?")
-        return (
-            f"{protector.capitalize()} wins if {name} survives to the "
-            f"turn cap (hold out to win)."
-        )
-    if t == "reach_tile":
+        return (t("win.protect_unit_survives", locale)
+                .replace("{protector}", protector.capitalize())
+                .replace("{name}", name))
+    if wc_type == "reach_tile":
         pos = wc.get("pos") or {}
         team = wc.get("team", "?")
         u = wc.get("unit_id")
         who = _humanize_unit_id(u, scenario_description) if u else f"any {team} unit"
-        return (
-            f"{team.capitalize()} wins if {who} ends a turn on "
-            f"({pos.get('x', '?')}, {pos.get('y', '?')})."
-        )
-    if t == "hold_tile":
+        return (t("win.reach_tile", locale)
+                .replace("{team}", team.capitalize())
+                .replace("{who}", who)
+                .replace("{x}", str(pos.get("x", "?")))
+                .replace("{y}", str(pos.get("y", "?"))))
+    if wc_type == "hold_tile":
         pos = wc.get("pos") or {}
         n = wc.get("consecutive_turns", "?")
         team = wc.get("team", "?")
-        return (
-            f"{team.capitalize()} wins by holding "
-            f"({pos.get('x', '?')}, {pos.get('y', '?')}) for {n} consecutive turns."
-        )
-    if t == "reach_goal_line":
+        return (t("win.hold_tile", locale)
+                .replace("{team}", team.capitalize())
+                .replace("{x}", str(pos.get("x", "?")))
+                .replace("{y}", str(pos.get("y", "?")))
+                .replace("{n}", str(n)))
+    if wc_type == "reach_goal_line":
         team = wc.get("team", "?")
-        return (
-            f"{team.capitalize()} wins by crossing "
-            f"{wc.get('axis', '?')}={wc.get('value', '?')} with any unit."
-        )
-    if t == "plugin":
-        # Scenarios can attach a description to their check_fn (an
-        # explicit `.description` attribute or its docstring's first
-        # line). Server-side `describe_scenario` resolves that into
-        # the `description` field on this dict, so the client just
-        # reads it straight — no plugin imports in the TUI process.
+        return (t("win.reach_goal_line", locale)
+                .replace("{team}", team.capitalize())
+                .replace("{axis}", str(wc.get("axis", "?")))
+                .replace("{value}", str(wc.get("value", "?"))))
+    if wc_type == "plugin":
         desc = wc.get("description")
         if desc:
             return str(desc)
-        return f"Custom plugin rule: {wc.get('check_fn', '?')}."
-    return t or "(unknown rule)"
+        return t("win_desc.custom_plugin", locale).replace("{fn}", str(wc.get("check_fn", "?")))
+    return wc_type or t("win_desc.unknown", locale)
 
 
 # ---- panel: Chat (placeholder) ----
 
 
 class ChatPanel(Panel):
-    title = "Chat"
+    def __init__(self, app: TUIApp) -> None:
+        self.app = app
+
+    @property
+    def title(self):
+        return t("room_panels.chat", self.app.state.locale)
 
     def key_hints(self) -> str:
-        return "(chat not wired yet)"
+        return t("room_chat.not_wired", self.app.state.locale)
 
     def render(self, focused: bool) -> RenderableType:
+        lc = self.app.state.locale
         body = Text(
-            "(chat pipeline not wired yet — see TODO.md)\n\n"
-            "Players will be able to type here to chat with each other\n"
-            "and with the AI agents while a match is being set up or played.",
+            t("room_panels.chat_placeholder", lc) + "\n" + t("room_chat.not_wired", lc),
             style="dim italic",
         )
         return RichPanel(
@@ -842,19 +853,21 @@ _HOST_TEAM_DESCRIPTIONS = {
 
 
 class ActionsPanel(Panel):
-    title = "Actions"
+    @property
+    def title(self):
+        return t("room_panels.actions", self.screen.app.state.locale)
 
     def __init__(self, screen: "RoomScreen") -> None:
         self.screen = screen
         self.focus = 0
 
     def key_hints(self) -> str:
-        return "↑/↓ select   Enter activate"
+        return t("room_actions.key_hints", self.screen.app.state.locale)
 
     def render(self, focused: bool) -> RenderableType:
         buttons = self._buttons()
         if not buttons:
-            body: RenderableType = Text("(no actions)", style="dim")
+            body: RenderableType = Text(t("room_actions.no_actions", self.screen.app.state.locale), style="dim")
         else:
             self.focus = max(0, min(self.focus, len(buttons) - 1))
             lines: list[Text] = []
@@ -976,7 +989,9 @@ class ActionsPanel(Panel):
 
 
 class MapPanel(Panel):
-    title = "Map"
+    @property
+    def title(self):
+        return t("room_panels.map", self.screen.app.state.locale)
 
     def __init__(self, screen: "RoomScreen") -> None:
         self.screen = screen
@@ -984,7 +999,7 @@ class MapPanel(Panel):
         self.cy = 0
 
     def key_hints(self) -> str:
-        return "←↑↓→ (or h/j/k/l) move   Enter unit stats"
+        return t("room_map.key_hints", self.screen.app.state.locale)
 
     def _board(self) -> dict[str, Any]:
         return self.screen.scenario_preview or {}
@@ -1076,13 +1091,14 @@ class MapPanel(Panel):
     def _cursor_tooltip(
         self, w: int, h: int, unit_at: dict[tuple[int, int], dict]
     ) -> RenderableType:
+        _lc = self.screen.app.state.locale
         if w == 0 or h == 0:
-            return Text("(loading map…)", style="dim italic")
+            return Text(t("room_map.loading", _lc), style="dim italic")
         pos = (self.cx, self.cy)
         terrain = "plain"
-        for t in (self._board().get("tiles") or []):
-            if int(t.get("x", -1)) == self.cx and int(t.get("y", -1)) == self.cy:
-                terrain = str(t.get("type", "plain"))
+        for tile in (self._board().get("tiles") or []):
+            if int(tile.get("x", -1)) == self.cx and int(tile.get("y", -1)) == self.cy:
+                terrain = str(tile.get("type", "plain"))
                 break
         # Forts live in their own list in scenario_preview (legacy
         # compatibility — the engine treats them as a tile type but
@@ -1095,7 +1111,7 @@ class MapPanel(Panel):
                 break
         line = Text()
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
-        line.append(f"terrain: {terrain}", style="yellow")
+        line.append(f"{t('game_map.terrain_label', _lc)}: {terrain}", style="yellow")
         # Terrain effect summary from the cached scenario bundle.
         summary = _terrain_effect_summary(
             self.screen.app.state.scenario_description, terrain
@@ -1110,7 +1126,7 @@ class MapPanel(Panel):
             line.append("   ")
             line.append(f"{name} ({owner})", style=f"bold {color}")
             line.append("   ")
-            line.append("Enter for details", style="dim italic")
+            line.append(t("room_map.enter_details", _lc), style="dim italic")
         return line
 
     async def handle_key(self, key: str) -> Screen | None:
@@ -1197,7 +1213,7 @@ class RoomScreen(Screen):
             PlayerPanel(app),
             self.actions_panel,
             DescriptionPanel(app),
-            ChatPanel(),
+            ChatPanel(app),
         ]
         # Start focus on the Actions panel — that's where Toggle Ready
         # lives, which is what the player almost always wants first.
@@ -1227,18 +1243,19 @@ class RoomScreen(Screen):
         header_line = Text()
         # Room id + scenario header are neutral chrome — use yellow so
         # they don't read as "this room belongs to the blue team".
-        header_line.append(f"Room {room_id[:10]}  ", style="bold white")
+        lc = self.app.state.locale
+        header_line.append(f"{t('room_status.room_label', lc)} {room_id[:10]}  ", style="bold white")
         header_line.append(scenario, style="yellow")
-        header_line.append(f"   fog={rs.get('fog_of_war', '?')}", style="dim")
-        header_line.append(f"   teams={rs.get('team_assignment', '?')}", style="dim")
+        header_line.append(f"   {t('room_status.fog_label', lc)}={rs.get('fog_of_war', '?')}", style="dim")
+        header_line.append(f"   {t('room_status.teams_label', lc)}={rs.get('team_assignment', '?')}", style="dim")
         if countdown is not None:
             header_line.append(
-                f"   match starting in {countdown:.1f}s", style="bold yellow"
+                f"   {t('room_status.match_starting', lc).replace('{s}', f'{countdown:.1f}')}", style="bold yellow"
             )
         elif status == "waiting_for_players":
-            header_line.append("   waiting for opponent…", style="dim")
+            header_line.append(f"   {t('room_status.waiting_opponent', lc)}", style="dim")
         elif status == "waiting_ready":
-            header_line.append("   ready up to start", style="green")
+            header_line.append(f"   {t('room_status.ready_up', lc)}", style="green")
 
         # Footer: errors take priority, otherwise the focused panel's
         # own key hints + the always-on Tab/q hints.
@@ -1254,7 +1271,7 @@ class RoomScreen(Screen):
                 hints.append(f"[{focused.title}] ", style="bold yellow")
                 hints.append(panel_hints, style="white")
                 hints.append("   ", style="dim")
-            hints.append("Tab next panel   F2 help   q quit", style="dim")
+            hints.append(f"{t('keys.tab_next', lc)}   {t('keys.help', lc)}   {t('keys.quit', lc)}", style="dim")
             footer_line = hints
 
         # Put header / body / footer all inside a single Layout with
@@ -1376,7 +1393,7 @@ class RoomScreen(Screen):
         unit_classes = (
             self.app.state.scenario_description or {}
         ).get("unit_classes") or {}
-        self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes)
+        self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes, locale=self.app.state.locale)
 
     def _navigable_units(self) -> list[dict[str, Any]]:
         """Units the unit-card cycle (h / l) walks through. Sorted by
@@ -1471,7 +1488,7 @@ class RoomScreen(Screen):
         # player can read the playbook before committing. Rich wraps
         # it inside the fixed-width modal; the box grows vertically.
         # Drop YAML frontmatter if any so it's just the prose.
-        descriptions: dict[str, str] = {"(none)": "No playbook. The agent uses only its baseline behavior."}
+        descriptions: dict[str, str] = {"(none)": t("room_strategy.no_playbook", self.app.state.locale)}
         for p in candidates:
             try:
                 txt = p.read_text(encoding="utf-8")
@@ -1485,6 +1502,7 @@ class RoomScreen(Screen):
             selected_idx=idx,
             on_confirm=_on_pick,
             option_descriptions=descriptions,
+            locale=self.app.state.locale,
         )
 
     def _open_leave_confirm(self) -> None:
@@ -1495,6 +1513,7 @@ class RoomScreen(Screen):
         self._confirm = ConfirmModal(
             prompt=t("room_buttons.leave_confirm", self.app.state.locale),
             on_confirm=_on_confirm,
+            locale=self.app.state.locale,
         )
 
     def _open_quit_confirm(self) -> None:
@@ -1505,6 +1524,7 @@ class RoomScreen(Screen):
         self._confirm = ConfirmModal(
             prompt=t("room_buttons.quit_confirm", self.app.state.locale),
             on_confirm=_on_confirm,
+            locale=self.app.state.locale,
         )
 
     def _open_scenario_modal(self) -> None:
@@ -1521,6 +1541,7 @@ class RoomScreen(Screen):
             current=current or options[0],
             client=self.app.client,
             on_confirm=_on_confirm,
+            locale=self.app.state.locale,
         )
         self._scenario_picker = picker
         # Kick off the first scenario's data fetch so the preview
@@ -1538,6 +1559,7 @@ class RoomScreen(Screen):
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"fog_of_war": v}),
             option_descriptions=dict(_FOG_DESCRIPTIONS),
+            locale=self.app.state.locale,
         )
 
     def _open_teams_modal(self) -> None:
@@ -1555,6 +1577,7 @@ class RoomScreen(Screen):
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"team_assignment": v}),
             option_descriptions=dict(_TEAM_MODE_DESCRIPTIONS),
+            locale=self.app.state.locale,
         )
 
     def _open_host_team_modal(self) -> None:
@@ -1570,6 +1593,7 @@ class RoomScreen(Screen):
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"host_team": v}),
             option_descriptions=dict(_HOST_TEAM_DESCRIPTIONS),
+            locale=self.app.state.locale,
         )
 
     def _open_turn_time_modal(self) -> None:
@@ -1592,6 +1616,7 @@ class RoomScreen(Screen):
             selected_idx=idx,
             on_confirm=_on_confirm,
             option_descriptions=dict(_TURN_TIME_DESCRIPTIONS),
+            locale=self.app.state.locale,
         )
 
     # ---- server interactions ----

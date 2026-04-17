@@ -114,7 +114,8 @@ class PlayerPanel(Panel):
         self._roster: list[dict] = []  # rebuilt each render
 
     def key_hints(self) -> str:
-        return "j/k ↕ unit   Enter details   ^d/^u ½page"
+        from silicon_pantheon.client.locale import t
+        return t("game_player.key_hints", self.screen.app.state.locale)
 
     async def handle_key(self, key: str) -> "Screen | None":
         n = len(self._roster)
@@ -150,22 +151,25 @@ class PlayerPanel(Panel):
         status = gs.get("status", "?")
         winner = gs.get("winner")
 
+        from silicon_pantheon.client.locale import t as _t
+        _lc = self.screen.app.state.locale
+
         rows: list[RenderableType] = []
         rows.append(
             Text(
-                f"You: {my_team}   Turn {turn}/{max_turns}",
+                f"{_t('status.you', _lc)}: {my_team}   {_t('status.turn', _lc)} {turn}/{max_turns}",
                 style="bold cyan" if my_team == "blue" else "bold red",
             )
         )
         my_turn = active == my_team
         rows.append(
             Text(
-                "YOUR TURN" if my_turn else "opponent's turn",
+                _t("status.your_turn", _lc) if my_turn else _t("status.opponent_turn", _lc),
                 style="bold green" if my_turn else "dim",
             )
         )
         if status == "game_over":
-            line = Text("GAME OVER", style="bold yellow")
+            line = Text(_t("status.game_over", _lc), style="bold yellow")
             if winner:
                 line.append(
                     f" — {winner}",
@@ -179,7 +183,7 @@ class PlayerPanel(Panel):
             )
             rows.append(
                 Text(
-                    f"agent {'thinking…' if busy else 'idle'}",
+                    _t("status.agent_thinking", _lc) if busy else _t("status.agent_idle", _lc),
                     style="yellow" if busy else "dim",
                 )
             )
@@ -219,7 +223,7 @@ class PlayerPanel(Panel):
             rows.append(Text(f"{team}:", style=header_style))
             rows.append(
                 Text(
-                    f"  {'Unit':<14}  {'HP':>7}  Status",
+                    f"  {_t('game_player.unit_header', _lc):<14}  {_t('game_player.hp_header', _lc):>7}  {_t('game_player.status_header', _lc)}",
                     style="bold dim",
                 )
             )
@@ -276,7 +280,7 @@ class PlayerPanel(Panel):
                         ("  ", None),
                         (f"{hp_str:>7}", "dim"),
                         ("  ", None),
-                        ("dead", "bold red"),
+                        (_t("unit_status.dead", _lc), "bold red"),
                     )
                     rows.append(row)
                 roster_idx += 1
@@ -329,7 +333,8 @@ class GameMapPanel(Panel):
         self.cy = 0
 
     def key_hints(self) -> str:
-        return "←↑↓→ (or h/j/k/l) move   Enter unit stats"
+        from silicon_pantheon.client.locale import t
+        return t("game_map.key_hints", self.screen.app.state.locale)
 
     def _state(self) -> dict[str, Any]:
         return self.screen.state or {}
@@ -415,14 +420,16 @@ class GameMapPanel(Panel):
         tile_by_pos: dict[tuple[int, int], dict],
         unit_at: dict[tuple[int, int], dict],
     ) -> RenderableType:
+        from silicon_pantheon.client.locale import t as _loc
+        _lc2 = self.screen.app.state.locale
         if w == 0 or h == 0:
-            return Text("(loading map…)", style="dim italic")
-        t = tile_by_pos.get((self.cx, self.cy), {})
-        terrain = str(t.get("type", "plain"))
+            return Text(_loc("game_map.loading_map", _lc2), style="dim italic")
+        tile = tile_by_pos.get((self.cx, self.cy), {})
+        terrain = str(tile.get("type", "plain"))
         u = unit_at.get((self.cx, self.cy))
         line = Text()
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
-        line.append(f"terrain: {terrain}", style="yellow")
+        line.append(f"{_loc('game_map.terrain_label', _lc2)}: {terrain}", style="yellow")
         summary = _terrain_effect_summary(
             self.screen.app.state.scenario_description, terrain
         )
@@ -440,7 +447,7 @@ class GameMapPanel(Panel):
                 style=f"bold {color}",
             )
             line.append("   ")
-            line.append("Enter for details", style="dim italic")
+            line.append(_loc("game_map.enter_details", _lc2), style="dim italic")
         return line
 
     async def handle_key(self, key: str) -> Screen | None:
@@ -538,7 +545,8 @@ class ReasoningPanel(Panel):
         self._gg_primed = False
 
     def key_hints(self) -> str:
-        return "j/k ↕   ^f/^b page   ^d/^u ½page   G tail   gg top   0 tail"
+        from silicon_pantheon.client.locale import t
+        return t("game_reasoning.key_hints", self.screen.app.state.locale)
 
     def _build_all_lines(self) -> list[tuple[str, str]]:
         """Flatten thoughts into (style, text) line tuples, oldest
@@ -595,9 +603,11 @@ class ReasoningPanel(Panel):
             self.line_offset += new_lines
         self._last_total_lines = total
 
+        from silicon_pantheon.client.locale import t as _t
+        _lc = self.screen.app.state.locale
         if total == 0:
             return RichPanel(
-                Text("(no reasoning yet)", style="dim italic"),
+                Text(_t("game_reasoning.no_reasoning", _lc), style="dim italic"),
                 title=self.title,
                 border_style=border_style(focused),
                 padding=(0, 1),
@@ -633,18 +643,12 @@ class ReasoningPanel(Panel):
                 body.append("\n")
 
         if self.line_offset == 0:
-            title = f"{self.title} — live ({end}/{total})"
+            title = f"{self.title} — {_t('game_reasoning.live', _lc)} ({end}/{total})"
         else:
-            # Surface how many lines are hidden below the user's
-            # current view so they know there's new content waiting —
-            # pressing 0 returns to live tail. Without this hint the
-            # pinned-while-scrolled behaviour is invisible: you'd see
-            # the agent's old thought sitting still and have no cue
-            # that a newer one landed behind it.
             hidden_below = total - end
             title = (
-                f"{self.title} — PAUSED · scrolled  (showing {end}/{total}"
-                + (f", {hidden_below} new below — press 0 to resume"
+                f"{self.title} — {_t('game_reasoning.paused', _lc)}  ({_t('game_reasoning.showing', _lc)} {end}/{total}"
+                + (f", {hidden_below} {_t('game_reasoning.new_below', _lc)}"
                    if hidden_below > 0 else "")
                 + ")"
             )
@@ -728,9 +732,12 @@ class CoachPanel(Panel):
         self.history: deque[str] = deque(maxlen=5)
 
     def key_hints(self) -> str:
-        return "type a message   Enter send   Esc clear   Tab leave (empty)"
+        from silicon_pantheon.client.locale import t
+        return t("game_coach.key_hints_unfocused", self.screen.app.state.locale)
 
     def render(self, focused: bool) -> RenderableType:
+        from silicon_pantheon.client.locale import t as _t
+        _lc = self.screen.app.state.locale
         rows: list[RenderableType] = []
         if focused:
             prompt = Text(no_wrap=False, overflow="fold")
@@ -739,18 +746,18 @@ class CoachPanel(Panel):
             prompt.append("▌", style="yellow")
             rows.append(prompt)
             rows.append(
-                Text("Enter send  Esc clear  Tab leave panel", style="dim")
+                Text(_t("game_coach.key_hints_focused", _lc), style="dim")
             )
         else:
             rows.append(
                 Text(
-                    "(Tab here to type a coach message)",
+                    _t("game_coach.tab_prompt", _lc),
                     style="dim italic",
                 )
             )
         if self.history:
             rows.append(Text(""))
-            rows.append(Text("recent:", style="dim"))
+            rows.append(Text(_t("game_coach.recent", _lc), style="dim"))
             for m in list(self.history)[-3:]:
                 rows.append(Text(f"  • {m}", style="dim"))
         return RichPanel(
@@ -1008,8 +1015,9 @@ class GameScreen(Screen):
             return self._confirm.render()
         if self._scenario_overlay is not None:
             inner = self._scenario_overlay.render(focused=True)
+            from silicon_pantheon.client.locale import t as _t
             footer = Text(
-                "F3/Esc/q close   j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom",
+                _t("game_overlay.footer", self.app.state.locale),
                 style="dim",
             )
             root = Layout()
@@ -1171,8 +1179,11 @@ class GameScreen(Screen):
                 if yes:
                     self.app.exit()
 
+            from silicon_pantheon.client.locale import t as _t
             self._confirm = ConfirmModal(
-                prompt="Quit SiliconPantheon?", on_confirm=_quit,
+                prompt=_t("game_quit.confirm", self.app.state.locale),
+                on_confirm=_quit,
+                locale=self.app.state.locale,
             )
             return None
         if key == "\t":
@@ -1219,7 +1230,7 @@ class GameScreen(Screen):
         unit_classes = (
             self.app.state.scenario_description or {}
         ).get("unit_classes") or {}
-        self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes)
+        self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes, locale=self.app.state.locale)
 
     def _clear_range_overlay(self) -> None:
         self.range_overlay_unit = None

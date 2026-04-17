@@ -7,7 +7,8 @@ import asyncio
 
 from rich.console import Console
 
-from silicon_pantheon.client.tui.app import HELP_TEXT, _HelpOverlay
+from silicon_pantheon.client.locale import t
+from silicon_pantheon.client.tui.app import _HelpOverlay
 
 
 def test_help_overlay_renders_some_help_content():
@@ -36,9 +37,10 @@ def test_help_overlay_scroll_drops_leading_lines():
 def test_help_text_mentions_player_facing_things_only():
     """Sanity: help should talk about gameplay and navigation, NOT
     implementation slugs like 'unit_classes' or 'class_spec'."""
+    help_text = t("help.body", "en")
     forbidden = ["class_spec", "unit_classes", "_render_", "RichPanel", "describe_scenario"]
     for word in forbidden:
-        assert word not in HELP_TEXT, f"help leaks impl detail: {word}"
+        assert word not in help_text, f"help leaks impl detail: {word}"
 
 
 def test_app_help_intercept_does_not_leak_to_screen():

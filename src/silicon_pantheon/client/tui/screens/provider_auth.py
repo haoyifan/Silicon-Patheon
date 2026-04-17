@@ -39,6 +39,7 @@ from silicon_pantheon.client.credentials import (
     resolve_key,
     save,
 )
+from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import Screen, TUIApp
 from silicon_pantheon.shared.providers import PROVIDERS, ProviderSpec, get_provider
 
@@ -145,7 +146,6 @@ class ProviderAuthScreen(Screen):
         return Text("(provider-auth: unknown step)", style="red")
 
     def _render_resume(self) -> RenderableType:
-        from silicon_pantheon.client.locale import t
         lc = self.app.state.locale
 
         p = get_provider(self._step.provider_id or "")
@@ -169,7 +169,6 @@ class ProviderAuthScreen(Screen):
         )
 
     def _render_pick_provider(self) -> RenderableType:
-        from silicon_pantheon.client.locale import t
         lc = self.app.state.locale
         lines: list[Text] = [Text(t("provider.pick_provider", lc), style="bold yellow"), Text("")]
         for i, p in enumerate(PROVIDERS):
@@ -180,7 +179,7 @@ class ProviderAuthScreen(Screen):
                 Text(f"      {p.token_cost_warning}", style="dim italic")
             )
         lines.append(Text(""))
-        lines.append(Text("↑/k ↓/j navigate   Enter pick   q quit", style="dim"))
+        lines.append(Text(t("provider_extra.nav_pick_quit", lc), style="dim"))
         if self.app.state.error_message:
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
@@ -197,13 +196,14 @@ class ProviderAuthScreen(Screen):
         (or, if a default model is also saved, straight to apply for
         a one-Enter fast path). Re-auth drops into api_key paste
         mode with the paste row pre-focused."""
+        lc = self.app.state.locale
         p = get_provider(self._step.provider_id or "")
         provider_label = p.display_name if p else (self._step.provider_id or "?")
         cred = self._creds.providers.get(self._step.provider_id or "")
         auth_mode = cred.auth_mode if cred else "?"
         if auth_mode == "subscription_cli":
-            summary = f"Stored auth: {provider_label} CLI subscription"
-            re_label = "Re-authenticate (run claude login again)"
+            summary = t("provider_cli.stored_auth", lc).replace("{label}", provider_label)
+            re_label = t("provider_cli.reauth_cli", lc)
         else:
             # Show a short tail of the resolved key so the user can
             # tell at a glance which saved key they're about to use —
@@ -214,15 +214,15 @@ class ProviderAuthScreen(Screen):
                 if k:
                     tail = "…" + k[-4:]
             except CredentialsError:
-                tail = "(unresolvable)"
-            summary = f"Stored key: {provider_label}  {tail}"
-            re_label = "Enter a different key (validate + save)"
+                tail = t("provider_extra.unresolvable", lc)
+            summary = f"{t('provider_extra.stored_key', lc)}: {provider_label}  {tail}"
+            re_label = t("provider_extra.reauth_creds", lc)
         options = [
-            ("keep", "Use the saved credentials"),
+            ("keep", t("provider_extra.keep_creds", self.app.state.locale)),
             ("reauth", re_label),
         ]
         lines: list[Text] = [
-            Text(f"{provider_label} — authentication", style="bold yellow"),
+            Text(f"{provider_label} — {t('provider_extra.authentication', lc)}", style="bold yellow"),
             Text(""),
             Text(summary, style="green"),
             Text(""),
@@ -234,32 +234,34 @@ class ProviderAuthScreen(Screen):
         lines.append(Text(""))
         lines.append(
             Text(
-                "↑/k ↓/j switch   Enter confirm   Esc back   q quit",
+                t("provider_extra.nav_switch_confirm", lc),
                 style="dim",
             )
         )
         if self.app.state.error_message:
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
-            Panel(Group(*lines), title="auth", border_style="yellow", padding=(1, 3)),
+            Panel(Group(*lines), title=t("provider_extra.auth_title", lc), border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
     def _render_api_key(self) -> RenderableType:
+        lc = self.app.state.locale
         p = get_provider(self._step.provider_id or "")
         env_var = p.env_var if p else None
         env_present = bool(env_var and os.environ.get(env_var))
+        env_label = t("provider_extra.env_label", lc).replace("{var}", env_var or "?") if env_present else t("provider_extra.env_label_missing", lc).replace("{var}", env_var or "?")
         options = [
             (
                 "use_env",
-                f"Use {env_var} (detected)" if env_present else f"Use {env_var} (not set)",
+                env_label,
                 env_present,
             ),
-            ("paste", "Paste an API key (saves to keyring)", True),
+            ("paste", t("provider_extra.paste_label", lc), True),
         ]
         lines: list[Text] = [
             Text(
-                f"{p.display_name if p else '?'} — auth",
+                f"{p.display_name if p else '?'} — {t('provider_extra.auth_title', lc)}",
                 style="bold yellow",
             ),
             Text(""),
@@ -300,30 +302,31 @@ class ProviderAuthScreen(Screen):
             )
             lines.append(
                 Text(
-                    "(paste or type the key, Enter to validate + save, Esc cancels)",
+                    t("provider_extra.paste_hint", lc),
                     style="dim italic",
                 )
             )
         lines.append(Text(""))
         lines.append(
             Text(
-                "↑/k ↓/j switch option   Enter confirm   Esc back   q quit",
+                t("provider_extra.nav_switch_option", lc),
                 style="dim",
             )
         )
         if self.app.state.error_message:
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
-            Panel(Group(*lines), title="auth", border_style="yellow", padding=(1, 3)),
+            Panel(Group(*lines), title=t("provider_extra.auth_title", lc), border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
     def _render_pick_model(self) -> RenderableType:
+        lc = self.app.state.locale
         p = get_provider(self._step.provider_id or "")
         if p is None:
             return Text("(missing provider)", style="red")
         lines: list[Text] = [
-            Text(f"{p.display_name} — pick model", style="bold yellow"),
+            Text(f"{p.display_name} — {t('provider_extra.pick_model', lc)}", style="bold yellow"),
             Text(""),
         ]
         for i, m in enumerate(p.models):
@@ -341,17 +344,14 @@ class ProviderAuthScreen(Screen):
         lines.append(Text(""))
         # Show the [r] rotate-key hint only when it's actually
         # actionable (api-key providers with a saved credential).
-        hint = "↑/k ↓/j navigate   Enter pick   Esc back   q quit"
+        hint = t("provider_extra.nav_pick_quit", lc)
         if p.auth_mode == "api_key" and self._has_usable_cred(p.id):
-            hint = (
-                "↑/k ↓/j navigate   Enter pick   r re-enter key   "
-                "Esc back   q quit"
-            )
+            hint = "↑/k ↓/j navigate   Enter pick   r re-enter key   " + t("provider_extra.esc_back", lc)
         lines.append(Text(hint, style="dim"))
         if self.app.state.error_message:
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
-            Panel(Group(*lines), title="model", border_style="yellow", padding=(1, 3)),
+            Panel(Group(*lines), title=t("provider_extra.model_title", lc), border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
@@ -580,7 +580,7 @@ class ProviderAuthScreen(Screen):
             return None
         if in_paste and key == "enter":
             if not self._step.key_buffer:
-                self.app.state.error_message = "key is empty"
+                self.app.state.error_message = t("provider_extra.empty_key", self.app.state.locale)
                 return None
             return await self._save_api_key_then_pick_model()
         if in_paste and key == "backspace":
@@ -604,10 +604,10 @@ class ProviderAuthScreen(Screen):
             # Use env var.
             p = get_provider(self._step.provider_id or "")
             if p is None or not p.env_var:
-                self.app.state.error_message = "provider has no env var"
+                self.app.state.error_message = t("provider_extra.no_env_var", self.app.state.locale)
                 return None
             if not os.environ.get(p.env_var):
-                self.app.state.error_message = f"{p.env_var} not set; use the paste option"
+                self.app.state.error_message = t("provider_extra.env_not_set", self.app.state.locale).replace("{var}", p.env_var)
                 return None
             cred = ProviderCredential(
                 auth_mode="api_key", key_ref=f"env:{p.env_var}"
@@ -629,13 +629,13 @@ class ProviderAuthScreen(Screen):
     async def _save_api_key_then_pick_model(self) -> Screen | None:
         p = get_provider(self._step.provider_id or "")
         if p is None:
-            self.app.state.error_message = "provider missing"
+            self.app.state.error_message = t("provider_extra.provider_missing", self.app.state.locale)
             return None
         key = self._step.key_buffer
         # Validate the key against the provider BEFORE persisting —
         # saves users from a silent failure when the first game starts
         # and the agent can't authenticate.
-        self.app.state.error_message = "validating key with provider…"
+        self.app.state.error_message = t("provider_extra.validating_key", self.app.state.locale)
         err = await _validate_api_key(p.id, key)
         if err:
             self.app.state.error_message = f"key rejected: {err}"

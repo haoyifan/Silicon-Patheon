@@ -91,9 +91,9 @@ class PostMatchScreen(Screen):
             banner.append(f"  ({reason})", style="dim")
 
         summary = Text(
-            f"Turns: {gs.get('turn', '?')} / {gs.get('max_turns', '?')}\n"
-            f"blue: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'blue')}  "
-            f"red: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'red')}",
+            f"{t('post_match_summary.turns', lc)}: {gs.get('turn', '?')} / {gs.get('max_turns', '?')}\n"
+            f"{t('post_match_summary.blue', lc)}: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'blue')}  "
+            f"{t('post_match_summary.red', lc)}: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'red')}",
             style="dim",
         )
 
@@ -163,7 +163,8 @@ class PostMatchScreen(Screen):
 
         _dlog = _logging.getLogger("silicon.tui.post_match")
         if self.app.client is None:
-            self._download_error = "not connected"
+            from silicon_pantheon.client.locale import t as _t
+            self._download_error = _t("errors.not_connected", self.app.state.locale)
             _dlog.warning("download_replay: app.client is None")
             return
         # Log the cid we're about to use so it can be cross-referenced

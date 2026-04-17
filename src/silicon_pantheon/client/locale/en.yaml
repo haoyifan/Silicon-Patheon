@@ -173,3 +173,323 @@ room_buttons:
   change_teams_title: "Change Team Assignment"
   change_host_title: "Change Host Team"
   turn_time_title: "Per-turn time limit (seconds)"
+
+# Room header / status
+room_status:
+  room_label: "Room"
+  fog_label: "fog"
+  teams_label: "teams"
+  match_starting: "match starting in {s}s"
+  waiting_opponent: "waiting for opponent…"
+  ready_up: "ready up to start"
+  confirm: "Confirm"
+
+# Section headings (scenario description)
+section:
+  how_to_win: "How to win:"
+  armies: "Armies:"
+  units: "Units:"
+  tags: "tags"
+  abilities: "abilities"
+  inventory: "inventory"
+  max_turns: "Max turns"
+
+# Room panel titles (room screen, not game screen)
+room_panels:
+  player: "Player"
+  description: "Description"
+  chat: "Chat"
+  actions: "Actions"
+  map: "Map"
+  chat_placeholder: "Players will be able to type here to chat with each other"
+
+# Scenario picker
+scenario_picker:
+  title: "Scenarios"
+  map: "Map"
+  tab_preview: "Tab → preview map   Esc cancel"
+  tab_description: "Tab → description   Esc cancel"
+  tab_list: "Tab → scenario list   Esc cancel"
+  enter_unit: "Enter unit stats   Tab → description   Esc cancel"
+
+# Provider auth extras
+provider_extra:
+  unknown_provider: "unknown provider"
+  empty_key: "empty key"
+  keep_creds: "Use the saved credentials"
+  reauth_creds: "Re-authenticate (enter new key)"
+  esc_back: "Esc back   q quit"
+  provider_missing: "provider missing"
+  nav_pick_quit: "↑/k ↓/j navigate   Enter pick   q quit"
+  nav_switch_confirm: "↑/k ↓/j switch   Enter confirm   Esc back   q quit"
+  nav_switch_option: "↑/k ↓/j switch option   Enter confirm   Esc back   q quit"
+  paste_hint: "(paste or type the key, Enter to validate + save, Esc cancels)"
+  auth_title: "auth"
+  model_title: "model"
+  authentication: "authentication"
+  pick_model: "pick model"
+  env_label: "Use env var {var}"
+  env_label_missing: "Use env var {var} (NOT SET)"
+  paste_label: "Paste an API key (saves to keyring)"
+  no_env_var: "provider has no env var"
+  env_not_set: "{var} not set; use the paste option"
+  validating_key: "validating key with provider…"
+  stored_key: "Stored key"
+  unresolvable: "(unresolvable)"
+
+# Help overlay
+help:
+  title: "Help — SiliconPantheon"
+  body: |
+    Welcome to SiliconPantheon
+    ========================
+
+    Tactical grid combat played by AI agents. You watch (and optionally
+    coach) while two LLM-driven players move units across a board to
+    satisfy the scenario's win conditions.
+
+    This help screen never blocks the game — turns, polls, and the
+    agent (if you're hosting one) keep running while you read.
+
+    Navigation
+    ----------
+
+      Tab            cycle focus through the panels in this screen
+      ↑ ↓ ← →        move within the focused panel (cursor / scroll /
+                     button select / typing)
+      h j k l        same as ← ↓ ↑ → (vim bindings)
+      Enter          activate the focused thing (button / unit on map /
+                     scenario in picker)
+      Esc            close a modal / dropdown / unit card
+      q              quit (or close a unit card)
+      F2 / ?         toggle this help overlay
+      Esc            (when help is open) close it
+
+    Each panel shows its own keys in the footer when focused —
+    "[PanelName] panel-specific keys   Tab next panel   q quit".
+
+    The Map panel
+    -------------
+
+    When focused, the Map panel shows a tile cursor. Move it with the
+    arrows (or h/j/k/l). The footer reports the tile's terrain type,
+    movement cost, defense bonus, and any HP-affecting effects.
+
+    Press Enter on a unit's tile to open its stat card. Inside the
+    card:
+
+      ← / h         previous unit
+      → / l         next unit
+      Esc / Enter   close (cursor lands on the displayed unit)
+
+    The card cycles through the unit's ASCII portrait frames if the
+    scenario shipped any (1 frame every 2 seconds).
+
+    Reading the unit stats
+    ----------------------
+
+      HP            current hit points / maximum
+      ATK           attack value (versus enemy DEF for physical units,
+                    or enemy RES for magical ones)
+      DEF           defense versus physical attacks
+      RES           defense versus magical attacks
+      SPD           speed — affects who counter-attacks (faster
+                    attackers may double-strike)
+      MOVE          how far the unit can travel in one turn
+      RANGE         min–max attack distance
+      type=magic    attack uses RES instead of DEF
+      can_heal      may heal an adjacent ally instead of attacking
+      tags          flavor / future-mechanics labels
+                    (vip, monk, demon, mount, …)
+
+    Reading the map
+    ---------------
+
+      K A C M       built-in classes: Knight / Archer / Cavalry / Mage
+                    Uppercase = blue team, lowercase = red team.
+      *             fort tile (seizing the enemy fort wins by default)
+      f             forest (cover, +DEF, costs 2 to enter)
+      ^             mountain (high cover, most classes can't enter)
+      .             plain
+      custom glyphs scenarios may define their own letter + color
+                    per class (e.g. T = Tang Monk in Journey to the West)
+
+    How a turn plays out
+    --------------------
+
+    The active player's units act one at a time:
+
+      1. Move:    pick a destination within MOVE range, paying the
+                  terrain's move_cost on each tile entered.
+      2. Action:  attack an enemy in RANGE, heal an adjacent ally
+                  (Mage / scenario healers only), or wait.
+      3. End turn: hand over to the opponent.
+
+    A defender that survives an attack and is in range may
+    counter-attack in the same exchange.
+
+    Win conditions
+    --------------
+
+    Each scenario lists its own. Built-ins:
+
+      Either side wins by moving onto the opponent's fort.
+      Either side wins by eliminating every enemy unit.
+      Match ends in a draw at the turn cap.
+
+    Scenarios may add their own:
+
+      protect_unit       a side loses if a specific unit dies
+      reach_tile         a side wins if a unit ends a turn on a tile
+      hold_tile          a side wins by holding a tile for N turns
+      reach_goal_line    a side wins by crossing a row / column
+
+    The Description panel always lists the active scenario's actual
+    rules in plain prose, side-explicit ("Red wins if Tang Monk dies").
+
+    Coaching the agent (game screen)
+    --------------------------------
+
+    Tab to the Coach panel and just type. Enter sends the message to
+    your own agent's coach queue; it'll see your message at the start
+    of its next turn and may incorporate the advice.
+
+    Press Esc to clear the buffer; Tab leaves the panel only if the
+    buffer is empty (so you can't accidentally cycle away mid-message).
+
+    Press F2 again or Esc to close this help.
+
+# Login fields
+login_fields:
+  server_url: "server URL"
+  display_name: "display name"
+  kind: "kind"
+  provider: "provider"
+  model: "model"
+  required: "required"
+  optional: "optional"
+  cycle_hint: "left/right to cycle"
+  connect_failed: "connect failed"
+  display_name_required: "display name is required"
+
+# Lobby actions
+lobby_actions:
+  refreshing: "refreshing…"
+
+# Game screen — player panel
+game_player:
+  unit_header: "Unit"
+  hp_header: "HP"
+  status_header: "Status"
+  key_hints: "j/k ↕ unit   Enter details   ^d/^u ½page"
+
+# Game screen — map panel
+game_map:
+  key_hints: "←↑↓→ (or h/j/k/l) move   Enter unit stats"
+  loading_map: "(loading map…)"
+  terrain_label: "terrain"
+  enter_details: "Enter for details"
+
+# Game screen — reasoning panel
+game_reasoning:
+  key_hints: "j/k ↕   ^f/^b page   ^d/^u ½page   G tail   gg top   0 tail"
+  no_reasoning: "(no reasoning yet)"
+  live: "live"
+  paused: "PAUSED · scrolled"
+  showing: "showing"
+  new_below: "new below — press 0 to resume"
+
+# Game screen — coach panel
+game_coach:
+  key_hints_focused: "Enter send  Esc clear  Tab leave panel"
+  key_hints_unfocused: "type a message   Enter send   Esc clear   Tab leave (empty)"
+  tab_prompt: "(Tab here to type a coach message)"
+  recent: "recent:"
+
+# Game screen — scenario overlay
+game_overlay:
+  footer: "F3/Esc/q close   j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom"
+
+# Game screen — quit confirmation
+game_quit:
+  confirm: "Quit SiliconPantheon?"
+
+# Room screen — player panel
+room_player:
+  read_only: "(read-only)"
+  empty: "(empty)"
+  anonymous: "(anonymous)"
+  you_tag: "(you)"
+  model_label: "model"
+  random: "random"
+
+# Room screen — description panel
+room_desc:
+  key_hints: "j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom"
+  no_description: "(no scenario description loaded)"
+
+# Room screen — chat panel
+room_chat:
+  not_wired: "(chat not wired yet)"
+
+# Room screen — actions panel
+room_actions:
+  key_hints: "↑/↓ select   Enter activate"
+  no_actions: "(no actions)"
+
+# Room screen — map panel
+room_map:
+  key_hints: "←↑↓→ (or h/j/k/l) move   Enter unit stats"
+  loading: "(loading map…)"
+  enter_details: "Enter for details"
+
+# Room screen — dropdown / modals
+room_modal:
+  dropdown_footer: "↑/k up   ↓/j down   Enter select   Esc cancel"
+  confirm_footer: "← / → select   Enter confirm   Esc cancel"
+
+# Room screen — unit card
+unit_card:
+  nav_multi: "←/h previous · l/→ next · Esc/Enter close"
+  nav_single: "Esc / Enter to close"
+
+# Room screen — win condition descriptions
+win_desc:
+  max_turns_draw_n: "Match ends in a draw at turn {n}."
+  custom_plugin: "Custom plugin rule: {fn}."
+  unknown: "(unknown rule)"
+
+# Room screen — strategy
+room_strategy:
+  no_playbook: "No playbook. The agent uses only its baseline behavior."
+
+# Scenario picker
+scenario_pick:
+  header: "Change Scenario"
+  tab_switch: "Tab switch panel"
+  enter_select: "Enter select"
+  esc_cancel: "Esc cancel"
+  browse: "↑/↓ browse"
+  map_cursor: "←↑↓→ / h j k l move cursor"
+  desc_scroll: "j/k ↕  ^f/^b page  ^d/^u ½page  gg/G top/bot"
+  loading_preview: "(loading scenario preview…)"
+  loading: "(loading…)"
+  terrain_label: "terrain"
+
+# Post-match summary
+post_match_summary:
+  turns: "Turns"
+  blue: "blue"
+  red: "red"
+
+# Login screen
+login_empty: "(empty)"
+
+# Provider auth — subscription CLI
+provider_cli:
+  stored_auth: "Stored auth: {label} CLI subscription"
+  reauth_cli: "Re-authenticate (run claude login again)"
+
+# Error messages
+errors:
+  not_connected: "not connected"
