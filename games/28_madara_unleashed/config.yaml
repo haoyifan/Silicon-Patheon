@@ -200,6 +200,42 @@ unit_classes:
     glyph: "w"
     color: green
 
+  reanimated_ninja:
+    display_name: Reanimated Ninja
+    description: |
+      A shinobi brought back through Edo Tensei. Retains their
+      jutsu from life and attacks with ranged ninjutsu. Harder
+      to kill than the expendable Zetsu clones.
+    hp_max: 18
+    atk: 8
+    defense: 4
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "r"
+    color: bright_red
+
+  zetsu_medic:
+    display_name: Zetsu Medic
+    description: |
+      A White Zetsu variant that can merge with and repair other
+      Zetsu clones. Its healing is weak but keeps the fodder alive.
+    hp_max: 10
+    atk: 5
+    defense: 3
+    res: 2
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 3
+    glyph: "z"
+    color: green
+
 armies:
   blue:
     # Naruto — forward position
@@ -228,9 +264,9 @@ armies:
     - {class: white_zetsu, pos: {x: 5, y: 1}}
     - {class: white_zetsu, pos: {x: 9, y: 1}}
     - {class: white_zetsu, pos: {x: 11, y: 1}}
-    - {class: white_zetsu, pos: {x: 4, y: 2}}
-    - {class: white_zetsu, pos: {x: 10, y: 2}}
-    - {class: white_zetsu, pos: {x: 6, y: 3}}
+    - {class: reanimated_ninja, pos: {x: 4, y: 2}}
+    - {class: reanimated_ninja, pos: {x: 10, y: 2}}
+    - {class: zetsu_medic, pos: {x: 6, y: 3}}
     - {class: white_zetsu, pos: {x: 8, y: 3}}
     - {class: white_zetsu, pos: {x: 7, y: 0}}
 

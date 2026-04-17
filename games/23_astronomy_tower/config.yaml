@@ -62,7 +62,8 @@ unit_classes:
     display_name: Order Guard
     description: |
       Members of the Order of the Phoenix patrolling the castle
-      corridors. Experienced adult witches and wizards.
+      corridors. Experienced adult witches and wizards. Trained
+      in basic field healing charms.
     hp_max: 22
     atk: 9
     defense: 4
@@ -72,6 +73,8 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
+    can_heal: true
+    heal_amount: 4
     glyph: "o"
     color: white
 

@@ -34,12 +34,13 @@ board:
     - {x: 1, y: 3, type: water}
     - {x: 2, y: 3, type: water}
     - {x: 3, y: 3, type: water}
-    - {x: 4, y: 3, type: water}
-    - {x: 5, y: 3, type: water}
-    - {x: 6, y: 3, type: water}
-    - {x: 7, y: 3, type: water}
-    - {x: 8, y: 3, type: water}
-    - {x: 9, y: 3, type: water}
+    # x=4-9 at y=3 removed — bridge widened to 3 rows (y=3,4,5)
+    - {x: 4, y: 3, type: bridge}
+    - {x: 5, y: 3, type: bridge}
+    - {x: 6, y: 3, type: bridge}
+    - {x: 7, y: 3, type: bridge}
+    - {x: 8, y: 3, type: bridge}
+    - {x: 9, y: 3, type: bridge}
     - {x: 10, y: 3, type: water}
     - {x: 11, y: 3, type: water}
     - {x: 12, y: 3, type: water}

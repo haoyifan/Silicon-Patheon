@@ -36,13 +36,11 @@ board:
     - {x: 4, y: 12, type: village_wall}
     - {x: 5, y: 12, type: village_wall}
     - {x: 6, y: 12, type: village_wall}
-    - {x: 7, y: 12, type: village_wall}
-    # (8, 12) is the gate
-    - {x: 9, y: 12, type: village_wall}
+    # (7, 8, 9) is the main gate — 3-wide, no wall
+    # (12, 13) is the second gate — Pain blasted open multiple entrances
     - {x: 10, y: 12, type: village_wall}
     - {x: 11, y: 12, type: village_wall}
-    - {x: 12, y: 12, type: village_wall}
-    - {x: 13, y: 12, type: village_wall}
+    # x=12,13 removed — second gate breach
     - {x: 14, y: 12, type: village_wall}
     - {x: 15, y: 12, type: village_wall}
     - {x: 0, y: 13, type: village_wall}

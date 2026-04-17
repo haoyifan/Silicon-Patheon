@@ -37,9 +37,7 @@ board:
     - {x: 3, y: 10, type: titan_wall}
     - {x: 4, y: 10, type: titan_wall}
     - {x: 5, y: 10, type: titan_wall}
-    - {x: 6, y: 10, type: titan_wall}
-    # Breach at (7, 10) — plain tile, no wall
-    - {x: 8, y: 10, type: titan_wall}
+    # (6, 7, 8) is the breach — 3-wide, the Colossal Titan kicked a big hole
     - {x: 9, y: 10, type: titan_wall}
     - {x: 10, y: 10, type: titan_wall}
     - {x: 11, y: 10, type: titan_wall}
@@ -168,6 +166,24 @@ unit_classes:
     glyph: "g"
     color: yellow
 
+  medic_corps:
+    display_name: Garrison Medic
+    description: |
+      A field medic from the Garrison regiment. Tends to wounded
+      soldiers behind the defensive line while titans advance.
+    hp_max: 14
+    atk: 4
+    defense: 3
+    res: 4
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 5
+    glyph: "m"
+    color: yellow
+
   eren_titan:
     display_name: Eren (Attack Titan)
     description: |
@@ -256,7 +272,7 @@ armies:
     - {class: garrison, pos: {x: 4, y: 9}}
     - {class: garrison, pos: {x: 9, y: 9}}
     - {class: garrison, pos: {x: 6, y: 9}}
-    - {class: garrison, pos: {x: 8, y: 9}}
+    - {class: medic_corps, pos: {x: 8, y: 9}}
 
   red:
     # Armored Titan — leading the charge

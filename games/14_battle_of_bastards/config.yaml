@@ -192,6 +192,25 @@ unit_classes:
     glyph: "R"
     color: bright_red
 
+  melisandre:
+    display_name: Melisandre
+    description: |
+      The Red Woman. Priestess of R'hllor who brought Jon Snow back
+      from the dead. Her fire magic heals allies and scorches foes.
+    hp_max: 16
+    atk: 7
+    defense: 2
+    res: 8
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    can_heal: true
+    heal_amount: 6
+    glyph: "M"
+    color: red
+
   vale_knight:
     display_name: Knight of the Vale
     description: |
@@ -223,7 +242,7 @@ armies:
     - {class: free_folk, pos: {x: 6, y: 6}}
     - {class: free_folk, pos: {x: 8, y: 6}}
     - {class: free_folk, pos: {x: 9, y: 6}}
-    - {class: free_folk, pos: {x: 5, y: 7}}
+    - {class: melisandre, pos: {x: 5, y: 7}}
     - {class: free_folk, pos: {x: 6, y: 7}}
     - {class: free_folk, pos: {x: 8, y: 7}}
     # Stark infantry — rear guard.

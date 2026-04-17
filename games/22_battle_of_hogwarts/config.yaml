@@ -62,13 +62,11 @@ board:
     - {x: 3, y: 10, type: stone_wall}
     - {x: 4, y: 10, type: stone_wall}
     - {x: 5, y: 10, type: stone_wall}
-    - {x: 6, y: 10, type: stone_wall}
-    # (7, 10) is the gate — no wall here
-    - {x: 8, y: 10, type: stone_wall}
+    # (6, 7, 8) is the main gate — 3-wide, no wall here
+    # (11, 12) is the courtyard entrance — 2-wide side passage
     - {x: 9, y: 10, type: stone_wall}
     - {x: 10, y: 10, type: stone_wall}
-    - {x: 11, y: 10, type: stone_wall}
-    - {x: 12, y: 10, type: stone_wall}
+    # x=11,12 removed — courtyard entrance
     - {x: 13, y: 10, type: stone_wall}
     - {x: 0, y: 11, type: stone_wall}
     - {x: 1, y: 11, type: stone_wall}
@@ -242,6 +240,26 @@ unit_classes:
     glyph: "o"
     color: white
 
+  pomfrey:
+    display_name: Madam Pomfrey
+    description: |
+      Hogwarts matron and master healer. She has mended every bone
+      Harry has ever broken. Tonight she tends the wounded in the
+      Great Hall — and fights when she must.
+    hp_max: 16
+    atk: 5
+    defense: 2
+    res: 7
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    is_magic: true
+    can_heal: true
+    heal_amount: 7
+    glyph: "P"
+    color: white
+
   voldemort:
     display_name: Lord Voldemort
     description: |
@@ -361,7 +379,7 @@ armies:
     - {class: da_member, pos: {x: 8, y: 7}}
     - {class: da_member, pos: {x: 9, y: 7}}
     - {class: da_member, pos: {x: 10, y: 7}}
-    - {class: da_member, pos: {x: 11, y: 7}}
+    - {class: pomfrey, pos: {x: 11, y: 7}}
     # Order members — rear guard inside castle
     - {class: order_member, pos: {x: 3, y: 9}}
     - {class: order_member, pos: {x: 5, y: 8}}

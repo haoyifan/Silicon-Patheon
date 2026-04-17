@@ -153,6 +153,7 @@ unit_classes:
       Dreamy, strange, and utterly unafraid. Luna duels Death
       Eaters with serene calm, as though cursing dark wizards
       is no more alarming than spotting a Crumple-Horned Snorkack.
+      Her Patronus charm mends wounds with gentle silver light.
     hp_max: 18
     atk: 9
     defense: 2
@@ -162,6 +163,8 @@ unit_classes:
     rng_min: 2
     rng_max: 3
     is_magic: true
+    can_heal: true
+    heal_amount: 4
     glyph: "L"
     color: bright_blue
 

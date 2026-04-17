@@ -353,6 +353,24 @@ unit_classes:
     glyph: "n"
     color: red
 
+  marine_medic:
+    display_name: Marine Medic
+    description: |
+      A field medic attached to the Marine forces at Marineford.
+      Keeps wounded Marines fighting through the chaos of battle.
+    hp_max: 16
+    atk: 5
+    defense: 4
+    res: 4
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 5
+    glyph: "h"
+    color: red
+
 armies:
   blue:
     # Whitebeard — center of the pirate charge
@@ -402,7 +420,7 @@ armies:
     - {class: marine_soldier, pos: {x: 5, y: 8}}
     - {class: marine_soldier, pos: {x: 8, y: 8}}
     - {class: marine_soldier, pos: {x: 11, y: 8}}
-    - {class: marine_soldier, pos: {x: 14, y: 8}}
+    - {class: marine_medic, pos: {x: 14, y: 8}}
     - {class: marine_soldier, pos: {x: 7, y: 6}}
 
 rules:

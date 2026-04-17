@@ -106,6 +106,42 @@ unit_classes:
     glyph: "B"
     color: bright_yellow
 
+  dothraki_shaman:
+    display_name: Dothraki Shaman
+    description: |
+      A healer of the Great Grass Sea, tending wounds with herbs
+      and chants between charges. Fragile but keeps riders fighting.
+    hp_max: 14
+    atk: 6
+    defense: 2
+    res: 5
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 5
+    glyph: "h"
+    color: yellow
+
+  lannister_medic:
+    display_name: Lannister Medic
+    description: |
+      A field surgeon attached to the Lannister column. Keeps
+      wounded soldiers in the fight with bandages and boiled wine.
+    hp_max: 16
+    atk: 5
+    defense: 4
+    res: 4
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 5
+    glyph: "m"
+    color: red
+
   jaime:
     display_name: Jaime Lannister
     description: |
@@ -208,7 +244,7 @@ armies:
     - {class: dothraki, pos: {x: 2, y: 5}}
     - {class: dothraki, pos: {x: 3, y: 2}}
     - {class: dothraki, pos: {x: 3, y: 5}}
-    - {class: dothraki, pos: {x: 3, y: 6}}
+    - {class: dothraki_shaman, pos: {x: 3, y: 6}}
 
   red:
     # Jaime — commanding from the road
@@ -226,7 +262,7 @@ armies:
     - {class: lannister_infantry, pos: {x: 10, y: 3}}
     - {class: lannister_infantry, pos: {x: 11, y: 3}}
     - {class: lannister_infantry, pos: {x: 11, y: 5}}
-    - {class: lannister_infantry, pos: {x: 13, y: 4}}
+    - {class: lannister_medic, pos: {x: 13, y: 4}}
     # Lannister archers — behind the line
     - {class: lannister_archer, pos: {x: 9, y: 2}}
     - {class: lannister_archer, pos: {x: 10, y: 2}}

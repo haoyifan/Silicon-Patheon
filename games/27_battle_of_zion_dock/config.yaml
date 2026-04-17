@@ -141,6 +141,24 @@ unit_classes:
     glyph: "z"
     color: white
 
+  medic:
+    display_name: Zion Medic
+    description: |
+      A field medic from Zion's medical corps. Keeps wounded
+      defenders alive in the chaos of the dock battle.
+    hp_max: 14
+    atk: 4
+    defense: 3
+    res: 4
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 5
+    glyph: "m"
+    color: white
+
   sentinel:
     display_name: Sentinel
     description: |
@@ -212,7 +230,7 @@ armies:
     - {class: zion_infantry, pos: {x: 9, y: 7}}
     - {class: zion_infantry, pos: {x: 11, y: 7}}
     - {class: zion_infantry, pos: {x: 6, y: 8}}
-    - {class: zion_infantry, pos: {x: 8, y: 8}}
+    - {class: medic, pos: {x: 8, y: 8}}
 
   red:
     # Sentinels — swarm approaching from north

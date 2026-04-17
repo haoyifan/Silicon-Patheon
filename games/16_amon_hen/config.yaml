@@ -191,6 +191,7 @@ unit_classes:
     description: |
       The gardener of Bag End. Loyal beyond reason, braver than
       he knows. He will follow Mr. Frodo into Mordor and back.
+      Tends wounds with athelas and steady hands.
     hp_max: 10
     atk: 3
     defense: 3
@@ -199,6 +200,8 @@ unit_classes:
     move: 3
     rng_min: 1
     rng_max: 1
+    can_heal: true
+    heal_amount: 4
     glyph: "S"
     color: green
 

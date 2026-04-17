@@ -151,7 +151,8 @@ unit_classes:
     description: |
       Insect Hashira. Too small to decapitate demons, she instead
       poisons them with wisteria-laced thrusts. Her attacks deal
-      magic (poison) damage, bypassing physical defense.
+      magic (poison) damage, bypassing physical defense. Her
+      medical knowledge lets her tend allies' wounds.
     hp_max: 16
     atk: 8
     defense: 2
@@ -161,6 +162,8 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
+    can_heal: true
+    heal_amount: 4
     glyph: "S"
     color: magenta
 
@@ -238,7 +241,8 @@ unit_classes:
     description: |
       Upper Moon Two. Cryokinetic blood demon art — freezing mist
       and ice clones. Fights at range with a serene smile that
-      masks absolute emptiness.
+      masks absolute emptiness. Absorbs followers to regenerate,
+      healing himself and nearby demons.
     hp_max: 32
     atk: 11
     defense: 4
@@ -248,6 +252,8 @@ unit_classes:
     rng_min: 2
     rng_max: 3
     is_magic: true
+    can_heal: true
+    heal_amount: 5
     glyph: "D"
     color: bright_blue
 

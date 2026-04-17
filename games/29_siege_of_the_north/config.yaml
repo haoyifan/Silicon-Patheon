@@ -15,14 +15,11 @@ board:
     # Ice fortress walls at y=7-9 with gate at (8, 7)
     - {x: 0, y: 7, type: ice_wall}
     - {x: 1, y: 7, type: ice_wall}
-    - {x: 2, y: 7, type: ice_wall}
-    - {x: 3, y: 7, type: ice_wall}
+    # x=2,3 removed — Fire Nation melted through the ice
     - {x: 4, y: 7, type: ice_wall}
     - {x: 5, y: 7, type: ice_wall}
     - {x: 6, y: 7, type: ice_wall}
-    - {x: 7, y: 7, type: ice_wall}
-    # Gate at (8, 7) — no wall tile
-    - {x: 9, y: 7, type: ice_wall}
+    # (7, 8, 9) is the main gate — 3-wide, no wall
     - {x: 10, y: 7, type: ice_wall}
     - {x: 11, y: 7, type: ice_wall}
     - {x: 12, y: 7, type: ice_wall}
@@ -241,6 +238,26 @@ unit_classes:
     glyph: "F"
     color: bright_red
 
+  fire_sage:
+    display_name: Fire Sage
+    description: |
+      A Fire Nation sage who channels spiritual flame to mend
+      wounds. Their healing fire restores allies while their
+      combat firebending remains formidable.
+    hp_max: 16
+    atk: 6
+    defense: 3
+    res: 6
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    is_magic: true
+    can_heal: true
+    heal_amount: 5
+    glyph: "s"
+    color: bright_red
+
   komodo_rhino:
     display_name: Komodo Rhino
     description: |
@@ -293,7 +310,7 @@ armies:
     - {class: fire_nation_soldier, pos: {x: 12, y: 0}}
     - {class: fire_nation_soldier, pos: {x: 3, y: 1}}
     - {class: fire_nation_soldier, pos: {x: 6, y: 1}}
-    - {class: fire_nation_soldier, pos: {x: 10, y: 1}}
+    - {class: fire_sage, pos: {x: 10, y: 1}}
     # Firebenders — ranged support
     - {class: firebender, pos: {x: 1, y: 2}}
     - {class: firebender, pos: {x: 5, y: 2}}

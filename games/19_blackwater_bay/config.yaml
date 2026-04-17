@@ -191,6 +191,42 @@ unit_classes:
     glyph: "T"
     color: bright_cyan
 
+  baratheon_maester:
+    display_name: Baratheon Maester
+    description: |
+      A maester attached to Stannis's army. Tends to the wounded
+      on the beach between volleys of arrows and wildfire.
+    hp_max: 14
+    atk: 4
+    defense: 3
+    res: 5
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 5
+    glyph: "h"
+    color: cyan
+
+  lannister_maester:
+    display_name: Lannister Maester
+    description: |
+      A maester of the Citadel serving King's Landing. Patches
+      wounds behind the city walls as the battle rages.
+    hp_max: 14
+    atk: 4
+    defense: 3
+    res: 5
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 5
+    glyph: "h"
+    color: red
+
   tyrion:
     display_name: Tyrion Lannister
     description: |
@@ -302,7 +338,7 @@ armies:
     - {class: baratheon_infantry, pos: {x: 8, y: 3}}
     - {class: baratheon_infantry, pos: {x: 8, y: 5}}
     - {class: baratheon_infantry, pos: {x: 8, y: 6}}
-    - {class: baratheon_infantry, pos: {x: 8, y: 7}}
+    - {class: baratheon_maester, pos: {x: 8, y: 7}}
     # Baratheon archers — covering fire
     - {class: baratheon_archer, pos: {x: 6, y: 6}}
     - {class: baratheon_archer, pos: {x: 6, y: 7}}
@@ -331,7 +367,7 @@ armies:
     - {class: city_watch, pos: {x: 11, y: 5}}
     - {class: city_watch, pos: {x: 11, y: 6}}
     - {class: city_watch, pos: {x: 13, y: 7}}
-    - {class: city_watch, pos: {x: 11, y: 7}}
+    - {class: lannister_maester, pos: {x: 11, y: 7}}
 
 rules:
   max_turns: 16

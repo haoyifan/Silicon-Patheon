@@ -214,6 +214,25 @@ unit_classes:
     glyph: "k"
     color: cyan
 
+  healer_of_gondor:
+    display_name: Healer of Gondor
+    description: |
+      A healer from the Houses of Healing in Minas Tirith. Trained
+      in the old arts of athelas and herb-lore, tending the wounded
+      behind the shield wall.
+    hp_max: 14
+    atk: 4
+    defense: 3
+    res: 6
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 6
+    glyph: "h"
+    color: cyan
+
   rohirrim:
     display_name: Rohirrim
     description: |
@@ -330,7 +349,7 @@ armies:
     - {class: gondor_soldier, pos: {x: 3, y: 7}}
     - {class: gondor_soldier, pos: {x: 3, y: 9}}
     - {class: gondor_soldier, pos: {x: 4, y: 4}}
-    - {class: gondor_soldier, pos: {x: 4, y: 8}}
+    - {class: healer_of_gondor, pos: {x: 4, y: 8}}
     # Gondor archers — behind the soldiers
     - {class: gondor_archer, pos: {x: 2, y: 3}}
     - {class: gondor_archer, pos: {x: 2, y: 5}}

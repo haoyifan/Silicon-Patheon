@@ -32,13 +32,11 @@ board:
     - {x: 0, y: 9, type: stone_wall}
     - {x: 1, y: 9, type: stone_wall}
     - {x: 2, y: 9, type: stone_wall}
-    - {x: 3, y: 9, type: stone_wall}
-    - {x: 4, y: 9, type: stone_wall}
+    # x=3,4 removed — side breach
     - {x: 5, y: 9, type: stone_wall}
     - {x: 6, y: 9, type: stone_wall}
-    - {x: 7, y: 9, type: stone_wall}
-    # (8, 9) is the gate — plain tile, no wall
-    - {x: 9, y: 9, type: stone_wall}
+    # (7, 8, 9) is the main gate — 3-wide, no wall
+    # (3, 4) is the side breach — the dead broke through
     - {x: 10, y: 9, type: stone_wall}
     - {x: 11, y: 9, type: stone_wall}
     - {x: 12, y: 9, type: stone_wall}
@@ -203,6 +201,26 @@ unit_classes:
     glyph: "d"
     color: yellow
 
+  melisandre:
+    display_name: Melisandre
+    description: |
+      The Red Woman. Fire priestess of R'hllor who lights the
+      Dothraki arakhs and the trench. Her flames heal the living
+      and burn the dead.
+    hp_max: 16
+    atk: 8
+    defense: 2
+    res: 9
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    can_heal: true
+    heal_amount: 7
+    glyph: "R"
+    color: red
+
   night_king:
     display_name: Night King
     description: |
@@ -280,7 +298,7 @@ armies:
     # Dothraki — forward, aggressive (one fewer than before — they
     # historically charged into darkness and got wiped out)
     - {class: dothraki, pos: {x: 2, y: 8}}
-    - {class: dothraki, pos: {x: 4, y: 8}}
+    - {class: melisandre, pos: {x: 4, y: 8}}
     - {class: dothraki, pos: {x: 11, y: 8}}
     - {class: dothraki, pos: {x: 13, y: 8}}
 

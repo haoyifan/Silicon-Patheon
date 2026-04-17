@@ -193,6 +193,24 @@ unit_classes:
     glyph: "t"
     color: white
 
+  medic_droid:
+    display_name: 2-1B Medical Droid
+    description: |
+      A 2-1B surgical droid repurposed for field triage. Fragile
+      but essential — it keeps wounded troopers in the fight.
+    hp_max: 12
+    atk: 3
+    defense: 3
+    res: 4
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 6
+    glyph: "2"
+    color: white
+
   veers:
     display_name: General Veers
     description: |
@@ -281,7 +299,7 @@ armies:
     # Rebel troopers — close defense
     - {class: rebel_trooper, pos: {x: 7, y: 10}}
     - {class: rebel_trooper, pos: {x: 8, y: 9}}
-    - {class: rebel_trooper, pos: {x: 10, y: 10}}
+    - {class: medic_droid, pos: {x: 10, y: 10}}
 
   red:
     # Veers — in the lead AT-AT
