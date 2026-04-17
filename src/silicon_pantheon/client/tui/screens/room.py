@@ -1660,7 +1660,11 @@ class RoomScreen(Screen):
             except Exception:
                 desc = None
             if desc and desc.get("ok"):
-                self.app.state.scenario_description = desc
+                from silicon_pantheon.client.locale.scenario import localize_scenario
+                desc["scenario_slug"] = scenario_name
+                self.app.state.scenario_description = localize_scenario(
+                    desc, self.app.state.locale
+                )
 
     async def _load_scenarios(self) -> None:
         if self.app.client is None:

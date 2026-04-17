@@ -71,6 +71,23 @@ def load_scenario_locale(scenario_name: str, locale: str) -> dict | None:
         return yaml.safe_load(f) or {}
 
 
+def _load_base_locale(locale: str) -> dict | None:
+    """Load the shared base locale that covers built-in terrain types
+    and unit classes. Located at client/locale/scenario_base/<locale>.yaml."""
+    if locale == "en":
+        return None
+    path = Path(__file__).parent / "scenario_base" / f"{locale}.yaml"
+    if not path.exists():
+        return None
+    if locale not in _base_cache:
+        with open(path, encoding="utf-8") as f:
+            _base_cache[locale] = yaml.safe_load(f) or {}
+    return _base_cache[locale]
+
+
+_base_cache: dict[str, dict] = {}
+
+
 def localize_scenario(
     bundle: dict[str, Any],
     locale: str,
@@ -82,24 +99,28 @@ def localize_scenario(
     file is merged on top — translatable string fields override, stats
     stay from the base.
 
+    Three layers are merged (later wins):
+      1. Original bundle (English from the server)
+      2. Shared base locale (built-in terrain/unit class translations)
+      3. Per-scenario locale (scenario-specific overrides)
+
     Returns a NEW dict (base is not mutated).
     """
     if locale == "en":
         return bundle
+    # Layer 1: apply shared base translations (terrain, built-in units)
+    base_overrides = _load_base_locale(locale)
+    result = _deep_merge(bundle, base_overrides) if base_overrides else dict(bundle)
+    # Layer 2: apply per-scenario translations
     name = bundle.get("name") or ""
-    # Try to match the scenario directory name from the bundle.
-    # describe_scenario returns the scenario name in the "name" field,
-    # but the directory uses the slug (e.g. "14_battle_of_bastards").
-    # The caller might also pass the slug directly.
     overrides = load_scenario_locale(name, locale)
     if overrides is None:
-        # Try common slug patterns.
         for key in ("scenario_slug", "slug"):
             slug = bundle.get(key)
             if slug:
                 overrides = load_scenario_locale(slug, locale)
                 if overrides is not None:
                     break
-    if overrides is None:
-        return bundle
-    return _deep_merge(bundle, overrides)
+    if overrides is not None:
+        result = _deep_merge(result, overrides)
+    return result

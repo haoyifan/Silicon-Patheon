@@ -104,7 +104,9 @@ class ScenarioPicker:
         try:
             r = await self.client.call("describe_scenario", name=name)
             if r.get("ok"):
-                self._cache[name] = r
+                from silicon_pantheon.client.locale.scenario import localize_scenario
+                r["scenario_slug"] = name
+                self._cache[name] = localize_scenario(r, self.locale)
         except Exception:
             pass
         finally:

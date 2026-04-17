@@ -1,0 +1,27 @@
+# Shared Chinese translations for built-in terrain types and unit classes.
+# These apply to ALL scenarios as a base layer; per-scenario locale files
+# can override any of these.
+
+terrain_types:
+  plain:
+    description: "开阔地形。无任何修正。"
+  forest:
+    description: "密林。占据者+2 DEF；进入消耗2点移动力。"
+  mountain:
+    description: "陡峭地形。+3 DEF / +1 RES；大多数兵种无法进入。"
+  fort:
+    description: "堡垒。+3 DEF / +3 RES；每回合开始为己方治疗3 HP；占领敌方堡垒默认获胜。"
+
+unit_classes:
+  knight:
+    display_name: "骑士"
+    description: "重甲近战战士。高HP和DEF，速度慢，短攻击范围。"
+  archer:
+    display_name: "弓箭手"
+    description: "远程攻击手。近战较弱，但可在2-3格外攻击。"
+  cavalry:
+    display_name: "骑兵"
+    description: "快速机动单位。高移动力和攻击力，但防御较低。"
+  mage:
+    display_name: "法师"
+    description: "魔法攻击者。攻击对比敌方RES而非DEF。可治疗相邻友军。"
