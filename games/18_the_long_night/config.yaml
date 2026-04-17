@@ -164,6 +164,29 @@ unit_classes:
     glyph: "u"
     color: cyan
 
+  arya:
+    display_name: Arya Stark
+    description: |
+      No One. A girl trained by the Faceless Men of Braavos. She
+      carries a Valyrian steel dagger — the catspaw blade — and
+      moves like a shadow. Impossibly fast, impossibly fragile.
+      In the show she leaps from the darkness and kills the Night
+      King with a single thrust. Here she is an assassin: SPD 10
+      lets her double every enemy; MOVE 5 lets her slip through
+      gaps; HP 16 means one mistake and she's dead. Get her to
+      the Night King and the war ends. Lose her and blue loses
+      its best shot at a surgical win.
+    hp_max: 16
+    atk: 13
+    defense: 3
+    res: 5
+    spd: 10
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "A"
+    color: white
+
   dothraki:
     display_name: Dothraki Screamer
     description: |
@@ -250,10 +273,14 @@ armies:
     - {class: unsullied, pos: {x: 9, y: 7}}
     - {class: unsullied, pos: {x: 11, y: 7}}
     - {class: unsullied, pos: {x: 12, y: 7}}
-    # Dothraki — forward, aggressive
+    # Arya — inside Winterfell, behind the gate. She waits for the
+    # right moment to slip through. Glass cannon: SPD 10, ATK 13,
+    # HP 16. Get her to the Night King and the war ends.
+    - {class: arya, pos: {x: 8, y: 10}}
+    # Dothraki — forward, aggressive (one fewer than before — they
+    # historically charged into darkness and got wiped out)
     - {class: dothraki, pos: {x: 2, y: 8}}
     - {class: dothraki, pos: {x: 4, y: 8}}
-    - {class: dothraki, pos: {x: 9, y: 8}}
     - {class: dothraki, pos: {x: 11, y: 8}}
     - {class: dothraki, pos: {x: 13, y: 8}}
 
@@ -328,6 +355,11 @@ narrative:
       text: |
         The Night King shatters like ice. Every wight on the field
         collapses. Dawn breaks over Winterfell.
+    - trigger: on_unit_killed
+      unit_id: u_b_arya_1
+      text: |
+        Arya falls. The catspaw dagger clatters to the frozen ground.
+        Without her, no one can reach the Night King in time.
     - trigger: on_unit_killed
       unit_id: u_b_jon_snow_1
       text: |
