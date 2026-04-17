@@ -455,10 +455,11 @@ class DescriptionPanel(Panel):
     def title(self):
         return t("room_panels.description", self.app.state.locale)
 
-    def __init__(self, app: TUIApp) -> None:
+    def __init__(self, app: TUIApp, *, fullscreen: bool = False) -> None:
         self.app = app
         self.scroll = 0  # number of rows scrolled down from the top
         self._gg: list[bool] = [False]
+        self._fullscreen = fullscreen  # True when used as F3 overlay
 
     def key_hints(self) -> str:
         return t("room_desc.key_hints", self.app.state.locale)
@@ -578,10 +579,14 @@ class DescriptionPanel(Panel):
         rows = wrap_rows_to_width(rows, max(20, int(cw * 2 / 3) - 6))
         # Clamp scroll to keep a FULL visible window at the end —
         # without this the panel shrinks to 1 row when you scroll
-        # past the content. Visible-window estimate: console height
-        # minus the borders (2), title line (1), footer (1), and a
-        # bit of slack (1). Floor at 1 so tiny terminals still work.
-        visible_window = max(1, ch - 5)
+        # past the content.  When used as the F3 overlay the panel
+        # gets nearly the full terminal; in the room screen it sits
+        # in the bottom row of a 3:2 column split (~2/5 of height).
+        if self._fullscreen:
+            panel_height = max(1, ch - 4)  # full screen minus footer + borders
+        else:
+            panel_height = max(1, int((ch - 2) * 2 / 5) - 2)
+        visible_window = max(1, panel_height)
         max_scroll = max(0, len(rows) - visible_window)
         if self.scroll > max_scroll:
             self.scroll = max_scroll

@@ -1123,7 +1123,7 @@ class GameScreen(Screen):
                 DescriptionPanel as _DescriptionPanel,
             )
 
-            self._scenario_overlay = _DescriptionPanel(self.app)
+            self._scenario_overlay = _DescriptionPanel(self.app, fullscreen=True)
             return None
         # Range overlay toggle: `r` shows/hides move + attack range
         # for the highlighted unit. Works from Map or Player panel.
