@@ -70,7 +70,15 @@ board:
     - {x: 14, y: 12, type: river}
     - {x: 14, y: 13, type: river}
   forts:
-    - {x: 9, y: 2, owner: blue}
+    # Blue (Dwarves/Elves/Men) fort — the Gate of Erebor, moved
+    # behind blue's defensive line so goblins can't seize it on
+    # turn 1. Blue units cluster at y=3-6; fort at y=5 is inside
+    # the perimeter.
+    - {x: 9, y: 5, owner: blue}
+    # Red (Goblins/Wargs) staging area — the goblin camp south of
+    # the battlefield. Gives red a fort-heal position and makes
+    # seize_enemy_fort work symmetrically.
+    - {x: 2, y: 10, owner: red}
 
 terrain_types:
   mountain:

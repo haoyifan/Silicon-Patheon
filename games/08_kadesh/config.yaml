@@ -33,12 +33,11 @@ board:
     - {x: 12, y: 0, type: river}
     - {x: 13, y: 0, type: river}
     - {x: 3, y: 1, type: ford}
-    # Kadesh fortress — a fort cluster on the northeast.
-    - {x: 12, y: 8, type: kadesh_wall}
-    - {x: 13, y: 8, type: kadesh_wall}
-    - {x: 12, y: 9, type: kadesh_wall}
   forts:
-    - {x: 13, y: 9, owner: red}
+    # Kadesh fortress — moved to the open plain between the armies
+    # so it's a contested healing resource. Neutral (no owner) so
+    # neither side gets a free fort-heal on turn 1.
+    - {x: 7, y: 4, owner: null}
 
 terrain_types:
   river:
@@ -51,13 +50,6 @@ terrain_types:
     defense_bonus: 0
     glyph: "="
     color: yellow
-  kadesh_wall:
-    move_cost: 99
-    passable: false
-    defense_bonus: 5
-    glyph: "#"
-    color: yellow
-
 unit_classes:
   ramses:
     display_name: Ramses II
@@ -245,10 +237,10 @@ win_conditions:
   # Mutual VIP rules.
   - {type: protect_unit, unit_id: u_b_ramses_1, owning_team: blue}
   - {type: protect_unit, unit_id: u_r_muwatalli_1, owning_team: red}
-  # Either side can win by seizing the enemy stronghold (only red
-  # has a fort; blue's "stronghold" is reaching the ford bridge
-  # back to safety with Ramses).
-  - {type: seize_enemy_fort}
+  # No seize_enemy_fort — the neutral fort on the plain is a
+  # healing resource, not a win objective. The historical battle
+  # was about killing the opposing commander and controlling the
+  # field, not storming a fortress.
   - {type: eliminate_all_enemy_units}
   - {type: max_turns_draw}
 
