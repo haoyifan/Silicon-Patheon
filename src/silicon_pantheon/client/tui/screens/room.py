@@ -1656,9 +1656,16 @@ class RoomScreen(Screen):
             if desc and desc.get("ok"):
                 from silicon_pantheon.client.locale.scenario import localize_scenario
                 desc["scenario_slug"] = scenario_name
-                self.app.state.scenario_description = localize_scenario(
-                    desc, self.app.state.locale
-                )
+                try:
+                    self.app.state.scenario_description = localize_scenario(
+                        desc, self.app.state.locale
+                    )
+                except Exception:
+                    log.exception(
+                        "load_preview: localize_scenario crashed for %s locale=%s",
+                        scenario_name, self.app.state.locale,
+                    )
+                    self.app.state.scenario_description = desc
 
     async def _load_scenarios(self) -> None:
         if self.app.client is None:
@@ -1676,24 +1683,42 @@ class RoomScreen(Screen):
         self._last_poll = _time.time()
         if self.app.client is None:
             return None
+        cid = self.app.client.connection_id if self.app.client else "?"
+        log.debug("refresh_state: calling get_room_state cid=%s", cid)
         try:
             r = await self.app.client.call("get_room_state")
         except Exception as e:
+            log.exception(
+                "refresh_state: get_room_state EXCEPTION cid=%s type=%s",
+                cid, type(e).__name__,
+            )
             self.app.state.error_message = f"get_room_state failed: {e}"
             return None
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get(
+            err_msg = r.get("error", {}).get(
                 "message", "get_room_state rejected"
             )
-            log.warning("get_room_state rejected: %s", r)
+            log.warning(
+                "refresh_state: get_room_state rejected cid=%s err=%s",
+                cid, err_msg,
+            )
+            self.app.state.error_message = err_msg
             return None
         self.app.state.error_message = ""
         room = r.get("room", {})
+        status = room.get("status")
         prior_scenario = (self.app.state.last_room_state or {}).get("scenario")
         self.app.state.last_room_state = room
-        if room.get("status") == "in_game":
+        log.debug(
+            "refresh_state: status=%s seats=%s",
+            status,
+            {k: {"ready": v.get("ready"), "occupied": v.get("occupied")}
+             for k, v in (room.get("seats") or {}).items()},
+        )
+        if status == "in_game":
             from silicon_pantheon.client.tui.screens.game import GameScreen
 
+            log.info("refresh_state: transitioning to GameScreen")
             next_screen = GameScreen(self.app)
             await self.app.transition(next_screen)
             return next_screen
@@ -1727,13 +1752,24 @@ class RoomScreen(Screen):
         seats = rs.get("seats", {})
         my_seat = seats.get(slot or "", {})
         currently_ready = bool(my_seat.get("ready"))
+        log.info(
+            "toggle_ready: currently=%s → requesting=%s cid=%s slot=%s status=%s",
+            currently_ready, not currently_ready,
+            self.app.client.connection_id if self.app.client else "?",
+            slot, rs.get("status"),
+        )
         try:
             r = await self.app.client.call(
                 "set_ready", ready=not currently_ready
             )
         except Exception as e:
+            log.exception(
+                "toggle_ready: set_ready EXCEPTION cid=%s",
+                self.app.client.connection_id if self.app.client else "?",
+            )
             self.app.state.error_message = f"set_ready failed: {e}"
             return
+        log.info("toggle_ready: set_ready ok=%s", r.get("ok"))
         if not r.get("ok"):
             self.app.state.error_message = r.get("error", {}).get(
                 "message", "set_ready rejected"
