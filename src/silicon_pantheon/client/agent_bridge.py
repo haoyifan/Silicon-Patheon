@@ -513,6 +513,98 @@ class NetworkedAgent:
 
     # ---- turn orchestration ----
 
+    async def _build_turn_context(self) -> tuple[list[dict], dict | None]:
+        """Fetch opponent history since our last turn and tactical digest.
+
+        Returns (new_history, tactical_summary).
+
+        new_history is non-empty only on fresh (non-retry) turns after
+        turn 1 — it carries the opponent's actions since our last turn.
+        On retries we skip re-shipping opponent actions because the
+        retry prompt intentionally omits them.
+
+        tactical_summary is fetched on every entry (turn 1, deltas,
+        retries) because it drains coach messages that can arrive at
+        any time and because the opportunities/threats/win_progress
+        lines are useful even on bootstrap turns.
+        """
+        new_history: list[dict] = []
+        # Only fetch history on a fresh turn (not on a retry — we
+        # already shipped opponent actions in the previous play_turn
+        # entry for this same game turn, and the retry prompt
+        # intentionally skips re-shipping them).
+        if self._turns_played > 0 and self._no_progress_retries == 0:
+            try:
+                r = await self.client.call("get_history", last_n=0)
+                full_history = (r.get("result") or {}).get("history") or []
+                new_history = full_history[self._history_cursor :]
+            except Exception:
+                log.exception("get_history failed; delta prompt will omit opponent actions")
+
+        tactical_summary: dict | None = None
+        try:
+            r = await self.client.call("get_tactical_summary")
+            if r.get("ok"):
+                tactical_summary = r.get("result") or r
+        except Exception:
+            log.exception(
+                "get_tactical_summary failed; turn prompt will omit tactical section"
+            )
+
+        return new_history, tactical_summary
+
+    async def _finalize_turn(self, viewer: Team) -> dict:
+        """Post-turn bookkeeping: check whether the turn actually ended
+        and update delta cursors accordingly.
+
+        Returns the post-turn game state.
+
+        If the agent called end_turn (active_player flipped), we advance
+        _turns_played and snapshot the history cursor for delta prompts.
+        If the agent did NOT end the turn (adapter hit max_iterations /
+        time budget / provider error), we bump the no-progress retry
+        counter so the next play_turn sends a continuation-framed prompt.
+        """
+        post_state = await self._fetch_state()
+        turn_ended = post_state.get("active_player") != viewer.value
+        if turn_ended:
+            self._turns_played += 1
+            self._no_progress_retries = 0
+            try:
+                r = await self.client.call("get_history", last_n=0)
+                self._history_cursor = len(
+                    (r.get("result") or {}).get("history") or []
+                )
+            except Exception:
+                log.exception("get_history failed; delta cursor not advanced")
+            log.info(
+                "play_turn EXIT OK turn_ended=True turns_played=%d "
+                "history_cursor=%d",
+                self._turns_played, self._history_cursor,
+            )
+        else:
+            # Turn didn't end — the TUI will retry on the next poll
+            # with a continuation-framed prompt. No client-side
+            # watchdog: if the model truly can't finish, the server's
+            # turn_time_limit_s is the ultimate bound (currently 30
+            # min default, configurable per room). Model freedom over
+            # client-side handholding.
+            #
+            # The counter is kept only so the retry prompt knows
+            # retry_n > 0 (triggers continuation framing) and so
+            # operators can see from the log how many attempts a
+            # stuck turn is running through.
+            self._no_progress_retries += 1
+            log.warning(
+                "play_turn EXIT WITHOUT end_turn (active still %s); "
+                "no_progress_retries=%d — TUI will retry on next poll "
+                "with continuation prompt; no client-side cap (server "
+                "turn_time_limit_s is the forfeit bound)",
+                viewer.value, self._no_progress_retries,
+            )
+
+        return post_state
+
     async def play_turn(self, viewer: Team, *, max_turns: int) -> dict:
         """Drive one half-turn: fetch state, build prompt, let the
         adapter run until the turn ends."""
@@ -547,43 +639,14 @@ class NetworkedAgent:
                 active, viewer.value,
             )
             return state
+
         # Build the per-turn user prompt. First turn is a full
         # bootstrap snapshot; every turn after is a delta — just
         # the opponent's actions since our last turn and a compact
         # friendly-unit status line. The adapter keeps a persistent
         # conversation, so the model already remembers the earlier
         # full snapshot and doesn't need a fresh one each turn.
-        new_history: list[dict] = []
-        # Only fetch history on a fresh turn (not on a retry — we
-        # already shipped opponent actions in the previous play_turn
-        # entry for this same game turn, and the retry prompt
-        # intentionally skips re-shipping them).
-        if self._turns_played > 0 and self._no_progress_retries == 0:
-            try:
-                r = await self.client.call("get_history", last_n=0)
-                full_history = (r.get("result") or {}).get("history") or []
-                new_history = full_history[self._history_cursor :]
-            except Exception:
-                log.exception("get_history failed; delta prompt will omit opponent actions")
-
-        # Fetch the precomputed tactical digest on EVERY turn entry
-        # (turn 1, deltas, retries). Two reasons:
-        #   - get_tactical_summary now drains coach messages too, and
-        #     coach messages can arrive at any time (including before
-        #     turn 1 or between retries); we must drain on each entry
-        #     so they reach the agent the very next turn-prompt.
-        #   - Cheap server call; even on bootstrap turns the
-        #     opportunities/threats/win_progress lines are useful
-        #     additions on top of the full state snapshot.
-        tactical_summary: dict | None = None
-        try:
-            r = await self.client.call("get_tactical_summary")
-            if r.get("ok"):
-                tactical_summary = r.get("result") or r
-        except Exception:
-            log.exception(
-                "get_tactical_summary failed; turn prompt will omit tactical section"
-            )
+        new_history, tactical_summary = await self._build_turn_context()
 
         user_prompt = build_turn_prompt_from_state_dict(
             state,
@@ -646,53 +709,7 @@ class NetworkedAgent:
             time_budget_s=self.time_budget_s,
         )
 
-        # Only advance the delta bookkeeping if the agent actually
-        # ended the turn (active_player has flipped to the opponent).
-        # If it's still us on the clock, the adapter hit max_iterations
-        # / a time budget / a provider error without calling end_turn,
-        # and the TUI will retrigger play_turn on the next poll. In
-        # that case we must NOT advance _turns_played (next prompt
-        # should still be the same shape) and must NOT advance the
-        # history cursor.
-        post_state = await self._fetch_state()
-        turn_ended = post_state.get("active_player") != viewer.value
-        if turn_ended:
-            self._turns_played += 1
-            self._no_progress_retries = 0
-            try:
-                r = await self.client.call("get_history", last_n=0)
-                self._history_cursor = len(
-                    (r.get("result") or {}).get("history") or []
-                )
-            except Exception:
-                log.exception("get_history failed; delta cursor not advanced")
-            log.info(
-                "play_turn EXIT OK turn_ended=True turns_played=%d "
-                "history_cursor=%d",
-                self._turns_played, self._history_cursor,
-            )
-        else:
-            # Turn didn't end — the TUI will retry on the next poll
-            # with a continuation-framed prompt. No client-side
-            # watchdog: if the model truly can't finish, the server's
-            # turn_time_limit_s is the ultimate bound (currently 30
-            # min default, configurable per room). Model freedom over
-            # client-side handholding.
-            #
-            # The counter is kept only so the retry prompt knows
-            # retry_n > 0 (triggers continuation framing) and so
-            # operators can see from the log how many attempts a
-            # stuck turn is running through.
-            self._no_progress_retries += 1
-            log.warning(
-                "play_turn EXIT WITHOUT end_turn (active still %s); "
-                "no_progress_retries=%d — TUI will retry on next poll "
-                "with continuation prompt; no client-side cap (server "
-                "turn_time_limit_s is the forfeit bound)",
-                viewer.value, self._no_progress_retries,
-            )
-
-        return post_state
+        return await self._finalize_turn(viewer)
 
     async def summarize_match(self, viewer: Team) -> Lesson | None:
         """Post-match lesson writer. Saves to LessonStore if configured."""
