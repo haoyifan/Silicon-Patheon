@@ -1049,11 +1049,34 @@ class GameScreen(Screen):
         if coach_focused and key == "\t" and self.coach_panel.buffer:
             return None
 
-        # Global quit — but not when a unit card is open (Esc/Enter/q
-        # close the card instead). Route through the same ConfirmModal
-        # the Quit button uses so q is consistent with the button
-        # (quitting an in-progress match without confirmation was a
-        # footgun, especially mid-turn).
+        # Unit card: dismiss on Esc / Enter / q from ANY focused panel.
+        # The card renders inside the Map panel, but the user might
+        # have opened it from the Player panel's cursor-Enter — keys
+        # still route to the Player panel, so without this global
+        # intercept the card would be stuck until Tab→Map→Esc.
+        if self.unit_card is not None:
+            if key in ("escape", "esc", "enter", "q"):
+                # Snap map cursor to the card's unit position on close.
+                pos = self.unit_card.unit.get("pos") or {}
+                self.map_panel.cx = int(pos.get("x", self.map_panel.cx))
+                self.map_panel.cy = int(pos.get("y", self.map_panel.cy))
+                self.unit_card = None
+                return None
+            if key in ("left", "h"):
+                self.unit_card.navigate(-1)
+                return None
+            if key in ("right", "l"):
+                self.unit_card.navigate(1)
+                return None
+            # Swallow all other keys while card is up so they don't
+            # accidentally trigger game actions underneath.
+            return None
+
+        # Global quit — but not when a unit card is open (handled
+        # above). Route through the same ConfirmModal the Quit button
+        # uses so q is consistent with the button (quitting an
+        # in-progress match without confirmation was a footgun,
+        # especially mid-turn).
         if key == "q" and self.unit_card is None:
             async def _quit(yes: bool) -> None:
                 if yes:
