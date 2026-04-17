@@ -290,8 +290,11 @@ class PlayerPanel(Panel):
             ch = 30
         visible = max(1, int(ch * 3 / 5) - 4)
         if cursor_row_idx is not None:
-            # Scroll so cursor is within the visible window.
-            if cursor_row_idx < self.scroll:
+            if self.cursor_idx == 0:
+                # First unit: always show from the top so the turn
+                # status / agent-thinking header rows are visible.
+                self.scroll = 0
+            elif cursor_row_idx < self.scroll:
                 self.scroll = cursor_row_idx
             elif cursor_row_idx >= self.scroll + visible:
                 self.scroll = cursor_row_idx - visible + 1
@@ -1283,7 +1286,7 @@ class GameScreen(Screen):
                     )
                 elif t == "heal":
                     tid = la.get("target_id", "?")
-                    amt = la.get("healed", "?")
+                    amt = la.get("heal_amount", la.get("healed", "?"))
                     self.unit_last_actions[uid] = f"healed {tid} +{amt}"
                 # "wait" and "end_turn" are intentionally skipped.
 
