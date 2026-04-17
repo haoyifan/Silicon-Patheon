@@ -1,0 +1,323 @@
+schema_version: 1
+name: Battle of the Bastards
+description: |
+  Winterfell, 303 AC. Jon Snow, risen from the dead, rides north
+  with a ragtag force of Free Folk, minor Stark bannermen, and one
+  giant named Wun Wun to reclaim Winterfell from Ramsay Bolton.
+  Ramsay has more men, better armor, and a cruel tactical mind.
+  His pikemen form a shield wall that threatens to crush the Stark
+  force in a closing vice. Jon must hold out long enough for
+  Sansa's letter to bring the Knights of the Vale — or kill Ramsay
+  before the trap closes.
+
+board:
+  width: 14
+  height: 10
+  terrain:
+    # Corpse piles from the initial cavalry clash — rough terrain
+    # that slows movement but offers cover. Scattered across the
+    # center of the battlefield where the first charge collided.
+    - {x: 4, y: 3, type: corpse_pile}
+    - {x: 5, y: 3, type: corpse_pile}
+    - {x: 8, y: 3, type: corpse_pile}
+    - {x: 9, y: 3, type: corpse_pile}
+    - {x: 3, y: 4, type: corpse_pile}
+    - {x: 6, y: 4, type: corpse_pile}
+    - {x: 7, y: 4, type: corpse_pile}
+    - {x: 10, y: 4, type: corpse_pile}
+    - {x: 4, y: 5, type: corpse_pile}
+    - {x: 5, y: 5, type: corpse_pile}
+    - {x: 8, y: 5, type: corpse_pile}
+    - {x: 9, y: 5, type: corpse_pile}
+  forts: []
+
+terrain_types:
+  corpse_pile:
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "+"
+    color: bright_black
+    description: |
+      Heaps of the fallen from the first cavalry charge. Hard to
+      cross but offer cover from arrows.
+
+unit_classes:
+  jon_snow:
+    display_name: Jon Snow
+    description: |
+      The White Wolf, risen from the dead by the Red Woman. Fights
+      with Longclaw, a Valyrian steel bastard sword. Charges alone
+      to save Rickon and nearly dies before his men reach him.
+    hp_max: 35
+    atk: 12
+    defense: 8
+    res: 5
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "J"
+    color: white
+
+  tormund:
+    display_name: Tormund Giantsbane
+    description: |
+      Wildling chieftain. Fights like a bear, bites like one too.
+      His Free Folk follow him because he's the last man standing
+      after every battle.
+    hp_max: 30
+    atk: 13
+    defense: 5
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "T"
+    color: bright_red
+
+  wun_wun:
+    display_name: Wun Wun
+    description: |
+      The last giant south of the Wall. Towers over every man on
+      the field. Swings a tree trunk. Nearly unkillable — but
+      slow. Historically punches through the Winterfell gate.
+    hp_max: 60
+    atk: 15
+    defense: 6
+    res: 2
+    spd: 2
+    move: 2
+    rng_min: 1
+    rng_max: 2
+    glyph: "W"
+    color: bright_yellow
+
+  free_folk:
+    display_name: Free Folk Warrior
+    description: |
+      Wildling fighters — fierce, fast, lightly armored. What they
+      lack in discipline they make up in ferocity.
+    hp_max: 18
+    atk: 7
+    defense: 3
+    res: 2
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "f"
+    color: yellow
+
+  stark_infantry:
+    display_name: Stark Infantry
+    description: |
+      Northern bannermen loyal to the Stark name. Better armored
+      than the Free Folk, trained in shield-wall discipline.
+    hp_max: 22
+    atk: 8
+    defense: 6
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "s"
+    color: cyan
+
+  bolton_cavalry:
+    display_name: Bolton Cavalry
+    description: |
+      Mounted lancers bearing the flayed man banner. Fast flankers
+      who encircle the Stark force and close the trap.
+    hp_max: 20
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "c"
+    color: red
+
+  bolton_pikeman:
+    display_name: Bolton Pikeman
+    description: |
+      Heavy infantry with long pikes and interlocking shields.
+      They form the crushing wall that closes around Jon's men.
+      Slow but extremely hard to break through.
+    hp_max: 24
+    atk: 7
+    defense: 9
+    res: 3
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 1
+    glyph: "p"
+    color: red
+
+  bolton_archer:
+    display_name: Bolton Archer
+    description: |
+      Ramsay's archers who rain arrows indiscriminately — even
+      into the melee where their own men are fighting, because
+      Ramsay doesn't care about friendly casualties.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "a"
+    color: red
+
+  ramsay:
+    display_name: Ramsay Bolton
+    description: |
+      The Bastard of Bolton. Cruel, calculating, and cowardly —
+      stays behind his lines and lets his men do the dying. A
+      decent archer with a sadistic streak.
+    hp_max: 20
+    atk: 10
+    defense: 3
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 4
+    glyph: "R"
+    color: bright_red
+
+  vale_knight:
+    display_name: Knight of the Vale
+    description: |
+      Heavy cavalry of the Eyrie, led by Littlefinger at Sansa's
+      request. Fresh, armored, and devastating on the charge.
+      They arrive late — but they arrive.
+    hp_max: 28
+    atk: 11
+    defense: 7
+    res: 4
+    spd: 6
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "V"
+    color: bright_cyan
+
+armies:
+  blue:
+    # Jon Snow — center of the field, slightly forward.
+    - {class: jon_snow, pos: {x: 7, y: 5}}
+    # Tormund — beside Jon.
+    - {class: tormund, pos: {x: 6, y: 5}}
+    # Wun Wun — behind, lumbering forward.
+    - {class: wun_wun, pos: {x: 7, y: 6}}
+    # Free Folk — spread around Jon in a rough semicircle.
+    - {class: free_folk, pos: {x: 4, y: 6}}
+    - {class: free_folk, pos: {x: 5, y: 6}}
+    - {class: free_folk, pos: {x: 6, y: 6}}
+    - {class: free_folk, pos: {x: 8, y: 6}}
+    - {class: free_folk, pos: {x: 9, y: 6}}
+    - {class: free_folk, pos: {x: 5, y: 7}}
+    - {class: free_folk, pos: {x: 6, y: 7}}
+    - {class: free_folk, pos: {x: 8, y: 7}}
+    # Stark infantry — rear guard.
+    - {class: stark_infantry, pos: {x: 4, y: 7}}
+    - {class: stark_infantry, pos: {x: 7, y: 7}}
+    - {class: stark_infantry, pos: {x: 9, y: 7}}
+    - {class: stark_infantry, pos: {x: 10, y: 7}}
+
+  red:
+    # Ramsay — far back, safe behind his lines.
+    - {class: ramsay, pos: {x: 7, y: 0}}
+    # Bolton archers — second row, raining arrows.
+    - {class: bolton_archer, pos: {x: 4, y: 1}}
+    - {class: bolton_archer, pos: {x: 6, y: 1}}
+    - {class: bolton_archer, pos: {x: 8, y: 1}}
+    - {class: bolton_archer, pos: {x: 10, y: 1}}
+    # Bolton pikemen — forming the crushing U-shape.
+    # Left wall:
+    - {class: bolton_pikeman, pos: {x: 1, y: 2}}
+    - {class: bolton_pikeman, pos: {x: 1, y: 3}}
+    - {class: bolton_pikeman, pos: {x: 1, y: 4}}
+    - {class: bolton_pikeman, pos: {x: 2, y: 5}}
+    # Right wall:
+    - {class: bolton_pikeman, pos: {x: 12, y: 2}}
+    - {class: bolton_pikeman, pos: {x: 12, y: 3}}
+    - {class: bolton_pikeman, pos: {x: 12, y: 4}}
+    - {class: bolton_pikeman, pos: {x: 11, y: 5}}
+    # Bolton cavalry — on the flanks, ready to encircle.
+    - {class: bolton_cavalry, pos: {x: 0, y: 2}}
+    - {class: bolton_cavalry, pos: {x: 0, y: 3}}
+    - {class: bolton_cavalry, pos: {x: 0, y: 4}}
+    - {class: bolton_cavalry, pos: {x: 13, y: 2}}
+    - {class: bolton_cavalry, pos: {x: 13, y: 3}}
+    - {class: bolton_cavalry, pos: {x: 13, y: 4}}
+
+rules:
+  max_turns: 18
+  first_player: blue
+
+win_conditions:
+  # Jon dies → blue loses immediately.
+  - {type: protect_unit, unit_id: u_b_jon_snow_1, owning_team: blue}
+  # Ramsay dies → red loses immediately (blue's primary objective).
+  - {type: protect_unit, unit_id: u_r_ramsay_1, owning_team: red}
+  # Jon survives the turn cap → the Vale saved them. Blue wins.
+  - {type: protect_unit_survives, unit_id: u_b_jon_snow_1, owning_team: blue}
+  # Either side wins by total elimination.
+  - {type: eliminate_all_enemy_units}
+  # Backstop (shouldn't fire — protect_unit_survives precedes).
+  - {type: max_turns_draw}
+
+plugin_hooks:
+  on_turn_start:
+    - vale_reinforcements
+
+narrative:
+  title: Battle of the Bastards
+  description: |
+    Winterfell, 303 AC. The White Wolf versus the Mad Dog. Jon
+    Snow's ragged force of Free Folk and Northern loyalists faces
+    Ramsay Bolton's disciplined army on the open field before
+    Winterfell's walls.
+  intro: |
+    Dawn. The two armies face each other across a field already
+    littered with the dead from the opening cavalry charge. Jon
+    stands alone between the lines, Longclaw in hand, as Ramsay's
+    archers nock their arrows.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        The Bolton shield wall begins to close. Pikemen advance
+        from both flanks, their long spears a forest of steel.
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        The crush tightens. Jon's men are pressed together so
+        tightly they can barely swing their swords. Bodies pile
+        up underfoot. Tormund bites a man's throat.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        A horn sounds from the south. Banners with the falcon
+        and moon — the Knights of the Vale charge into the
+        Bolton rear! Six fresh heavy cavalry crash into the
+        encirclement.
+    - trigger: on_unit_killed
+      unit_id: u_r_ramsay_1
+      text: |
+        Ramsay's face goes blank as he realizes there's nowhere
+        left to run. Jon beats him bloody in the mud of
+        Winterfell's courtyard.
+    - trigger: on_unit_killed
+      unit_id: u_b_wun_wun_1
+      text: |
+        Wun Wun crashes through the gates of Winterfell,
+        bristling with arrows. The last giant falls.
