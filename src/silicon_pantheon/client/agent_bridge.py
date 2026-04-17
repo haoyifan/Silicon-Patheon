@@ -412,6 +412,7 @@ class NetworkedAgent:
         time_budget_s: float = 1800.0,
         adapter: ProviderAdapter | None = None,
         scenario_description: dict | None = None,
+        locale: str = "en",
     ):
         self.client = client
         self.model = model
@@ -420,6 +421,7 @@ class NetworkedAgent:
         self.lessons_dir = lessons_dir
         self.thoughts_callback = thoughts_callback
         self.time_budget_s = time_budget_s
+        self.locale = locale
         self.adapter: ProviderAdapter = adapter or _build_default_adapter(model)
         # Scenario invariants (classes / terrain / win conditions /
         # starting map). Lazily fetched on the first play_turn if the
@@ -588,12 +590,9 @@ class NetworkedAgent:
             viewer,
             is_first_turn=(self._turns_played == 0),
             new_history=new_history,
-            # retry_n > 0 frames the prompt as a CONTINUATION of the
-            # same turn, not a fresh "start of turn". Prevents the
-            # model from restarting its "call get_coach_messages"
-            # routine on every retry.
             retry_n=self._no_progress_retries,
             tactical_summary=tactical_summary,
+            locale=self.locale,
         )
         # Lazy-fetch scenario invariants on the first turn. The
         # Anthropic adapter reuses its ClaudeSDKClient across turns
@@ -615,6 +614,7 @@ class NetworkedAgent:
                 strategy=self.strategy,
                 lessons=self._load_lessons(),
                 scenario_description=self._scenario_bundle,
+                locale=self.locale,
             )
             # Log the system prompt once, in full, so operators can
             # tail the client log and audit what the model sees.

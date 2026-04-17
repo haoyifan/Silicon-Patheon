@@ -977,6 +977,7 @@ class GameScreen(Screen):
             # narrative); stats come from the base config unchanged.
             scenario_description=self._localized_scenario(app),
             time_budget_s=time_budget_s,
+            locale=app.state.locale,
         )
 
     def _localized_scenario(self, app: TUIApp) -> dict | None:

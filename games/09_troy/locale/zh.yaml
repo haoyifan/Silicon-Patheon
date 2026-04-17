@@ -1,0 +1,100 @@
+# 特洛伊之战 — 中文本地化
+name: 特洛伊之战
+description: |
+  围城第九年。阿喀琉斯因阿伽门农的冒犯赌气留在帐中数周
+  不肯出战。赫克托尔已将希腊人逼回海边的搁浅战船。当赫克托尔
+  杀死帕特罗克洛斯——阿喀琉斯最亲密的挚友，身穿阿喀琉斯
+  借来的铠甲作战——阿喀琉斯重返战场。九年来彼此回避的
+  两位最伟大战士，终于在斯凯安门前相遇。
+
+unit_classes:
+  achilles:
+    display_name: 阿喀琉斯
+    description: |
+      珀琉斯和海洋女神忒提斯之子，幼时浸入冥河——
+      除脚踵外刀枪不入。手持赫菲斯托斯为他打造的新铠甲。
+      特洛伊最强的战士。失去他，希腊远征就此终结。
+  odysseus:
+    display_name: 奥德修斯
+    description: |
+      伊萨卡之王。阿开亚人中最机智者。战后将花十年才能
+      回到家乡。适合在纯蛮力不奏效的侧翼骚扰。
+  diomedes:
+    display_name: 狄俄墨得斯
+    description: |
+      所有阿开亚国王中，唯一一位曾伤过神明的人
+      （先是阿佛洛狄忒，后是阿瑞斯）。强大、冷静，
+      纯战斗力仅次于阿喀琉斯。
+  ajax:
+    display_name: 大埃阿斯
+    description: |
+      忒拉蒙之子。持巨塔盾，防御如磐石。曾独力
+      挡住特洛伊人焚烧希腊战船。
+  myrmidon:
+    display_name: 弥尔弥冬战士
+    description: |
+      阿喀琉斯的精锐亲卫——弗提亚的"蚁人"。
+      随首领重返战场。
+  hector:
+    display_name: 赫克托尔
+    description: |
+      特洛伊王子，普里阿摩斯的长子，安德洛玛克的丈夫，
+      阿斯提亚纳克斯的父亲。穿着阿喀琉斯铠甲杀死了
+      帕特罗克洛斯——现在必须面对那个被他杀了挚友的人。
+  paris:
+    display_name: 帕里斯
+    description: |
+      赫克托尔的弟弟，因拐走海伦而引发整场战争。
+      善射；近战不行。最终射杀阿喀琉斯的箭出自他手。
+  aeneas:
+    display_name: 埃涅阿斯
+    description: |
+      安喀塞斯和阿佛洛狄忒之子。特洛伊陷落后将航行到
+      意大利建立罗马（据维吉尔所述）。英雄级战士，
+      赫克托尔的副手。
+  trojan_guard:
+    display_name: 特洛伊卫兵
+    description: |
+      普里阿摩斯的家臣和九年来一直在城墙上和街道中
+      保卫城市的特洛伊市民。持矛有射程。
+
+terrain_types:
+  troy_wall:
+    description: |
+      特洛伊城墙——不可通行，防御加成极高。
+  xanthus:
+    description: |
+      克珊托斯河——不可通行，将地图南北分隔。
+  ford:
+    description: |
+      河流浅滩——唯一可以渡河的地点。
+  greek_ship:
+    description: |
+      搁浅的希腊战船——提供些许防御加成。
+
+narrative:
+  title: 特洛伊——阿喀琉斯与赫克托尔
+  description: |
+    终结《伊利亚特》的决斗。两位伟大的战士，
+    克珊托斯河横亘其间，特洛伊城墙为背景。
+  intro: |
+    斯凯安门前的黎明。帕特罗克洛斯已死。阿喀琉斯
+    从母亲手中获得了新铠甲。赫克托尔在父亲的城池前
+    等待。冰冷的克珊托斯河在他们之间流淌。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        阿喀琉斯大步走向浅滩。希腊人让开了道路。
+    - trigger: on_turn_start
+      turn: 6
+      text: |
+        赫克托尔和阿喀琉斯隔河相望。
+    - trigger: on_unit_killed
+      unit_id: u_r_hector_1
+      text: |
+        赫克托尔倒下了。安德洛玛克从城墙上发出悲鸣。
+    - trigger: on_unit_killed
+      unit_id: u_b_achilles_1
+      text: |
+        阿喀琉斯倒下了。帕里斯的箭终究找到了他的脚踵。

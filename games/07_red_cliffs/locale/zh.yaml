@@ -1,0 +1,84 @@
+# 赤壁之战 — 中文本地化
+name: 赤壁之战
+description: |
+  建安十三年冬。汉室倾颓，曹操统一北方，号称八十万大军
+  顺长江而下，欲一举灭吴并刘。孙权与刘备结盟，联合军师
+  诸葛亮预言东风将至。老将黄盖诈降——驾满载油脂芦苇的
+  火船，借东风直冲曹操铁索连环的北方舰队。长江上火光照天，
+  曹军大半葬身火海。三国鼎立之势由此奠定。
+
+unit_classes:
+  zhuge_liang:
+    display_name: 诸葛亮
+    description: |
+      卧龙先生，蜀汉军师。"借东风"之人——祭坛祈风，
+      使火攻得以实施。法术型角色。
+  zhou_yu:
+    display_name: 周瑜
+    description: |
+      孙权麾下年轻的大都督，联军实际战场指挥官。
+      才华横溢，风度翩翩，与诸葛亮暗中较劲。
+  guan_yu:
+    display_name: 关羽
+    description: |
+      刘备的结义兄弟——武圣，美髯公，青龙偃月刀在手，
+      一人抵得上一支小军队。后世被尊为武神。
+  huang_gai:
+    display_name: 黄盖
+    description: |
+      孙权帐下老将。主动请缨执行苦肉计：当众被周瑜
+      杖打，使曹操相信他的投降是真的，然后驾火船
+      直冲铁索连环的战舰。
+  wu_archer:
+    display_name: 吴军弓箭手
+    description: |
+      孙权麾下弓箭手——在摇晃的甲板上射箭训练了一辈子
+      的江边子弟。
+  cao_cao:
+    display_name: 曹操
+    description: |
+      汉丞相。才略过人，雄才大略，魏国奠基人。下令将
+      战船铁索连环以防北方士兵晕船。即将为这个工程决策
+      付出代价。
+  cao_guard:
+    display_name: 虎豹骑
+    description: |
+      曹操的精锐亲卫。黄河以北最精锐的士兵。
+  northern_infantry:
+    display_name: 北方步兵
+    description: |
+      中原征召的士兵。不会游泳，不想上船。
+
+terrain_types:
+  river:
+    description: |
+      滔滔长江——不可通行。
+  ship:
+    description: |
+      曹操铁索连环的战船——北军可在其上行走。
+
+narrative:
+  title: 赤壁之战
+  description: |
+    赤壁火攻。长江燃烧的那一夜，三国时代由此开启。
+  intro: |
+    长江之上，暮色降临。数周以来西风从海上吹来，
+    曹操铁索连环的舰队在江面上起伏。诸葛亮点燃
+    一柱清香，静待天时。黄盖的信号旗升起了。
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        风向转东。诸葛亮微微一笑："时候到了。"
+    - trigger: on_turn_start
+      turn: 7
+      text: |
+        黄盖的先导火船撞上铁链。火焰跃向相邻的船只。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        江面亮如白昼。曹操大军在浓烟中哀嚎。
+    - trigger: on_unit_killed
+      unit_id: u_r_cao_cao_1
+      text: |
+        曹操阵亡。北方大军土崩瓦解。

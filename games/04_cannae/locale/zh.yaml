@@ -1,0 +1,84 @@
+# 坎尼会战 — 中文本地化
+name: 坎尼会战
+description: |
+  公元前216年8月。汉尼拔·巴卡已在意大利击溃三支罗马军队；
+  如今罗马集结了八万大军——有史以来最大的兵力——由执政官
+  盖乌斯·瓦罗统率。双方在坎尼村附近的平原上交锋。汉尼拔
+  以高卢人和西班牙人排成凹形薄阵；罗马军团推进时，他的
+  中军后退，利比亚老兵从两翼包抄，努米底亚骑兵封锁后方。
+  日落前五万罗马人战死。这是双重包围的教科书范例——至今
+  仍在军事院校讲授。
+
+unit_classes:
+  varro:
+    display_name: 盖乌斯·瓦罗
+    description: |
+      罗马执政官，过于自信的指挥官。不顾同僚保卢斯的
+      拖延建议执意决战。瓦罗阵亡则罗马士气崩溃。
+  roman_legionary:
+    display_name: 罗马军团兵
+    description: |
+      共和国训练有素的重步兵。投枪加短剑，密集队形，
+      无情碾压推进。后排即将体会到被侧翼包抄时密集
+      方阵无法转向的痛苦。
+  roman_hastati:
+    display_name: 罗马前锋兵
+    description: |
+      年轻的前线军团兵。投掷重标枪后以剑盾近战。
+      廉价、众多、热血。
+  hannibal:
+    display_name: 汉尼拔·巴卡
+    description: |
+      迦太基统帅，在伊特鲁里亚沼泽中失去一只眼睛。
+      史上最伟大的军事天才之一；这场包围战的设计者。
+  libyan_spearman:
+    display_name: 利比亚枪兵
+    description: |
+      汉尼拔的非洲老兵——从西班牙起就跟随他的雇佣兵，
+      如今身穿缴获的罗马铠甲。坚韧的枪兵；包围的转轴。
+  gallic_warrior:
+    display_name: 高卢战士
+    description: |
+      头戴金环、手持长剑、脾气火爆的凯尔特人。汉尼拔
+      故意将他们置于阵线中央——他们先溃退，将罗马人
+      引入陷阱。
+  numidian_cavalry:
+    display_name: 努米底亚骑兵
+    description: |
+      北非轻骑兵。无马鞍，投标枪，速度骇人。他们将
+      绕到罗马军后方，在两翼合拢时猛击后背。
+
+terrain_types:
+  river:
+    description: |
+      奥菲杜斯河——不可通行，固定罗马右翼。
+  hill:
+    description: |
+      战场中央的缓坡——百人队长之丘。提供防御加成。
+
+narrative:
+  title: 坎尼会战
+  description: |
+    教科书级的双重包围。汉尼拔诱使罗马人深入口袋，
+    然后从身后封死出口。
+  intro: |
+    平原上的清晨。瓦罗今日有指挥权；他驳回了同僚
+    以饥饿拖垮迦太基人的建议。军团列出罗马有史以来
+    最厚重的阵型。汉尼拔微笑了。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        高卢中军开始后退。瓦罗命令军团继续推进。
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        汉尼拔的利比亚老兵向内旋转。罗马人的侧翼缩短了。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        罗马后方扬起尘土——努米底亚骑兵封闭了口袋。
+    - trigger: on_unit_killed
+      unit_id: u_b_varro_1
+      text: |
+        瓦罗倒下了。罗马防线四分五裂。

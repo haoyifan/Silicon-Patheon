@@ -1,0 +1,72 @@
+# 温泉关之战 — 中文本地化
+name: 温泉关之战
+description: |
+  公元前480年。波斯王薛西斯一世率领古代世界前所未见的
+  庞大军队沿海岸大道向雅典进军。斯巴达王列奥尼达率领
+  三百名亲卫加数千希腊联军重装步兵，在温泉关——悬崖
+  与海之间仅五十英尺宽的海岸隘口——将波斯大军堵住。
+  三天之内，一小群重甲步兵扼守住了通往雅典的最窄咽喉。
+  教科书级的坚守防线。
+
+unit_classes:
+  leonidas:
+    display_name: 列奥尼达
+    description: |
+      斯巴达之王。从七岁起除了这场战斗什么都没训练。
+      他的阵亡意味着希腊防线崩溃——不惜一切代价保护他。
+  spartan:
+    display_name: 斯巴达重装步兵
+    description: |
+      三百勇士之一。各项属性均为精英，以圆盾和长矛
+      肩并肩作战。在正面交锋中以一敌三。
+  greek_hoplite:
+    display_name: 希腊重装步兵
+    description: |
+      来自底比斯、弗西亚和塞斯皮亚的联军士兵。
+      单兵战力不及斯巴达人，但组成了坚实的青铜盾墙。
+  immortal:
+    display_name: 波斯不死军
+    description: |
+      万人不死军——薛西斯的宫廷卫队，每阵亡一人
+      立刻补充以保持万人之数。波斯帝国最强的战士。
+  persian_infantry:
+    display_name: 波斯步兵
+    description: |
+      帝国四方征召的士兵——米底人、基西亚人、塞迦人。
+      轻甲；他们的优势在于数量。
+  persian_archer:
+    display_name: 波斯弓箭手
+    description: |
+      希罗多德记载，温泉关的波斯箭雨遮天蔽日。
+      近战脆弱，须保持在步兵线之后。
+
+terrain_types:
+  cliff:
+    description: |
+      悬崖峭壁。不可通行，将战斗限制在狭窄的中间通道。
+  stone_wall:
+    description: |
+      温泉关的石墙——列奥尼达的防线标志。难以逾越，
+      提供强大的防御加成。
+
+narrative:
+  title: 温泉关之战
+  description: |
+    三百斯巴达勇士，七千希腊联军，一条狭窄的隘口。
+    守住温泉关。
+  intro: |
+    第一天。波斯大军延伸至天际。薛西斯端坐在隘口上方
+    的宝座上观战。列奥尼达整军列阵。
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        波斯箭雨遮天蔽日。希腊人躲在盾牌之下。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        薛西斯派出不死军。隘口愈发狭窄。
+    - trigger: on_unit_killed
+      unit_id: u_b_leonidas_1
+      text: |
+        列奥尼达倒下了。防线崩溃。

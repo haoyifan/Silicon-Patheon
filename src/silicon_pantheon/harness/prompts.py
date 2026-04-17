@@ -383,6 +383,7 @@ def build_system_prompt(
     strategy: str | None,
     lessons: list[Lesson] | None = None,
     scenario_description: dict | None = None,
+    locale: str = "en",
 ) -> str:
     """Build the per-session system prompt.
 
@@ -430,7 +431,15 @@ def build_system_prompt(
         terrain_types, armies, unit_classes,
     )
 
-    return SYSTEM_PROMPT_TEMPLATE.format(
+    # Select template by locale. Chinese templates are in prompts_zh.py;
+    # English (default) uses the template defined above in this file.
+    template = SYSTEM_PROMPT_TEMPLATE
+    if locale == "zh":
+        from silicon_pantheon.harness.prompts_zh import SYSTEM_PROMPT_TEMPLATE_ZH
+        template = SYSTEM_PROMPT_TEMPLATE_ZH
+        scenario_name_line = f"剧本是**{name}**。"
+
+    return template.format(
         team=team.value,
         max_turns=max_turns,
         scenario_name_line=scenario_name_line,
@@ -736,6 +745,7 @@ def build_turn_prompt_from_state_dict(
     new_history: list[dict] | None = None,
     retry_n: int = 0,
     tactical_summary: dict | None = None,
+    locale: str = "en",
 ) -> str:
     """Per-turn user message for the networked client.
 
@@ -762,11 +772,26 @@ def build_turn_prompt_from_state_dict(
     """
     team = viewer.value
 
+    # Select templates by locale.
+    if locale == "zh":
+        from silicon_pantheon.harness.prompts_zh import (
+            TURN_PROMPT_BOOTSTRAP_ZH,
+            TURN_PROMPT_DELTA_ZH,
+            TURN_PROMPT_RETRY_ZH,
+        )
+        _tmpl_bootstrap = TURN_PROMPT_BOOTSTRAP_ZH
+        _tmpl_delta = TURN_PROMPT_DELTA_ZH
+        _tmpl_retry = TURN_PROMPT_RETRY_ZH
+    else:
+        _tmpl_bootstrap = TURN_PROMPT_TEMPLATE_BOOTSTRAP
+        _tmpl_delta = TURN_PROMPT_TEMPLATE_DELTA
+        _tmpl_retry = TURN_PROMPT_TEMPLATE_RETRY
+
     # Retry path wins over both bootstrap and delta: a retry is never
     # a fresh turn, even on the notional "first turn" (the model has
     # already seen a turn-prompt once — this is a continuation).
     if retry_n > 0:
-        prompt = TURN_PROMPT_TEMPLATE_RETRY.format(
+        prompt = _tmpl_retry.format(
             turn=state_dict.get("turn", "?"),
             your_units_section=_build_own_units_section(state_dict, team),
             tactical_section=_build_tactical_section(tactical_summary),
@@ -793,7 +818,7 @@ def build_turn_prompt_from_state_dict(
             "units": [_slim_unit(u) for u in state_dict.get("units", [])],
             "last_action": state_dict.get("last_action"),
         }
-        prompt = TURN_PROMPT_TEMPLATE_BOOTSTRAP.format(
+        prompt = _tmpl_bootstrap.format(
             turn=state_dict.get("turn", "?"),
             team=team,
             state_json=json.dumps(snapshot, indent=2),
@@ -821,7 +846,7 @@ def build_turn_prompt_from_state_dict(
         tc = state_dict.get("turn_clock") or {}
         turns_remaining = tc.get("turns_remaining", "?")
 
-        prompt = TURN_PROMPT_TEMPLATE_DELTA.format(
+        prompt = _tmpl_delta.format(
             turn=state_dict.get("turn", "?"),
             max_turns=max_turns,
             turns_remaining=turns_remaining,

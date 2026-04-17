@@ -1,0 +1,81 @@
+# 卡迭石之战 — 中文本地化
+name: 卡迭石之战
+description: |
+  公元前1274年5月。法老拉美西斯二世率军北上进入赫梯领土，
+  意图夺回奥伦特斯河畔的卡迭石城。赫梯王穆瓦塔利二世
+  收买贝都因人传递假情报；拉美西斯仅带一个军团冒进。
+  赫梯战车从侧翼伏击分散的埃及纵队。拉美西斯与大军
+  分离，亲自率领亲卫反冲锋。两位国王后来都宣称胜利；
+  留存至今的条约是人类历史上最早的和平协议。战车是
+  青铜时代的明星武器，而这是它最大的舞台。
+
+unit_classes:
+  ramses:
+    display_name: 拉美西斯二世
+    description: |
+      埃及法老，第十九王朝第三代。卡迭石之战时年仅二十五岁，
+      亲自收拢溃兵反击。此后在位六十六年，成为"拉美西斯大帝"。
+  egyptian_chariot:
+    display_name: 埃及战车
+    description: |
+      双人轻型战车——车夫和一名复合弓手。比赫梯战车
+      更快更灵活，但装甲更轻。不能进入森林或山地。
+  egyptian_infantry:
+    display_name: 埃及步兵
+    description: |
+      舍尔登雇佣兵和埃及征召兵。青铜斧，牛皮盾。
+      可靠的战线士兵。
+  egyptian_archer:
+    display_name: 埃及弓箭手
+    description: |
+      战车屏障后的复合弓手。射程超过赫梯枪兵，
+      但近战就完了。
+  muwatalli:
+    display_name: 穆瓦塔利二世
+    description: |
+      赫梯之王。将预备队留在东岸，让附庸战车发动伏击。
+      耐心、精于算计。
+  hittite_chariot:
+    display_name: 赫梯战车
+    description: |
+      三人重型战车——车夫、持盾者、枪兵。比埃及战车
+      更慢更容易陷坑，但近战冲锋毁灭性极强。不能进入森林。
+  hittite_spearman:
+    display_name: 赫梯枪兵
+    description: |
+      安纳托利亚步兵。青铜矛，皮甲。占领战车夺取的阵地。
+
+terrain_types:
+  river:
+    description: |
+      奥伦特斯河——不可通行。
+  ford:
+    description: |
+      浅滩渡口——唯一可以涉水过河的地点。
+
+narrative:
+  title: 卡迭石之战
+  description: |
+    有文字记录的最早战役——双方都留下了战斗记述。
+    青铜时代黎明，开阔平原上的战车对决。
+  intro: |
+    正午，卡迭石城南方的平原上。奥伦特斯河在北方
+    闪烁。拉美西斯仅率阿蒙军团，走在大军前方。
+    赫梯战车在河东的烟尘中等待。
+  events:
+    - trigger: on_turn_start
+      turn: 2
+      text: |
+        赫梯战车从隐蔽处冲出。埃及侧翼崩溃。
+    - trigger: on_turn_start
+      turn: 6
+      text: |
+        拉美西斯收拢亲卫。"塞特在我身侧！"
+    - trigger: on_unit_killed
+      unit_id: u_b_ramses_1
+      text: |
+        法老陨落。埃及战线全面崩溃。
+    - trigger: on_unit_killed
+      unit_id: u_r_muwatalli_1
+      text: |
+        穆瓦塔利阵亡。赫梯军四散奔逃。

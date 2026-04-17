@@ -1,0 +1,115 @@
+# 五军之战 — 中文本地化
+name: 五军之战
+description: |
+  史矛革已死，被巴德的黑箭射落。索林·橡木盾夺回了孤山
+  和其中的龙之宝藏。长湖镇的幸存者由巴德率领前来索要
+  份额。瑟兰迪尔的木精灵也带着自己的要求赶到。三族即将
+  在孤山门前大打出手之际，哥布林大军带着座狼从北坡涌来。
+  三个准敌人瞬间变成三个盟友。然后巨鹰来了。然后比翁来了。
+
+unit_classes:
+  thorin:
+    display_name: 索林·橡木盾
+    description: |
+      山下之王。已夺回孤山。在哥布林逼迫他改变主意之前，
+      不会让出一枚金币。小说以他的死亡结尾。
+  bilbo:
+    display_name: 比尔博·巴金斯
+    description: |
+      远征队的霍比特飞贼。战斗中大部分时间戴着魔戒。
+      弱小、隐蔽，速度对身材来说异常快。
+  dwarf_warrior:
+    display_name: 矮人战士
+    description: |
+      铁丘陵丹恩麾下的矮人，刚到增援索林。
+      矮壮、缓慢、重击。
+  thranduil:
+    display_name: 瑟兰迪尔
+    description: |
+      林地精灵之王。本为龙之宝藏而来，留下来对抗哥布林。
+      不情不愿的盟友；杰出的剑士。
+  wood_elf_archer:
+    display_name: 木精灵弓箭手
+    description: |
+      幽暗密林精灵。轻便、快速、远程致命。
+  bard:
+    display_name: 弓箭手巴德
+    description: |
+      河谷城吉里安的后裔。用家族最后一支黑箭射杀了
+      史矛革。现在领导着无家可归的长湖镇居民。
+  laketown_militia:
+    display_name: 长湖镇民兵
+    description: |
+      史矛革焚毁埃斯加罗斯后的幸存者——渔民和镇民，
+      拿着能找到的任何武器。
+  bolg:
+    display_name: 北方的波格
+    description: |
+      阿佐格之子。率领哥布林大军为父报仇。
+      双手锤，比看起来快。
+  goblin_warrior:
+    display_name: 哥布林战士
+    description: |
+      歪歪扭扭、龇牙咧嘴、数量众多。便宜；
+      哥布林大军主要是这些。
+  goblin_archer:
+    display_name: 哥布林弓箭手
+    description: |
+      矮弓，毒箭尖。脆弱但在掩体后很烦人。
+  warg_rider:
+    display_name: 座狼骑手
+    description: |
+      骑在座狼上的哥布林——充满恶意狡猾的狼形生物。
+      快速、嗥叫、侧翼极为危险。
+  eagle:
+    display_name: 巨鹰
+    description: |
+      鹰王应关赫之召而来。第15回合从南方天空出现
+      （如果哥布林还没赢的话）。可以飞越山脉。
+  beorn_bear:
+    display_name: 比翁（熊形态）
+    description: |
+      卡洛克的换皮人。第18回合以巨熊形态到达。
+      小说中的决定性一击——亲手杀死波格。
+
+terrain_types:
+  mountain:
+    description: |
+      孤山——不可通行（巨鹰除外，可以飞越）。
+  ruins:
+    description: |
+      河谷城废墟——类似森林的掩体，提供防御加成。
+  river:
+    description: |
+      奔流河——不可通行。
+
+narrative:
+  title: 五军之战
+  description: |
+    矮人、精灵和人类对阵哥布林和座狼，在孤山脚下——
+    还有来自天空和森林的意外援军。
+  intro: |
+    孤山脚下的清晨。三个族群站在即将彼此开战的边缘。
+    一声来自北方的号角让所有人都停了下来：哥布林，
+    成千上万。
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        更多哥布林从山门涌出。
+    - trigger: on_turn_start
+      turn: 15
+      text: |
+        一声巨大的呼喊响起："巨鹰！巨鹰来了！"
+    - trigger: on_turn_start
+      turn: 18
+      text: |
+        熊形态的比翁从南方冲出，将座狼撕成碎片。
+    - trigger: on_unit_killed
+      unit_id: u_b_thorin_1
+      text: |
+        索林倒下了。龙病随他而终。
+    - trigger: on_unit_killed
+      unit_id: u_r_bolg_1
+      text: |
+        北方的波格战死。哥布林大军动摇了。
