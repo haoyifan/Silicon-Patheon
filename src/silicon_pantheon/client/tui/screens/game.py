@@ -909,18 +909,22 @@ class GameScreen(Screen):
 
     async def _maybe_build_agent(self, app: TUIApp) -> None:
         log.info(
-            "maybe_build_agent: kind=%s provider=%s model=%s",
+            "maybe_build_agent: kind=%s provider=%s model=%s locale=%s",
             app.state.kind, app.state.provider, app.state.model,
+            app.state.locale,
         )
         if app.state.kind not in ("ai", "hybrid"):
+            log.info("maybe_build_agent: SKIP kind=%s not ai/hybrid", app.state.kind)
             return
         if not app.state.model:
+            log.info("maybe_build_agent: SKIP model is empty")
             return
         if app.client is None:
+            log.info("maybe_build_agent: SKIP client is None")
             return
         scenario = (app.state.last_room_state or {}).get("scenario") or ""
         if not scenario:
-            log.warning("maybe_build_agent: no scenario")
+            log.warning("maybe_build_agent: SKIP no scenario in room state")
             return
 
         from silicon_pantheon.client.agent_bridge import NetworkedAgent
@@ -995,6 +999,10 @@ class GameScreen(Screen):
             scenario_description=self._localized_scenario(app),
             time_budget_s=time_budget_s,
             locale=app.state.locale,
+        )
+        log.info(
+            "maybe_build_agent: CREATED agent scenario=%s locale=%s model=%s budget=%.0fs",
+            scenario, app.state.locale, app.state.model, time_budget_s,
         )
 
     def _localized_scenario(self, app: TUIApp) -> dict | None:

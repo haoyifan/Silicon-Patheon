@@ -629,6 +629,13 @@ class NetworkedAgent:
             viewer.value, state.get("turn"), user_prompt,
         )
         system_prompt = self._system_prompt_cached
+        log.info(
+            "play_turn: calling adapter.play_turn model=%s locale=%s "
+            "system_len=%d user_len=%d",
+            self.model, self.locale,
+            len(system_prompt) if system_prompt else 0,
+            len(user_prompt),
+        )
 
         await self.adapter.play_turn(
             system_prompt=system_prompt,
