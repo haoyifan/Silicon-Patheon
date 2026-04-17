@@ -95,30 +95,43 @@ class PlayerPanel(Panel):
     sides. Dead units stay in the roster, rendered dim + strikethrough
     — they don't silently disappear when killed.
 
-    Scrollable when focused: scenarios with large rosters
-    (Journey to the West has 13 units) don't always fit in the
-    available rows, so the user can page through."""
+    Per-unit cursor: j/k moves through units (not just scroll).
+    When focused, the cursor drives a cross-highlight: the unit at
+    cursor_idx sets screen.highlighted_unit_id, and the GameMapPanel
+    renders that unit's glyph with a distinctive style. Vice versa:
+    when the Map is focused and its cursor sits on a unit, the
+    roster highlights that unit's row."""
 
     title = "Player"
 
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
         self.scroll = 0
-        self._gg: list[bool] = [False]
+        self.cursor_idx = 0  # index into the flat _roster list
+        self._roster: list[dict] = []  # rebuilt each render
 
     def key_hints(self) -> str:
-        return "j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom"
+        return "j/k ↕ unit   Enter details   ^d/^u ½page"
 
     async def handle_key(self, key: str) -> "Screen | None":
-        from silicon_pantheon.client.tui.panels import apply_vim_scroll
-
-        nxt = apply_vim_scroll(
-            key,
-            current=self.scroll,
-            gg_state=self._gg,
-        )
-        if nxt is not None:
-            self.scroll = nxt
+        n = len(self._roster)
+        if n == 0:
+            return None
+        if key in ("down", "j"):
+            self.cursor_idx = min(self.cursor_idx + 1, n - 1)
+        elif key in ("up", "k"):
+            self.cursor_idx = max(self.cursor_idx - 1, 0)
+        elif key == "ctrl-d":
+            self.cursor_idx = min(self.cursor_idx + 6, n - 1)
+        elif key == "ctrl-u":
+            self.cursor_idx = max(self.cursor_idx - 6, 0)
+        elif key == "enter" and 0 <= self.cursor_idx < n:
+            u = self._roster[self.cursor_idx]
+            if u.get("alive", u.get("hp", 0) > 0):
+                self.screen.open_unit_card(u)
+        # Drive the cross-highlight on every key.
+        if 0 <= self.cursor_idx < n:
+            self.screen.highlighted_unit_id = self._roster[self.cursor_idx].get("id")
         return None
 
     def render(self, focused: bool) -> RenderableType:
@@ -163,28 +176,38 @@ class PlayerPanel(Panel):
                     style="yellow" if busy else "dim",
                 )
             )
-        # Unit roster per team, rendered as a 3-column table:
-        # name / HP / status. Dead units stay in the list so the map
-        # doesn't silently swallow them — they render dim +
-        # strikethrough with the "dead" status in place of the live
-        # value. The same status vocabulary the engine uses (ready,
-        # moved, done) shows through so the player can see at a
-        # glance which units have already acted this turn.
+
+        # Build flat roster used for cursor indexing + cross-highlight.
         units = gs.get("units") or []
         scen_desc = self.screen.app.state.scenario_description
+        self._roster = []
         for team in ("blue", "red"):
-            team_units = [u for u in units if u.get("owner") == team]
+            for u in units:
+                if u.get("owner") == team:
+                    self._roster.append(u)
+        # Clamp cursor after roster rebuild (unit count can change
+        # mid-game when units die).
+        if self._roster:
+            self.cursor_idx = max(0, min(self.cursor_idx, len(self._roster) - 1))
+
+        # Cross-highlight: if Map focused AND its cursor is on a unit,
+        # screen.highlighted_unit_id was set by the Map panel. We
+        # check it here to find which roster row to highlight even
+        # when PlayerPanel is NOT focused.
+        highlight_id = self.screen.highlighted_unit_id
+
+        # Per-unit action lookup for "last turn" annotations.
+        last_actions = self.screen.unit_last_actions
+
+        # Render per-team roster.
+        roster_idx = 0
+        for team in ("blue", "red"):
+            team_units = [u for u in self._roster if u.get("owner") == team]
             if not team_units:
                 continue
             rows.append(Text(""))
             header_style = "bold cyan" if team == "blue" else "bold red"
             rows.append(Text(f"{team}:", style=header_style))
-            # Emit one Text per unit instead of a Rich Table so the
-            # panel's line-scroll advances per unit — earlier we wrapped
-            # the whole roster in a single Table.grid row, which the
-            # scroll logic treated as one atomic item (scroll 1 = lose
-            # all units at once). Fixed-column padding reproduces the
-            # table look without the atomicity.
             rows.append(
                 Text(
                     f"  {'Unit':<14}  {'HP':>7}  Status",
@@ -195,34 +218,51 @@ class PlayerPanel(Panel):
                 alive = u.get("alive", u.get("hp", 0) > 0)
                 hp = u.get("hp", "?")
                 hp_max = u.get("hp_max", "?")
+                uid = u.get("id", "")
                 name = _unit_display_name(u, scen_desc)
+                # Is this the cursor row (focused) or cross-highlighted
+                # (other panel focused)?
+                is_cursor = focused and roster_idx == self.cursor_idx
+                is_highlight = (not focused) and uid == highlight_id
+                row_suffix = " ◄" if is_cursor else ""
                 if alive:
-                    status = str(u.get("status", "ready"))
+                    unit_status = str(u.get("status", "ready"))
                     hp_str = f"{hp}/{hp_max}"
-                    # Per-column styling: neutral name, HP colored by
-                    # remaining ratio (green/yellow/red), status
-                    # colored by progress. Before the per-column split
-                    # the whole row inherited _status_style and the
-                    # entire roster rendered green/yellow/dim.
-                    row = Text.assemble(
-                        ("  ", None),
-                        (f"{name[:14]:<14}", "white"),
-                        ("  ", None),
-                        (f"{hp_str:>7}", _hp_style(hp, hp_max)),
-                        ("  ", None),
-                        (status, _status_style(status)),
-                    )
+                    if is_cursor or is_highlight:
+                        # Highlighted row: reverse the name + status.
+                        row = Text.assemble(
+                            ("► ", "bold yellow" if is_cursor else "bold white"),
+                            (f"{name[:14]:<14}", "reverse white"),
+                            ("  ", None),
+                            (f"{hp_str:>7}", _hp_style(hp, hp_max)),
+                            ("  ", None),
+                            (unit_status, _status_style(unit_status)),
+                        )
+                    else:
+                        row = Text.assemble(
+                            ("  ", None),
+                            (f"{name[:14]:<14}", "white"),
+                            ("  ", None),
+                            (f"{hp_str:>7}", _hp_style(hp, hp_max)),
+                            ("  ", None),
+                            (unit_status, _status_style(unit_status)),
+                        )
                     rows.append(row)
+                    # Last-action annotation (compact, below the row).
+                    action_desc = last_actions.get(uid)
+                    if action_desc:
+                        rows.append(
+                            Text(f"    └ {action_desc}", style="dim")
+                        )
                 else:
-                    # Dead unit: the dim color + ✗ prefix + "dead"
-                    # status column together convey the state clearly.
-                    # Earlier we wrapped the name in tildes as a
-                    # portable strikethrough, but it just looked like
-                    # noise once the row was already dim.
                     marker = f"✗ {name[:12]}"
                     hp_str = f"0/{hp_max}"
+                    prefix = "► " if (is_cursor or is_highlight) else "  "
+                    prefix_style = "bold yellow" if is_cursor else (
+                        "bold white" if is_highlight else None
+                    )
                     row = Text.assemble(
-                        ("  ", None),
+                        (prefix, prefix_style),
                         (f"{marker:<14}", "dim"),
                         ("  ", None),
                         (f"{hp_str:>7}", "dim"),
@@ -230,10 +270,21 @@ class PlayerPanel(Panel):
                         ("dead", "bold red"),
                     )
                     rows.append(row)
-        # Apply scroll by dropping leading rows. Clamp so scrolling
-        # past the bottom snaps back to the last full row.
+                roster_idx += 1
+
+        # Auto-scroll so the cursor row is always visible. Compute
+        # which row the cursor is at in the `rows` list. Rough: the
+        # header lines + per-unit rows. Easier: just keep scroll = 0
+        # for short rosters, or scroll so cursor_idx's row is centered.
+        try:
+            ch = self.screen.app.console.height
+        except Exception:
+            ch = 30
+        visible = max(1, ch - 5)
+        max_scroll = max(0, len(rows) - visible)
+        if self.scroll > max_scroll:
+            self.scroll = max_scroll
         if self.scroll > 0 and rows:
-            self.scroll = min(self.scroll, max(0, len(rows) - 1))
             rows = rows[self.scroll :]
         return RichPanel(
             Group(*rows),
@@ -302,8 +353,20 @@ class GameMapPanel(Panel):
                             "terrain_types"
                         ),
                     )
-                if focused and x == self.cx and y == self.cy:
+                is_cursor = focused and x == self.cx and y == self.cy
+                # Cross-highlight: when PlayerPanel cursor is on a
+                # unit, highlight that unit's cell on the map even
+                # when the map doesn't have focus. Use underline so
+                # it's visually distinct from the cursor's reverse.
+                is_highlight = (
+                    u is not None
+                    and u.get("id") == self.screen.highlighted_unit_id
+                    and not is_cursor
+                )
+                if is_cursor:
                     text.append(f"[{g}]", style=f"reverse {st}")
+                elif is_highlight:
+                    text.append(f"({g})", style=f"bold underline {st}")
                 else:
                     text.append(f" {g} ", style=st)
             text.append("\n")
@@ -374,17 +437,13 @@ class GameMapPanel(Panel):
             return None
         if key in ("up", "k"):
             self.cy = (self.cy - 1) % h
-            return None
-        if key in ("down", "j"):
+        elif key in ("down", "j"):
             self.cy = (self.cy + 1) % h
-            return None
-        if key in ("left", "h"):
+        elif key in ("left", "h"):
             self.cx = (self.cx - 1) % w
-            return None
-        if key in ("right", "l"):
+        elif key in ("right", "l"):
             self.cx = (self.cx + 1) % w
-            return None
-        if key == "enter":
+        elif key == "enter":
             for u in gs.get("units", []):
                 if not u.get("alive", u.get("hp", 0) > 0):
                     continue
@@ -393,6 +452,19 @@ class GameMapPanel(Panel):
                     self.screen.open_unit_card(u)
                     break
             return None
+        # After cursor move: drive cross-highlight from whatever unit
+        # the map cursor now sits on (or clear if empty tile).
+        unit_here = None
+        for u in gs.get("units", []):
+            if not u.get("alive", u.get("hp", 0) > 0):
+                continue
+            pos = u.get("pos") or {}
+            if int(pos.get("x", -1)) == self.cx and int(pos.get("y", -1)) == self.cy:
+                unit_here = u
+                break
+        self.screen.highlighted_unit_id = (
+            unit_here.get("id") if unit_here else None
+        )
         return None
 
 
@@ -688,6 +760,17 @@ class GameScreen(Screen):
         # shows pre-game; reuses DescriptionPanel verbatim. While
         # open, scroll keys route to it and F3/Esc/q close it.
         self._scenario_overlay: Any = None
+        # Cross-highlighting: when the Player panel cursor is on a
+        # unit, its ID is stored here so the Map panel can render the
+        # corresponding glyph with a highlight. Vice versa for map
+        # cursor sitting on a unit. Cleared when focus moves to a
+        # panel that doesn't participate (reasoning / coach).
+        self.highlighted_unit_id: str | None = None
+        # Per-unit last-action cache. Populated from get_history at
+        # turn boundaries. Maps unit_id → compact one-line description
+        # like "moved (3,2)→(5,4)" or "attacked u_r_k1 dealt 8 dmg".
+        self.unit_last_actions: dict[str, str] = {}
+        self._last_history_turn: int | None = None
 
         self.map_panel = GameMapPanel(self)
         self.reasoning_panel = ReasoningPanel(self)
@@ -995,6 +1078,14 @@ class GameScreen(Screen):
             i = (i + step) % n
             if self._panels[i].can_focus():
                 self._focus_idx = i
+                # Clear cross-highlight when focus moves to a panel
+                # that doesn't participate (reasoning, coach). Map +
+                # Player drive the highlight; others don't.
+                new_panel = self._panels[i]
+                if new_panel is not self.map_panel and not isinstance(
+                    new_panel, PlayerPanel
+                ):
+                    self.highlighted_unit_id = None
                 return
 
     # ---- public API used by panels ----
@@ -1067,6 +1158,14 @@ class GameScreen(Screen):
         self.state = r.get("result", {})
         self.app.state.last_game_state = self.state
 
+        # Refresh per-unit last-action annotations when the turn
+        # changes. One get_history call per turn boundary; the cache
+        # persists until the next boundary.
+        current_turn = self.state.get("turn")
+        if current_turn is not None and current_turn != self._last_history_turn:
+            self._last_history_turn = current_turn
+            await self._refresh_unit_last_actions()
+
         await self._maybe_trigger_agent()
 
         if self.state.get("status") == "game_over":
@@ -1076,6 +1175,46 @@ class GameScreen(Screen):
             await self.app.transition(next_screen)
             return next_screen
         return None
+
+    async def _refresh_unit_last_actions(self) -> None:
+        """Fetch recent history and build per-unit action descriptions.
+
+        Called once per turn boundary. Iterates the last ~30 events in
+        reverse to find the most recent action per unit_id. Renders a
+        compact one-line string like "moved (3,2)→(5,4)" or "attacked
+        u_r_k1 dealt 8 dmg (killed)".
+        """
+        if self.app.client is None:
+            return
+        try:
+            r = await self.app.client.call("get_history", last_n=50)
+        except Exception:
+            return
+        history = (r.get("result") or r).get("history") or []
+        actions: dict[str, str] = {}
+        # Walk in reverse so the first match per unit is the most recent.
+        for ev in reversed(history):
+            if not isinstance(ev, dict):
+                continue
+            uid = ev.get("unit_id") or ev.get("healer_id")
+            if not uid or uid in actions:
+                continue
+            t = ev.get("type")
+            if t == "move":
+                dest = ev.get("dest") or {}
+                actions[uid] = f"moved → ({dest.get('x','?')},{dest.get('y','?')})"
+            elif t == "attack":
+                tid = ev.get("target_id", "?")
+                dmg = ev.get("damage_dealt", "?")
+                killed = " (killed)" if ev.get("target_killed") else ""
+                actions[uid] = f"atk {tid} dealt {dmg}{killed}"
+            elif t == "heal":
+                tid = ev.get("target_id", "?")
+                amt = ev.get("healed", "?")
+                actions[uid] = f"healed {tid} +{amt}"
+            elif t == "wait":
+                actions[uid] = "waited"
+        self.unit_last_actions = actions
 
     async def _maybe_trigger_agent(self) -> None:
         # Each early return gets a WHY log so the Q3 "blue just stops

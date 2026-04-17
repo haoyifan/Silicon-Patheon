@@ -82,7 +82,9 @@ def test_game_on_enter_clears_thoughts_buffer():
     assert len(app.state.thoughts) == 0
 
 
-def test_player_panel_scrolls_when_focused():
+def test_player_panel_cursor_moves_through_units():
+    """PlayerPanel now has a per-unit cursor (not just scroll).
+    j/k moves through units; cursor_idx drives cross-highlight."""
     from silicon_pantheon.client.tui.screens.game import PlayerPanel
 
     app = _FakeApp()
@@ -97,14 +99,19 @@ def test_player_panel_scrolls_when_focused():
     screen = GameScreen(app)
     screen.state = app.state.last_game_state
     panel = PlayerPanel(screen)
-    assert panel.scroll == 0
+    # Force a render to populate _roster.
+    panel.render(focused=True)
+    assert panel.cursor_idx == 0
     asyncio.run(panel.handle_key("down"))
-    assert panel.scroll == 1
+    assert panel.cursor_idx == 1
+    # Cross-highlight set on the unit at cursor_idx.
+    assert screen.highlighted_unit_id == "u1"
     asyncio.run(panel.handle_key("up"))
-    assert panel.scroll == 0
+    assert panel.cursor_idx == 0
+    assert screen.highlighted_unit_id == "u0"
     # Can't go below 0.
     asyncio.run(panel.handle_key("up"))
-    assert panel.scroll == 0
+    assert panel.cursor_idx == 0
 
 
 def test_tab_cycles_through_four_panels_in_order():
