@@ -31,23 +31,25 @@ class LobbyScreen(Screen):
         await self._refresh_rooms()
 
     def render(self) -> RenderableType:
+        from silicon_pantheon.client.locale import t
+        lc = self.app.state.locale
         rooms = self.app.state.last_rooms
 
-        header = Text(f"Lobby — {self.app.state.display_name} ({self.app.state.kind})", style="bold yellow")
-        subtitle = Text(f"{len(rooms)} room(s) open", style="dim")
+        header = Text(f"{t('lobby_title', lc)} — {self.app.state.display_name} ({self.app.state.kind})", style="bold yellow")
+        subtitle = Text(f"{len(rooms)} {t('lobby_table.room', lc)}(s) {t('lobby_table.open', lc)}", style="dim")
 
         table = Table(expand=True, show_lines=False, header_style="bold")
         table.add_column(" ", width=2)
-        table.add_column("Room", overflow="fold")
-        table.add_column("Host", overflow="fold")
-        table.add_column("Scenario", overflow="fold")
-        table.add_column("Teams")
-        table.add_column("Fog")
-        table.add_column("Seats")
-        table.add_column("Status")
+        table.add_column(t("lobby_table.room", lc), overflow="fold")
+        table.add_column(t("lobby_table.host", lc), overflow="fold")
+        table.add_column(t("lobby_table.scenario", lc), overflow="fold")
+        table.add_column(t("lobby_table.teams", lc))
+        table.add_column(t("lobby_table.fog", lc))
+        table.add_column(t("lobby_table.seats", lc))
+        table.add_column(t("lobby_table.col_status", lc))
 
         if not rooms:
-            table.add_row("", "(no rooms yet — press [n] to host one)", "", "", "", "", "", "")
+            table.add_row("", t("lobby_table.no_rooms", lc), "", "", "", "", "", "")
         else:
             for i, r in enumerate(rooms):
                 marker = "➤" if i == self._selected else " "
@@ -65,10 +67,7 @@ class LobbyScreen(Screen):
                     style="bold" if i == self._selected else None,
                 )
 
-        keys = Text(
-            "↓/j next   ↑/k prev   Enter join   p preview   n new room   r refresh   q quit",
-            style="dim",
-        )
+        keys = Text(t("lobby_table.footer", lc), style="dim")
 
         status = Text("")
         if self.app.state.error_message:
@@ -77,7 +76,7 @@ class LobbyScreen(Screen):
             status.append(self.app.state.status_message, style="green")
 
         body = Group(header, subtitle, Text(""), table, Text(""), keys, status)
-        return Panel(Align.center(body, vertical="top"), border_style="green", title="lobby")
+        return Panel(Align.center(body, vertical="top"), border_style="green", title=t("lobby_title", lc))
 
     async def tick(self) -> None:
         import time

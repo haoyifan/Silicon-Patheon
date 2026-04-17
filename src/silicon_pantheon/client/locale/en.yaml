@@ -117,3 +117,39 @@ provider:
   keep: "Keep"
   reauth: "Re-authenticate"
   rotate_key: "[r] rotate key"
+
+# Login screen
+login_screen:
+  title: "login"
+  submit: "Enter submit   q quit"
+  connecting: "connecting…"
+
+# Lobby table headers
+lobby_table:
+  room: "Room"
+  host: "Host"
+  scenario: "Scenario"
+  teams: "Teams"
+  fog: "Fog"
+  seats: "Seats"
+  col_status: "Status"
+  no_rooms: "(no rooms yet — press n to host one)"
+  open: "open"
+  footer: "↓/j next   ↑/k prev   Enter join   p preview   n new room   r refresh   q quit"
+
+# Room panel titles
+room_panel:
+  actions: "Actions"
+  chat: "Chat"
+  confirm: "Confirm"
+
+# Post-match
+post_match:
+  title: "match over"
+  you_won: "You won!"
+  you_lost: "You lost"
+  draw: "Match ended in a draw"
+  footer: "d download replay   l back to lobby   q quit"
+
+# Lobby title
+lobby_title: "Lobby"

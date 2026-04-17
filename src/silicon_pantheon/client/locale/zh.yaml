@@ -115,3 +115,39 @@ provider:
   keep: "保留"
   reauth: "重新认证"
   rotate_key: "[r] 更换密钥"
+
+# 登录界面
+login_screen:
+  title: "登录"
+  submit: "Enter 提交   q 退出"
+  connecting: "连接中…"
+
+# 大厅表格标题
+lobby_table:
+  room: "房间"
+  host: "房主"
+  scenario: "剧本"
+  teams: "队伍"
+  fog: "迷雾"
+  seats: "人数"
+  col_status: "状态"
+  no_rooms: "（暂无房间——按 n 创建）"
+  open: "开放中"
+  footer: "↓/j 下一个   ↑/k 上一个   Enter 加入   p 预览   n 新房间   r 刷新   q 退出"
+
+# 房间面板标题
+room_panel:
+  actions: "操作"
+  chat: "聊天"
+  confirm: "确认"
+
+# 赛后界面
+post_match:
+  title: "比赛结束"
+  you_won: "你赢了！"
+  you_lost: "你输了"
+  draw: "比赛以平局结束"
+  footer: "d 下载回放   l 返回大厅   q 退出"
+
+# 大厅标题
+lobby_title: "大厅"

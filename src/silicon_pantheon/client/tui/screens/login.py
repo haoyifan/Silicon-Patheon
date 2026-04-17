@@ -69,23 +69,21 @@ class LoginScreen(Screen):
                 lines.append(hint)
         lines.append(Text(""))
         status = Text("")
+        from silicon_pantheon.client.locale import t
+        lc = self.app.state.locale
         if self._connecting:
-            status.append("connecting…", style="yellow")
+            status.append(t("login_screen.connecting", lc), style="yellow")
         elif self.app.state.error_message:
             status.append(self.app.state.error_message, style="red")
         elif self.app.state.status_message:
             status.append(self.app.state.status_message, style="green")
         lines.append(status)
         lines.append(Text(""))
-        keys = Text(
-            "Tab/↓ next field   Shift-Tab/↑ prev   ←/→ cycle options   "
-            "Enter submit   q quit",
-            style="dim",
-        )
+        keys = Text(t("login_screen.submit", lc), style="dim")
         lines.append(keys)
 
         body = Group(*lines)
-        return Align.center(Panel(body, title="login", border_style="yellow"), vertical="middle")
+        return Align.center(Panel(body, title=t("login_screen.title", lc), border_style="yellow"), vertical="middle")
 
     async def handle_key(self, key: str) -> Screen | None:
         if self._connecting:

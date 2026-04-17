@@ -73,23 +73,26 @@ class PostMatchScreen(Screen):
         _asyncio.create_task(_summarize())
 
     def render(self) -> RenderableType:
+        from silicon_pantheon.client.locale import t
+        lc = self.app.state.locale
+
         gs = self.app.state.last_game_state or {}
         winner = gs.get("winner")
         my_team = gs.get("you")
         reason = (gs.get("last_action") or {}).get("reason", "")
 
         if winner is None:
-            banner = Text("Match ended in a draw", style="bold yellow")
+            banner = Text(t("post_match.draw", lc), style="bold yellow")
         elif my_team and winner == my_team:
-            banner = Text(f"You won! (team {winner})", style="bold green")
+            banner = Text(f"{t('post_match.you_won', lc)} (team {winner})", style="bold green")
         else:
-            banner = Text(f"You lost — {winner} wins", style="bold red")
+            banner = Text(f"{t('post_match.you_lost', lc)} — {winner}", style="bold red")
         if reason:
-            banner.append(f"  (reason: {reason})", style="dim")
+            banner.append(f"  ({reason})", style="dim")
 
         summary = Text(
-            f"Turns played: {gs.get('turn', '?')} / {gs.get('max_turns', '?')}\n"
-            f"Survivors — blue: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'blue')}  "
+            f"Turns: {gs.get('turn', '?')} / {gs.get('max_turns', '?')}\n"
+            f"blue: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'blue')}  "
             f"red: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'red')}",
             style="dim",
         )
@@ -97,25 +100,22 @@ class PostMatchScreen(Screen):
         download_line = Text("")
         if self._downloaded_path is not None:
             download_line.append(
-                f"Replay saved to: {self._downloaded_path}", style="green"
+                f"{t('post_match.replay_saved', lc)}: {self._downloaded_path}", style="green"
             )
         elif self._download_error:
             download_line.append(
-                f"Download failed: {self._download_error}", style="red"
+                f"{t('post_match.download_failed', lc)}: {self._download_error}", style="red"
             )
 
-        keys = Text(
-            "d download replay   l back to lobby   q quit",
-            style="dim",
-        )
+        keys = Text(t("post_match.footer", lc), style="dim")
 
         summary_line = Text("")
         if self._summary_state == "pending":
-            summary_line.append("agent reviewing the match…", style="yellow")
+            summary_line.append(t("post_match.lesson_pending", lc), style="yellow")
         elif self._summary_state == "done" and self._summary_path is not None:
-            summary_line.append(f"lesson saved: {self._summary_path}", style="green")
+            summary_line.append(f"{t('post_match.lesson_done', lc)}: {self._summary_path}", style="green")
         elif self._summary_state == "failed":
-            summary_line.append("lesson summary failed", style="dim red")
+            summary_line.append(t("post_match.lesson_failed", lc), style="dim red")
 
         body = Group(
             banner,
@@ -128,7 +128,7 @@ class PostMatchScreen(Screen):
             keys,
         )
         return Align.center(
-            Panel(body, title="match over", border_style="green"), vertical="middle"
+            Panel(body, title=t("post_match.title", lc), border_style="green"), vertical="middle"
         )
 
     async def handle_key(self, key: str) -> Screen | None:
