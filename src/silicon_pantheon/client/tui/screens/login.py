@@ -56,7 +56,7 @@ class LoginScreen(Screen):
 
     def render(self) -> RenderableType:
         lines: list[Text] = []
-        title = Text(t("login_screen.title", self.app.state.locale), style="bold yellow")
+        title = Text(f"SiliconPantheon — {t('login_screen.title', self.app.state.locale)}", style="bold yellow")
         lines.append(title)
         lines.append(Text(""))
         for i, f in enumerate(self._fields):
