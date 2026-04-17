@@ -13,7 +13,7 @@ import time
 import pytest
 from rich.console import Console
 
-from silicon_pantheon.client.tui.screens.room import ART_FRAME_SECONDS, UnitCard
+from silicon_pantheon.client.tui.widgets import ART_FRAME_SECONDS, UnitCard
 from silicon_pantheon.server.engine.scenarios import (
     DEFAULT_ART_MAX_COLS,
     _validate_art_frame,

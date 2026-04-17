@@ -13,7 +13,7 @@ from silicon_pantheon.client.tui.screens.game import (
     GameScreen,
     ReasoningPanel,
 )
-from silicon_pantheon.client.tui.screens.room import UnitCard
+from silicon_pantheon.client.tui.widgets import UnitCard
 
 
 class _FakeApp:

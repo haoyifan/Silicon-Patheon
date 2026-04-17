@@ -36,12 +36,12 @@ def _slug_to_title(slug: str) -> str:
     placeholder while describe_scenario is in flight."""
     parts = slug.replace("-", "_").split("_")
     return " ".join(p.capitalize() if p else "_" for p in parts if p)
-from silicon_pantheon.client.tui.screens.room import (
-    UnitCard,
-    _describe_win_condition,
-    _terrain_effect_summary,
-    _unit_cell_style,
-    _unit_display_name,
+from silicon_pantheon.client.tui.widgets import UnitCard
+from silicon_pantheon.client.tui.scenario_display import (
+    describe_win_condition,
+    terrain_effect_summary,
+    unit_cell_style,
+    unit_display_name,
 )
 
 
@@ -255,7 +255,7 @@ class ScenarioPicker:
             for x in range(w):
                 u = unit_at.get((x, y))
                 if u is not None:
-                    g, st = _unit_cell_style(u)
+                    g, st = unit_cell_style(u)
                 else:
                     ttype = tile_type.get((x, y), "plain")
                     g, st = _terrain_cell(ttype, scenario_terrain_types)
@@ -282,14 +282,14 @@ class ScenarioPicker:
         line = Text()
         line.append(f"({cx}, {cy}) ", style="dim")
         line.append(f"{t('scenario_pick.terrain_label', self.locale)}: {terrain}", style="yellow")
-        summary = _terrain_effect_summary(self._current_desc(), terrain, self.locale)
+        summary = terrain_effect_summary(self._current_desc(), terrain, self.locale)
         if summary:
             line.append(f" — {summary}", style="dim")
         u = unit_at.get((cx, cy))
         if u:
             owner = u.get("owner", "?")
             color = "cyan" if owner == "blue" else "red"
-            name = _unit_display_name(u, self._current_desc())
+            name = unit_display_name(u, self._current_desc())
             line.append("   ")
             line.append(f"{name} ({owner})", style=f"bold {color}")
             line.append(f"   {t('game_map.enter_details', self.locale)}", style="dim italic")
@@ -321,7 +321,7 @@ class ScenarioPicker:
             rows.append(Text(t("section.how_to_win", self.locale), style="bold"))
             for wc in wcs:
                 rows.append(
-                    Text(f"  • {_describe_win_condition(wc, desc, self.locale)}", style="dim")
+                    Text(f"  • {describe_win_condition(wc, desc, self.locale)}", style="dim")
                 )
         rows.append(Text(""))
         rows.append(Text(t("section.armies", self.locale), style="bold"))

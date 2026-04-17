@@ -1,0 +1,342 @@
+"""Shared TUI widgets — Dropdown, ConfirmModal, UnitCard.
+
+These are reusable modal / card components used by both the room and
+game screens.  Extracted from ``screens.room`` to avoid circular
+imports and keep the room module focused on its own layout.
+"""
+
+from __future__ import annotations
+
+import time as _time
+from dataclasses import dataclass
+from typing import Any, Awaitable, Callable
+
+from rich.align import Align
+from rich.console import Group, RenderableType
+from rich.panel import Panel as RichPanel
+from rich.table import Table
+from rich.text import Text
+
+from silicon_pantheon.client.locale import t
+from silicon_pantheon.client.tui.panels import border_style
+
+
+@dataclass
+class Dropdown:
+    """Modal single-select list with an inline explanation box.
+
+    When the caller supplies `option_descriptions`, the currently-
+    highlighted option's description is rendered beneath the list so
+    the player can read what 'classic' fog actually means before
+    committing."""
+
+    title: str
+    options: list[str]
+    selected_idx: int
+    on_confirm: Callable[[str], Awaitable[None]]
+    # Optional {option_value: markdown-free explanation}. Missing keys
+    # render no description panel — the list stays minimal for truly
+    # self-describing options (e.g. team colors).
+    option_descriptions: dict[str, str] | None = None
+    locale: str = "en"
+
+    def render(self) -> RenderableType:
+        lines: list[Text] = []
+        for i, opt in enumerate(self.options):
+            marker = "➤ " if i == self.selected_idx else "  "
+            style = "bold yellow" if i == self.selected_idx else "white"
+            lines.append(Text(f"{marker}{opt}", style=style))
+        list_panel = RichPanel(
+            Group(*lines), border_style="dim", padding=(0, 1),
+        )
+        footer = Text(
+            t("room_modal.dropdown_footer", self.locale), style="dim"
+        )
+        body_parts: list[RenderableType] = [list_panel]
+        desc = (self.option_descriptions or {}).get(
+            self.options[self.selected_idx] if self.options else ""
+        )
+        if desc:
+            # overflow="fold" + no_wrap=False makes Rich wrap the
+            # description across multiple lines inside the panel's
+            # fixed width — otherwise a long explanation blew the
+            # whole dropdown sideways and the shape changed per
+            # option, which read as a shifting modal.
+            body_parts.append(
+                RichPanel(
+                    Text(desc, style="white", no_wrap=False, overflow="fold"),
+                    title=self.options[self.selected_idx],
+                    border_style="yellow",
+                    padding=(0, 1),
+                )
+            )
+        body_parts.append(Text(""))
+        body_parts.append(footer)
+        # Fixed width (~60 cols) so the modal shape stays stable as
+        # the highlight moves between options with different
+        # description lengths. Vertical height grows to fit wrapped
+        # content; horizontal stays constant.
+        return Align.center(
+            RichPanel(
+                Group(*body_parts),
+                title=self.title,
+                border_style="yellow",
+                padding=(1, 3),
+                width=60,
+            ),
+            vertical="middle",
+        )
+
+    async def handle_key(self, key: str) -> bool:
+        # esc / tab / q all close without confirming — Tab in
+        # particular because users reach for it to cycle panels
+        # when they don't realize a modal is open; swallowing it
+        # silently looks like the TUI is frozen.
+        if key in ("esc", "\t", "q"):
+            return True
+        if key in ("up", "k"):
+            self.selected_idx = (self.selected_idx - 1) % len(self.options)
+            return False
+        if key in ("down", "j"):
+            self.selected_idx = (self.selected_idx + 1) % len(self.options)
+            return False
+        if key == "enter":
+            chosen = self.options[self.selected_idx]
+            await self.on_confirm(chosen)
+            return True
+        return False
+
+
+@dataclass
+class ConfirmModal:
+    """Yes/No confirmation overlay. Esc cancels. Enter invokes
+    `on_confirm` on the currently-highlighted option."""
+
+    prompt: str
+    on_confirm: Callable[[bool], Awaitable[None]]
+    selected_yes: bool = False  # default: No, so accidental Enter cancels
+    locale: str = "en"
+
+    def render(self) -> RenderableType:
+        # Yes is the destructive option (leave / concede / quit), so
+        # red genuinely conveys "this is the dangerous side". Not a
+        # team-color collision in this context — confirm modals never
+        # render team status alongside.
+        yes = Text(
+            "[Yes]",
+            style="bold red" if self.selected_yes else "dim",
+        )
+        no = Text(
+            "[No]",
+            style="bold green" if not self.selected_yes else "dim",
+        )
+        row = Text()
+        row.append(yes)
+        row.append("    ")
+        row.append(no)
+        body = Group(
+            Text(self.prompt, style="white"),
+            Text(""),
+            Align.center(row),
+            Text(""),
+            Text(t("room_modal.confirm_footer", self.locale), style="dim"),
+        )
+        return Align.center(
+            RichPanel(body, title=t("room_status.confirm", self.locale), border_style="yellow", padding=(1, 3)),
+            vertical="middle",
+        )
+
+    async def handle_key(self, key: str) -> bool:
+        """True = close modal. on_confirm already fired if chosen.
+
+        Accepts every reasonable hotkey a user might try so the
+        modal never looks frozen:
+          - y / Y / enter  → confirm yes
+          - n / N / esc    → cancel (close without firing on_confirm)
+          - ← / → / h / l / j / k → move selection between Yes/No
+          - \\t (Tab) / q  → cancel, same as esc. Tab specifically was
+            the recurring footgun — users hit Tab to cycle panels,
+            the modal ate the key with no visual feedback, and the
+            TUI appeared stuck.
+        """
+        if key in ("esc", "\t", "q", "n", "N"):
+            return True
+        if key in ("y", "Y"):
+            await self.on_confirm(True)
+            return True
+        if key in ("left", "h", "j"):
+            self.selected_yes = True
+            return False
+        if key in ("right", "l", "k"):
+            self.selected_yes = False
+            return False
+        if key == "enter":
+            await self.on_confirm(self.selected_yes)
+            return True
+        return False
+
+
+ART_FRAME_SECONDS = 2.0
+
+
+@dataclass
+class UnitCard:
+    """Read-only card showing a unit's description / stats / tags /
+    abilities / inventory.
+
+    Holds an ordered list of units the player can browse with
+    h/left and l/right while the card is open — the unit_classes
+    lookup lets us repaint stats and ASCII art when the highlighted
+    unit changes class. The owning MapPanel snaps its cursor to the
+    card's currently-displayed unit when the card dismisses, so
+    closing always lands you back on the unit you were inspecting."""
+
+    units: list[dict[str, Any]]
+    index: int
+    unit_classes: dict[str, Any] | None = None
+    locale: str = "en"
+    _opened_at: float | None = None
+
+    @property
+    def unit(self) -> dict[str, Any]:
+        return self.units[self.index]
+
+    @property
+    def class_spec(self) -> dict[str, Any] | None:
+        if self.unit_classes is None:
+            return None
+        return self.unit_classes.get(self.unit.get("class"))
+
+    def _stat(self, key: str, default: str = "?") -> str:
+        """Prefer the unit's live value, fall back to class_spec, then
+        to the placeholder."""
+        u_val = self.unit.get(key)
+        if u_val is not None and u_val != "":
+            return str(u_val)
+        if self.class_spec is not None:
+            spec_val = self.class_spec.get(key)
+            if spec_val is not None:
+                return str(spec_val)
+        return default
+
+    def render(self) -> RenderableType:
+        u = self.unit
+        spec = self.class_spec or {}
+        owner = u.get("owner", "?")
+        team_color = "cyan" if owner == "blue" else "red"
+        display = (
+            u.get("display_name")
+            or spec.get("display_name")
+            or u.get("class")
+            or u.get("id", "?")
+        )
+        title = f"{display} ({owner})"
+        frames = u.get("art_frames") or spec.get("art_frames") or []
+        text_body = self._render_text_body(team_color)
+        if not frames:
+            return RichPanel(
+                text_body,
+                title=title,
+                border_style=team_color,
+                padding=(0, 2),
+            )
+        # Two-column layout: text on the left, animated portrait on
+        # the right. The portrait column auto-sizes to its widest
+        # frame so descriptions on the left always have predictable
+        # space and never get clipped by the art.
+        if self._opened_at is None:
+            self._opened_at = _time.monotonic()
+        elapsed = _time.monotonic() - self._opened_at
+        idx = int(elapsed / ART_FRAME_SECONDS) % len(frames)
+        frame = frames[idx]
+        art_width = max(
+            (len(line) for f in frames for line in f.split("\n")),
+            default=0,
+        )
+        # Add a small gutter so art doesn't kiss the right border.
+        art_col_width = art_width + 2
+        grid = Table.grid(expand=True, padding=(0, 1))
+        grid.add_column(ratio=1)
+        grid.add_column(no_wrap=True, width=art_col_width)
+        grid.add_row(text_body, Text(frame, style=team_color))
+        return RichPanel(
+            grid,
+            title=title,
+            border_style=team_color,
+            padding=(0, 2),
+        )
+
+    def _render_text_body(self, team_color: str) -> RenderableType:
+        u = self.unit
+        spec = self.class_spec or {}
+        rows: list[RenderableType] = []
+        desc = spec.get("description") or u.get("description") or ""
+        if desc:
+            rows.append(Text(desc, style="italic"))
+            rows.append(Text(""))
+
+        stats = Table.grid(padding=(0, 2))
+        stats.add_column(style="dim")
+        stats.add_column()
+        hp_now = u.get("hp")
+        hp_max = self._stat("hp_max")
+        _lc = self.locale
+        stats.add_row(
+            t("stat.hp", _lc),
+            f"{hp_now if hp_now is not None else hp_max} / {hp_max}",
+        )
+        stats.add_row(t("stat.atk", _lc), self._stat("atk"))
+        def_val = u.get("def")
+        if def_val is None:
+            def_val = spec.get("defense") or spec.get("def") or "?"
+        stats.add_row(t("stat.def", _lc), str(def_val))
+        stats.add_row(t("stat.res", _lc), self._stat("res"))
+        stats.add_row(t("stat.spd", _lc), self._stat("spd"))
+        stats.add_row(t("stat.move", _lc), self._stat("move"))
+        rng = u.get("rng") or [
+            spec.get("rng_min", self._stat("rng_min")),
+            spec.get("rng_max", self._stat("rng_max")),
+        ]
+        stats.add_row(t("stat.range", _lc), f"{rng[0]}–{rng[1]}")
+        if u.get("is_magic") or spec.get("is_magic"):
+            stats.add_row(t("stat.type", _lc), t("stat.magic", _lc))
+        if u.get("can_heal") or spec.get("can_heal"):
+            stats.add_row(t("stat.can_heal", _lc), t("stat.yes", _lc))
+        rows.append(stats)
+
+        tags = u.get("tags") or spec.get("tags") or []
+        if tags:
+            rows.append(Text(""))
+            rows.append(Text(f"{t('section.tags', self.locale)}: " + ", ".join(tags), style="dim"))
+
+        abilities = u.get("abilities") or spec.get("abilities") or []
+        if abilities:
+            rows.append(Text(""))
+            rows.append(Text(f"{t('section.abilities', self.locale)}: " + ", ".join(abilities)))
+
+        inv = u.get("default_inventory") or spec.get("default_inventory") or []
+        if inv:
+            rows.append(Text(""))
+            rows.append(Text(f"{t('section.inventory', self.locale)}: " + ", ".join(inv)))
+
+        rows.append(Text(""))
+        if len(self.units) > 1:
+            rows.append(
+                Text(t("unit_card.nav_multi", self.locale), style="dim")
+            )
+        else:
+            rows.append(Text(t("unit_card.nav_single", self.locale), style="dim"))
+        return Group(*rows)
+
+    def navigate(self, step: int) -> None:
+        """Move the highlighted unit by `step` (wraps). Resets the
+        animation clock so the new portrait starts at frame 0."""
+        if not self.units:
+            return
+        self.index = (self.index + step) % len(self.units)
+        self._opened_at = None
+
+    async def handle_key(self, key: str) -> bool:
+        # Tab closes the card too — otherwise users pressing Tab to
+        # leave the unit card feel stuck.
+        return key in ("esc", "enter", "q", "\t")

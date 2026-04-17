@@ -35,16 +35,15 @@ from rich.layout import Layout
 from rich.panel import Panel as RichPanel
 from rich.table import Table
 from rich.text import Text
-
+from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 from silicon_pantheon.client.tui.panels import Panel, border_style
-from silicon_pantheon.client.tui.screens.room import (
-    ConfirmModal,
-    UnitCard,
-    _describe_win_condition,
-    _terrain_effect_summary,
-    _unit_cell_style,
-    _unit_display_name,
+from silicon_pantheon.client.tui.widgets import ConfirmModal, UnitCard
+from silicon_pantheon.client.tui.scenario_display import (
+    describe_win_condition,
+    terrain_effect_summary,
+    unit_cell_style,
+    unit_display_name,
 )
 
 log = logging.getLogger("silicon.tui.game")
@@ -104,7 +103,6 @@ class PlayerPanel(Panel):
 
     @property
     def title(self) -> str:
-        from silicon_pantheon.client.locale import t
         return t("panel.player", self.screen.app.state.locale)
 
     def __init__(self, screen: "GameScreen") -> None:
@@ -114,7 +112,6 @@ class PlayerPanel(Panel):
         self._roster: list[dict] = []  # rebuilt each render
 
     def key_hints(self) -> str:
-        from silicon_pantheon.client.locale import t
         return t("game_player.key_hints", self.screen.app.state.locale)
 
     async def handle_key(self, key: str) -> "Screen | None":
@@ -150,26 +147,24 @@ class PlayerPanel(Panel):
         max_turns = gs.get("max_turns") or (gs.get("rules") or {}).get("max_turns", "?")
         status = gs.get("status", "?")
         winner = gs.get("winner")
-
-        from silicon_pantheon.client.locale import t as _t
         _lc = self.screen.app.state.locale
 
         rows: list[RenderableType] = []
         rows.append(
             Text(
-                f"{_t('status.you', _lc)}: {my_team}   {_t('status.turn', _lc)} {turn}/{max_turns}",
+                f"{t('status.you', _lc)}: {my_team}   {t('status.turn', _lc)} {turn}/{max_turns}",
                 style="bold cyan" if my_team == "blue" else "bold red",
             )
         )
         my_turn = active == my_team
         rows.append(
             Text(
-                _t("status.your_turn", _lc) if my_turn else _t("status.opponent_turn", _lc),
+                t("status.your_turn", _lc) if my_turn else t("status.opponent_turn", _lc),
                 style="bold green" if my_turn else "dim",
             )
         )
         if status == "game_over":
-            line = Text(_t("status.game_over", _lc), style="bold yellow")
+            line = Text(t("status.game_over", _lc), style="bold yellow")
             if winner:
                 line.append(
                     f" — {winner}",
@@ -183,7 +178,7 @@ class PlayerPanel(Panel):
             )
             rows.append(
                 Text(
-                    _t("status.agent_thinking", _lc) if busy else _t("status.agent_idle", _lc),
+                    t("status.agent_thinking", _lc) if busy else t("status.agent_idle", _lc),
                     style="yellow" if busy else "dim",
                 )
             )
@@ -223,7 +218,7 @@ class PlayerPanel(Panel):
             rows.append(Text(f"{team}:", style=header_style))
             rows.append(
                 Text(
-                    f"  {_t('game_player.unit_header', _lc):<14}  {_t('game_player.hp_header', _lc):>7}  {_t('game_player.status_header', _lc)}",
+                    f"  {t('game_player.unit_header', _lc):<14}  {t('game_player.hp_header', _lc):>7}  {t('game_player.status_header', _lc)}",
                     style="bold dim",
                 )
             )
@@ -232,7 +227,7 @@ class PlayerPanel(Panel):
                 hp = u.get("hp", "?")
                 hp_max = u.get("hp_max", "?")
                 uid = u.get("id", "")
-                name = _unit_display_name(u, scen_desc)
+                name = unit_display_name(u, scen_desc)
                 is_cursor = focused and roster_idx == self.cursor_idx
                 is_highlight = (not focused) and uid == highlight_id
                 if is_cursor:
@@ -280,7 +275,7 @@ class PlayerPanel(Panel):
                         ("  ", None),
                         (f"{hp_str:>7}", "dim"),
                         ("  ", None),
-                        (_t("unit_status.dead", _lc), "bold red"),
+                        (t("unit_status.dead", _lc), "bold red"),
                     )
                     rows.append(row)
                 roster_idx += 1
@@ -324,7 +319,6 @@ class PlayerPanel(Panel):
 class GameMapPanel(Panel):
     @property
     def title(self) -> str:
-        from silicon_pantheon.client.locale import t
         return t("panel.map", self.screen.app.state.locale)
 
     def __init__(self, screen: "GameScreen") -> None:
@@ -333,7 +327,6 @@ class GameMapPanel(Panel):
         self.cy = 0
 
     def key_hints(self) -> str:
-        from silicon_pantheon.client.locale import t
         return t("game_map.key_hints", self.screen.app.state.locale)
 
     def _state(self) -> dict[str, Any]:
@@ -372,7 +365,7 @@ class GameMapPanel(Panel):
             for x in range(w):
                 u = unit_at.get((x, y))
                 if u is not None:
-                    g, st = _unit_cell_style(u)
+                    g, st = unit_cell_style(u)
                 else:
                     t = tile_by_pos.get((x, y), {})
                     g, st = _terrain_cell(
@@ -420,17 +413,16 @@ class GameMapPanel(Panel):
         tile_by_pos: dict[tuple[int, int], dict],
         unit_at: dict[tuple[int, int], dict],
     ) -> RenderableType:
-        from silicon_pantheon.client.locale import t as _loc
-        _lc2 = self.screen.app.state.locale
+        lc = self.screen.app.state.locale
         if w == 0 or h == 0:
-            return Text(_loc("game_map.loading_map", _lc2), style="dim italic")
+            return Text(t("game_map.loading_map", lc), style="dim italic")
         tile = tile_by_pos.get((self.cx, self.cy), {})
         terrain = str(tile.get("type", "plain"))
         u = unit_at.get((self.cx, self.cy))
         line = Text()
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
-        line.append(f"{_loc('game_map.terrain_label', _lc2)}: {terrain}", style="yellow")
-        summary = _terrain_effect_summary(
+        line.append(f"{t('game_map.terrain_label', lc)}: {terrain}", style="yellow")
+        summary = terrain_effect_summary(
             self.screen.app.state.scenario_description, terrain, _lc2
         )
         if summary:
@@ -438,7 +430,7 @@ class GameMapPanel(Panel):
         if u:
             owner = u.get("owner", "?")
             color = "cyan" if owner == "blue" else "red"
-            name = _unit_display_name(
+            name = unit_display_name(
                 u, self.screen.app.state.scenario_description
             )
             line.append("   ")
@@ -447,7 +439,7 @@ class GameMapPanel(Panel):
                 style=f"bold {color}",
             )
             line.append("   ")
-            line.append(_loc("game_map.enter_details", _lc2), style="dim italic")
+            line.append(t("game_map.enter_details", lc), style="dim italic")
         return line
 
     async def handle_key(self, key: str) -> Screen | None:
@@ -532,7 +524,6 @@ class ReasoningPanel(Panel):
 
     @property
     def title(self) -> str:
-        from silicon_pantheon.client.locale import t
         return t("panel.reasoning", self.screen.app.state.locale)
 
     def __init__(self, screen: "GameScreen") -> None:
@@ -545,7 +536,6 @@ class ReasoningPanel(Panel):
         self._gg_primed = False
 
     def key_hints(self) -> str:
-        from silicon_pantheon.client.locale import t
         return t("game_reasoning.key_hints", self.screen.app.state.locale)
 
     def _build_all_lines(self) -> list[tuple[str, str]]:
@@ -602,12 +592,10 @@ class ReasoningPanel(Panel):
         if new_lines > 0 and self.line_offset > 0:
             self.line_offset += new_lines
         self._last_total_lines = total
-
-        from silicon_pantheon.client.locale import t as _t
         _lc = self.screen.app.state.locale
         if total == 0:
             return RichPanel(
-                Text(_t("game_reasoning.no_reasoning", _lc), style="dim italic"),
+                Text(t("game_reasoning.no_reasoning", _lc), style="dim italic"),
                 title=self.title,
                 border_style=border_style(focused),
                 padding=(0, 1),
@@ -643,12 +631,12 @@ class ReasoningPanel(Panel):
                 body.append("\n")
 
         if self.line_offset == 0:
-            title = f"{self.title} — {_t('game_reasoning.live', _lc)} ({end}/{total})"
+            title = f"{self.title} — {t('game_reasoning.live', _lc)} ({end}/{total})"
         else:
             hidden_below = total - end
             title = (
-                f"{self.title} — {_t('game_reasoning.paused', _lc)}  ({_t('game_reasoning.showing', _lc)} {end}/{total}"
-                + (f", {hidden_below} {_t('game_reasoning.new_below', _lc)}"
+                f"{self.title} — {t('game_reasoning.paused', _lc)}  ({t('game_reasoning.showing', _lc)} {end}/{total}"
+                + (f", {hidden_below} {t('game_reasoning.new_below', _lc)}"
                    if hidden_below > 0 else "")
                 + ")"
             )
@@ -723,7 +711,6 @@ class ReasoningPanel(Panel):
 class CoachPanel(Panel):
     @property
     def title(self) -> str:
-        from silicon_pantheon.client.locale import t
         return t("panel.coach", self.screen.app.state.locale)
 
     def __init__(self, screen: "GameScreen") -> None:
@@ -732,11 +719,9 @@ class CoachPanel(Panel):
         self.history: deque[str] = deque(maxlen=5)
 
     def key_hints(self) -> str:
-        from silicon_pantheon.client.locale import t
         return t("game_coach.key_hints_unfocused", self.screen.app.state.locale)
 
     def render(self, focused: bool) -> RenderableType:
-        from silicon_pantheon.client.locale import t as _t
         _lc = self.screen.app.state.locale
         rows: list[RenderableType] = []
         if focused:
@@ -746,18 +731,18 @@ class CoachPanel(Panel):
             prompt.append("▌", style="yellow")
             rows.append(prompt)
             rows.append(
-                Text(_t("game_coach.key_hints_focused", _lc), style="dim")
+                Text(t("game_coach.key_hints_focused", _lc), style="dim")
             )
         else:
             rows.append(
                 Text(
-                    _t("game_coach.tab_prompt", _lc),
+                    t("game_coach.tab_prompt", _lc),
                     style="dim italic",
                 )
             )
         if self.history:
             rows.append(Text(""))
-            rows.append(Text(_t("game_coach.recent", _lc), style="dim"))
+            rows.append(Text(t("game_coach.recent", _lc), style="dim"))
             for m in list(self.history)[-3:]:
                 rows.append(Text(f"  • {m}", style="dim"))
         return RichPanel(
@@ -1023,9 +1008,8 @@ class GameScreen(Screen):
             return self._confirm.render()
         if self._scenario_overlay is not None:
             inner = self._scenario_overlay.render(focused=True)
-            from silicon_pantheon.client.locale import t as _t
             footer = Text(
-                _t("game_overlay.footer", self.app.state.locale),
+                t("game_overlay.footer", self.app.state.locale),
                 style="dim",
             )
             root = Layout()
@@ -1059,12 +1043,11 @@ class GameScreen(Screen):
                 hints.append(f"[{focused.title}] ", style="bold yellow")
                 hints.append(panel_hints, style="white")
                 hints.append("   ", style="dim")
-            from silicon_pantheon.client.locale import t as _t
             lc = self.app.state.locale
             hints.append(
-                f"{_t('keys.tab_next', lc)}   {_t('keys.range', lc)}   "
-                f"{_t('keys.help', lc)}   {_t('keys.scenario', lc)}   "
-                f"{_t('keys.quit', lc)}",
+                f"{t('keys.tab_next', lc)}   {t('keys.range', lc)}   "
+                f"{t('keys.help', lc)}   {t('keys.scenario', lc)}   "
+                f"{t('keys.quit', lc)}",
                 style="dim",
             )
             footer_line = hints
@@ -1186,10 +1169,8 @@ class GameScreen(Screen):
             async def _quit(yes: bool) -> None:
                 if yes:
                     self.app.exit()
-
-            from silicon_pantheon.client.locale import t as _t
             self._confirm = ConfirmModal(
-                prompt=_t("game_quit.confirm", self.app.state.locale),
+                prompt=t("game_quit.confirm", self.app.state.locale),
                 on_confirm=_quit,
                 locale=self.app.state.locale,
             )
@@ -1332,22 +1313,21 @@ class GameScreen(Screen):
             self._last_action_seen = la
             uid = la.get("unit_id") or la.get("healer_id")
             if uid:
-                from silicon_pantheon.client.locale import t as _lt
-                _alc = self.app.state.locale
+                lc = self.app.state.locale
                 la_type = la.get("type")
                 if la_type == "move":
                     dest = la.get("dest") or {}
                     self.unit_last_actions[uid] = (
-                        _lt("action.moved", _alc)
+                        t("action.moved", lc)
                         .replace("{x}", str(dest.get("x", "?")))
                         .replace("{y}", str(dest.get("y", "?")))
                     )
                 elif la_type == "attack":
                     tid = la.get("target_id", "?")
                     dmg = la.get("damage_dealt", "?")
-                    killed = f" {_lt('action.killed', _alc)}" if la.get("target_killed") else ""
+                    killed = f" {t('action.killed', lc)}" if la.get("target_killed") else ""
                     self.unit_last_actions[uid] = (
-                        _lt("action.atk", _alc)
+                        t("action.atk", lc)
                         .replace("{tid}", str(tid))
                         .replace("{dmg}", str(dmg))
                         + killed
@@ -1356,7 +1336,7 @@ class GameScreen(Screen):
                     tid = la.get("target_id", "?")
                     amt = la.get("heal_amount", la.get("healed", "?"))
                     self.unit_last_actions[uid] = (
-                        _lt("action.healed", _alc)
+                        t("action.healed", lc)
                         .replace("{tid}", str(tid))
                         .replace("{amt}", str(amt))
                     )

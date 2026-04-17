@@ -10,12 +10,10 @@ from rich.console import Console
 from silicon_pantheon.client.tui.app import SharedState
 from silicon_pantheon.client.tui.screens.room import (
     ActionsPanel,
-    ConfirmModal,
-    Dropdown,
     MapPanel,
     RoomScreen,
-    UnitCard,
 )
+from silicon_pantheon.client.tui.widgets import ConfirmModal, Dropdown, UnitCard
 
 
 class _FakeApp:
@@ -384,7 +382,7 @@ def test_win_condition_prose_uses_display_name_when_available():
     """Regression: win conditions used to render `u_b_tang_monk_1`
     directly. With display_name in the bundle, the prose should say
     `Tang Monk`."""
-    from silicon_pantheon.client.tui.screens.room import _describe_win_condition
+    from silicon_pantheon.client.tui.scenario_display import describe_win_condition as _describe_win_condition
 
     bundle = {
         "unit_classes": {
@@ -406,7 +404,7 @@ def test_protect_unit_prose_names_the_winning_side():
     """The opposite team of `owning_team` is the one that wins when
     the protected unit dies. Earlier prose buried this — it just said
     'keep X alive (blue)' which never explained how RED wins."""
-    from silicon_pantheon.client.tui.screens.room import _describe_win_condition
+    from silicon_pantheon.client.tui.scenario_display import describe_win_condition as _describe_win_condition
 
     out = _describe_win_condition(
         {"type": "protect_unit", "unit_id": "u_r_boss_1", "owning_team": "red"},
@@ -416,14 +414,14 @@ def test_protect_unit_prose_names_the_winning_side():
 
 
 def test_eliminate_all_prose_says_either_side_wins():
-    from silicon_pantheon.client.tui.screens.room import _describe_win_condition
+    from silicon_pantheon.client.tui.scenario_display import describe_win_condition as _describe_win_condition
 
     out = _describe_win_condition({"type": "eliminate_all_enemy_units"}, None)
     assert "Either side" in out
 
 
 def test_win_condition_prose_falls_back_when_no_display_name():
-    from silicon_pantheon.client.tui.screens.room import _describe_win_condition
+    from silicon_pantheon.client.tui.scenario_display import describe_win_condition as _describe_win_condition
 
     out = _describe_win_condition(
         {"type": "protect_unit", "unit_id": "u_b_knight_1",

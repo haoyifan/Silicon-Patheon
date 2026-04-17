@@ -32,361 +32,29 @@ from rich.text import Text
 from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 from silicon_pantheon.client.tui.panels import Panel, border_style, wrap_rows_to_width
+from silicon_pantheon.client.tui.widgets import (
+    ART_FRAME_SECONDS,
+    ConfirmModal,
+    Dropdown,
+    UnitCard,
+)
+from silicon_pantheon.client.tui.scenario_display import (
+    describe_win_condition,
+    other_team,
+    strip_frontmatter,
+    terrain_effect_summary,
+    unit_cell_style,
+    unit_display_name,
+)
+
+# Re-export for backward compatibility (external tools may import from here)
+__all__ = [
+    "ART_FRAME_SECONDS", "ConfirmModal", "Dropdown", "UnitCard",
+    "describe_win_condition", "terrain_effect_summary", "unit_cell_style",
+    "unit_display_name", "strip_frontmatter",
+]
 
 log = logging.getLogger("silicon.tui.room")
-
-
-# ---- shared helpers (used by both room and game renderers) ----
-
-
-def _unit_cell_style(u: dict[str, Any]) -> tuple[str, str]:
-    """Pick the (glyph, Rich style) for a unit cell on any map view.
-
-    Color is ALWAYS team-based (cyan for blue, red for red) so the
-    map is immediately readable at a glance. Per-class colors from
-    the YAML are intentionally ignored here — they created a rainbow
-    of yellows, greens, magentas, whites that made it impossible to
-    tell teams apart. The glyph letter (uppercase=blue, lowercase=red)
-    already differentiates unit classes; color's job is to show the
-    team.
-
-    Per-class colors still appear in the unit card (detailed stat
-    view) and the player panel roster header."""
-    cls = str(u.get("class", "") or "")
-    owner = u.get("owner")
-    glyph = u.get("glyph")
-    if not glyph:
-        glyph = (cls[:1] or "?")
-    glyph = glyph.upper() if owner == "blue" else glyph.lower()
-    # Team-based color: one hue per side, instantly readable.
-    color = "cyan" if owner == "blue" else "red"
-    return glyph, f"bold {color}"
-
-
-# ---- modals (shared with the game screen via re-export) ----
-
-
-@dataclass
-class Dropdown:
-    """Modal single-select list with an inline explanation box.
-
-    When the caller supplies `option_descriptions`, the currently-
-    highlighted option's description is rendered beneath the list so
-    the player can read what 'classic' fog actually means before
-    committing."""
-
-    title: str
-    options: list[str]
-    selected_idx: int
-    on_confirm: Callable[[str], Awaitable[None]]
-    # Optional {option_value: markdown-free explanation}. Missing keys
-    # render no description panel — the list stays minimal for truly
-    # self-describing options (e.g. team colors).
-    option_descriptions: dict[str, str] | None = None
-    locale: str = "en"
-
-    def render(self) -> RenderableType:
-        lines: list[Text] = []
-        for i, opt in enumerate(self.options):
-            marker = "➤ " if i == self.selected_idx else "  "
-            style = "bold yellow" if i == self.selected_idx else "white"
-            lines.append(Text(f"{marker}{opt}", style=style))
-        list_panel = RichPanel(
-            Group(*lines), border_style="dim", padding=(0, 1),
-        )
-        footer = Text(
-            t("room_modal.dropdown_footer", self.locale), style="dim"
-        )
-        body_parts: list[RenderableType] = [list_panel]
-        desc = (self.option_descriptions or {}).get(
-            self.options[self.selected_idx] if self.options else ""
-        )
-        if desc:
-            # overflow="fold" + no_wrap=False makes Rich wrap the
-            # description across multiple lines inside the panel's
-            # fixed width — otherwise a long explanation blew the
-            # whole dropdown sideways and the shape changed per
-            # option, which read as a shifting modal.
-            body_parts.append(
-                RichPanel(
-                    Text(desc, style="white", no_wrap=False, overflow="fold"),
-                    title=self.options[self.selected_idx],
-                    border_style="yellow",
-                    padding=(0, 1),
-                )
-            )
-        body_parts.append(Text(""))
-        body_parts.append(footer)
-        # Fixed width (~60 cols) so the modal shape stays stable as
-        # the highlight moves between options with different
-        # description lengths. Vertical height grows to fit wrapped
-        # content; horizontal stays constant.
-        return Align.center(
-            RichPanel(
-                Group(*body_parts),
-                title=self.title,
-                border_style="yellow",
-                padding=(1, 3),
-                width=60,
-            ),
-            vertical="middle",
-        )
-
-    async def handle_key(self, key: str) -> bool:
-        # esc / tab / q all close without confirming — Tab in
-        # particular because users reach for it to cycle panels
-        # when they don't realize a modal is open; swallowing it
-        # silently looks like the TUI is frozen.
-        if key in ("esc", "\t", "q"):
-            return True
-        if key in ("up", "k"):
-            self.selected_idx = (self.selected_idx - 1) % len(self.options)
-            return False
-        if key in ("down", "j"):
-            self.selected_idx = (self.selected_idx + 1) % len(self.options)
-            return False
-        if key == "enter":
-            chosen = self.options[self.selected_idx]
-            await self.on_confirm(chosen)
-            return True
-        return False
-
-
-@dataclass
-class ConfirmModal:
-    """Yes/No confirmation overlay. Esc cancels. Enter invokes
-    `on_confirm` on the currently-highlighted option."""
-
-    prompt: str
-    on_confirm: Callable[[bool], Awaitable[None]]
-    selected_yes: bool = False  # default: No, so accidental Enter cancels
-    locale: str = "en"
-
-    def render(self) -> RenderableType:
-        # Yes is the destructive option (leave / concede / quit), so
-        # red genuinely conveys "this is the dangerous side". Not a
-        # team-color collision in this context — confirm modals never
-        # render team status alongside.
-        yes = Text(
-            "[Yes]",
-            style="bold red" if self.selected_yes else "dim",
-        )
-        no = Text(
-            "[No]",
-            style="bold green" if not self.selected_yes else "dim",
-        )
-        row = Text()
-        row.append(yes)
-        row.append("    ")
-        row.append(no)
-        body = Group(
-            Text(self.prompt, style="white"),
-            Text(""),
-            Align.center(row),
-            Text(""),
-            Text(t("room_modal.confirm_footer", self.locale), style="dim"),
-        )
-        return Align.center(
-            RichPanel(body, title=t("room_status.confirm", self.locale), border_style="yellow", padding=(1, 3)),
-            vertical="middle",
-        )
-
-    async def handle_key(self, key: str) -> bool:
-        """True = close modal. on_confirm already fired if chosen.
-
-        Accepts every reasonable hotkey a user might try so the
-        modal never looks frozen:
-          - y / Y / enter  → confirm yes
-          - n / N / esc    → cancel (close without firing on_confirm)
-          - ← / → / h / l / j / k → move selection between Yes/No
-          - \\t (Tab) / q  → cancel, same as esc. Tab specifically was
-            the recurring footgun — users hit Tab to cycle panels,
-            the modal ate the key with no visual feedback, and the
-            TUI appeared stuck.
-        """
-        if key in ("esc", "\t", "q", "n", "N"):
-            return True
-        if key in ("y", "Y"):
-            await self.on_confirm(True)
-            return True
-        if key in ("left", "h", "j"):
-            self.selected_yes = True
-            return False
-        if key in ("right", "l", "k"):
-            self.selected_yes = False
-            return False
-        if key == "enter":
-            await self.on_confirm(self.selected_yes)
-            return True
-        return False
-
-
-ART_FRAME_SECONDS = 2.0
-
-
-@dataclass
-class UnitCard:
-    """Read-only card showing a unit's description / stats / tags /
-    abilities / inventory.
-
-    Holds an ordered list of units the player can browse with
-    h/left and l/right while the card is open — the unit_classes
-    lookup lets us repaint stats and ASCII art when the highlighted
-    unit changes class. The owning MapPanel snaps its cursor to the
-    card's currently-displayed unit when the card dismisses, so
-    closing always lands you back on the unit you were inspecting."""
-
-    units: list[dict[str, Any]]
-    index: int
-    unit_classes: dict[str, Any] | None = None
-    locale: str = "en"
-    _opened_at: float | None = None
-
-    @property
-    def unit(self) -> dict[str, Any]:
-        return self.units[self.index]
-
-    @property
-    def class_spec(self) -> dict[str, Any] | None:
-        if self.unit_classes is None:
-            return None
-        return self.unit_classes.get(self.unit.get("class"))
-
-    def _stat(self, key: str, default: str = "?") -> str:
-        """Prefer the unit's live value, fall back to class_spec, then
-        to the placeholder."""
-        u_val = self.unit.get(key)
-        if u_val is not None and u_val != "":
-            return str(u_val)
-        if self.class_spec is not None:
-            spec_val = self.class_spec.get(key)
-            if spec_val is not None:
-                return str(spec_val)
-        return default
-
-    def render(self) -> RenderableType:
-        u = self.unit
-        spec = self.class_spec or {}
-        owner = u.get("owner", "?")
-        team_color = "cyan" if owner == "blue" else "red"
-        display = (
-            u.get("display_name")
-            or spec.get("display_name")
-            or u.get("class")
-            or u.get("id", "?")
-        )
-        title = f"{display} ({owner})"
-        frames = u.get("art_frames") or spec.get("art_frames") or []
-        text_body = self._render_text_body(team_color)
-        if not frames:
-            return RichPanel(
-                text_body,
-                title=title,
-                border_style=team_color,
-                padding=(0, 2),
-            )
-        # Two-column layout: text on the left, animated portrait on
-        # the right. The portrait column auto-sizes to its widest
-        # frame so descriptions on the left always have predictable
-        # space and never get clipped by the art.
-        import time as _time
-
-        if self._opened_at is None:
-            self._opened_at = _time.monotonic()
-        elapsed = _time.monotonic() - self._opened_at
-        idx = int(elapsed / ART_FRAME_SECONDS) % len(frames)
-        frame = frames[idx]
-        art_width = max(
-            (len(line) for f in frames for line in f.split("\n")),
-            default=0,
-        )
-        # Add a small gutter so art doesn't kiss the right border.
-        art_col_width = art_width + 2
-        grid = Table.grid(expand=True, padding=(0, 1))
-        grid.add_column(ratio=1)
-        grid.add_column(no_wrap=True, width=art_col_width)
-        grid.add_row(text_body, Text(frame, style=team_color))
-        return RichPanel(
-            grid,
-            title=title,
-            border_style=team_color,
-            padding=(0, 2),
-        )
-
-    def _render_text_body(self, team_color: str) -> RenderableType:
-        u = self.unit
-        spec = self.class_spec or {}
-        rows: list[RenderableType] = []
-        desc = spec.get("description") or u.get("description") or ""
-        if desc:
-            rows.append(Text(desc, style="italic"))
-            rows.append(Text(""))
-
-        stats = Table.grid(padding=(0, 2))
-        stats.add_column(style="dim")
-        stats.add_column()
-        hp_now = u.get("hp")
-        hp_max = self._stat("hp_max")
-        _lc = self.locale
-        stats.add_row(
-            t("stat.hp", _lc),
-            f"{hp_now if hp_now is not None else hp_max} / {hp_max}",
-        )
-        stats.add_row(t("stat.atk", _lc), self._stat("atk"))
-        def_val = u.get("def")
-        if def_val is None:
-            def_val = spec.get("defense") or spec.get("def") or "?"
-        stats.add_row(t("stat.def", _lc), str(def_val))
-        stats.add_row(t("stat.res", _lc), self._stat("res"))
-        stats.add_row(t("stat.spd", _lc), self._stat("spd"))
-        stats.add_row(t("stat.move", _lc), self._stat("move"))
-        rng = u.get("rng") or [
-            spec.get("rng_min", self._stat("rng_min")),
-            spec.get("rng_max", self._stat("rng_max")),
-        ]
-        stats.add_row(t("stat.range", _lc), f"{rng[0]}–{rng[1]}")
-        if u.get("is_magic") or spec.get("is_magic"):
-            stats.add_row(t("stat.type", _lc), t("stat.magic", _lc))
-        if u.get("can_heal") or spec.get("can_heal"):
-            stats.add_row(t("stat.can_heal", _lc), t("stat.yes", _lc))
-        rows.append(stats)
-
-        tags = u.get("tags") or spec.get("tags") or []
-        if tags:
-            rows.append(Text(""))
-            rows.append(Text(f"{t('section.tags', self.locale)}: " + ", ".join(tags), style="dim"))
-
-        abilities = u.get("abilities") or spec.get("abilities") or []
-        if abilities:
-            rows.append(Text(""))
-            rows.append(Text(f"{t('section.abilities', self.locale)}: " + ", ".join(abilities)))
-
-        inv = u.get("default_inventory") or spec.get("default_inventory") or []
-        if inv:
-            rows.append(Text(""))
-            rows.append(Text(f"{t('section.inventory', self.locale)}: " + ", ".join(inv)))
-
-        rows.append(Text(""))
-        if len(self.units) > 1:
-            rows.append(
-                Text(t("unit_card.nav_multi", self.locale), style="dim")
-            )
-        else:
-            rows.append(Text(t("unit_card.nav_single", self.locale), style="dim"))
-        return Group(*rows)
-
-    def navigate(self, step: int) -> None:
-        """Move the highlighted unit by `step` (wraps). Resets the
-        animation clock so the new portrait starts at frame 0."""
-        if not self.units:
-            return
-        self.index = (self.index + step) % len(self.units)
-        self._opened_at = None
-
-    async def handle_key(self, key: str) -> bool:
-        # Tab closes the card too — otherwise users pressing Tab to
-        # leave the unit card feel stuck.
-        return key in ("esc", "enter", "q", "\t")
 
 
 # ---- panel: Player ----
@@ -497,7 +165,7 @@ class DescriptionPanel(Panel):
             for wc in win_conds:
                 rows.append(
                     Text(
-                        f"  • {_describe_win_condition(wc, desc, self.app.state.locale)}",
+                        f"  • {describe_win_condition(wc, desc, self.app.state.locale)}",
                         style="dim",
                     )
                 )
@@ -600,176 +268,7 @@ class DescriptionPanel(Panel):
         )
 
 
-# Terrain styling lives in silicon_pantheon.client.tui.terrain so all
-# three map renderers (in-game, room preview, scenario picker) agree
-# on glyph + color for both built-in and scenario-declared terrain.
 from silicon_pantheon.client.tui.terrain import terrain_cell as _terrain_cell  # noqa: E402
-
-
-def _terrain_effect_summary(
-    scenario_description: dict[str, Any] | None, terrain: str,
-    locale: str = "en",
-) -> str:
-    """One-line summary of what a terrain does, built from the cached
-    describe_scenario bundle. Empty if we don't have the data.
-    Descriptions that ship in the bundle win; otherwise we compose
-    from the individual fields."""
-    if not scenario_description:
-        return ""
-    spec = (scenario_description.get("terrain_types") or {}).get(terrain)
-    if not spec:
-        return ""
-    if spec.get("description"):
-        return str(spec["description"])
-    parts: list[str] = []
-    mc = spec.get("move_cost")
-    if mc is not None:
-        parts.append(t("terrain_fx.move", locale).replace("{n}", str(mc)))
-    db = spec.get("defense_bonus")
-    if db:
-        parts.append(t("terrain_fx.def_bonus", locale).replace("{n}", str(db)))
-    rb = spec.get("res_bonus") or spec.get("magic_bonus")
-    if rb:
-        parts.append(t("terrain_fx.res_bonus", locale).replace("{n}", str(rb)))
-    heals = spec.get("heals")
-    if heals:
-        sign = "+" if heals > 0 else ""
-        parts.append(t("terrain_fx.hp_turn", locale).replace("{n}", f"{sign}{heals}"))
-    if spec.get("blocks_sight"):
-        parts.append(t("terrain_fx.blocks_los", locale))
-    if spec.get("passable") is False:
-        parts.append(t("terrain_fx.impassable", locale))
-    if spec.get("effects_plugin"):
-        parts.append(t("terrain_fx.plugin", locale).replace("{name}", str(spec["effects_plugin"])))
-    return ", ".join(parts)
-
-
-def _strip_frontmatter(text: str) -> str:
-    """Drop a leading `---\\n...\\n---` YAML frontmatter block if one
-    is present. Strategy md files sometimes start with one; players
-    don't need to see the metadata, just the prose playbook."""
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return text
-    for i, line in enumerate(lines[1:], start=1):
-        if line.strip() == "---":
-            return "\n".join(lines[i + 1 :])
-    return text
-
-
-def _unit_display_name(
-    unit: dict[str, Any],
-    scenario_description: dict[str, Any] | None,
-) -> str:
-    """Best human-readable name for a unit. Per-unit override first,
-    then class display_name from the scenario bundle, then the slug."""
-    if unit.get("display_name"):
-        return str(unit["display_name"])
-    cls = unit.get("class") or ""
-    spec = (
-        (scenario_description or {}).get("unit_classes") or {}
-    ).get(cls)
-    if spec and spec.get("display_name"):
-        return str(spec["display_name"])
-    return cls or str(unit.get("id", "?"))
-
-
-def _humanize_unit_id(unit_id: str, scenario_description: dict[str, Any] | None) -> str:
-    """Translate `u_b_tang_monk_1` → `Tang Monk` when the scenario
-    bundle has a display_name for the class. Falls back to the slug
-    derived from the id (tang_monk → tang_monk) and finally to the
-    raw id so we never silently drop information."""
-    if not unit_id:
-        return "?"
-    parts = unit_id.split("_")
-    # Convention: u_<team>_<class>_<index>. The class can itself
-    # contain underscores (tang_monk, white_bone_demon), so re-join
-    # everything between the team initial and the trailing index.
-    if len(parts) >= 4 and parts[0] == "u":
-        class_slug = "_".join(parts[2:-1])
-    else:
-        class_slug = unit_id
-    spec = (
-        (scenario_description or {}).get("unit_classes") or {}
-    ).get(class_slug)
-    if spec and spec.get("display_name"):
-        return str(spec["display_name"])
-    return class_slug or unit_id
-
-
-def _other(team: str) -> str:
-    return "red" if team == "blue" else "blue"
-
-
-def _describe_win_condition(
-    wc: dict[str, Any],
-    scenario_description: dict[str, Any] | None = None,
-    locale: str = "en",
-) -> str:
-    """Return a one-line, side-explicit explanation of a win condition.
-
-    Both teams need to read this prose: protect_unit and
-    reach_tile are asymmetric (only one side benefits), so each line
-    must say WHO wins instead of just describing the trigger. Earlier
-    versions said "keep Tang Monk (blue) alive" — true from blue's
-    perspective, but a red player reading the same line wouldn't know
-    they win when the monk dies.
-    """
-    wc_type = wc.get("type", "")
-    if wc_type == "seize_enemy_fort":
-        return t("win.seize_enemy_fort", locale)
-    if wc_type == "eliminate_all_enemy_units":
-        return t("win.eliminate_all", locale)
-    if wc_type == "max_turns_draw":
-        n = wc.get("turns")
-        if n:
-            return t("win_desc.max_turns_draw_n", locale).replace("{n}", str(n))
-        return t("win.max_turns_draw", locale)
-    if wc_type == "protect_unit":
-        name = _humanize_unit_id(wc.get("unit_id", ""), scenario_description)
-        loser = wc.get("owning_team", "?")
-        winner = _other(loser)
-        return (t("win.protect_unit", locale)
-                .replace("{winner}", winner.capitalize())
-                .replace("{name}", name)
-                .replace("{loser}", loser))
-    if wc_type == "protect_unit_survives":
-        name = _humanize_unit_id(wc.get("unit_id", ""), scenario_description)
-        protector = wc.get("owning_team", "?")
-        return (t("win.protect_unit_survives", locale)
-                .replace("{protector}", protector.capitalize())
-                .replace("{name}", name))
-    if wc_type == "reach_tile":
-        pos = wc.get("pos") or {}
-        team = wc.get("team", "?")
-        u = wc.get("unit_id")
-        who = _humanize_unit_id(u, scenario_description) if u else t("button_val.any_unit", locale).replace("{team}", team)
-        return (t("win.reach_tile", locale)
-                .replace("{team}", team.capitalize())
-                .replace("{who}", who)
-                .replace("{x}", str(pos.get("x", "?")))
-                .replace("{y}", str(pos.get("y", "?"))))
-    if wc_type == "hold_tile":
-        pos = wc.get("pos") or {}
-        n = wc.get("consecutive_turns", "?")
-        team = wc.get("team", "?")
-        return (t("win.hold_tile", locale)
-                .replace("{team}", team.capitalize())
-                .replace("{x}", str(pos.get("x", "?")))
-                .replace("{y}", str(pos.get("y", "?")))
-                .replace("{n}", str(n)))
-    if wc_type == "reach_goal_line":
-        team = wc.get("team", "?")
-        return (t("win.reach_goal_line", locale)
-                .replace("{team}", team.capitalize())
-                .replace("{axis}", str(wc.get("axis", "?")))
-                .replace("{value}", str(wc.get("value", "?"))))
-    if wc_type == "plugin":
-        desc = wc.get("description")
-        if desc:
-            return str(desc)
-        return t("win_desc.custom_plugin", locale).replace("{fn}", str(wc.get("check_fn", "?")))
-    return wc_type or t("win_desc.unknown", locale)
 
 
 # ---- panel: Chat (placeholder) ----
@@ -1054,7 +553,7 @@ class MapPanel(Panel):
             pos = u.get("pos") or {}
             x, y = int(pos.get("x", -1)), int(pos.get("y", -1))
             if 0 <= x < w and 0 <= y < h:
-                glyph, style = _unit_cell_style(u)
+                glyph, style = unit_cell_style(u)
                 styled[(x, y)] = (glyph, style)
                 unit_at[(x, y)] = u
 
@@ -1107,7 +606,7 @@ class MapPanel(Panel):
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
         line.append(f"{t('game_map.terrain_label', _lc)}: {terrain}", style="yellow")
         # Terrain effect summary from the cached scenario bundle.
-        summary = _terrain_effect_summary(
+        summary = terrain_effect_summary(
             self.screen.app.state.scenario_description, terrain, _lc
         )
         if summary:
@@ -1116,7 +615,7 @@ class MapPanel(Panel):
         if u:
             owner = u.get("owner", "?")
             color = "cyan" if owner == "blue" else "red"
-            name = _unit_display_name(u, self.screen.app.state.scenario_description)
+            name = unit_display_name(u, self.screen.app.state.scenario_description)
             line.append("   ")
             line.append(f"{name} ({owner})", style=f"bold {color}")
             line.append("   ")
@@ -1488,7 +987,7 @@ class RoomScreen(Screen):
                 txt = p.read_text(encoding="utf-8")
             except OSError:
                 continue
-            descriptions[p.stem] = _strip_frontmatter(txt).strip()
+            descriptions[p.stem] = strip_frontmatter(txt).strip()
 
         self._dropdown = Dropdown(
             title=t("room_buttons.pick_strategy", self.app.state.locale),
