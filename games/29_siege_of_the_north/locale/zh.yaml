@@ -1,0 +1,111 @@
+# 北方水族围城战 — 中文本地化
+name: 北方水族围城战
+description: |
+  北方水族部落，最后的御水术堡垒。赵将军的火烈国舰队
+  经过数周围攻抵达冰墙。安昂、卡塔拉、索卡和帕库大师
+  守卫堡垒，而赵秘密计划到达灵域绿洲杀死月亮之灵。
+  如果安昂存活到回合上限，神灵状态将融合海洋之灵，
+  将火烈国扫入大海。
+
+unit_classes:
+  aang:
+    display_name: 安昂
+    description: |
+      神通——精通气术，学习水术。年幼但是物质世界
+      与灵界的桥梁。如果他存活，神灵状态将融合海洋之灵，
+      将火烈国扫入海中。
+  katara:
+    display_name: 卡塔拉
+    description: |
+      南方部落御水术师。她的治疗能力和日益增长的战斗
+      技巧使她无价。满月将她的御术放大到巅峰。
+  sokka:
+    display_name: 索卡
+    description: |
+      南方水族部落的战士和战术家。没有御术，但他的
+      战略头脑和回旋镖弥补了不足。规划外墙的防御。
+  pakku:
+    display_name: 帕库大师
+    description: |
+      北方水族御水术宗师。在满月下，他的御术毁灭性
+      十足——冰矛和水鞭粉碎火烈国铠甲。
+  water_tribe_warrior:
+    display_name: 水族部落战士
+    description: |
+      北方水族部落的防御者。持棍棒和矛，他们驻守
+      冰墙并在运河中战斗。
+  waterbender:
+    display_name: 御水术师
+    description: |
+      北方水族御水术师，在满月下力量倍增。
+      冰系攻击在远程控制战场。
+  zhao:
+    display_name: 赵将军
+    description: |
+      痴迷荣耀的火烈国将军。他的真正目标是灵域绿洲中的
+      月亮之灵——杀死它将永远剥夺所有御水术师的力量。
+  zuko:
+    display_name: 祖寇王子
+    description: |
+      被放逐的王子，在荣誉和执念间挣扎。技艺精湛的
+      御火术师，也用双刀战斗。他的忠诚……很复杂。
+  fire_nation_soldier:
+    display_name: 火烈国士兵
+    description: |
+      赵入侵部队的纪律步兵。装甲精良、训练有素，
+      但在北极环境中处于劣势。
+  firebender:
+    display_name: 御火术师
+    description: |
+      火烈国御术师。满月下御水术增强时他们的火焰减弱，
+      但在远程仍然危险。
+  fire_sage:
+    display_name: 火之贤者
+    description: |
+      火烈国贤者，引导灵性之火治愈伤口。治疗之火
+      修复盟友，同时战斗御火术依然可观。
+  komodo_rhino:
+    display_name: 科莫多犀牛
+    description: |
+      火烈国的装甲战兽。重型骑兵，能撞碎冰墙障碍
+      并践踏防御者。
+
+terrain_types:
+  ice_wall:
+    description: |
+      数百年来一代代御水术师加固的巨大冰墙。
+      除城门外不可通行。
+  canal:
+    description: |
+      冰冷的北极水运河横穿堡垒入口。涉水通过很慢。
+
+narrative:
+  title: 北方水族围城战
+  description: |
+    北方水族部落遭受围攻。赵将军的舰队攻击冰之堡垒，
+    同时秘密计划杀死月亮之灵，永远终结御水术。
+  intro: |
+    满月低悬在北极上空。火烈国战舰填满港口，引擎
+    碾碎海冰。冰墙上，御水术师从月亮中汲取力量，
+    准备迎接进攻。
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        火烈国以集中御火术突破外墙。士兵从缺口涌入，
+        御水术师挣扎着用冰封住缺口。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        月亮变红了。灵域绿洲出了问题。安昂感受到
+        灵界的召唤——海洋之灵在池中躁动。
+    - trigger: on_unit_killed
+      unit_id: u_r_zhao_1
+      text: |
+        海洋之灵的巨手将赵拖入波涛之下。他对荣耀的
+        执念终结在冰层之下的黑暗中。
+    - trigger: on_unit_killed
+      unit_id: u_b_aang_1
+      text: |
+        神通倒下了。没有通往灵界的桥梁，海洋之灵
+        无法显现。水族部落最后的希望沉入冰下。
