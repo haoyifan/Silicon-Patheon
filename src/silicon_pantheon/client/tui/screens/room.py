@@ -40,6 +40,7 @@ from silicon_pantheon.client.tui.widgets import (
 )
 from silicon_pantheon.client.tui.scenario_display import (
     describe_win_condition,
+    filter_win_conditions,
     other_team,
     strip_frontmatter,
     terrain_effect_summary,
@@ -173,7 +174,7 @@ class DescriptionPanel(Panel):
         if win_conds:
             rows.append(Text(""))
             rows.append(Text(t("section.how_to_win", self.app.state.locale), style="bold"))
-            for wc in win_conds:
+            for wc in filter_win_conditions(win_conds):
                 rows.append(
                     Text(
                         f"  • {describe_win_condition(wc, desc, self.app.state.locale)}",

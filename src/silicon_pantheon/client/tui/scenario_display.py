@@ -133,6 +133,20 @@ def other_team(team: str) -> str:
     return "red" if team == "blue" else "blue"
 
 
+def filter_win_conditions(wcs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Remove redundant win conditions that would confuse the reader.
+
+    When ``protect_unit_survives`` is present, ``max_turns_draw`` is
+    misleading — the VIP surviving to the turn cap is a WIN for the
+    protector, not a draw.  Suppress the draw line so the rules don't
+    contradict each other.
+    """
+    has_survives = any(wc.get("type") == "protect_unit_survives" for wc in wcs)
+    if not has_survives:
+        return wcs
+    return [wc for wc in wcs if wc.get("type") != "max_turns_draw"]
+
+
 def describe_win_condition(
     wc: dict[str, Any],
     scenario_description: dict[str, Any] | None = None,

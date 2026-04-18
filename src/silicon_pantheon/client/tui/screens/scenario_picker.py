@@ -39,6 +39,7 @@ def _slug_to_title(slug: str) -> str:
 from silicon_pantheon.client.tui.widgets import UnitCard
 from silicon_pantheon.client.tui.scenario_display import (
     describe_win_condition,
+    filter_win_conditions,
     terrain_effect_summary,
     unit_cell_style,
     unit_display_name,
@@ -319,7 +320,7 @@ class ScenarioPicker:
         if wcs:
             rows.append(Text(""))
             rows.append(Text(t("section.how_to_win", self.locale), style="bold"))
-            for wc in wcs:
+            for wc in filter_win_conditions(wcs):
                 rows.append(
                     Text(f"  • {describe_win_condition(wc, desc, self.locale)}", style="dim")
                 )

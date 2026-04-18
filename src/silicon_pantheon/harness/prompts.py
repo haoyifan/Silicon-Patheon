@@ -209,13 +209,16 @@ def _format_win_conditions(
     wording."""
     # Local import avoids pulling the TUI stack into server-side code
     # that doesn't need Rich.
-    from silicon_pantheon.client.tui.scenario_display import describe_win_condition as _describe_win_condition
+    from silicon_pantheon.client.tui.scenario_display import (
+        describe_win_condition as _describe_win_condition,
+        filter_win_conditions as _filter_win_conditions,
+    )
 
     if not win_conditions:
         return "(scenario did not declare any — defaults: seize fort / eliminate / draw at turn cap)"
     lines = [
         f"- {_describe_win_condition(wc, scenario_description)}"
-        for wc in win_conditions
+        for wc in _filter_win_conditions(win_conditions)
     ]
     return "\n".join(lines)
 
