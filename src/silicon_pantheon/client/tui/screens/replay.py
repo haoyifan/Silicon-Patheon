@@ -15,7 +15,6 @@ from __future__ import annotations
 import copy
 import json
 import logging
-from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +25,6 @@ from rich.text import Text
 from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import Screen, TUIApp
 from silicon_pantheon.client.tui.screens.game import (
-    CoachPanel,
     GameMapPanel,
     PlayerPanel,
     ReasoningPanel,
@@ -488,7 +486,7 @@ class ReplayScreen(Screen):
             self._step = 0
             self._apply_step()
             return None
-        if key in ("G", "shift-g"):
+        if key == "shift-g":
             self._step = total
             self._apply_step()
             return None
