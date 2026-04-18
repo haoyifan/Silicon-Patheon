@@ -1,8 +1,8 @@
 """Department of Mysteries plugin — Order of the Phoenix reinforcements.
 
-Turn 10: order_reinforcements — 4 Order members (Sirius, Lupin, Tonks,
-                                 Moody) spawn at the corridor entrances
-                                 for blue.
+Turn 8: order_reinforcements — 4 Order members (Sirius, Lupin, Tonks,
+                                Moody) spawn at the corridor entrances
+                                for blue.
 
 Guarded by a once-only flag stored on the state so repeated
 on_turn_start invocations are idempotent.
@@ -20,8 +20,8 @@ from silicon_pantheon.server.engine.scenarios import build_unit_stats, find_spaw
 
 
 def order_reinforcements(state, turn: int, team: str, **_):
-    """Turn 10: the Order of the Phoenix arrives with 4 reinforcements."""
-    if turn != 10 or state.__dict__.get("_order_arrived"):
+    """Turn 8: the Order of the Phoenix arrives with 4 reinforcements."""
+    if turn != 8 or state.__dict__.get("_order_arrived"):
         return
     state.__dict__["_order_arrived"] = True
 

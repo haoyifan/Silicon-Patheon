@@ -6,7 +6,7 @@ description: |
   Dumbledore's Army have broken into the Department of Mysteries
   to rescue Sirius Black — except it's a trap. Death Eaters led
   by Lucius Malfoy emerge from the shadows, demanding the prophecy.
-  Six teenagers against ten dark wizards, in a labyrinth of stone
+  Six teenagers against eight dark wizards, in a labyrinth of stone
   corridors and shelves of glowing orbs. All they need to do is
   survive until the Order of the Phoenix arrives.
   Inspired by the Battle of the Department of Mysteries from Harry Potter by J.K. Rowling.
@@ -32,6 +32,14 @@ board:
     - {x: 8, y: 2, type: stone_wall}
     - {x: 3, y: 5, type: stone_wall}
     - {x: 8, y: 5, type: stone_wall}
+    # Chokepoint walls around prophecy hall — narrow the approaches
+    - {x: 3, y: 3, type: stone_wall}
+    - {x: 3, y: 4, type: stone_wall}
+    - {x: 8, y: 3, type: stone_wall}
+    - {x: 8, y: 4, type: stone_wall}
+    - {x: 5, y: 1, type: prophecy_shelf}
+    - {x: 6, y: 1, type: prophecy_shelf}
+    - {x: 7, y: 1, type: prophecy_shelf}
     # Southern wall
     - {x: 0, y: 7, type: stone_wall}
     - {x: 1, y: 7, type: stone_wall}
@@ -112,6 +120,8 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
+    can_heal: true
+    heal_amount: 6
     glyph: "E"
     color: bright_cyan
 
@@ -139,9 +149,9 @@ unit_classes:
       Clumsy, overlooked, and underestimated. But Neville was
       almost the Chosen One, and tonight he fights with the
       stubborn courage that will one day kill a Horcrux.
-    hp_max: 22
+    hp_max: 26
     atk: 7
-    defense: 5
+    defense: 7
     res: 4
     spd: 4
     move: 3
@@ -168,7 +178,7 @@ unit_classes:
     rng_max: 3
     is_magic: true
     can_heal: true
-    heal_amount: 4
+    heal_amount: 6
     glyph: "L"
     color: bright_blue
 
@@ -357,9 +367,6 @@ armies:
     - {class: death_eater, pos: {x: 11, y: 3}}
     - {class: death_eater, pos: {x: 10, y: 4}}
     - {class: death_eater, pos: {x: 11, y: 4}}
-    # Death Eaters from south
-    - {class: death_eater, pos: {x: 4, y: 7}}
-    - {class: death_eater, pos: {x: 9, y: 7}}
 
 rules:
   max_turns: 16
@@ -383,7 +390,7 @@ narrative:
   title: Department of Mysteries
   description: |
     Ministry of Magic, June 1996. Six members of Dumbledore's
-    Army are trapped in the Department of Mysteries with ten
+    Army are trapped in the Department of Mysteries with eight
     Death Eaters. The Order of the Phoenix is coming — but
     will they arrive in time?
   intro: |
@@ -406,7 +413,7 @@ narrative:
         to room. Hermione falls behind, dueling Dolohov alone
         in the dark.
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
         A door bursts open. Sirius Black, Remus Lupin,
         Nymphadora Tonks, and Mad-Eye Moody charge into the
