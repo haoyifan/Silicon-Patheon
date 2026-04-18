@@ -213,6 +213,14 @@ class TUIApp:
             except Exception:
                 pass
             self.state.agent = None
+        # Leave room cleanly so the server can notify the other player
+        # and clean up immediately (instead of waiting for heartbeat
+        # timeout ~45s later).
+        if self.client is not None and self.state.room_id:
+            try:
+                await self.client.call("leave_room")
+            except Exception:
+                pass
         # Disconnect client cleanly if still connected.
         if self.client is not None:
             try:

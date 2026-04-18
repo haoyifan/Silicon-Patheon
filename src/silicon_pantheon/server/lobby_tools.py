@@ -779,15 +779,50 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
         room_id, slot = info
         _cancel_countdown(app, room_id)
+
+        # If the room is pre-game, evict the OTHER player too so they
+        # don't sit in a dead room. Their next get_room_state poll will
+        # fail and transition them to lobby.
+        room = app.rooms.get(room_id)
+        if room is not None and room.status in (
+            RoomStatus.WAITING_FOR_PLAYERS,
+            RoomStatus.WAITING_READY,
+            RoomStatus.COUNTING_DOWN,
+        ):
+            other_slot = Slot.B if slot == Slot.A else Slot.A
+            for cid, (rid, s) in list(app.conn_to_room.items()):
+                if rid == room_id and s == other_slot:
+                    other_conn = app.get_connection(cid)
+                    if other_conn is not None:
+                        other_conn.state = ConnectionState.IN_LOBBY
+                    app.conn_to_room.pop(cid, None)
+                    log.info(
+                        "leave_room: evicted other player %s from room %s",
+                        cid[:8], room_id,
+                    )
+                    break
+
         app.rooms.leave(room_id, slot)
         conn.state = ConnectionState.IN_LOBBY
         # If the leave deleted the room (post-match + last player
-        # out), clean up the companion per-room maps so memory doesn't
-        # pile up across matches.
+        # out, or pre-game after evicting the other player), clean up.
         if app.rooms.get(room_id) is None:
             app.sessions.pop(room_id, None)
             app.slot_to_team.pop(room_id, None)
             log.info("room %s fully cleaned up", room_id)
+        else:
+            # Room still exists (other player's seat was already vacated
+            # above but room deletion needs both seats empty). Force
+            # delete for pre-game rooms.
+            if room is not None and room.status in (
+                RoomStatus.WAITING_FOR_PLAYERS,
+                RoomStatus.WAITING_READY,
+                RoomStatus.COUNTING_DOWN,
+            ):
+                app.rooms.delete(room_id)
+                app.sessions.pop(room_id, None)
+                app.slot_to_team.pop(room_id, None)
+                log.info("room %s deleted (player left pre-game)", room_id)
         return _ok({})
 
     @mcp.tool()
