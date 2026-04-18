@@ -319,6 +319,10 @@ def end_turn(session: Session, viewer: Team) -> dict:
     except IllegalAction as e:
         raise ToolError(str(e)) from e
     _record_action(session, result)
+    # Clear delivered coach messages for the team that just finished.
+    # Messages accumulate during the turn so repeated get_tactical_summary
+    # calls always see the full set; only cleared here at turn boundary.
+    session.coach_queues[viewer] = []
     # Mark the start of the next team's turn.
     session.turn_start_time = _time.monotonic()
     return result

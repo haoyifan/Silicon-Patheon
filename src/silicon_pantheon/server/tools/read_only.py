@@ -233,15 +233,14 @@ def get_tactical_summary(session: Session, viewer: Team) -> dict:
 
     pending = [u.id for u in my_units if u.status is UnitStatus.MOVED]
 
-    # Drain unread coach messages for this viewer. Auto-delivery in
-    # this digest replaces the old `get_coach_messages` tool -- agents
-    # were missing coach advice because they only polled the tool
-    # once per session (Haiku's "checked once, no need to check
-    # again" pattern). Now the messages are shipped proactively in
-    # the same response the agent fetches every turn-start.
+    # Include ALL pending coach messages for this viewer. Messages
+    # accumulate until end_turn clears them — so the human can type
+    # multiple messages during the opponent's turn and ALL of them
+    # are delivered. We do NOT clear here; clearing happens in
+    # end_turn (mutations.py) so repeated get_tactical_summary calls
+    # (agent tool calls mid-turn) still see the full set.
     coach_queue = session.coach_queues.get(viewer, [])
     coach_messages = [{"turn": m.turn, "text": m.text} for m in coach_queue]
-    session.coach_queues[viewer] = []
 
     # Win-condition progress: one line per condition, describing
     # where the viewer stands on the scoreboard. Lets the model

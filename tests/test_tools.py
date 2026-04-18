@@ -320,16 +320,25 @@ def test_get_history_last_n_zero_means_all():
 
 
 def test_coach_message_queue():
-    """The send_to_agent → coach_messages auto-delivery path
-    (replaces the old explicit get_coach_messages tool)."""
+    """Coach messages persist until end_turn so the human can send
+    multiple messages during a turn and all are delivered."""
     s = _session()
     call_tool(s, Team.BLUE, "send_to_agent", {"team": "blue", "text": "push the knight"})
+    call_tool(s, Team.BLUE, "send_to_agent", {"team": "blue", "text": "protect the archer"})
     out = call_tool(s, Team.BLUE, "get_tactical_summary", {})
-    assert len(out["coach_messages"]) == 1
+    assert len(out["coach_messages"]) == 2
     assert out["coach_messages"][0]["text"] == "push the knight"
-    # Queue drained on read
+    assert out["coach_messages"][1]["text"] == "protect the archer"
+    # Messages persist across repeated reads within the same turn.
     out2 = call_tool(s, Team.BLUE, "get_tactical_summary", {})
-    assert out2["coach_messages"] == []
+    assert len(out2["coach_messages"]) == 2
+    # end_turn clears the queue.
+    call_tool(s, Team.BLUE, "wait", {"unit_id": "u_b_knight_1"})
+    call_tool(s, Team.BLUE, "wait", {"unit_id": "u_b_archer_1"})
+    call_tool(s, Team.BLUE, "end_turn", {})
+    out3 = call_tool(s, Team.RED, "get_tactical_summary", {})
+    # Red's queue should be empty (messages were for blue).
+    assert out3["coach_messages"] == []
 
 
 def test_registry_has_all_tools():
@@ -355,12 +364,10 @@ def test_registry_has_all_tools():
     assert expected == set(TOOL_REGISTRY.keys())
 
 
-def test_tactical_summary_drains_coach_queue():
-    """Coach messages queued for the viewer's team are delivered in
-    get_tactical_summary's response and removed from the queue (drain
-    semantics, same as the old get_coach_messages tool)."""
+def test_tactical_summary_coach_persists_until_end_turn():
+    """Coach messages persist across get_tactical_summary calls within
+    a turn, and are only cleared at end_turn."""
     s = _session()
-    # Pre-load two messages for blue.
     call_tool(
         s, Team.BLUE, "send_to_agent",
         {"team": "blue", "text": "push the right flank"},
@@ -374,9 +381,9 @@ def test_tactical_summary_drains_coach_queue():
     assert len(msgs) == 2
     assert msgs[0]["text"] == "push the right flank"
     assert msgs[1]["text"] == "save the archer"
-    # Drained.
+    # Still there on second read (not drained).
     out2 = call_tool(s, Team.BLUE, "get_tactical_summary", {})
-    assert out2["coach_messages"] == []
+    assert len(out2["coach_messages"]) == 2
 
 
 def test_tactical_summary_only_delivers_own_team_coach_messages():
