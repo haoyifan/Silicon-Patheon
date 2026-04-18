@@ -1013,7 +1013,7 @@ class GameScreen(Screen):
         # regardless of CWD.
         from pathlib import Path as _Path
 
-        _project_root = _Path(__file__).resolve().parents[4]
+        _project_root = _Path(__file__).resolve().parents[5]
         lessons_dir = (_project_root / "lessons") if app.state.save_lessons else None
         # Per-turn agent time budget = room's turn_time_limit_s when
         # the host set it, otherwise the adapter's default (180s). The

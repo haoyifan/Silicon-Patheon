@@ -1051,7 +1051,7 @@ class RoomScreen(Screen):
         from silicon_pantheon.lessons import LessonStore
 
         scenario = (self.app.state.last_room_state or {}).get("scenario") or ""
-        _project_root = _Path(__file__).resolve().parents[4]
+        _project_root = _Path(__file__).resolve().parents[5]
         store = LessonStore(_project_root / "lessons")
         all_lessons = store.list_for_scenario(scenario) if scenario else []
 
