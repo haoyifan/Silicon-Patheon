@@ -173,7 +173,7 @@ class TUIApp:
             with Live(
                 self._render_with_overlay(),
                 console=self.console,
-                refresh_per_second=0,
+                refresh_per_second=1,
                 screen=True,
                 auto_refresh=False,
             ) as live:
