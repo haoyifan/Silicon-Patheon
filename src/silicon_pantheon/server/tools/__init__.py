@@ -37,6 +37,7 @@ from .mutations import (
     heal,
     wait_unit,
     end_turn,
+    concede,
 )
 from .coach import get_match_telemetry, report_tokens, send_to_agent
 
@@ -179,6 +180,12 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "fn": end_turn,
         "description": "Pass control to the opponent. Rejects if any unit is mid-action (moved but not acted).",
         "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    "concede": {
+        "fn": concede,
+        "description": "Resign the match — the opponent wins immediately. Use only when the position is truly hopeless.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+        "mutates": True,
     },
     "send_to_agent": {
         "fn": send_to_agent,

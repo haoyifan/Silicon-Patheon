@@ -350,6 +350,7 @@ def test_registry_has_all_tools():
         "wait",
         "end_turn",
         "send_to_agent",
+        "concede",
     }
     assert expected == set(TOOL_REGISTRY.keys())
 

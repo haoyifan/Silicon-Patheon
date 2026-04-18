@@ -322,3 +322,15 @@ def end_turn(session: Session, viewer: Team) -> dict:
     # Mark the start of the next team's turn.
     session.turn_start_time = _time.monotonic()
     return result
+
+
+def concede(session: Session, viewer: Team) -> dict:
+    """Resign the match — the opponent wins immediately."""
+    from ..engine.state import GameStatus
+
+    opponent = viewer.other()
+    session.state.status = GameStatus.GAME_OVER
+    session.state.winner = opponent
+    result = {"type": "concede", "team": viewer.value, "winner": opponent.value}
+    _record_action(session, result)
+    return result
