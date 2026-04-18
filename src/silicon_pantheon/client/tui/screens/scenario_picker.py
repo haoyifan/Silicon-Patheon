@@ -88,15 +88,16 @@ class ScenarioPicker:
         (e.g. 'journey_to_the_west') that flip to display_name only
         after the user moves the highlight onto them.
 
-        The current scenario is awaited so the left-side preview is
-        populated immediately; the rest run in the background."""
-        await self._ensure_loaded(self.scenarios[self.selected_idx])
+        Load all scenario descriptions so names are ready on first
+        render (no slug-to-title flicker)."""
         import asyncio as _asyncio
 
+        tasks = []
         for n in self.scenarios:
-            if n in self._cache or n in self._in_flight:
-                continue
-            _asyncio.create_task(self._ensure_loaded(n))
+            if n not in self._cache and n not in self._in_flight:
+                tasks.append(_asyncio.create_task(self._ensure_loaded(n)))
+        if tasks:
+            await _asyncio.gather(*tasks, return_exceptions=True)
 
     async def _ensure_loaded(self, name: str) -> None:
         if name in self._cache or name in self._in_flight or self.client is None:
