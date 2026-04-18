@@ -165,6 +165,19 @@ def main() -> int:
             mcp.settings.transport_security.allowed_origins,
         )
 
+    # Health endpoint for fast client pre-flight validation.
+    # Returns a tiny JSON body that identifies this as a Silicon Pantheon
+    # server. Clients probe GET /health before attempting the full MCP
+    # handshake — catches wrong URLs in ~100ms.
+    from starlette.responses import JSONResponse
+
+    @mcp.custom_route("/health", methods=["GET"])
+    async def _health(request):
+        return JSONResponse({
+            "server": "silicon-pantheon",
+            "status": "ok",
+        })
+
     log.info("silicon-serve starting on http://%s:%d", args.host, args.port)
 
     # Launch the heartbeat sweeper as a background task on the same

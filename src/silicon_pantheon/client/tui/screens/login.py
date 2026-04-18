@@ -71,7 +71,10 @@ class LoginScreen(Screen):
         if self._connecting:
             status.append(t("login_screen.connecting", lc), style="yellow")
         elif self.app.state.error_message:
-            status.append(self.app.state.error_message, style="red")
+            status = Text(
+                self.app.state.error_message,
+                style="red", no_wrap=False, overflow="fold",
+            )
         elif self.app.state.status_message:
             status.append(self.app.state.status_message, style="green")
         lines.append(status)
@@ -80,7 +83,10 @@ class LoginScreen(Screen):
         lines.append(keys)
 
         body = Group(*lines)
-        return Align.center(Panel(body, title=t("login_screen.title", lc), border_style="yellow"), vertical="middle")
+        return Align.center(
+            Panel(body, title=t("login_screen.title", lc), border_style="yellow", width=70),
+            vertical="middle",
+        )
 
     async def handle_key(self, key: str) -> Screen | None:
         if self._confirm is not None:
@@ -241,32 +247,38 @@ async def _fetch_scenario_bundle(app: TUIApp) -> None:
 
 
 async def _validate_url(url: str) -> None:
-    """Fast pre-flight check: probe the URL before attempting the full
-    MCP handshake. Catches DNS errors, wrong ports, and non-MCP servers
-    in ~2s instead of hanging for 10s.
+    """Fast pre-flight check via the /health endpoint (~100ms).
 
-    MCP servers respond to GET with 405 Method Not Allowed (they only
-    accept POST). Any other response means the URL is wrong or points
-    to a non-MCP server."""
+    The Silicon Pantheon server exposes GET /health which returns
+    {"server": "silicon-pantheon", "status": "ok"}. We derive the
+    health URL from the MCP URL (strip /mcp/ path, append /health).
+    """
     import httpx
+    from urllib.parse import urlparse, urlunparse
 
-    _fmt = "Expected format: http://host:port/mcp/"
+    _fmt = "Expected: http://host:port/mcp/"
+
+    # Derive health URL: https://host:port/mcp/ → https://host:port/health
+    parsed = urlparse(url)
+    health_url = urlunparse((
+        parsed.scheme, parsed.netloc, "/health", "", "", "",
+    ))
+
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            r = await client.get(url)
-            # MCP endpoints return 405 on GET — that's the signal.
-            if r.status_code == 405:
-                return  # looks like an MCP server
-            # Anything else = not an MCP endpoint.
-            ct = r.headers.get("content-type", "")
-            if "html" in ct:
+            r = await client.get(health_url)
+            if r.status_code == 200:
+                try:
+                    body = r.json()
+                    if body.get("server") == "silicon-pantheon":
+                        return  # valid server
+                except Exception:
+                    pass
                 raise ConnectionError(
-                    f"URL returned a web page (HTTP {r.status_code}), "
-                    f"not an MCP server. {_fmt}"
+                    f"Server responded but is not Silicon Pantheon. {_fmt}"
                 )
             raise ConnectionError(
-                f"URL returned HTTP {r.status_code}, expected 405. "
-                f"This doesn't look like an MCP server. {_fmt}"
+                f"/health returned HTTP {r.status_code}. {_fmt}"
             )
     except httpx.ConnectError as e:
         raise ConnectionError(
@@ -274,12 +286,12 @@ async def _validate_url(url: str) -> None:
         ) from e
     except httpx.ConnectTimeout:
         raise ConnectionError(
-            f"Connection timed out — server not responding. {_fmt}"
+            f"Connection timed out. {_fmt}"
         )
     except ConnectionError:
         raise
     except Exception:
-        # Other errors (SSL, etc.) — let MCP handshake handle it
+        # SSL errors, etc. — let MCP handshake handle it
         return
 
 
