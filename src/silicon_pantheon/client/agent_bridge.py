@@ -453,6 +453,11 @@ class NetworkedAgent:
         # the same delta prompt being re-shipped every poll.
         self._no_progress_retries: int = 0
         self._MAX_NO_PROGRESS = 5  # force end_turn after this many retries
+        # Battlefield change detection: tracks the unit roster from the
+        # previous turn so we can generate one-time alerts when units
+        # appear (reinforcements) or disappear (killed between turns).
+        self._last_seen_unit_ids: set[str] | None = None
+        self._battlefield_alerts: list[str] = []
 
     async def close(self) -> None:
         try:
@@ -532,6 +537,48 @@ class NetworkedAgent:
 
     # ---- turn orchestration ----
 
+    def _detect_battlefield_changes(self, state: dict, viewer: Team) -> None:
+        """Compare current units to the last-seen set and generate
+        one-time alerts for significant changes (reinforcements,
+        deaths between turns). Alerts are injected into the turn
+        prompt via _battlefield_alerts."""
+        current_units = {
+            u["id"]: u for u in (state.get("units") or [])
+            if u.get("alive", u.get("hp", 0) > 0)
+        }
+        current_ids = set(current_units.keys())
+
+        self._battlefield_alerts = []
+
+        if self._last_seen_unit_ids is not None:
+            # New units that weren't there last turn (reinforcements)
+            appeared = current_ids - self._last_seen_unit_ids
+            if appeared:
+                for uid in sorted(appeared):
+                    u = current_units[uid]
+                    owner = u.get("owner", "?")
+                    cls = u.get("class", "?")
+                    pos = u.get("pos") or {}
+                    side = "friendly" if owner == viewer.value else "ENEMY"
+                    self._battlefield_alerts.append(
+                        f"⚠ NEW {side} unit appeared: {uid} ({cls}) "
+                        f"at ({pos.get('x')},{pos.get('y')})"
+                    )
+                log.info(
+                    "battlefield change: %d new units appeared: %s",
+                    len(appeared), sorted(appeared),
+                )
+            # Units that disappeared (killed between turns, not by us)
+            vanished = self._last_seen_unit_ids - current_ids
+            if vanished:
+                for uid in sorted(vanished):
+                    side = "friendly" if viewer.value in uid else "enemy"
+                    self._battlefield_alerts.append(
+                        f"⚠ {side} unit eliminated: {uid}"
+                    )
+
+        self._last_seen_unit_ids = current_ids
+
     async def _build_turn_context(self) -> tuple[list[dict], dict | None]:
         """Fetch opponent history since our last turn and tactical digest.
 
@@ -546,6 +593,9 @@ class NetworkedAgent:
         retries) because it drains coach messages that can arrive at
         any time and because the opportunities/threats/win_progress
         lines are useful even on bootstrap turns.
+
+        Also detects battlefield changes (reinforcements, unit deaths
+        between turns) and records alerts for _build_battlefield_alerts.
         """
         new_history: list[dict] = []
         # Only fetch history on a fresh turn (not on a retry — we
@@ -691,6 +741,9 @@ class NetworkedAgent:
             )
             return state
 
+        # Detect battlefield changes: reinforcements, unexpected deaths.
+        self._detect_battlefield_changes(state, viewer)
+
         # Build the per-turn user prompt. First turn is a full
         # bootstrap snapshot; every turn after is a delta — just
         # the opponent's actions since our last turn and a compact
@@ -708,6 +761,18 @@ class NetworkedAgent:
             tactical_summary=tactical_summary,
             locale=self.locale,
         )
+        # Inject battlefield alerts (reinforcements, deaths) into the
+        # prompt so the agent notices significant state changes that
+        # aren't captured by the opponent-action history (e.g. units
+        # spawning via on_turn_start hooks).
+        if self._battlefield_alerts:
+            alerts_block = (
+                "\n\n⚠ BATTLEFIELD ALERT ⚠\n"
+                + "\n".join(self._battlefield_alerts)
+                + "\n\nCall get_state for full updated positions.\n"
+            )
+            user_prompt += alerts_block
+            self._battlefield_alerts = []
         # Lazy-fetch scenario invariants on the first turn. The
         # Anthropic adapter reuses its ClaudeSDKClient across turns
         # so the system prompt is only consumed on turn 1; no point
