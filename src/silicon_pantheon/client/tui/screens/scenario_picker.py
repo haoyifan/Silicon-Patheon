@@ -81,25 +81,16 @@ class ScenarioPicker:
     # ---- async bridge ----
 
     async def prefetch_current(self) -> None:
-        """Called once by the owning screen when the picker is first
-        opened — fetches descriptions for ALL scenarios in parallel
-        so the right-side list can show display_name (e.g. 'Journey
-        to the West') from the very first frame instead of slugs
-        (e.g. 'journey_to_the_west') that flip to display_name only
-        after the user moves the highlight onto them.
+        """Fetch the currently-highlighted scenario's description.
 
-        Load all scenario descriptions so names are ready on first
-        render (no slug-to-title flicker)."""
-        import asyncio as _asyncio
-
-        tasks = []
-        for n in self.scenarios:
-            if n.startswith("🎲"):
-                continue  # special entry, no server data
-            if n not in self._cache and n not in self._in_flight:
-                tasks.append(_asyncio.create_task(self._ensure_loaded(n)))
-        if tasks:
-            await _asyncio.gather(*tasks, return_exceptions=True)
+        Called once when the picker opens, and again on each tick /
+        cursor move. Fetches ONE scenario at a time — the transport
+        lock serializes all call_tool requests, so firing 30 parallel
+        fetches would block the UI for seconds. Instead we load
+        lazily: the highlighted scenario loads immediately, the rest
+        fill in as the user browses (each cursor move triggers
+        _ensure_loaded for the new highlight via tick)."""
+        await self._ensure_loaded(self._current_name())
 
     async def _ensure_loaded(self, name: str) -> None:
         if name.startswith("🎲"):
