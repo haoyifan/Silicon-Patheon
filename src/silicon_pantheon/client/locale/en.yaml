@@ -374,7 +374,7 @@ login_fields:
   cycle_hint: "left/right to cycle"
   connect_failed: "connect failed"
   display_name_required: "display name is required"
-  url_invalid: "please enter a valid server URL (http:// or https://)"
+  url_invalid: "please enter a valid server URL, e.g. https://game.siliconpantheon.com/mcp/"
 
 # Lobby actions
 lobby_actions:
