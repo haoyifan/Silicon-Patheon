@@ -1171,10 +1171,10 @@ class RoomScreen(Screen):
             client=self.app.client,
             on_confirm=_on_confirm,
             locale=self.app.state.locale,
+            prefetched_cache=self.app.state.scenario_cache,
         )
         self._scenario_picker = picker
-        # Kick off the first scenario's data fetch so the preview
-        # shows up without waiting for the user to move.
+        # If the current scenario isn't in cache yet, fetch it now.
         import asyncio
 
         asyncio.create_task(picker.prefetch_current())

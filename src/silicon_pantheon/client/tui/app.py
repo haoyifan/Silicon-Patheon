@@ -123,6 +123,12 @@ class SharedState:
     # Populated when the room screen first fetches the room's scenario
     # so the preview + game-screen legends don't have to refetch.
     scenario_description: dict[str, Any] | None = None
+    # In-memory cache of describe_scenario results, keyed by scenario
+    # slug. Populated by a background task that starts at lobby entry.
+    # The scenario picker reads from this cache instead of hitting the
+    # server per-scenario. Cleared on exit (in-memory only).
+    scenario_cache: dict[str, dict[str, Any]] = field(default_factory=dict)
+    _scenario_prefetch_task: asyncio.Task | None = None
 
 
 class TUIApp:

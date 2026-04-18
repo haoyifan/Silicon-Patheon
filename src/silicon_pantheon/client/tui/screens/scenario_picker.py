@@ -56,6 +56,7 @@ class ScenarioPicker:
         on_confirm: Callable[[str], Awaitable[None]],
         on_cancel: Callable[[], None] = lambda: None,
         locale: str = "en",
+        prefetched_cache: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self.scenarios = scenarios or [current]
         self.on_confirm = on_confirm
@@ -66,7 +67,8 @@ class ScenarioPicker:
             self.scenarios.index(current) if current in self.scenarios else 0
         )
         # Cache of describe_scenario results, keyed by scenario name.
-        self._cache: dict[str, dict[str, Any]] = {}
+        # Seeded from the app-level prefetch cache (populated at login).
+        self._cache: dict[str, dict[str, Any]] = dict(prefetched_cache or {})
         # Pending fetches so we don't hammer the server while renders tick.
         self._in_flight: set[str] = set()
         # Focus rotates Tab → "list" → "map" → "desc" → "list" — the
