@@ -498,29 +498,48 @@ def _read_key_blocking() -> str:
     except termios.error:
         return "q"
 
-    def _read_byte() -> str:
-        """Blocking single-byte read, bypassing Python's TextIOWrapper.
+    def _read_char() -> str:
+        """Blocking single-character read, bypassing Python's TextIOWrapper.
 
-        sys.stdin.read(1) goes through a buffered text wrapper that may
-        slurp the trailing bytes of an escape sequence into Python's
-        internal buffer, after which select() on the kernel fd reports
-        nothing readable and our peek loop gives up. os.read on the
-        raw fd doesn't have that buffer, so each byte is observed
-        exactly when the kernel makes it available.
+        Reads the raw fd one byte at a time and handles multi-byte
+        UTF-8 sequences (Chinese, emoji, etc.) by inspecting the lead
+        byte to determine how many continuation bytes to expect.
         """
         try:
             b = os.read(fd, 1)
         except OSError:
             return ""
-        return b.decode("utf-8", errors="replace") if b else ""
+        if not b:
+            return ""
+        # Determine how many bytes this UTF-8 character needs.
+        lead = b[0]
+        if lead < 0x80:
+            return b.decode("utf-8")  # ASCII
+        if lead < 0xC0:
+            return b.decode("utf-8", errors="replace")  # stray continuation
+        if lead < 0xE0:
+            n_more = 1  # 2-byte char
+        elif lead < 0xF0:
+            n_more = 2  # 3-byte char (CJK, most Chinese)
+        else:
+            n_more = 3  # 4-byte char (emoji, rare CJK)
+        for _ in range(n_more):
+            try:
+                more = os.read(fd, 1)
+            except OSError:
+                break
+            if not more:
+                break
+            b += more
+        return b.decode("utf-8", errors="replace")
 
     def _peek(timeout: float) -> str:
         r, _, _ = select.select([fd], [], [], timeout)
-        return _read_byte() if r else ""
+        return _read_char() if r else ""
 
     try:
         tty.setcbreak(fd)
-        ch = _read_byte()
+        ch = _read_char()
         if not ch:
             return "q"
         if ch == "\x1b":
