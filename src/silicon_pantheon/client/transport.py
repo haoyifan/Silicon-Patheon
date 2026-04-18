@@ -91,39 +91,67 @@ class ServerClient:
             tool_name, self.connection_id, sess_id, ws_id, ws_closed, rs_id,
             {k: v for k, v in kwargs.items()},
         )
+        import asyncio as _aio
+        import time as _time
+        _t0 = _time.monotonic()
+
+        # Watchdog: log a warning if call_tool is still pending after
+        # 15s. Doesn't cancel anything — just makes stalls visible in
+        # the log so we can diagnose SSE transport hangs.
+        async def _watchdog() -> None:
+            await _aio.sleep(15.0)
+            elapsed = _time.monotonic() - _t0
+            log.warning(
+                "call HUNG %s cid=%s pending=%.0fs — "
+                "session.call_tool has not returned. SSE stream may "
+                "have stalled. sess=%s ws_closed=%s",
+                tool_name, self.connection_id, elapsed,
+                id(self._session),
+                getattr(getattr(self._session, "_write_stream", None), "_closed", "?"),
+            )
+        _wd = _aio.create_task(_watchdog())
+
         try:
             result = await self._session.call_tool(tool_name, args)
         except Exception as e:
-            # Re-snapshot stream state at failure time so we can see
-            # whether the close happened between request issue and the
-            # exception raise (e.g. server reset, or our own side
-            # tearing down). Log type explicitly because anyio's
-            # ClosedResourceError vs. EndOfStream vs. transport-level
-            # CancelledError each have different root causes.
             ws2 = getattr(self._session, "_write_stream", None)
             rs2 = getattr(self._session, "_read_stream", None)
             log.error(
-                "call !! %s cid=%s exc_type=%s exc=%r "
+                "call !! %s cid=%s exc_type=%s exc=%r dt=%.1fs "
                 "sess_now=%s ws_now=%s ws_closed_now=%s rs_now=%s",
                 tool_name, self.connection_id, type(e).__name__, e,
+                _time.monotonic() - _t0,
                 id(self._session),
                 id(ws2) if ws2 is not None else None,
                 getattr(ws2, "_closed", "?") if ws2 is not None else "?",
                 id(rs2) if rs2 is not None else None,
             )
             raise
+        finally:
+            _wd.cancel()
+        _dt = _time.monotonic() - _t0
+        if _dt > 5.0:
+            log.warning(
+                "call SLOW %s cid=%s dt=%.1fs",
+                tool_name, self.connection_id, _dt,
+            )
         for block in result.content:
             text = getattr(block, "text", None)
             if text is not None:
                 parsed = json.loads(text)
                 log.log(
                     level,
-                    "call <- %s ok=%s keys=%s",
+                    "call <- %s ok=%s dt=%.2fs keys=%s",
                     tool_name,
                     parsed.get("ok"),
+                    _dt,
                     list(parsed.keys())[:8],
                 )
                 return parsed
+        log.error(
+            "call NO_TEXT_BLOCK %s cid=%s dt=%.1fs content=%r",
+            tool_name, self.connection_id, _dt, result.content,
+        )
         raise RemoteToolError(
             f"tool {tool_name} returned no text block: {result!r}"
         )
