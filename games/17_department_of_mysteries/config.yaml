@@ -56,6 +56,7 @@ board:
 
 terrain_types:
   stone_wall:
+    display_name: Stone Wall
     move_cost: 99
     defense_bonus: 0
     passable: false
@@ -66,6 +67,7 @@ terrain_types:
       cold, and impervious to most spells.
 
   prophecy_shelf:
+    display_name: Prophecy Shelf
     move_cost: 2
     defense_bonus: 1
     glyph: "~"
@@ -73,7 +75,7 @@ terrain_types:
     description: |
       Towering shelves of glass orbs, each containing a recorded
       prophecy. They glow with pale blue light and shatter
-      spectacularly when hit by stray curses.
+      spectacularly when hit by stray curses. +1 DEF, costs 2 to enter.
 
 unit_classes:
   harry:

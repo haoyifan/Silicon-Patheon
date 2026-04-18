@@ -7,6 +7,14 @@ description: |
   在石头走廊和发光球体架之间的迷宫中。他们只需要撑到
   凤凰社赶来。
 
+terrain_types:
+  stone_wall:
+    display_name: "石墙"
+    description: "魔法部最深层的黑色石墙。古老、冰冷，对大多数咒语免疫。"
+  prophecy_shelf:
+    display_name: "预言架"
+    description: "高耸的玻璃球架，每个球中封存一段预言。发出淡蓝色的光，被流弹击中时会壮观地碎裂。+1防御，进入消耗2移动。"
+
 unit_classes:
   harry:
     display_name: 哈利·波特

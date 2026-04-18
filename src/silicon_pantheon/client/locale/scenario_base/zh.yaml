@@ -4,12 +4,16 @@
 
 terrain_types:
   plain:
+    display_name: "平原"
     description: "开阔地形。无任何修正。"
   forest:
+    display_name: "森林"
     description: "密林。占据者+2 DEF；进入消耗2点移动力。"
   mountain:
+    display_name: "山地"
     description: "陡峭地形。+3 DEF / +1 RES；大多数兵种无法进入。"
   fort:
+    display_name: "堡垒"
     description: "堡垒。+3 DEF / +3 RES；每回合开始为己方治疗3 HP；占领敌方堡垒默认获胜。"
 
 unit_classes:

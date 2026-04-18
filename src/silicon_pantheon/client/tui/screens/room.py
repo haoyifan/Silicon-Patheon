@@ -641,10 +641,12 @@ class MapPanel(Panel):
                 break
         line = Text()
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
-        line.append(f"{t('game_map.terrain_label', _lc)}: {terrain}", style="yellow")
-        # Terrain effect summary from the cached scenario bundle.
+        scen = self.screen.app.state.scenario_description or {}
+        terrain_spec = (scen.get("terrain_types") or {}).get(terrain, {})
+        terrain_display = terrain_spec.get("display_name", terrain)
+        line.append(f"{t('game_map.terrain_label', _lc)}: {terrain_display}", style="yellow")
         summary = terrain_effect_summary(
-            self.screen.app.state.scenario_description, terrain, _lc
+            scen, terrain, _lc
         )
         if summary:
             line.append(f" — {summary}", style="dim")

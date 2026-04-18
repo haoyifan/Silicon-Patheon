@@ -52,6 +52,36 @@ log = logging.getLogger("silicon.tui.game")
 # ---- panel: Player (turn / team / agent status) ----
 
 
+import unicodedata
+
+
+def _visual_width(s: str) -> int:
+    """Count display cells: wide (CJK) chars = 2, others = 1."""
+    w = 0
+    for ch in s:
+        w += 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+    return w
+
+
+def _pad_right(s: str, width: int) -> str:
+    """Pad string to `width` display cells (right-pad with spaces)."""
+    vw = _visual_width(s)
+    return s + " " * max(0, width - vw)
+
+
+def _trunc(s: str, width: int) -> str:
+    """Truncate string to at most `width` display cells."""
+    out = []
+    w = 0
+    for ch in s:
+        cw = 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+        if w + cw > width:
+            break
+        out.append(ch)
+        w += cw
+    return "".join(out)
+
+
 def _status_style(status: str) -> str:
     """Color the status cell by how "done" the unit is this turn:
     ready (still to act) = green, moved (partial) = yellow, done
@@ -218,7 +248,7 @@ class PlayerPanel(Panel):
             rows.append(Text(f"{team}:", style=header_style))
             rows.append(
                 Text(
-                    f"  {t('game_player.unit_header', lc):<14}  {t('game_player.hp_header', lc):>7}  {t('game_player.status_header', lc)}",
+                    f"  {_pad_right(t('game_player.unit_header', lc), 14)}  {t('game_player.hp_header', lc):>7}  {t('game_player.status_header', lc)}",
                     style="bold dim",
                 )
             )
@@ -239,7 +269,7 @@ class PlayerPanel(Panel):
                     if is_cursor or is_highlight:
                         row = Text.assemble(
                             ("► ", "bold yellow" if is_cursor else "bold white"),
-                            (f"{name[:14]:<14}", "reverse white"),
+                            (_pad_right(_trunc(name, 14), 14), "reverse white"),
                             ("  ", None),
                             (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                             ("  ", None),
@@ -248,7 +278,7 @@ class PlayerPanel(Panel):
                     else:
                         row = Text.assemble(
                             ("  ", None),
-                            (f"{name[:14]:<14}", "white"),
+                            (_pad_right(_trunc(name, 14), 14), "white"),
                             ("  ", None),
                             (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                             ("  ", None),
@@ -422,9 +452,13 @@ class GameMapPanel(Panel):
         u = unit_at.get((self.cx, self.cy))
         line = Text()
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
-        line.append(f"{t('game_map.terrain_label', lc)}: {terrain}", style="yellow")
+        # Show terrain display_name if available, otherwise the raw slug.
+        scen = self.screen.app.state.scenario_description or {}
+        terrain_spec = (scen.get("terrain_types") or {}).get(terrain, {})
+        terrain_display = terrain_spec.get("display_name", terrain)
+        line.append(f"{t('game_map.terrain_label', lc)}: {terrain_display}", style="yellow")
         summary = terrain_effect_summary(
-            self.screen.app.state.scenario_description, terrain, lc
+            scen, terrain, lc
         )
         if summary:
             line.append(f" — {summary}", style="dim")

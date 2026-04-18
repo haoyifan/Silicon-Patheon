@@ -289,33 +289,43 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         # match starts.
         art_root = path.parent / "art"
         if art_root.is_dir():
-            for class_slug_dir in sorted(art_root.iterdir()):
-                if not class_slug_dir.is_dir():
-                    continue
-                frames: list[str] = []
-                for f in sorted(class_slug_dir.glob("*.txt")):
+            for entry in sorted(art_root.iterdir()):
+                if entry.is_dir():
+                    # Subdirectory layout: art/<class_slug>/frame1.txt
+                    frames: list[str] = []
+                    for f in sorted(entry.glob("*.txt")):
+                        try:
+                            frames.append(
+                                f.read_text(encoding="utf-8").rstrip("\n")
+                            )
+                        except OSError:
+                            continue
+                    if frames:
+                        unit_classes.setdefault(entry.name, {})[
+                            "art_frames"
+                        ] = frames
+                elif entry.suffix == ".txt":
+                    # Flat layout: art/<class_slug>.txt (single frame)
                     try:
-                        frames.append(
-                            f.read_text(encoding="utf-8").rstrip("\n")
-                        )
+                        frame = entry.read_text(encoding="utf-8").rstrip("\n")
                     except OSError:
                         continue
-                if frames:
-                    unit_classes.setdefault(class_slug_dir.name, {})[
-                        "art_frames"
-                    ] = frames
+                    if frame:
+                        unit_classes.setdefault(entry.stem, {})[
+                            "art_frames"
+                        ] = [frame]
 
         # Built-ins carry their baked-in effects so the client can show
         # what "forest" means without having to know engine internals.
         # Scenario overrides win — scenarios may redefine a built-in.
         terrain_types: dict[str, dict] = {
-            "plain": {"move_cost": 1, "defense_bonus": 0, "res_bonus": 0,
+            "plain": {"display_name": "Plain", "move_cost": 1, "defense_bonus": 0, "res_bonus": 0,
                       "description": "Open ground. No modifiers."},
-            "forest": {"move_cost": 2, "defense_bonus": 2, "res_bonus": 0,
+            "forest": {"display_name": "Forest", "move_cost": 2, "defense_bonus": 2, "res_bonus": 0,
                        "description": "Dense woods. +2 DEF for the occupant; costs 2 movement to enter."},
-            "mountain": {"move_cost": 2, "defense_bonus": 3, "res_bonus": 1,
+            "mountain": {"display_name": "Mountain", "move_cost": 2, "defense_bonus": 3, "res_bonus": 1,
                          "description": "Steep terrain. +3 DEF / +1 RES; most classes cannot enter."},
-            "fort": {"move_cost": 1, "defense_bonus": 3, "res_bonus": 3, "heals": 3,
+            "fort": {"display_name": "Fort", "move_cost": 1, "defense_bonus": 3, "res_bonus": 3, "heals": 3,
                      "description": "Fortification. +3 DEF / +3 RES; heals 3 HP to its owning team at turn start; seizing an enemy fort wins the match under default rules."},
         }
         for tname, spec in (cfg.get("terrain_types") or {}).items():

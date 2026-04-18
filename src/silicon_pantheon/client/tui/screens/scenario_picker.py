@@ -282,7 +282,10 @@ class ScenarioPicker:
         terrain = tile_type.get((cx, cy), "plain")
         line = Text()
         line.append(f"({cx}, {cy}) ", style="dim")
-        line.append(f"{t('scenario_pick.terrain_label', self.locale)}: {terrain}", style="yellow")
+        desc = self._current_desc() or {}
+        t_spec = (desc.get("terrain_types") or {}).get(terrain, {})
+        terrain_display = t_spec.get("display_name", terrain)
+        line.append(f"{t('scenario_pick.terrain_label', self.locale)}: {terrain_display}", style="yellow")
         summary = terrain_effect_summary(self._current_desc(), terrain, self.locale)
         if summary:
             line.append(f" — {summary}", style="dim")
