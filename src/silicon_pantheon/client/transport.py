@@ -24,6 +24,12 @@ log = logging.getLogger("silicon.transport")
 
 CLIENT_HEARTBEAT_INTERVAL_S = 10.0
 
+# Hard timeout for call_tool. If the MCP SDK's SSE stream stalls
+# (server closes connection silently, network hiccup, etc.) the
+# call_tool coroutine hangs indefinitely. This timeout ensures we
+# surface the failure rather than wedging the client forever.
+CALL_TOOL_TIMEOUT_S = 30.0
+
 # Tools that are purely noisy (heartbeat / state polls) are logged at
 # DEBUG so the file stays readable; everything else at INFO.
 # IMPORTANT: keep get_state at INFO — it's how we see agents / screens
@@ -91,28 +97,26 @@ class ServerClient:
             tool_name, self.connection_id, sess_id, ws_id, ws_closed, rs_id,
             {k: v for k, v in kwargs.items()},
         )
-        import asyncio as _aio
         import time as _time
         _t0 = _time.monotonic()
 
-        # Watchdog: log a warning if call_tool is still pending after
-        # 15s. Doesn't cancel anything — just makes stalls visible in
-        # the log so we can diagnose SSE transport hangs.
-        async def _watchdog() -> None:
-            await _aio.sleep(15.0)
+        try:
+            result = await asyncio.wait_for(
+                self._session.call_tool(tool_name, args),
+                timeout=CALL_TOOL_TIMEOUT_S,
+            )
+        except asyncio.TimeoutError:
             elapsed = _time.monotonic() - _t0
-            log.warning(
-                "call HUNG %s cid=%s pending=%.0fs — "
-                "session.call_tool has not returned. SSE stream may "
-                "have stalled. sess=%s ws_closed=%s",
+            log.error(
+                "call TIMEOUT %s cid=%s dt=%.1fs — "
+                "session.call_tool did not return within %.0fs. "
+                "SSE stream likely stalled. sess=%s ws_closed=%s",
                 tool_name, self.connection_id, elapsed,
+                CALL_TOOL_TIMEOUT_S,
                 id(self._session),
                 getattr(getattr(self._session, "_write_stream", None), "_closed", "?"),
             )
-        _wd = _aio.create_task(_watchdog())
-
-        try:
-            result = await self._session.call_tool(tool_name, args)
+            raise
         except Exception as e:
             ws2 = getattr(self._session, "_write_stream", None)
             rs2 = getattr(self._session, "_read_stream", None)
@@ -127,8 +131,6 @@ class ServerClient:
                 id(rs2) if rs2 is not None else None,
             )
             raise
-        finally:
-            _wd.cancel()
         _dt = _time.monotonic() - _t0
         if _dt > 5.0:
             log.warning(
