@@ -1330,6 +1330,12 @@ class GameScreen(Screen):
         self.app.state.error_message = ""
         self.state = r.get("result", {})
         self.app.state.last_game_state = self.state
+        log.debug(
+            "refresh_state: active=%s turn=%s status=%s",
+            self.state.get("active_player"),
+            self.state.get("turn"),
+            self.state.get("status"),
+        )
 
         # Update per-unit last-action annotation incrementally from
         # the polled state's last_action field. No get_history call
