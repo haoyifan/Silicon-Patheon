@@ -450,6 +450,7 @@ room_map:
 # 房间界面 — 下拉框/弹窗
 room_modal:
   dropdown_footer: "↑/k 上   ↓/j 下   Enter 选择   Esc 取消"
+  dropdown_footer_tab: "↑/k ↓/j 导航   Tab 切换面板   Enter 选择   Esc 取消"
   confirm_footer: "← / → 选择   Enter 确认   Esc 取消"
 
 # 房间界面 — 单位卡片

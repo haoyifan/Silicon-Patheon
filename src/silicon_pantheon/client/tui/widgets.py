@@ -45,6 +45,9 @@ class Dropdown:
     locale: str = "en"
     # Description scroll offset (lines from top).
     _desc_scroll: int = 0
+    # Focus mode: "list" = j/k selects options, "desc" = j/k scrolls
+    # description. Tab cycles between them when descriptions exist.
+    _focus: str = "list"
 
     def render(self) -> RenderableType:
         lines: list[Text] = []
@@ -52,11 +55,17 @@ class Dropdown:
             marker = "➤ " if i == self.selected_idx else "  "
             style = "bold yellow" if i == self.selected_idx else "white"
             lines.append(Text(f"{marker}{opt}", style=style))
+        list_border = "bright_cyan" if self._focus == "list" else "dim"
         list_panel = RichPanel(
-            Group(*lines), border_style="dim", padding=(0, 1),
+            Group(*lines), border_style=list_border, padding=(0, 1),
+        )
+        has_desc = bool(self.option_descriptions)
+        footer_key = (
+            "room_modal.dropdown_footer_tab" if has_desc
+            else "room_modal.dropdown_footer"
         )
         footer = Text(
-            t("room_modal.dropdown_footer", self.locale), style="dim"
+            t(footer_key, self.locale), style="dim"
         )
         body_parts: list[RenderableType] = [list_panel]
         desc = (self.option_descriptions or {}).get(
@@ -73,21 +82,18 @@ class Dropdown:
             visible = "\n".join(desc_lines[start:end])
             scroll_hint = ""
             if total_lines > max_visible:
-                scroll_hint = f" [{start + 1}-{end}/{total_lines}  u/d scroll]"
+                scroll_hint = f" [{start + 1}-{end}/{total_lines}]"
+            desc_border = "bright_cyan" if self._focus == "desc" else "dim"
             body_parts.append(
                 RichPanel(
                     Text(visible, style="white", no_wrap=False, overflow="fold"),
                     title=self.options[self.selected_idx] + scroll_hint,
-                    border_style="yellow",
+                    border_style=desc_border,
                     padding=(0, 1),
                 )
             )
         body_parts.append(Text(""))
         body_parts.append(footer)
-        # Fixed width (~60 cols) so the modal shape stays stable as
-        # the highlight moves between options with different
-        # description lengths. Vertical height grows to fit wrapped
-        # content; horizontal stays constant.
         return Align.center(
             RichPanel(
                 Group(*body_parts),
@@ -100,31 +106,43 @@ class Dropdown:
         )
 
     async def handle_key(self, key: str) -> bool:
-        # esc / tab / q all close without confirming — Tab in
-        # particular because users reach for it to cycle panels
-        # when they don't realize a modal is open; swallowing it
-        # silently looks like the TUI is frozen.
-        if key in ("esc", "\t", "q"):
+        if key in ("esc", "q"):
             return True
-        if key in ("up", "k"):
-            self.selected_idx = (self.selected_idx - 1) % len(self.options)
-            self._desc_scroll = 0  # reset scroll on option change
-            return False
-        if key in ("down", "j"):
-            self.selected_idx = (self.selected_idx + 1) % len(self.options)
-            self._desc_scroll = 0  # reset scroll on option change
-            return False
-        # Description scroll (u/d or PageUp/PageDown).
-        if key in ("d", "pagedown"):
-            self._desc_scroll += 6
-            return False
-        if key in ("u", "pageup"):
-            self._desc_scroll = max(0, self._desc_scroll - 6)
-            return False
+        # Tab cycles focus between option list and description content
+        # (when descriptions exist). Without descriptions, Tab closes.
+        if key == "\t":
+            if self.option_descriptions:
+                self._focus = "desc" if self._focus == "list" else "list"
+                return False
+            return True  # no descriptions → close
         if key == "enter":
             chosen = self.options[self.selected_idx]
             await self.on_confirm(chosen)
             return True
+
+        # Route j/k/arrows based on focus mode.
+        if self._focus == "list":
+            if key in ("up", "k"):
+                self.selected_idx = (self.selected_idx - 1) % len(self.options)
+                self._desc_scroll = 0
+                return False
+            if key in ("down", "j"):
+                self.selected_idx = (self.selected_idx + 1) % len(self.options)
+                self._desc_scroll = 0
+                return False
+        else:  # focus == "desc"
+            if key in ("down", "j"):
+                self._desc_scroll += 1
+                return False
+            if key in ("up", "k"):
+                self._desc_scroll = max(0, self._desc_scroll - 1)
+                return False
+            if key in ("ctrl-d", "pgdown"):
+                self._desc_scroll += 6
+                return False
+            if key in ("ctrl-u", "pgup"):
+                self._desc_scroll = max(0, self._desc_scroll - 6)
+                return False
         return False
 
 
