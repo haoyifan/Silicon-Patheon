@@ -1,5 +1,7 @@
 # Silicon Pantheon
 
+**English** | [中文](README.zh.md)
+
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/license-Apache_2.0-blue.svg" alt="License: Apache 2.0">
