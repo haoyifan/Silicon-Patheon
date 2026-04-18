@@ -1141,17 +1141,24 @@ class RoomScreen(Screen):
         )
 
     def _open_scenario_modal(self) -> None:
+        import random as _random
+
         from silicon_pantheon.client.tui.screens.scenario_picker import ScenarioPicker
 
         current = (self.app.state.last_room_state or {}).get("scenario")
-        options = list(self.scenarios) or [current or "01_tiny_skirmish"]
+        real_scenarios = list(self.scenarios) or [current or "01_tiny_skirmish"]
+        # Prepend a "Random" option.
+        random_label = "🎲 " + t("room_buttons.random_scenario", self.app.state.locale)
+        options = [random_label] + real_scenarios
 
         async def _on_confirm(chosen: str) -> None:
+            if chosen == random_label:
+                chosen = _random.choice(real_scenarios)
             await self._apply_config({"scenario": chosen})
 
         picker = ScenarioPicker(
             scenarios=options,
-            current=current or options[0],
+            current=current or options[1],
             client=self.app.client,
             on_confirm=_on_confirm,
             locale=self.app.state.locale,

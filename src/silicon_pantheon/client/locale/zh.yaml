@@ -172,6 +172,8 @@ room_buttons:
   change_teams_title: "更换队伍分配"
   change_host_title: "更换主队"
   turn_time_title: "每回合时间限制（秒）"
+  random_scenario: "随机剧本"
+  random_scenario_desc: "确认后将随机选择一个剧本。"
 
 # 房间面板标题
 # 房间头部/状态

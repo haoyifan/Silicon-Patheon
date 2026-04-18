@@ -94,12 +94,16 @@ class ScenarioPicker:
 
         tasks = []
         for n in self.scenarios:
+            if n.startswith("🎲"):
+                continue  # special entry, no server data
             if n not in self._cache and n not in self._in_flight:
                 tasks.append(_asyncio.create_task(self._ensure_loaded(n)))
         if tasks:
             await _asyncio.gather(*tasks, return_exceptions=True)
 
     async def _ensure_loaded(self, name: str) -> None:
+        if name.startswith("🎲"):
+            return  # special entry, no server data
         if name in self._cache or name in self._in_flight or self.client is None:
             return
         self._in_flight.add(name)
@@ -182,7 +186,12 @@ class ScenarioPicker:
             # "journey_to_the_west" before the network roundtrip
             # completes — no jarring flip when fetches finish.
             desc = self._cache.get(name)
-            display = desc.get("name") if desc else _slug_to_title(name)
+            if desc:
+                display = desc.get("name") or _slug_to_title(name)
+            elif name.startswith("🎲"):
+                display = name  # special entry, use as-is
+            else:
+                display = _slug_to_title(name)
             style = "bold yellow" if is_selected else "white"
             lines.append(Text(f"  {marker} {display}", style=style))
         return RichPanel(
@@ -305,9 +314,11 @@ class ScenarioPicker:
         name = self._current_name()
         focused = self.focus == "desc"
         if desc is None:
+            label = name if name.startswith("🎲") else _slug_to_title(name)
+            msg = t("room_buttons.random_scenario_desc", self.locale) if name.startswith("🎲") else t("scenario_pick.loading", self.locale)
             return RichPanel(
-                Text(t("scenario_pick.loading", self.locale), style="dim italic"),
-                title=_slug_to_title(name),
+                Text(msg, style="dim italic"),
+                title=label,
                 border_style=border_style(focused),
                 padding=(0, 1),
             )
