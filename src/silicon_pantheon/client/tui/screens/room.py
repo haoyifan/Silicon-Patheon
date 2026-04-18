@@ -449,7 +449,7 @@ class ActionsPanel(Panel):
                     Button(
                         label=t("room_buttons.change_scenario", lc),
                         action="change_scenario",
-                        value=rs.get("scenario", "?"),
+                        value=("🎲 " + t("room_buttons.random_scenario", lc)) if self.screen._random_scenario_pool else rs.get("scenario", "?"),
                         enabled=editable and bool(self.screen.scenarios),
                     ),
                     Button(
@@ -734,6 +734,9 @@ class RoomScreen(Screen):
         # — see screens/scenario_picker.py for layout). Only the host
         # opens this.
         self._scenario_picker = None
+        # When the host picks "Random Scenario", the pool is stored
+        # here. The actual scenario is resolved at ready-up time.
+        self._random_scenario_pool: list[str] | None = None
         # Pending screen transition queued from a ConfirmModal callback.
         self._pending_transition: Screen | None = None
 
@@ -769,6 +772,8 @@ class RoomScreen(Screen):
         rs = self.app.state.last_room_state or {}
         room_id = rs.get("room_id") or self.app.state.room_id or "?"
         scenario = rs.get("scenario", "?")
+        if self._random_scenario_pool:
+            scenario = "🎲 " + t("room_buttons.random_scenario", self.app.state.locale)
         status = rs.get("status", "?")
         countdown = rs.get("autostart_in_s")
 
@@ -1153,7 +1158,11 @@ class RoomScreen(Screen):
 
         async def _on_confirm(chosen: str) -> None:
             if chosen == random_label:
-                chosen = _random.choice(real_scenarios)
+                # Don't resolve yet — store the flag and resolve at
+                # ready-up time so the opponent doesn't see the pick.
+                self._random_scenario_pool = real_scenarios
+                return
+            self._random_scenario_pool = None
             await self._apply_config({"scenario": chosen})
 
         picker = ScenarioPicker(
@@ -1378,6 +1387,8 @@ class RoomScreen(Screen):
         await self._refresh_state()
 
     async def _toggle_ready(self) -> None:
+        import random as _random
+
         if self.app.client is None:
             return
         rs = self.app.state.last_room_state or {}
@@ -1385,6 +1396,15 @@ class RoomScreen(Screen):
         seats = rs.get("seats", {})
         my_seat = seats.get(slot or "", {})
         currently_ready = bool(my_seat.get("ready"))
+
+        # Resolve random scenario just before readying up so the
+        # opponent doesn't see the pick until the game starts.
+        if not currently_ready and self._random_scenario_pool:
+            chosen = _random.choice(self._random_scenario_pool)
+            self._random_scenario_pool = None
+            log.info("toggle_ready: resolving random scenario → %s", chosen)
+            await self._apply_config({"scenario": chosen})
+
         log.info(
             "toggle_ready: currently=%s → requesting=%s cid=%s slot=%s status=%s",
             currently_ready, not currently_ready,
