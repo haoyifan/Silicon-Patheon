@@ -666,6 +666,15 @@ class ReasoningPanel(Panel):
         self._last_total_lines = total
         lc = self.screen.app.state.locale
         if total == 0:
+            # Check tutorial BEFORE returning the empty-state panel.
+            tut = getattr(self.screen, '_tutorial', None)
+            if tut and tut.targets_panel("reasoning"):
+                return RichPanel(
+                    tut.render_inline(),
+                    title=self.title,
+                    border_style="bright_yellow",
+                    padding=(0, 1),
+                )
             return RichPanel(
                 Text(t("game_reasoning.no_reasoning", lc), style="dim italic"),
                 title=self.title,
