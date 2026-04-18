@@ -73,10 +73,10 @@ board:
     - {x: 6, y: 9, type: palace}
     - {x: 7, y: 9, type: palace}
   forts:
-    - {x: 6, y: 8, team: red}
-    - {x: 7, y: 8, team: red}
-    - {x: 6, y: 9, team: red}
-    - {x: 7, y: 9, team: red}
+    - {x: 6, y: 8, owner: red}
+    - {x: 7, y: 8, owner: red}
+    - {x: 6, y: 9, owner: red}
+    - {x: 7, y: 9, owner: red}
 
 terrain_types:
   desert:

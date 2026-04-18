@@ -370,10 +370,14 @@ def build_state(cfg: dict) -> GameState:
         tiles[pos] = _make_tile(pos, str(t["type"]))
 
     # Forts overlay: they become FORT tiles with a fort_owner.
+    # Accept both "owner" and "team" field names for compatibility.
+    # owner: null → neutral fort (no team heals, capturable).
     for f in board_cfg.get("forts", []) or []:
         pos = Pos(int(f["x"]), int(f["y"]))
+        fort_owner_str = f.get("owner", f.get("team"))
+        fort_owner = Team(fort_owner_str) if fort_owner_str else None
         tiles[pos] = _make_tile(
-            pos, TerrainType.FORT.value, fort_owner=Team(f["owner"])
+            pos, TerrainType.FORT.value, fort_owner=fort_owner
         )
 
     board = Board(width=width, height=height, tiles=tiles)

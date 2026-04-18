@@ -59,10 +59,10 @@ board:
     - {x: 10, y: 10, type: castle_ruins}
     - {x: 11, y: 10, type: castle_ruins}
   forts:
-    - {x: 0, y: 10, team: blue}
-    - {x: 1, y: 10, team: blue}
-    - {x: 0, y: 11, team: blue}
-    - {x: 1, y: 11, team: blue}
+    - {x: 0, y: 10, owner: blue}
+    - {x: 1, y: 10, owner: blue}
+    - {x: 0, y: 11, owner: blue}
+    - {x: 1, y: 11, owner: blue}
     - {x: 10, y: 0, team: red}
     - {x: 11, y: 0, team: red}
     - {x: 10, y: 1, team: red}

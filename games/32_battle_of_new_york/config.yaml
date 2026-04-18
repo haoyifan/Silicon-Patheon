@@ -50,8 +50,8 @@ board:
     - {x: 5, y: 0, type: stark_tower}
     - {x: 6, y: 0, type: stark_tower}
   forts:
-    - {x: 5, y: 0, team: blue}
-    - {x: 6, y: 0, team: blue}
+    - {x: 5, y: 0, owner: blue}
+    - {x: 6, y: 0, owner: blue}
 
 terrain_types:
   building:
