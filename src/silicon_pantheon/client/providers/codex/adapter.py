@@ -70,7 +70,7 @@ USER_AGENT = "codex_cli_rs/0.0.0 silicon-pantheon"
 # Default model when the caller doesn't override. Codex models live
 # in their own namespace; we pick a reasonable default that's known
 # to support tool calling.
-DEFAULT_MODEL = "gpt-5.1-codex-mini"
+DEFAULT_MODEL = "gpt-5.2"
 
 
 class CodexAdapter:
