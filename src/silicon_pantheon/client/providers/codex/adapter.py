@@ -50,7 +50,6 @@ from .responses_api import (
     function_call_output_to_input_item,
     function_call_to_input_item,
     parse_response_output,
-    system_to_input_item,
     to_responses_tool,
     user_to_input_item,
 )
@@ -69,8 +68,9 @@ USER_AGENT = "codex_cli_rs/0.0.0 silicon-pantheon"
 
 # Default model when the caller doesn't override. Codex models live
 # in their own namespace; we pick a reasonable default that's known
-# to support tool calling.
-DEFAULT_MODEL = "gpt-5.2"
+# to support tool calling. Model ids track the OpenClaw catalog —
+# update when upstream ships new codex-tuned models.
+DEFAULT_MODEL = "gpt-5.4"
 
 
 class CodexAdapter:
@@ -95,6 +95,11 @@ class CodexAdapter:
         self._initialized = False
         # Per-turn correction counter (mirrors openai.py).
         self._corrections_this_turn: int = 0
+        # Guards against retry bloat: when agent_bridge retries
+        # play_turn after a crash, we must not append the same user
+        # prompt again. We snapshot len(_input) before appending so
+        # a retry can roll back.
+        self._pre_turn_input_len: int = 0
 
     # ---- transport ------------------------------------------------------
 
@@ -166,13 +171,35 @@ class CodexAdapter:
                 )
                 raise classify(err) from err
 
-            # Parse response. With stream=true the body is SSE events;
-            # collect the 'response.completed' event for the output.
+            # We always send stream=true, so always try SSE parsing
+            # first. The content-type can vary (text/event-stream,
+            # text/plain, application/json with SSE body, etc.) — don't
+            # rely on it for dispatch.
+            raw = resp.text
             content_type = resp.headers.get("content-type", "")
-            if "event-stream" in content_type or "text/" in content_type:
-                return self._parse_sse_body(resp.text)
-            # Non-streaming fallback (tests / future API changes).
-            return resp.json()
+            log.debug(
+                "Codex response: status=%d content_type=%s body_bytes=%d",
+                resp.status_code, content_type, len(raw),
+            )
+
+            # Try SSE parse first (handles data: lines).
+            if "data: " in raw:
+                return self._parse_sse_body(raw)
+
+            # Fallback: plain JSON (tests, future API changes).
+            if raw.strip():
+                try:
+                    return resp.json()
+                except Exception:
+                    log.warning(
+                        "Codex response not SSE and not valid JSON "
+                        "(content_type=%s, body_head=%s)",
+                        content_type, raw[:200],
+                    )
+            # Empty body — return empty output so the caller exits
+            # gracefully instead of crashing.
+            log.warning("Codex response body is empty")
+            return {"output": []}
 
         raise classify(RuntimeError("Codex POST failed after 401-retry"))
 
@@ -190,10 +217,6 @@ class CodexAdapter:
 
         Responses-API item types and how we handle each:
 
-          - message(role=developer) — system prompt. Keep the FIRST
-            one verbatim (canonical system prompt); drop subsequent
-            ones (those are per-turn corrective nudges from earlier
-            turns, same as openai.py's corrective system messages).
           - message(role=user) — user turn prompt. Truncate .content
             text over _USER_CONTENT_CAP chars — catches the turn-1
             bootstrap snapshot while letting small deltas pass through.
@@ -208,15 +231,13 @@ class CodexAdapter:
             signal. The model's final decisions are already captured
             in the function_call items that followed.
 
-        Invalidates the provider's prompt cache from the first
-        rewritten item onward (same tradeoff as openai.py). See TODO
-        for a cache-friendlier pass.
+        Note: system prompt lives in the top-level `instructions`
+        field, not in _input — no developer messages to handle here.
         """
         if len(self._input) <= 1:
             return
 
         compacted: list[dict] = []
-        dev_kept = 0
         for item in self._input:
             if not isinstance(item, dict):
                 compacted.append(item)
@@ -225,12 +246,6 @@ class CodexAdapter:
 
             if t == "message":
                 role = item.get("role")
-                if role == "developer":
-                    dev_kept += 1
-                    if dev_kept == 1:
-                        compacted.append(item)
-                    # Drop subsequent developer messages.
-                    continue
 
                 # user / assistant — truncate their text content.
                 cap = (
@@ -324,6 +339,13 @@ class CodexAdapter:
                     "codex compacted: %d→%d est_tokens (%d items)",
                     before, after, len(self._input),
                 )
+
+        # Retry-bloat guard: if agent_bridge retries play_turn after a
+        # crash, the previous call's user prompt is still in _input.
+        # Roll back to pre-turn state before appending the new prompt.
+        if len(self._input) > self._pre_turn_input_len:
+            self._input = self._input[:self._pre_turn_input_len]
+        self._pre_turn_input_len = len(self._input)
         self._input.append(user_to_input_item(user_prompt))
         self._corrections_this_turn = 0
 
@@ -476,6 +498,10 @@ class CodexAdapter:
                     )
                 )
 
+        # Turn completed (or exited via budget/token-limit). Snapshot
+        # the input length so a retry won't re-append the user prompt.
+        self._pre_turn_input_len = len(self._input)
+
     @staticmethod
     def _parse_sse_body(text: str) -> dict:
         """Extract the response from an SSE-formatted body."""
@@ -573,12 +599,10 @@ class CodexAdapter:
 
         body = {
             "model": self.model,
-            "input": [
-                system_to_input_item(
-                    "You are a tactical post-mortem writer. Return JSON only."
-                ),
-                user_to_input_item(prompt),
-            ],
+            "instructions": (
+                "You are a tactical post-mortem writer. Return JSON only."
+            ),
+            "input": [user_to_input_item(prompt)],
             "store": False,
             "stream": True,
         }
