@@ -1452,9 +1452,14 @@ class RoomScreen(Screen):
             self.app.state.error_message = f"update_room_config failed: {e}"
             return
         if not r.get("ok"):
-            self.app.state.error_message = (r.get("error") or {}).get(
+            err_msg = (r.get("error") or {}).get(
                 "message", "update_room_config rejected"
             )
+            log.warning(
+                "_apply_config rejected: fields=%s slot=%s err=%s",
+                fields, self.app.state.slot, err_msg,
+            )
+            self.app.state.error_message = err_msg
             return
         self.app.state.error_message = ""
         if "scenario" in fields:
