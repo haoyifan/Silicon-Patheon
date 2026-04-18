@@ -419,10 +419,24 @@ class GameMapPanel(Panel):
                 in_move_range = (x, y) in self.screen.range_move_tiles
                 in_atk_range = (x, y) in self.screen.range_attack_tiles
 
+                # Combat highlight: attacker (yellow bg), target (magenta bg).
+                is_combat_attacker = (
+                    u is not None
+                    and u.get("id") == self.screen._combat_attacker_id
+                )
+                is_combat_target = (
+                    u is not None
+                    and u.get("id") == self.screen._combat_target_id
+                )
+
                 if is_cursor:
                     text.append(f"[{g}]", style=f"reverse {st}")
                 elif is_highlight:
                     text.append(f"({g})", style=f"bold underline {st}")
+                elif is_combat_attacker:
+                    text.append(f">{g}<", style=f"bold on yellow {st}")
+                elif is_combat_target:
+                    text.append(f"*{g}*", style=f"bold on magenta {st}")
                 elif in_move_range:
                     text.append(f" {g} ", style=f"on dark_blue {st}")
                 elif in_atk_range:
@@ -849,6 +863,11 @@ class GameScreen(Screen):
         self.range_overlay_unit: str | None = None
         self.range_move_tiles: set[tuple[int, int]] = set()
         self.range_attack_tiles: set[tuple[int, int]] = set()
+        # Combat highlight: when an attack happens, briefly highlight
+        # the attacker (yellow bg) and target (magenta bg) on the map.
+        # Cleared when the next action arrives or after a few polls.
+        self._combat_attacker_id: str | None = None
+        self._combat_target_id: str | None = None
         # Per-unit last-action cache. Populated from get_history at
         # turn boundaries. Maps unit_id → compact one-line description
         # like "moved (3,2)→(5,4)" or "attacked u_r_k1 dealt 8 dmg".
@@ -1366,6 +1385,10 @@ class GameScreen(Screen):
                             del self.unit_last_actions[uid]
         if la is not None and la is not self._last_action_seen:
             self._last_action_seen = la
+            # Clear combat highlights on every new action; set them
+            # below only for attack actions.
+            self._combat_attacker_id = None
+            self._combat_target_id = None
             uid = la.get("unit_id") or la.get("healer_id")
             if uid:
                 lc = self.app.state.locale
@@ -1393,6 +1416,9 @@ class GameScreen(Screen):
                         .replace("{dmg}", str(dmg))
                         + killed
                     )
+                    # Highlight attacker and target on the map.
+                    self._combat_attacker_id = uid
+                    self._combat_target_id = tid
                 elif la_type == "heal":
                     tid = la.get("target_id", "?")
                     amt = la.get("heal_amount", la.get("healed", "?"))
