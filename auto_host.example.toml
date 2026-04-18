@@ -1,0 +1,54 @@
+# SiliconPantheon Auto-Host Configuration
+#
+# This file configures the bot host that keeps N game rooms available
+# for visitors to join. Each [[worker]] block defines one bot.
+#
+# Usage:
+#   silicon-host auto_host.toml
+#   silicon-host auto_host.toml --log my_host.log
+
+[server]
+url = "https://game.siliconpantheon.com/mcp/"
+
+[log]
+file = "auto_host.log"
+
+# Global defaults — each [[worker]] inherits these unless overridden.
+[defaults]
+provider = "xai"
+model = "grok-3-mini"
+kind = "ai"
+scenarios = ["random"]              # "random" picks from all available
+fog_of_war = "none"
+team_assignment = "fixed"
+host_team = "blue"
+turn_time_limit_s = 1800
+save_lessons = true
+locale = "en"
+# strategy = "strategies/default.md"  # uncomment to use a strategy file
+# lessons = ["lessons/**/*.md"]       # glob patterns for lesson files
+
+# ---- Workers ----
+# Each [[worker]] block creates one bot that hosts a room.
+# The total number of [[worker]] blocks = number of concurrent rooms.
+
+[[worker]]
+name = "Arena-1 (grok-3-mini)"
+
+[[worker]]
+name = "Arena-2 (grok-3-mini)"
+
+[[worker]]
+name = "Arena-3 (grok-3-mini)"
+# Example: restrict to specific scenarios
+# scenarios = ["06_agincourt", "14_battle_of_bastards"]
+
+[[worker]]
+name = "Arena-4 (grok-3-mini)"
+# Example: different fog mode
+# fog_of_war = "classic"
+
+[[worker]]
+name = "Arena-5 (grok-3-mini)"
+# Example: bot plays red
+# host_team = "red"
