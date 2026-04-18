@@ -56,7 +56,7 @@ TOKEN_URL = "https://auth.openai.com/oauth/token"
 SCOPES = "openid profile email offline_access"
 # Redirect target the codex CLI registers. Must match what's
 # whitelisted server-side; localhost ports vary across runs.
-REDIRECT_HOST = "127.0.0.1"
+REDIRECT_HOST = "localhost"
 REDIRECT_PORT_DEFAULT = 1455  # codex CLI's default; matches what auth.openai.com expects
 REDIRECT_PATH = "/auth/callback"
 
