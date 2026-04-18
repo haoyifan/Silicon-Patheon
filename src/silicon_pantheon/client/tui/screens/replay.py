@@ -349,10 +349,26 @@ class ReplayScreen(Screen):
     # ---- GameScreen duck-type methods ----
 
     def open_unit_card(self, unit: dict[str, Any]) -> None:
+        gs = self.state or {}
+        units = [u for u in (gs.get("units") or []) if u.get("alive", u.get("hp", 0) > 0)]
+        units.sort(
+            key=lambda u: (
+                int((u.get("pos") or {}).get("y", 0)),
+                int((u.get("pos") or {}).get("x", 0)),
+            )
+        )
+        try:
+            idx = units.index(unit)
+        except ValueError:
+            idx = 0
+            units = [unit] + units
+        unit_classes = (
+            self.app.state.scenario_description or {}
+        ).get("unit_classes") or {}
         self.unit_card = UnitCard(
-            unit,
-            self.app.state.scenario_description,
-            self.app.state.locale,
+            units=units, index=idx,
+            unit_classes=unit_classes,
+            locale=self.app.state.locale,
         )
 
     def _clear_range_overlay(self) -> None:
