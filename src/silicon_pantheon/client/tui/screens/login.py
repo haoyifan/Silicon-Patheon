@@ -159,6 +159,48 @@ class LoginScreen(Screen):
         return ProviderAuthScreen(self.app)
 
 
+async def _validate_url(url: str) -> None:
+    """Fast pre-flight check: probe the URL before attempting the full
+    MCP handshake. Catches DNS errors, wrong ports, and non-MCP servers
+    in ~1s instead of hanging for 10s.
+
+    MCP servers respond to GET with 405 Method Not Allowed (they only
+    accept POST). A connection error or HTML response means the URL
+    is wrong."""
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(url)
+            # MCP endpoints return 405 on GET — that's correct.
+            if r.status_code == 405:
+                return  # looks like an MCP server
+            # 200 with HTML = web page, not MCP
+            ct = r.headers.get("content-type", "")
+            if "html" in ct:
+                raise ConnectionError(
+                    f"URL returned a web page, not an MCP server. "
+                    f"Expected format: http://host:port/mcp/"
+                )
+            # Other 2xx/3xx — might be OK, let MCP handshake decide
+            return
+    except httpx.ConnectError as e:
+        raise ConnectionError(
+            f"cannot connect to {url} — check host and port. "
+            f"Expected format: http://host:port/mcp/"
+        ) from e
+    except httpx.ConnectTimeout:
+        raise ConnectionError(
+            f"connection timed out — server not responding. "
+            f"Expected format: http://host:port/mcp/"
+        )
+    except ConnectionError:
+        raise
+    except Exception:
+        # Other errors (SSL, etc.) — let MCP handshake handle it
+        return
+
+
 async def _connect_and_declare(app: TUIApp) -> None:
     """Open the ServerClient context, call set_player_metadata, start
     heartbeat. The client is retained on the app for later screens."""
@@ -166,19 +208,20 @@ async def _connect_and_declare(app: TUIApp) -> None:
 
     from silicon_pantheon.client.transport import ServerClient
 
+    # Fast pre-flight: catch bad URLs in ~1s instead of hanging.
+    await _validate_url(app.state.server_url)
+
     # We need the ServerClient's context to stay open for the whole app
     # lifetime. The `ServerClient.connect` classmethod is an async ctx
     # manager that opens the SSE connection; we enter it manually and
     # rely on TUIApp.run to clean up on exit.
-    #
-    # Timeout the connection attempt — streamablehttp_client hangs
-    # forever if the URL is unreachable or not an MCP server.
     ctx = ServerClient.connect(app.state.server_url)
     try:
         client = await _aio.wait_for(ctx.__aenter__(), timeout=10.0)
     except _aio.TimeoutError:
         raise ConnectionError(
-            "connection timed out after 10s — check the server URL"
+            "MCP handshake timed out after 10s — server may not "
+            "support MCP. Expected format: http://host:port/mcp/"
         )
     app.client = client
 
