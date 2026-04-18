@@ -215,23 +215,21 @@ class LobbyScreen(Screen):
         rooms = self.app.state.last_rooms
         if not rooms or self.app.client is None:
             return None
-        room_id = rooms[self._selected].get("room_id")
+        room = rooms[self._selected]
+        room_id = room.get("room_id")
         if not room_id:
             return None
-        try:
-            r = await self.app.client.call("preview_room", room_id=room_id)
-        except Exception as e:
-            self.app.state.error_message = f"preview_room failed: {e}"
-            return None
-        if not r.get("ok"):
-            self.app.state.error_message = (r.get("error") or {}).get("message", "preview rejected")
-            return None
-        # Stash preview on state for a (future) preview screen; for now
-        # render a concise banner on the lobby.
-        room = r.get("room", {})
-        preview = room.get("scenario_preview", {})
-        self.app.state.status_message = (
-            f"preview {room_id[:8]}: {preview.get('width','?')}x{preview.get('height','?')} "
-            f"units={len(preview.get('units', []))}"
-        )
-        return None
+        scenario = room.get("scenario", "")
+        # Fetch the full scenario description for the preview.
+        desc: dict | None = None
+        if scenario:
+            try:
+                r = await self.app.client.call("describe_scenario", name=scenario)
+                if r.get("ok"):
+                    from silicon_pantheon.client.locale.scenario import localize_scenario
+                    r["scenario_slug"] = scenario
+                    desc = localize_scenario(r, self.app.state.locale)
+            except Exception:
+                pass
+        from silicon_pantheon.client.tui.screens.room_preview import RoomPreviewScreen
+        return RoomPreviewScreen(self.app, room_data=room, scenario_desc=desc)
