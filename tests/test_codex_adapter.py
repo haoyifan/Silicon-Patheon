@@ -320,16 +320,41 @@ async def test_request_body_uses_responses_api_shape(stub_creds, monkeypatch):
         "parameters": {"type": "object",
                        "properties": {"x": {"type": "integer"}}},
     }]
-    # Reasoning with high effort is requested.
-    assert body["reasoning"] == {"effort": "high", "summary": "auto"}
-    # Encrypted reasoning content must be included so the model
-    # can reference its own chain-of-thought across iterations.
-    assert body["include"] == ["reasoning.encrypted_content"]
+    # Reasoning summary is requested (no effort without -reasoning-high).
+    assert body["reasoning"] == {"summary": "auto"}
+    assert "include" not in body
     # parallel_tool_calls is True — selective Layer 2 is what enforces
     # the one-mutation rule while allowing batched reads. Pinning
     # explicitly so a future accidental flip to False doesn't silently
     # re-introduce the "too-slow-to-play" regression.
     assert body["parallel_tool_calls"] is True
+
+
+# ---- reasoning-high model variant ------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_reasoning_high_model_sets_effort_and_include(stub_creds, monkeypatch):
+    """The -reasoning-high suffix must set effort=high and include
+    encrypted reasoning content. The API model name must strip the
+    suffix."""
+    captured: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(json.loads(request.content))
+        return _sse_response([])
+
+    _patch_async_client(monkeypatch, httpx.MockTransport(handler))
+    adapter = CodexAdapter(model="gpt-5.4-reasoning-high", credentials=stub_creds)
+    await adapter.play_turn(
+        system_prompt="sys", user_prompt="go",
+        tools=[], tool_dispatcher=None, on_thought=None,
+    )
+    await adapter.close()
+    body = captured[0]
+    assert body["model"] == "gpt-5.4"
+    assert body["reasoning"] == {"effort": "high", "summary": "auto"}
+    assert body["include"] == ["reasoning.encrypted_content"]
 
 
 # ---- 401 → refresh → retry path --------------------------------------

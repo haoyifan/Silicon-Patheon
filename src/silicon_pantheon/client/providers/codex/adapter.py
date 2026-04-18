@@ -66,11 +66,20 @@ RESPONSES_ENDPOINT = "https://chatgpt.com/backend-api/codex/responses"
 # the version string is harmless.
 USER_AGENT = "codex_cli_rs/0.0.0 silicon-pantheon"
 
-# Default model when the caller doesn't override. The codex backend's
-# /codex/models endpoint returns which models are available; as of
-# 2026-04 that's gpt-5.2. OpenClaw's catalog lists gpt-5.4 but those
-# are forward-compat entries that may not be live yet.
-DEFAULT_MODEL = "gpt-5.2"
+# Default model when the caller doesn't override.
+DEFAULT_MODEL = "gpt-5.4"
+
+# Suffix convention: "gpt-5.4-reasoning-high" → api_model="gpt-5.4",
+# reasoning_effort="high". Without the suffix, reasoning effort is
+# omitted (API default).
+_REASONING_SUFFIX = "-reasoning-high"
+
+
+def _parse_model(model: str) -> tuple[str, str | None]:
+    """Split a model ID into (api_model, reasoning_effort)."""
+    if model.endswith(_REASONING_SUFFIX):
+        return model[: -len(_REASONING_SUFFIX)], "high"
+    return model, None
 
 
 class CodexAdapter:
@@ -83,7 +92,8 @@ class CodexAdapter:
         max_iterations_per_turn: int = 20,
         credentials: CodexCredentials | None = None,
     ):
-        self.model = model
+        self.model = model  # full ID including suffix (for display/logging)
+        self._api_model, self._reasoning_effort = _parse_model(model)
         self.max_iterations = max_iterations_per_turn
         self._credentials = credentials  # may be None; lazy-loaded on first call
         self._client: httpx.AsyncClient | None = None
@@ -563,23 +573,25 @@ class CodexAdapter:
 
     def _build_request_body(self, tools: list[dict]) -> dict:
         body: dict = {
-            "model": self.model,
+            "model": self._api_model,
             "input": self._input,
             "tools": tools,
             "tool_choice": "auto",
             "parallel_tool_calls": True,
             "store": False,
             "stream": True,
-            # "effort": "high" allocates extended reasoning tokens.
-            # "summary": "auto" gives us a readable digest for the TUI.
-            # Without effort=high the model skips multi-step planning
-            # and defaults to single-unit-then-end-turn patterns.
-            "reasoning": {"effort": "high", "summary": "auto"},
-            # Required for the model to actually produce reasoning
-            # content (encrypted) that it can reference across turns.
-            # Without this, reasoning tokens aren't allocated.
-            "include": ["reasoning.encrypted_content"],
         }
+        # Reasoning config: always request summaries for the TUI.
+        # When effort is "high" (user chose the reasoning-high model
+        # variant), the model spends extended tokens on chain-of-thought
+        # planning — critical for multi-unit tactical turns.
+        reasoning: dict = {"summary": "auto"}
+        if self._reasoning_effort:
+            reasoning["effort"] = self._reasoning_effort
+            # Encrypted reasoning content lets the model reference its
+            # own chain-of-thought across iterations within a turn.
+            body["include"] = ["reasoning.encrypted_content"]
+        body["reasoning"] = reasoning
         # The Codex Responses API requires `instructions` (the system
         # prompt) as a top-level field. Extract it from the first
         # developer message in _input.
@@ -639,7 +651,7 @@ class CodexAdapter:
         )
 
         body = {
-            "model": self.model,
+            "model": self._api_model,
             "instructions": (
                 "You are a tactical post-mortem writer. Return JSON only."
             ),
