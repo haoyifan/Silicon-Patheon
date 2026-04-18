@@ -35,7 +35,15 @@ class PostMatchScreen(Screen):
 
     async def on_enter(self, app: TUIApp) -> None:
         # Compute match stats from history before the agent closes.
-        await self._compute_stats(app)
+        # Wrapped in try/except so a stats failure never prevents
+        # the lesson summary from running.
+        try:
+            await self._compute_stats(app)
+        except Exception:
+            import logging as _logging
+            _logging.getLogger("silicon.tui.post_match").exception(
+                "_compute_stats failed — stats will be empty"
+            )
 
         # Kick off a background summary if an agent is attached.
         if app.state.agent is None:
@@ -51,6 +59,10 @@ class PostMatchScreen(Screen):
             try:
                 lesson = await app.state.agent.summarize_match(viewer)
             except Exception:
+                import logging as _logging
+                _logging.getLogger("silicon.tui.post_match").exception(
+                    "summarize_match raised — lesson will not be saved"
+                )
                 self._summary_state = "failed"
                 return
             finally:
