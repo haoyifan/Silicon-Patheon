@@ -271,16 +271,24 @@ async def _validate_url(url: str) -> None:
                 try:
                     body = r.json()
                     if body.get("server") == "silicon-pantheon":
+                        # Server confirmed. Now check that the MCP path
+                        # is correct — the server expects /mcp/ (or /mcp).
+                        mcp_path = parsed.path.rstrip("/")
+                        if mcp_path and mcp_path != "/mcp":
+                            raise ConnectionError(
+                                f"Server found, but path '{parsed.path}' "
+                                f"is wrong. Use: {parsed.scheme}://"
+                                f"{parsed.netloc}/mcp/"
+                            )
                         return  # confirmed Silicon Pantheon server
+                except ConnectionError:
+                    raise
                 except Exception:
                     pass
-            # /health not found or returned unexpected content.
-            # Could be an older server without /health, or a wrong
-            # host entirely. Let the MCP handshake decide — don't
-            # reject here since the server might just be pre-update.
+            # /health not found or unexpected content — older server
+            # without the endpoint. Let MCP handshake decide.
             return
     except httpx.ConnectError as e:
-        # Connection refused / DNS failure = definitely wrong URL.
         raise ConnectionError(
             f"Cannot connect — check host and port. {_fmt}"
         ) from e
@@ -288,6 +296,8 @@ async def _validate_url(url: str) -> None:
         raise ConnectionError(
             f"Connection timed out. {_fmt}"
         )
+    except ConnectionError:
+        raise
     except Exception:
         return
 
