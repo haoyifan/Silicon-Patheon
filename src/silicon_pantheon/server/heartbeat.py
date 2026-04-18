@@ -69,14 +69,25 @@ def run_sweep_once(app: App, now: float | None = None) -> None:
         if conn is None:
             continue
         idle_heartbeat = _since_heartbeat(conn, now)
-        # For IN_GAME connections we're more interested in actual
-        # game activity than the noise-level heartbeat ping. A client
-        # whose tick loop has crashed but whose heartbeat task is
-        # still alive will look healthy via heartbeat alone — the
-        # opponent waits forever. Use the more informative timer
-        # for IN_GAME silence detection.
+        # For IN_GAME connections we prefer game-activity silence as
+        # the liveness signal (catches a crashed tick loop whose
+        # heartbeat task is still alive). BUT once the game is over
+        # (FINISHED), there won't be any more game activity — the
+        # client sits on PostMatchScreen reading the replay / waiting
+        # for lesson summary. In that case, fall back to heartbeat
+        # so the connection isn't evicted while the user is still
+        # connected.
         if conn.state == ConnectionState.IN_GAME:
-            idle = _since_game_activity(conn, now)
+            game_idle = _since_game_activity(conn, now)
+            # Check if the game is actually finished — if so, the
+            # heartbeat is the only liveness signal we have.
+            info = app.conn_to_room.get(cid)
+            room = app.rooms.get(info[0]) if info else None
+            from silicon_pantheon.server.rooms import RoomStatus
+            game_finished = (
+                room is not None and room.status == RoomStatus.FINISHED
+            )
+            idle = idle_heartbeat if game_finished else game_idle
         else:
             idle = idle_heartbeat
         hb = app.heartbeat_state.setdefault(cid, HeartbeatState())
