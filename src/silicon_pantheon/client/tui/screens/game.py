@@ -929,15 +929,13 @@ class GameScreen(Screen):
         # Reasoning is per-match: clear the thought buffer so the new
         # game's panel doesn't start with old text.
         app.state.thoughts.clear()
-        await self._refresh_state()
+        # DON'T await _refresh_state here — it can block for 15+ seconds
+        # on slow servers (start_game_for_room is computing initial state).
+        # The screen renders immediately with state=None (shows loading),
+        # and the first tick() populates the state + builds the agent.
         # Tutorial: show game tutorial on first visit.
         self._maybe_start_tutorial()
-        if app.state.agent is None:
-            await self._maybe_build_agent(app)
-        log.info(
-            "GameScreen.on_enter: finished agent=%s",
-            "set" if app.state.agent is not None else "none",
-        )
+        log.info("GameScreen.on_enter: done (state loads on first tick)")
 
     async def on_exit(self, app: TUIApp) -> None:
         log.info("GameScreen.on_exit")
@@ -1417,6 +1415,11 @@ class GameScreen(Screen):
             self.state.get("turn"),
             self.state.get("status"),
         )
+        # Build the agent on first successful state fetch (was
+        # previously done in on_enter, but that blocked the screen
+        # transition for 15+ seconds on slow servers).
+        if self.app.state.agent is None:
+            await self._maybe_build_agent(self.app)
 
         # Update per-unit last-action annotation incrementally from
         # the polled state's last_action field. No get_history call
