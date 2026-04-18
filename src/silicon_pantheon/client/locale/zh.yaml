@@ -416,9 +416,13 @@ game_coach:
 game_overlay:
   footer: "F3/Esc/q 关闭   j/k ↕   ^f/^b 翻页   ^d/^u 半页   gg 顶部   G 底部"
 
-# 游戏界面 — 退出确认
+# 退出确认
 game_quit:
   confirm: "退出SiliconPantheon？"
+lobby_quit:
+  confirm: "退出SiliconPantheon？"
+post_match_quit:
+  confirm: "退出？（按 'd' 先下载回放）"
 
 # 房间界面 — 玩家面板
 room_player:

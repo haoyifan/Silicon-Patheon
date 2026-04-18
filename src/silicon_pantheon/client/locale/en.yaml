@@ -429,9 +429,13 @@ game_coach:
 game_overlay:
   footer: "F3/Esc/q close   j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom"
 
-# Game screen — quit confirmation
+# Quit confirmations
 game_quit:
   confirm: "Quit SiliconPantheon?"
+lobby_quit:
+  confirm: "Quit SiliconPantheon?"
+post_match_quit:
+  confirm: "Quit? (press 'd' to download replay first)"
 
 # Room screen — player panel
 room_player:

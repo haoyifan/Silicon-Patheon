@@ -28,6 +28,7 @@ class LobbyScreen(Screen):
         self._selected = 0
         self._last_poll = 0.0
         self._tutorial = None  # TutorialOverlay | None
+        self._confirm = None  # ConfirmModal | None
 
     async def on_enter(self, app: TUIApp) -> None:
         # Immediate refresh on entry so the table is populated before the
@@ -94,6 +95,8 @@ class LobbyScreen(Screen):
 
         body = Group(header, subtitle, Text(""), table, Text(""), keys, status)
         base = Panel(Align.center(body, vertical="top"), border_style="green", title=t("lobby_title", lc))
+        if self._confirm is not None:
+            return self._confirm.render()
         if self._tutorial is not None and not self._tutorial.is_done:
             return self._tutorial.render()
         return base
@@ -106,6 +109,13 @@ class LobbyScreen(Screen):
             await self._refresh_rooms()
 
     async def handle_key(self, key: str) -> Screen | None:
+        # Confirmation modal wins over everything.
+        if self._confirm is not None:
+            close = await self._confirm.handle_key(key)
+            if close:
+                self._confirm = None
+            return None
+
         # Tutorial overlay intercepts all keys while active.
         if self._tutorial is not None and not self._tutorial.is_done:
             self._tutorial.handle_key(key)
@@ -115,7 +125,15 @@ class LobbyScreen(Screen):
 
         rooms = self.app.state.last_rooms
         if key == "q":
-            self.app.exit()
+            from silicon_pantheon.client.tui.widgets import ConfirmModal
+            async def _quit(yes: bool) -> None:
+                if yes:
+                    self.app.exit()
+            self._confirm = ConfirmModal(
+                prompt=t("lobby_quit.confirm", self.app.state.locale),
+                on_confirm=_quit,
+                locale=self.app.state.locale,
+            )
             return None
         if key in ("down", "j"):
             if rooms:

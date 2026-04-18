@@ -32,6 +32,7 @@ class PostMatchScreen(Screen):
         self._summary_path: Path | None = None
         self._match_stats: "MatchStats | None" = None
         self._agent_stats: dict | None = None
+        self._confirm = None  # ConfirmModal | None
 
     async def on_enter(self, app: TUIApp) -> None:
         # Compute match stats from history before the agent closes.
@@ -90,6 +91,8 @@ class PostMatchScreen(Screen):
         _asyncio.create_task(_summarize())
 
     def render(self) -> RenderableType:
+        if self._confirm is not None:
+            return self._confirm.render()
         from silicon_pantheon.client.locale import t
         lc = self.app.state.locale
 
@@ -265,8 +268,22 @@ class PostMatchScreen(Screen):
         )
 
     async def handle_key(self, key: str) -> Screen | None:
+        if self._confirm is not None:
+            close = await self._confirm.handle_key(key)
+            if close:
+                self._confirm = None
+            return None
         if key == "q":
-            self.app.exit()
+            from silicon_pantheon.client.tui.widgets import ConfirmModal
+            from silicon_pantheon.client.locale import t
+            async def _quit(yes: bool) -> None:
+                if yes:
+                    self.app.exit()
+            self._confirm = ConfirmModal(
+                prompt=t("post_match_quit.confirm", self.app.state.locale),
+                on_confirm=_quit,
+                locale=self.app.state.locale,
+            )
             return None
         if key == "d":
             await self._download_replay()
