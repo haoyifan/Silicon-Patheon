@@ -117,11 +117,11 @@ unit_classes:
     display_name: French Knight
     description: |
       Heavy plate, lance, spurred horse — the flower of French
-      chivalry. Or, today, a man who can barely walk through the
-      mud and can't enter the woods. Will get shot a lot.
-    hp_max: 30
+      chivalry. Powerful in melee but slow, and the English
+      longbowmen will pick them off on the approach.
+    hp_max: 26
     atk: 11
-    defense: 8
+    defense: 5
     res: 3
     spd: 4
     rng_min: 1

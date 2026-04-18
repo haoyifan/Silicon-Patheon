@@ -192,26 +192,13 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
             "required": ["team", "text"],
         },
     },
-    "report_tokens": {
-        "fn": report_tokens,
-        "description": "Report token usage to the server for post-game telemetry.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "tokens": {"type": "integer"},
-            },
-            "required": ["tokens"],
-        },
-    },
-    "get_match_telemetry": {
-        "fn": get_match_telemetry,
-        "description": "Get server-tracked telemetry for both teams (turn times, tool calls, tokens).",
-        "input_schema": {
-            "type": "object",
-            "properties": {},
-        },
-    },
 }
+
+# NOTE: report_tokens and get_match_telemetry are registered as MCP
+# tools on the server (game_tools.py) but are NOT in TOOL_REGISTRY.
+# They're infrastructure tools called by the client software directly,
+# not by the LLM agent. Keeping them out of the registry means they
+# don't appear in the agent's tool list.
 
 
 def call_tool(session: Session, viewer: Team, name: str, args: dict) -> dict:
