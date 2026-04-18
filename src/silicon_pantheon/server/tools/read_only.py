@@ -30,10 +30,11 @@ def get_unit_range(session: Session, viewer: Team, unit_id: str) -> dict:
     u = state.units.get(unit_id)
     if u is None or not u.alive:
         raise ToolError(f"unit {unit_id} does not exist or is dead")
-    if u.status is UnitStatus.DONE:
-        return {"unit_id": unit_id, "move_tiles": [], "attack_tiles": []}
 
-    # Movement range -- BFS from current position.
+    # Always show full hypothetical range from the unit's current
+    # tile, regardless of status (ready/moved/done). This is a
+    # visualization aid — "what could this unit reach?" — not tied
+    # to whether it can actually act this turn.
     reach = reachable_tiles(state, u)
     move_set = set(reach.keys())
     move_tiles = [{"x": p.x, "y": p.y} for p in sorted(move_set, key=lambda p: (p.y, p.x))]

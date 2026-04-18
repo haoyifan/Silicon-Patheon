@@ -212,16 +212,16 @@ def test_get_unit_range_returns_move_and_attack_tiles():
         assert "x" in t and "y" in t
 
 
-def test_get_unit_range_done_unit_returns_empty():
-    """Units with status DONE can't act — range should be empty."""
+def test_get_unit_range_done_unit_still_shows_range():
+    """Even DONE units show their hypothetical range from current tile
+    — the overlay is a visualization aid, not tied to actionability."""
     s = _session()
     # Wait the unit so it becomes DONE.
     call_tool(s, Team.BLUE, "wait", {"unit_id": "u_b_knight_1"})
     out = call_tool(
         s, Team.BLUE, "get_unit_range", {"unit_id": "u_b_knight_1"},
     )
-    assert out["move_tiles"] == []
-    assert out["attack_tiles"] == []
+    assert len(out["move_tiles"]) > 0
 
 
 def test_move_success_includes_next_actions_hint():
