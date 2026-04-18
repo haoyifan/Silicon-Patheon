@@ -233,7 +233,8 @@ class PlayerPanel(Panel):
                 if is_cursor:
                     cursor_row_idx = len(rows)
                 if alive:
-                    unit_status = str(u.get("status", "ready"))
+                    raw_status = str(u.get("status", "ready"))
+                    status_display = t(f"unit_status.{raw_status}", lc)
                     hp_str = f"{hp}/{hp_max}"
                     if is_cursor or is_highlight:
                         row = Text.assemble(
@@ -242,7 +243,7 @@ class PlayerPanel(Panel):
                             ("  ", None),
                             (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                             ("  ", None),
-                            (unit_status, _status_style(unit_status)),
+                            (status_display, _status_style(raw_status)),
                         )
                     else:
                         row = Text.assemble(
@@ -251,7 +252,7 @@ class PlayerPanel(Panel):
                             ("  ", None),
                             (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                             ("  ", None),
-                            (unit_status, _status_style(unit_status)),
+                            (status_display, _status_style(raw_status)),
                         )
                     rows.append(row)
                     # Last-action annotation on a sub-line below the

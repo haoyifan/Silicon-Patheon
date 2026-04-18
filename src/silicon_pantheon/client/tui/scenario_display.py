@@ -98,16 +98,23 @@ def unit_display_name(
     unit: dict[str, Any],
     scenario_description: dict[str, Any] | None,
 ) -> str:
-    """Best human-readable name for a unit. Per-unit override first,
-    then class display_name from the scenario bundle, then the slug."""
-    if unit.get("display_name"):
-        return str(unit["display_name"])
+    """Best human-readable name for a unit.
+
+    Priority: localized class name from scenario_description (if the
+    bundle was localized, this is Chinese/etc.), then per-unit
+    display_name from the server, then the class slug.
+    """
     cls = unit.get("class") or ""
+    # Prefer the scenario bundle's display_name — when localized,
+    # this gives us the Chinese/translated name. The server's per-unit
+    # display_name is always English (baked into the engine).
     spec = (
         (scenario_description or {}).get("unit_classes") or {}
     ).get(cls)
     if spec and spec.get("display_name"):
         return str(spec["display_name"])
+    if unit.get("display_name"):
+        return str(unit["display_name"])
     return cls or str(unit.get("id", "?"))
 
 
