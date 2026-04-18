@@ -64,6 +64,7 @@ board:
 
 terrain_types:
   snow:
+    display_name: Snow
     move_cost: 1
     defense_bonus: 0
     glyph: "*"
@@ -261,8 +262,8 @@ unit_classes:
     move: 2
     rng_min: 2
     rng_max: 3
-    glyph: "S"
-    color: red
+    glyph: "T"
+    color: bright_red
 
   snowtrooper:
     display_name: Snowtrooper

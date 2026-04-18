@@ -76,6 +76,7 @@ board:
 
 terrain_types:
   bridge:
+    display_name: Bridge
     move_cost: 1
     defense_bonus: 0
     glyph: "="

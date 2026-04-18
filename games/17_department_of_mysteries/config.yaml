@@ -112,8 +112,8 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "h"
-    color: yellow
+    glyph: "E"
+    color: bright_cyan
 
   ron:
     display_name: Ron Weasley
@@ -206,8 +206,8 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "X"
-    color: bright_black
+    glyph: "L"
+    color: bright_red
 
   bellatrix:
     display_name: Bellatrix Lestrange

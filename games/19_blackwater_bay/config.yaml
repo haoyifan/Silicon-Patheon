@@ -262,8 +262,8 @@ unit_classes:
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "C"
-    color: red
+    glyph: "X"
+    color: bright_red
 
   bronn:
     display_name: Bronn

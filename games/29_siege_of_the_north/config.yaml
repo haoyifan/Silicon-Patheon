@@ -239,7 +239,7 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "F"
+    glyph: "B"
     color: bright_red
 
   fire_sage:

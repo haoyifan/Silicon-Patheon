@@ -81,6 +81,7 @@ terrain_types:
     glyph: "~"
     color: blue
   ship:
+    display_name: Ship
     # Cao Cao's chained ships — walkable to north troops only.
     move_cost: 1
     passable: true

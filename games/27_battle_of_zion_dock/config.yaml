@@ -67,6 +67,7 @@ terrain_types:
       defensive advantage from the high ground.
 
   power_conduit:
+    display_name: Power Conduit
     move_cost: 1
     defense_bonus: 0
     glyph: "|"
@@ -90,7 +91,7 @@ unit_classes:
     move: 2
     rng_min: 2
     rng_max: 4
-    glyph: "M"
+    glyph: "Z"
     color: bright_cyan
 
   apu_pilot:
@@ -195,7 +196,7 @@ unit_classes:
     move: 4
     rng_min: 1
     rng_max: 2
-    glyph: "S"
+    glyph: "C"
     color: bright_red
 
   drill_machine:

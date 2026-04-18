@@ -124,6 +124,7 @@ terrain_types:
     glyph: "~"
     color: yellow
   desert:
+    display_name: Desert
     move_cost: 1
     glyph: "."
     color: yellow

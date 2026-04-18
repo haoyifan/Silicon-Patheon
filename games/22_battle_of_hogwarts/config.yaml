@@ -139,8 +139,8 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "h"
-    color: yellow
+    glyph: "E"
+    color: bright_cyan
 
   ron:
     display_name: Ron Weasley
@@ -312,8 +312,8 @@ unit_classes:
     move: 4
     rng_min: 1
     rng_max: 1
-    glyph: "S"
-    color: green
+    glyph: "N"
+    color: bright_red
 
   death_eater:
     display_name: Death Eater

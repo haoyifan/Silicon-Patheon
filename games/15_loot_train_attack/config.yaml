@@ -47,6 +47,7 @@ board:
 
 terrain_types:
   road:
+    display_name: Road
     move_cost: 1
     defense_bonus: 0
     glyph: "-"
@@ -71,8 +72,8 @@ unit_classes:
     rng_min: 2
     rng_max: 4
     is_magic: true
-    glyph: "D"
-    color: bright_yellow
+    glyph: "Q"
+    color: bright_cyan
 
   dothraki:
     display_name: Dothraki Screamer

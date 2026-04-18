@@ -99,8 +99,8 @@ unit_classes:
     move: 5
     rng_min: 1
     rng_max: 1
-    glyph: "M"
-    color: white
+    glyph: "K"
+    color: bright_cyan
 
   armin:
     display_name: Armin Arlert
@@ -185,8 +185,8 @@ unit_classes:
     rng_max: 1
     can_heal: true
     heal_amount: 5
-    glyph: "m"
-    color: yellow
+    glyph: "+"
+    color: bright_cyan
 
   eren_titan:
     display_name: Eren (Attack Titan)

@@ -59,7 +59,7 @@ unit_classes:
     rng_max: 3
     is_magic: true
     glyph: "D"
-    color: bright_yellow
+    color: bright_cyan
 
   order_guard:
     display_name: Order Guard
@@ -112,8 +112,8 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "X"
-    color: dim
+    glyph: "Z"
+    color: bright_red
 
   fenrir:
     display_name: Fenrir Greyback

@@ -121,7 +121,7 @@ unit_classes:
     rng_max: 3
     is_magic: true
     glyph: "G"
-    color: white
+    color: bright_cyan
 
   aragorn:
     display_name: Aragorn
@@ -137,7 +137,7 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     glyph: "A"
-    color: white
+    color: bright_cyan
 
   legolas:
     display_name: Legolas

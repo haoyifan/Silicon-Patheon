@@ -99,8 +99,8 @@ unit_classes:
     rng_min: 2
     rng_max: 4
     is_magic: true
-    glyph: "D"
-    color: bright_yellow
+    glyph: "Q"
+    color: bright_cyan
 
   brienne:
     display_name: Brienne of Tarth

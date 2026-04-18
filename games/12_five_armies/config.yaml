@@ -255,7 +255,7 @@ unit_classes:
     move: 5
     tags: [vip, chief, goblin]
     sight: 4
-    glyph: G
+    glyph: B
     color: bright_red
 
   goblin_warrior:

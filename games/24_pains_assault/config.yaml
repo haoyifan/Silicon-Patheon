@@ -137,8 +137,8 @@ unit_classes:
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "C"
-    color: yellow
+    glyph: "J"
+    color: bright_cyan
 
   shikamaru:
     display_name: Shikamaru Nara

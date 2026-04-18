@@ -53,6 +53,7 @@ terrain_types:
     glyph: "~"
     color: blue
   bridge:
+    display_name: Bridge
     move_cost: 1
     defense_bonus: 0
     glyph: "="
