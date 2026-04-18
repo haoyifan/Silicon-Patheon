@@ -284,15 +284,11 @@ def test_networked_agent_advances_cursor_when_turn_ends() -> None:
     asyncio.run(agent.close())
 
 
-def test_no_progress_does_not_force_end_turn_client_side() -> None:
-    """Historically the client-side watchdog force-called end_turn
-    after 3 consecutive play_turn returns without end_turn. That was
-    removed in favor of trusting the server's turn_time_limit_s
-    forfeit — the client never force-ends on the player's behalf;
-    the model retains full freedom to retry (with a continuation
-    prompt) until the server decides the turn is over.
-
-    This regression guards against the client-side cap coming back."""
+def test_force_end_turn_after_max_retries() -> None:
+    """After MAX_NO_PROGRESS retries without end_turn, the client
+    forces end_turn to prevent conversation bloat from livelocking
+    the game (each retry adds a continuation prompt, eventually
+    exceeding the token limit)."""
     from silicon_pantheon.client.agent_bridge import NetworkedAgent
 
     end_turn_calls: list[dict] = []
@@ -312,8 +308,6 @@ def test_no_progress_does_not_force_end_turn_client_side() -> None:
 
     class _StuckAdapter:
         async def play_turn(self, **kwargs):
-            # Adapter never dispatches end_turn — simulates a model
-            # that exited its loop without finishing the turn.
             return
 
         async def close(self):
@@ -326,17 +320,16 @@ def test_no_progress_does_not_force_end_turn_client_side() -> None:
         adapter=_StuckAdapter(),
     )
 
-    # Run several play_turn attempts — state never flips; client MUST
-    # NOT force end_turn regardless of retry count.
-    for _ in range(5):
+    # First few retries should NOT force end_turn.
+    for _ in range(4):
         asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
-    assert end_turn_calls == [], (
-        f"client-side watchdog regressed: end_turn_calls={end_turn_calls}"
-    )
-    # The counter keeps climbing so operators can see from the log
-    # how many attempts have happened, but it never triggers a
-    # force-end.
-    assert agent._no_progress_retries == 5
+    assert end_turn_calls == []
+
+    # The 5th retry (MAX_NO_PROGRESS) SHOULD force end_turn.
+    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
+    assert len(end_turn_calls) == 1
+    # Counter resets after forced end_turn.
+    assert agent._no_progress_retries == 0
     asyncio.run(agent.close())
 
 

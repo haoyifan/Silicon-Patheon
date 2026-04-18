@@ -452,6 +452,7 @@ class NetworkedAgent:
         # server-side so the game advances instead of livelocking with
         # the same delta prompt being re-shipped every poll.
         self._no_progress_retries: int = 0
+        self._MAX_NO_PROGRESS = 5  # force end_turn after this many retries
 
     async def close(self) -> None:
         try:
@@ -625,11 +626,33 @@ class NetworkedAgent:
             self._no_progress_retries += 1
             log.warning(
                 "play_turn EXIT WITHOUT end_turn (active still %s); "
-                "no_progress_retries=%d — TUI will retry on next poll "
-                "with continuation prompt; no client-side cap (server "
-                "turn_time_limit_s is the forfeit bound)",
+                "no_progress_retries=%d/%d",
                 viewer.value, self._no_progress_retries,
+                self._MAX_NO_PROGRESS,
             )
+            # Force end_turn after too many retries so the game doesn't
+            # livelock. The conversation grows with each retry prompt,
+            # eventually exceeding token limits and making recovery
+            # impossible.
+            if self._no_progress_retries >= self._MAX_NO_PROGRESS:
+                log.warning(
+                    "play_turn: MAX retries reached (%d) — forcing end_turn",
+                    self._no_progress_retries,
+                )
+                try:
+                    await self.client.call("end_turn")
+                except Exception:
+                    # end_turn may fail if units are mid-action; try
+                    # waiting all remaining units first.
+                    try:
+                        for u in (post_state.get("units") or []):
+                            if (u.get("owner") == viewer.value
+                                    and u.get("status") == "moved"):
+                                await self.client.call("wait", unit_id=u["id"])
+                        await self.client.call("end_turn")
+                    except Exception:
+                        log.exception("forced end_turn failed")
+                self._no_progress_retries = 0
 
         return post_state
 
