@@ -30,8 +30,13 @@ class PostMatchScreen(Screen):
         self._download_error: str | None = None
         self._summary_state: str = ""  # "", "pending", "done", "failed"
         self._summary_path: Path | None = None
+        self._match_stats: "MatchStats | None" = None
+        self._agent_stats: dict | None = None
 
     async def on_enter(self, app: TUIApp) -> None:
+        # Compute match stats from history before the agent closes.
+        await self._compute_stats(app)
+
         # Kick off a background summary if an agent is attached.
         if app.state.agent is None:
             return
@@ -97,6 +102,16 @@ class PostMatchScreen(Screen):
             style="dim",
         )
 
+        parts: list[RenderableType] = [banner, Text(""), summary]
+
+        # ---- Match stats ----
+        ms = self._match_stats
+        if ms is not None:
+            parts.append(Text(""))
+            parts.append(self._render_stats(ms, lc))
+
+        # ---- Download / lesson status ----
+        parts.append(Text(""))
         download_line = Text("")
         if self._downloaded_path is not None:
             download_line.append(
@@ -106,8 +121,7 @@ class PostMatchScreen(Screen):
             download_line.append(
                 f"{t('post_match.download_failed', lc)}: {self._download_error}", style="red"
             )
-
-        keys = Text(t("post_match.footer", lc), style="dim")
+        parts.append(download_line)
 
         summary_line = Text("")
         if self._summary_state == "pending":
@@ -116,19 +130,117 @@ class PostMatchScreen(Screen):
             summary_line.append(f"{t('post_match.lesson_done', lc)}: {self._summary_path}", style="green")
         elif self._summary_state == "failed":
             summary_line.append(t("post_match.lesson_failed", lc), style="dim red")
+        parts.append(summary_line)
 
-        body = Group(
-            banner,
-            Text(""),
-            summary,
-            Text(""),
-            download_line,
-            summary_line,
-            Text(""),
-            keys,
-        )
+        parts.append(Text(""))
+        parts.append(Text(t("post_match.footer", lc), style="dim"))
+
         return Align.center(
-            Panel(body, title=t("post_match.title", lc), border_style="green"), vertical="middle"
+            Panel(Group(*parts), title=t("post_match.title", lc), border_style="green"), vertical="middle"
+        )
+
+    def _render_stats(self, ms: "MatchStats", lc: str) -> RenderableType:
+        """Render the match statistics table."""
+        from rich.table import Table
+
+        from silicon_pantheon.client.locale import t
+
+        rows: list[RenderableType] = []
+
+        # ---- Team comparison table ----
+        tbl = Table(expand=False, show_lines=False, padding=(0, 2))
+        tbl.add_column("", style="bold")
+        tbl.add_column(t("post_match_summary.blue", lc), style="cyan", justify="right")
+        tbl.add_column(t("post_match_summary.red", lc), style="red", justify="right")
+
+        b, r = ms.blue, ms.red
+        tbl.add_row("Damage dealt", str(b.total_damage_dealt), str(r.total_damage_dealt))
+        tbl.add_row("Healing done", str(b.total_healing), str(r.total_healing))
+        tbl.add_row(
+            "Units lost",
+            f"{b.units_lost}/{b.units_fielded}",
+            f"{r.units_lost}/{r.units_fielded}",
+        )
+
+        # Agent telemetry (only if we have stats from the local agent).
+        agent_stats = self._agent_stats
+        if agent_stats and agent_stats.get("turns_played", 0) > 0:
+            avg_t = agent_stats.get("avg_thinking_time_s", 0)
+            tokens = agent_stats.get("total_tokens", 0)
+            tools = agent_stats.get("total_tool_calls", 0)
+            errors = agent_stats.get("total_errors", 0)
+            my = self.app.state.last_game_state.get("you", "blue") if self.app.state.last_game_state else "blue"
+            my_col = 1 if my == "blue" else 2
+            opp_col = 2 if my == "blue" else 1
+            vals = ["—", "—"]
+            vals[my_col - 1] = f"{avg_t:.1f}s"
+            tbl.add_row("Avg think/turn", vals[0], vals[1])
+            vals = ["—", "—"]
+            vals[my_col - 1] = f"{tokens:,}" if tokens else "—"
+            tbl.add_row("Tokens used", vals[0], vals[1])
+            vals = ["—", "—"]
+            vals[my_col - 1] = str(tools)
+            tbl.add_row("Tool calls", vals[0], vals[1])
+            if errors:
+                vals = ["—", "—"]
+                vals[my_col - 1] = str(errors)
+                tbl.add_row("Errors", vals[0], vals[1])
+
+        rows.append(tbl)
+
+        # ---- MVP + top killers ----
+        mvp = ms.mvp()
+        if mvp:
+            rows.append(Text(""))
+            color = "cyan" if mvp.owner == "blue" else "red"
+            rows.append(Text.assemble(
+                ("MVP: ", "bold"),
+                (f"{mvp.display_name}", f"bold {color}"),
+                (f" — {mvp.kills} kills, {mvp.damage_dealt} damage", "dim"),
+            ))
+
+        # Top killers (units with kills > 0, sorted by kills).
+        killers = sorted(
+            [u for u in ms.units.values() if u.kills > 0],
+            key=lambda u: (-u.kills, -u.damage_dealt),
+        )
+        if len(killers) > 1:
+            rows.append(Text(""))
+            for u in killers[:6]:
+                color = "cyan" if u.owner == "blue" else "red"
+                rows.append(Text(
+                    f"  {u.display_name}: {u.kills} kills, {u.damage_dealt} dmg",
+                    style=color,
+                ))
+
+        if ms.first_kill_turn is not None:
+            rows.append(Text(""))
+            rows.append(Text(f"First kill: turn {ms.first_kill_turn}", style="dim"))
+
+        return Group(*rows)
+
+    async def _compute_stats(self, app: TUIApp) -> None:
+        """Fetch history from server and compute match stats."""
+        from silicon_pantheon.match_stats import MatchStats, compute_match_stats
+
+        # Capture agent telemetry before it's closed.
+        if app.state.agent is not None:
+            self._agent_stats = app.state.agent.get_agent_stats()
+
+        gs = app.state.last_game_state or {}
+        units = gs.get("units") or []
+        history: list[dict] = []
+        if app.client is not None:
+            try:
+                r = await app.client.call("get_history", last_n=0)
+                history = (r.get("result") or {}).get("history") or []
+            except Exception:
+                pass
+        self._match_stats = compute_match_stats(
+            history=history,
+            units=units,
+            game_state=gs,
+            scenario_description=app.state.scenario_description,
         )
 
     async def handle_key(self, key: str) -> Screen | None:

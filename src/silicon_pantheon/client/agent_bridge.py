@@ -443,6 +443,8 @@ class NetworkedAgent:
         # main driver behind the 351k-token blow-up.
         self._turns_played: int = 0
         self._history_cursor: int = 0
+        # Accumulated per-turn timing for post-game stats.
+        self._turn_times: list[float] = []
         # No-progress watchdog: if the adapter returns N times in a
         # row without the agent calling end_turn, the model is stuck
         # (often hallucinating tool-call XML, or just paralyzed by
@@ -715,6 +717,8 @@ class NetworkedAgent:
             len(user_prompt),
         )
 
+        import time as _time
+        t0 = _time.time()
         await self.adapter.play_turn(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
@@ -723,8 +727,25 @@ class NetworkedAgent:
             on_thought=self.thoughts_callback,
             time_budget_s=self.time_budget_s,
         )
+        self._turn_times.append(_time.time() - t0)
 
         return await self._finalize_turn(viewer)
+
+    def get_agent_stats(self) -> dict:
+        """Return accumulated agent telemetry for post-game stats."""
+        avg_time = (
+            sum(self._turn_times) / len(self._turn_times)
+            if self._turn_times else 0.0
+        )
+        adapter = self.adapter
+        return {
+            "turns_played": self._turns_played,
+            "total_thinking_time_s": sum(self._turn_times),
+            "avg_thinking_time_s": avg_time,
+            "total_tokens": getattr(adapter, "total_tokens", 0),
+            "total_tool_calls": getattr(adapter, "total_tool_calls", 0),
+            "total_errors": getattr(adapter, "total_errors", 0),
+        }
 
     async def summarize_match(self, viewer: Team) -> Lesson | None:
         """Post-match lesson writer. Saves to LessonStore if configured."""

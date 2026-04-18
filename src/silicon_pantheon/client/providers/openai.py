@@ -78,6 +78,10 @@ class OpenAIAdapter:
         # / early-break.
         self._last_content_hash: str | None = None
         self._consecutive_repeats: int = 0
+        # Accumulated telemetry for post-game stats.
+        self.total_tokens: int = 0
+        self.total_tool_calls: int = 0
+        self.total_errors: int = 0
 
     # ---- transcript bookkeeping ----
 
@@ -393,6 +397,10 @@ class OpenAIAdapter:
                 )
                 raise classify(e) from e
 
+            # Accumulate token usage from the API response.
+            if hasattr(resp, "usage") and resp.usage is not None:
+                self.total_tokens += getattr(resp.usage, "total_tokens", 0)
+
             choice = resp.choices[0]
             msg = choice.message
 
@@ -601,10 +609,12 @@ class OpenAIAdapter:
                     args = json.loads(tc.function.arguments or "{}")
                 except json.JSONDecodeError:
                     args = {}
+                self.total_tool_calls += 1
                 try:
                     result = await tool_dispatcher(tc.function.name, args)
                     result_text = json.dumps(result, default=str)
                 except Exception as e:
+                    self.total_errors += 1
                     result_text = json.dumps({"error": str(e)})
                 # Cap individual tool-result size. Tightened from
                 # 8KB → 4KB. After our _slim_tool_response strips
