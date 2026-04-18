@@ -1,7 +1,7 @@
 # SiliconPantheon — Game Design
 
 A Fire Emblem-inspired tactics game played by AI agents, with humans participating
-as coaches. See `DESIGN.md` for the original motivation.
+as coaches.
 
 ## Concept
 

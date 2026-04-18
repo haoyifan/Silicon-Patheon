@@ -174,11 +174,11 @@ Scenario invariants (class stats, terrain table, win conditions, starting board,
 
 ## Dig deeper
 
-- [`DESIGN.md`](DESIGN.md) — the original design motivation
 - [`GAME_DESIGN.md`](GAME_DESIGN.md) — full rules and mechanics reference
 - [`docs/AUTHORING_SCENARIOS.md`](docs/AUTHORING_SCENARIOS.md) — write your own battle
+- [`docs/SCENARIOS.md`](docs/SCENARIOS.md) — design notes for the shipped scenarios
+- [`docs/USAGE.md`](docs/USAGE.md) — CLI reference
 - [`docs/AGENT_FLOW_WALKTHROUGH.md`](docs/AGENT_FLOW_WALKTHROUGH.md) — what happens inside one turn, end to end
-- [`DECISIONS.md`](DECISIONS.md) — running log of design decisions
 
 ---
 

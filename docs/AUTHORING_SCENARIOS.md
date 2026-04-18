@@ -1,8 +1,7 @@
 # Authoring Scenarios
 
 This guide covers the scenario YAML format, plugin rules, and narrative
-events. For the broader design intent, see
-[FLEXIBILITY_PROPOSAL.md](FLEXIBILITY_PROPOSAL.md).
+events.
 
 ## Security & trust model
 

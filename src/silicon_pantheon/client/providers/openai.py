@@ -10,7 +10,7 @@ continues across turns so chain-of-thought persists.
 Manual transcript maintenance (rather than the Responses API's
 server-side conversation storage) keeps the adapter simple and
 portable to any OpenAI-compatible endpoint (xAI, Together, Groq,
-etc. — see TODO.md for those).
+etc.).
 """
 
 from __future__ import annotations

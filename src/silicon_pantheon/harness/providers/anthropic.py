@@ -10,11 +10,10 @@ once at `on_match_start`. Each `decide_turn` sends a new user message
 retains its plan, remembers tool results, and can reflect on the
 opponent's move without re-deriving the position from scratch.
 
-See DECISIONS.md (2026-04-13 entry) for the full trade-off
-discussion. Summary: context grows monotonically across the match —
-fine on Sonnet / Opus 1M, may want pruning on Haiku for 30+ turn
-matches. Revert path: remove `_open_sdk_client` / `_close_sdk_client`
-and put `create_sdk_mcp_server` + `query()` back inside `_async_turn`.
+Trade-off: context grows monotonically across the match — fine on
+Sonnet / Opus 1M, may want pruning on Haiku for 30+ turn matches.
+Revert path: remove `_open_sdk_client` / `_close_sdk_client` and put
+`create_sdk_mcp_server` + `query()` back inside `_async_turn`.
 """
 
 from __future__ import annotations
