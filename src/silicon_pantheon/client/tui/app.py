@@ -129,6 +129,8 @@ class SharedState:
     # server per-scenario. Cleared on exit (in-memory only).
     scenario_cache: dict[str, dict[str, Any]] = field(default_factory=dict)
     _scenario_prefetch_task: asyncio.Task | None = None
+    # Tutorial completion state — loaded from disk on startup.
+    tutorial_state: Any = None  # TutorialState, lazy-loaded
 
 
 class TUIApp:

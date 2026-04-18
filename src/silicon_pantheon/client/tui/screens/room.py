@@ -752,6 +752,7 @@ class RoomScreen(Screen):
         self._random_scenario_pool: list[str] | None = None
         # Pending screen transition queued from a ConfirmModal callback.
         self._pending_transition: Screen | None = None
+        self._tutorial = None  # TutorialOverlay | None
 
         # Build panels. Order matters: Tab cycles in this order.
         self.map_panel = MapPanel(self)
@@ -771,10 +772,14 @@ class RoomScreen(Screen):
         await self._load_preview()
         await self._refresh_state()
         await self._load_scenarios()
+        # Tutorial: show room tutorial on first visit.
+        self._maybe_start_tutorial()
 
     # ---- render ----
 
     def render(self) -> RenderableType:
+        if self._tutorial is not None and not self._tutorial.is_done:
+            return self._tutorial.render()
         if self._confirm is not None:
             return self._confirm.render()
         if self._scenario_picker is not None:
@@ -880,6 +885,13 @@ class RoomScreen(Screen):
     # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
+        # Tutorial overlay intercepts all keys while active.
+        if self._tutorial is not None and not self._tutorial.is_done:
+            self._tutorial.handle_key(key)
+            if self._tutorial.is_done:
+                self._tutorial = None
+            return None
+
         # Confirmation overlays win over everything. When the modal
         # closes and staged a transition (e.g. Leave Room → Lobby),
         # surface it here.
@@ -1157,6 +1169,23 @@ class RoomScreen(Screen):
             on_confirm=_on_confirm,
             locale=self.app.state.locale,
         )
+
+    def _maybe_start_tutorial(self) -> None:
+        if self.app.state.tutorial_state is None:
+            from silicon_pantheon.client.tui.tutorial import load_tutorial_state
+            self.app.state.tutorial_state = load_tutorial_state()
+        ts = self.app.state.tutorial_state
+        if not ts.is_stage_done("room"):
+            from silicon_pantheon.client.tui.tutorial import (
+                ROOM_STEPS,
+                TutorialOverlay,
+            )
+            self._tutorial = TutorialOverlay(
+                steps=ROOM_STEPS,
+                stage="room",
+                locale=self.app.state.locale,
+                on_complete=lambda: ts.mark_done("room"),
+            )
 
     def _open_scenario_modal(self) -> None:
         import random as _random

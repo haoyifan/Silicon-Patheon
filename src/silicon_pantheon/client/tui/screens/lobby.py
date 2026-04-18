@@ -27,16 +27,13 @@ class LobbyScreen(Screen):
         self.app = app
         self._selected = 0
         self._last_poll = 0.0
+        self._tutorial = None  # TutorialOverlay | None
 
     async def on_enter(self, app: TUIApp) -> None:
         # Immediate refresh on entry so the table is populated before the
         # first tick.
         await self._refresh_rooms()
         # Kick off background scenario prefetch once (first lobby entry).
-        # Fetches all scenario descriptions one at a time so the
-        # scenario picker has instant data instead of per-scenario
-        # server round-trips. The cache lives on app.state (in-memory,
-        # cleared on exit).
         if (
             not app.state.scenario_cache
             and app.state._scenario_prefetch_task is None
@@ -45,6 +42,8 @@ class LobbyScreen(Screen):
             app.state._scenario_prefetch_task = asyncio.create_task(
                 self._prefetch_scenarios()
             )
+        # Tutorial: show on first visit or when replay is requested.
+        self._maybe_start_tutorial()
 
     def render(self) -> RenderableType:
         lc = self.app.state.locale
@@ -94,7 +93,10 @@ class LobbyScreen(Screen):
             status.append(self.app.state.status_message, style="green")
 
         body = Group(header, subtitle, Text(""), table, Text(""), keys, status)
-        return Panel(Align.center(body, vertical="top"), border_style="green", title=t("lobby_title", lc))
+        base = Panel(Align.center(body, vertical="top"), border_style="green", title=t("lobby_title", lc))
+        if self._tutorial is not None and not self._tutorial.is_done:
+            return self._tutorial.render()
+        return base
 
     async def tick(self) -> None:
         import time
@@ -104,6 +106,13 @@ class LobbyScreen(Screen):
             await self._refresh_rooms()
 
     async def handle_key(self, key: str) -> Screen | None:
+        # Tutorial overlay intercepts all keys while active.
+        if self._tutorial is not None and not self._tutorial.is_done:
+            self._tutorial.handle_key(key)
+            if self._tutorial.is_done:
+                self._tutorial = None
+            return None
+
         rooms = self.app.state.last_rooms
         if key == "q":
             self.app.exit()
@@ -127,6 +136,9 @@ class LobbyScreen(Screen):
             return await self._join_selected()
         if key == "p":
             return await self._preview_selected()
+        if key == "t":
+            self._start_tutorial()
+            return None
         if key == "w":
             from silicon_pantheon.client.tui.screens.replay_picker import (
                 ReplayPickerScreen,
@@ -189,6 +201,35 @@ class LobbyScreen(Screen):
         self.app.state.last_rooms = r.get("rooms", [])
         if self._selected >= len(self.app.state.last_rooms):
             self._selected = max(0, len(self.app.state.last_rooms) - 1)
+
+    def _ensure_tutorial_state(self) -> None:
+        if self.app.state.tutorial_state is None:
+            from silicon_pantheon.client.tui.tutorial import load_tutorial_state
+            self.app.state.tutorial_state = load_tutorial_state()
+
+    def _maybe_start_tutorial(self) -> None:
+        self._ensure_tutorial_state()
+        ts = self.app.state.tutorial_state
+        if not ts.is_stage_done("lobby"):
+            self._start_tutorial()
+
+    def _start_tutorial(self) -> None:
+        self._ensure_tutorial_state()
+        from silicon_pantheon.client.tui.tutorial import (
+            LOBBY_STEPS,
+            TutorialOverlay,
+        )
+        ts = self.app.state.tutorial_state
+
+        def _on_done():
+            ts.mark_done("lobby")
+
+        self._tutorial = TutorialOverlay(
+            steps=LOBBY_STEPS,
+            stage="lobby",
+            locale=self.app.state.locale,
+            on_complete=_on_done,
+        )
 
     async def _prefetch_scenarios(self) -> None:
         """Background task: fetch all scenario descriptions one at a

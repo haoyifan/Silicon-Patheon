@@ -841,6 +841,7 @@ class GameScreen(Screen):
         self.app = app
         self.state: dict[str, Any] | None = None
         self._last_poll = 0.0
+        self._tutorial = None  # TutorialOverlay | None
         # Inline unit card rendered inside the Map panel when the
         # cursor-Enter combo opens one. Not a full-screen modal — the
         # rest of the layout stays visible.
@@ -926,12 +927,11 @@ class GameScreen(Screen):
     async def on_enter(self, app: TUIApp) -> None:
         log.info("GameScreen.on_enter: starting")
         # Reasoning is per-match: clear the thought buffer so the new
-        # game's panel doesn't start with old text. The buffer lives
-        # on SharedState (which survives screen transitions — it's
-        # how PostMatchScreen can show the final transcript) so we
-        # have to reset it ourselves each time a new match starts.
+        # game's panel doesn't start with old text.
         app.state.thoughts.clear()
         await self._refresh_state()
+        # Tutorial: show game tutorial on first visit.
+        self._maybe_start_tutorial()
         if app.state.agent is None:
             await self._maybe_build_agent(app)
         log.info(
@@ -1087,6 +1087,8 @@ class GameScreen(Screen):
     # ---- render ----
 
     def render(self) -> RenderableType:
+        if self._tutorial is not None and not self._tutorial.is_done:
+            return self._tutorial.render()
         if self._confirm is not None:
             return self._confirm.render()
         if self._scenario_overlay is not None:
@@ -1177,6 +1179,15 @@ class GameScreen(Screen):
     # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
+        # Tutorial overlay intercepts all keys while active.
+        # The agent still runs in the background — the tutorial
+        # just prevents the player from accidentally interfering.
+        if self._tutorial is not None and not self._tutorial.is_done:
+            self._tutorial.handle_key(key)
+            if self._tutorial.is_done:
+                self._tutorial = None
+            return None
+
         if self._confirm is not None:
             close = await self._confirm.handle_key(key)
             if close:
@@ -1284,6 +1295,23 @@ class GameScreen(Screen):
                 return
 
     # ---- public API used by panels ----
+
+    def _maybe_start_tutorial(self) -> None:
+        if self.app.state.tutorial_state is None:
+            from silicon_pantheon.client.tui.tutorial import load_tutorial_state
+            self.app.state.tutorial_state = load_tutorial_state()
+        ts = self.app.state.tutorial_state
+        if not ts.is_stage_done("game"):
+            from silicon_pantheon.client.tui.tutorial import (
+                GAME_STEPS,
+                TutorialOverlay,
+            )
+            self._tutorial = TutorialOverlay(
+                steps=GAME_STEPS,
+                stage="game",
+                locale=self.app.state.locale,
+                on_complete=lambda: ts.mark_done("game"),
+            )
 
     def open_unit_card(self, unit: dict[str, Any]) -> None:
         gs = self.state or {}
