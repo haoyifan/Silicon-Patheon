@@ -316,9 +316,15 @@ class ScenarioPicker:
         rules = desc.get("rules") or {}
 
         rows: list[RenderableType] = []
-        rows.append(Text("★" * difficulty + "☆" * (5 - difficulty), style="yellow"))
         if story:
             rows.append(Text(story))
+        level_name = t(f"difficulty.{difficulty}", self.locale)
+        diff_text = Text()
+        diff_text.append(f"{t('difficulty.label', self.locale)}: ", style="bold")
+        diff_text.append("★" * difficulty + "☆" * (5 - difficulty), style="yellow")
+        diff_text.append(f" ({level_name})", style="dim")
+        rows.append(Text(""))
+        rows.append(diff_text)
         if wcs:
             rows.append(Text(""))
             rows.append(Text(t("section.how_to_win", self.locale), style="bold"))

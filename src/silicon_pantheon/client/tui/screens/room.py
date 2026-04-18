@@ -164,16 +164,23 @@ class DescriptionPanel(Panel):
         unit_classes = desc.get("unit_classes") or {}
 
         difficulty = desc.get("difficulty", 3)
+        lc = self.app.state.locale
 
         rows: list[RenderableType] = []
         rows.append(Text(name, style="bold yellow"))
-        rows.append(Text("★" * difficulty + "☆" * (5 - difficulty), style="yellow"))
         if story:
             rows.append(Text(""))
             rows.append(Text(story))
         if intro:
             rows.append(Text(""))
             rows.append(Text(intro, style="italic"))
+        rows.append(Text(""))
+        level_name = t(f"difficulty.{difficulty}", lc)
+        diff_text = Text()
+        diff_text.append(f"{t('difficulty.label', lc)}: ", style="bold")
+        diff_text.append("★" * difficulty + "☆" * (5 - difficulty), style="yellow")
+        diff_text.append(f" ({level_name})", style="dim")
+        rows.append(diff_text)
         if win_conds:
             rows.append(Text(""))
             rows.append(Text(t("section.how_to_win", self.app.state.locale), style="bold"))

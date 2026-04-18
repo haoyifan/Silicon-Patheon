@@ -549,7 +549,11 @@ help_footer: "↑/↓ scroll   PgUp/PgDn page   Esc / F2 close"
 # Difficulty
 difficulty:
   label: "Difficulty"
-  levels: ["Beginner", "Easy", "Medium", "Hard", "Expert"]
+  "1": "Beginner"
+  "2": "Easy"
+  "3": "Medium"
+  "4": "Hard"
+  "5": "Expert"
 
 # Error messages
 errors:
