@@ -8,6 +8,7 @@ from silicon_pantheon.server.engine.state import (
     Unit,
     UnitStatus,
 )
+from silicon_pantheon.server.engine.scenarios import find_spawn_pos
 
 
 def spawn_ambush(state, turn: int, team: str, **_):
@@ -32,14 +33,12 @@ def spawn_ambush(state, turn: int, team: str, **_):
         return
     spawns = [("u_r_ambush_1", Pos(7, 3)), ("u_r_ambush_2", Pos(7, 5))]
     for uid, pos in spawns:
-        # Skip if tile occupied.
-        if any(u.pos == pos for u in state.units.values()):
-            continue
+        spawn_pos = find_spawn_pos(state, pos)
         state.units[uid] = Unit(
             id=uid,
             owner=Team.RED,
             class_="skeleton",
-            pos=pos,
+            pos=spawn_pos,
             hp=skel_stats.hp_max,
             status=UnitStatus.READY,
             stats=skel_stats,

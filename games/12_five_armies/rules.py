@@ -18,7 +18,7 @@ from silicon_pantheon.server.engine.state import (
     Unit,
     UnitStatus,
 )
-from silicon_pantheon.server.engine.scenarios import build_unit_stats
+from silicon_pantheon.server.engine.scenarios import build_unit_stats, find_spawn_pos
 
 
 def second_goblin_wave(state, turn: int, team: str, **_):
@@ -32,16 +32,15 @@ def second_goblin_wave(state, turn: int, team: str, **_):
     ]
     base_idx = sum(1 for u in state.units.values() if u.class_ == "goblin_warrior")
     for i, (x, y) in enumerate(spawns):
-        if any(u.pos == Pos(x, y) for u in state.units.values()):
-            continue
         idx = base_idx + i + 1
         uid = f"u_r_goblin_warrior_{idx}"
         if uid in state.units:
             continue
         stats = build_unit_stats("goblin_warrior", spec)
+        spawn_pos = find_spawn_pos(state, Pos(x, y))
         state.units[uid] = Unit(
             id=uid, owner=Team.RED, class_="goblin_warrior",
-            pos=Pos(x, y), hp=stats.hp_max,
+            pos=spawn_pos, hp=stats.hp_max,
             status=UnitStatus.READY, stats=stats,
         )
 
@@ -57,9 +56,10 @@ def eagles_arrive(state, turn: int, team: str, **_):
         if uid in state.units:
             continue
         stats = build_unit_stats("eagle", spec)
+        spawn_pos = find_spawn_pos(state, Pos(x, y))
         state.units[uid] = Unit(
             id=uid, owner=Team.BLUE, class_="eagle",
-            pos=Pos(x, y), hp=stats.hp_max,
+            pos=spawn_pos, hp=stats.hp_max,
             status=UnitStatus.READY, stats=stats,
         )
 
@@ -73,9 +73,10 @@ def beorn_arrives(state, turn: int, team: str, **_):
     if uid in state.units:
         return
     stats = build_unit_stats("beorn_bear", spec)
+    spawn_pos = find_spawn_pos(state, Pos(9, 12))
     state.units[uid] = Unit(
         id=uid, owner=Team.BLUE, class_="beorn_bear",
-        pos=Pos(9, 12), hp=stats.hp_max,
+        pos=spawn_pos, hp=stats.hp_max,
         status=UnitStatus.READY, stats=stats,
     )
 

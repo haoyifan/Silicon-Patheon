@@ -15,7 +15,7 @@ from silicon_pantheon.server.engine.state import (
     Unit,
     UnitStatus,
 )
-from silicon_pantheon.server.engine.scenarios import build_unit_stats
+from silicon_pantheon.server.engine.scenarios import build_unit_stats, find_spawn_pos
 
 
 _VALE_KNIGHT_SPEC = {
@@ -53,16 +53,13 @@ def vale_reinforcements(state, turn: int, team: str, **_):
         uid = f"u_b_vale_knight_{i}"
         if uid in state.units:
             continue
-        # Skip tiles that are occupied (shouldn't happen at south
-        # edge but defensive).
-        if any(u.pos == Pos(x, y) for u in state.units.values()):
-            continue
         stats = build_unit_stats("vale_knight", _VALE_KNIGHT_SPEC)
+        spawn_pos = find_spawn_pos(state, Pos(x, y))
         state.units[uid] = Unit(
             id=uid,
             owner=Team.BLUE,
             class_="vale_knight",
-            pos=Pos(x, y),
+            pos=spawn_pos,
             hp=stats.hp_max,
             status=UnitStatus.READY,
             stats=stats,

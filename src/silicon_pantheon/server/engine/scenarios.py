@@ -124,6 +124,39 @@ def _is_safe_scenario_name(name: str) -> bool:
     return True
 
 
+def find_spawn_pos(state: "GameState", preferred: "Pos") -> "Pos":
+    """Find the nearest passable, unoccupied tile to ``preferred``.
+
+    Used by reinforcement plugins to avoid stacking units. BFS
+    expanding outward from ``preferred``; returns the first free tile.
+    Falls back to ``preferred`` itself if nothing is found (shouldn't
+    happen on a reasonably-sized board).
+    """
+    from collections import deque
+
+    occupied = {u.pos for u in state.units.values() if u.alive}
+    if preferred not in occupied and state.board.tile(preferred).passable:
+        return preferred
+    visited: set[Pos] = set()
+    queue: deque[Pos] = deque([preferred])
+    visited.add(preferred)
+    while queue:
+        p = queue.popleft()
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            np = Pos(p.x + dx, p.y + dy)
+            if np in visited:
+                continue
+            visited.add(np)
+            if not (0 <= np.x < state.board.width and 0 <= np.y < state.board.height):
+                continue
+            tile = state.board.tile(np)
+            if tile.passable and np not in occupied:
+                return np
+            if tile.passable:
+                queue.append(np)
+    return preferred  # fallback — should never reach here
+
+
 def load_scenario(name: str) -> GameState:
     """Load a scenario by folder name (e.g. '01_tiny_skirmish').
 

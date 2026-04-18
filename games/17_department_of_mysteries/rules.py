@@ -16,7 +16,7 @@ from silicon_pantheon.server.engine.state import (
     Unit,
     UnitStatus,
 )
-from silicon_pantheon.server.engine.scenarios import build_unit_stats
+from silicon_pantheon.server.engine.scenarios import build_unit_stats, find_spawn_pos
 
 
 def order_reinforcements(state, turn: int, team: str, **_):
@@ -35,14 +35,12 @@ def order_reinforcements(state, turn: int, team: str, **_):
         uid = f"u_b_{class_name}_1"
         if uid in state.units:
             continue
-        pos = Pos(x, y)
-        if any(u.pos == pos for u in state.units.values()):
-            continue
         spec = _CLASS_SPECS[class_name]
         stats = build_unit_stats(class_name, spec)
+        spawn_pos = find_spawn_pos(state, Pos(x, y))
         state.units[uid] = Unit(
             id=uid, owner=Team.BLUE, class_=class_name,
-            pos=pos, hp=stats.hp_max,
+            pos=spawn_pos, hp=stats.hp_max,
             status=UnitStatus.READY, stats=stats,
         )
 

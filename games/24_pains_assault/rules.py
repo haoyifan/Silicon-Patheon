@@ -15,7 +15,7 @@ from silicon_pantheon.server.engine.state import (
     Unit,
     UnitStatus,
 )
-from silicon_pantheon.server.engine.scenarios import build_unit_stats
+from silicon_pantheon.server.engine.scenarios import build_unit_stats, find_spawn_pos
 
 
 _NARUTO_SPEC = {
@@ -50,14 +50,13 @@ def naruto_reinforcement(state, turn: int, team: str, **_):
     if uid in state.units:
         return
     x, y = _NARUTO_SPAWN
-    if any(u.pos == Pos(x, y) for u in state.units.values()):
-        return
     stats = build_unit_stats("naruto_sage", _NARUTO_SPEC)
+    spawn_pos = find_spawn_pos(state, Pos(x, y))
     state.units[uid] = Unit(
         id=uid,
         owner=Team.BLUE,
         class_="naruto_sage",
-        pos=Pos(x, y),
+        pos=spawn_pos,
         hp=stats.hp_max,
         status=UnitStatus.READY,
         stats=stats,

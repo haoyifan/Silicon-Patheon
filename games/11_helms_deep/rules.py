@@ -25,7 +25,7 @@ from silicon_pantheon.server.engine.state import (
     UnitStatus,
 )
 from silicon_pantheon.server.engine.units import make_stats
-from silicon_pantheon.server.engine.scenarios import build_unit_stats
+from silicon_pantheon.server.engine.scenarios import build_unit_stats, find_spawn_pos
 
 
 def explode_culvert(state, turn: int, team: str, **_):
@@ -88,11 +88,12 @@ def gandalf_arrives(state, turn: int, team: str, **_):
         if uid in state.units:
             continue
         stats = build_unit_stats(cname, spec)
+        spawn_pos = find_spawn_pos(state, _pos)
         state.units[uid] = Unit(
             id=uid,
             owner=Team.BLUE,
             class_=cname,
-            pos=_pos,
+            pos=spawn_pos,
             hp=stats.hp_max,
             status=UnitStatus.READY,
             stats=stats,

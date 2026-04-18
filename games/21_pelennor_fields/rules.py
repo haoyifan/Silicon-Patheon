@@ -15,7 +15,7 @@ from silicon_pantheon.server.engine.state import (
     Unit,
     UnitStatus,
 )
-from silicon_pantheon.server.engine.scenarios import build_unit_stats
+from silicon_pantheon.server.engine.scenarios import build_unit_stats, find_spawn_pos
 
 
 _ROHIRRIM_SPEC = {
@@ -52,14 +52,13 @@ def rohan_reinforcements(state, turn: int, team: str, **_):
         uid = f"u_b_rohirrim_{i}"
         if uid in state.units:
             continue
-        if any(u.pos == Pos(x, y) for u in state.units.values()):
-            continue
         stats = build_unit_stats("rohirrim", _ROHIRRIM_SPEC)
+        spawn_pos = find_spawn_pos(state, Pos(x, y))
         state.units[uid] = Unit(
             id=uid,
             owner=Team.BLUE,
             class_="rohirrim",
-            pos=Pos(x, y),
+            pos=spawn_pos,
             hp=stats.hp_max,
             status=UnitStatus.READY,
             stats=stats,
