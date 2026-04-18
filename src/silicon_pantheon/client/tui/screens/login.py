@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 class _Field:
     label: str
     value: str
-    hint: str = ""
 
 
 class LoginScreen(Screen):
@@ -36,8 +35,8 @@ class LoginScreen(Screen):
         self.app = app
         lc = app.state.locale
         self._fields: list[_Field] = [
-            _Field(t("login_fields.server_url", lc), app.state.server_url, hint="http://host:port/mcp/"),
-            _Field(t("login_fields.display_name", lc), app.state.display_name, hint=t("login_fields.required", lc)),
+            _Field(t("login_fields.server_url", lc), app.state.server_url),
+            _Field(t("login_fields.display_name", lc), app.state.display_name),
         ]
         self._active = 0
         self._connecting = False
@@ -54,9 +53,6 @@ class LoginScreen(Screen):
             value_text = Text(f.value or t("login_empty", self.app.state.locale), style="white" if f.value else "dim italic")
             line = Text.assemble(label, Text("  "), value_text)
             lines.append(line)
-            if is_active and f.hint:
-                hint = Text(f"      {f.hint}", style="dim italic")
-                lines.append(hint)
         lines.append(Text(""))
         status = Text("")
         lc = self.app.state.locale
@@ -102,16 +98,22 @@ class LoginScreen(Screen):
         return None
 
     async def _submit(self) -> Screen | None:
+        lc = self.app.state.locale
+        url = self._fields[0].value.strip()
         name = self._fields[1].value.strip()
+        # Validate before connecting.
+        if not url or not url.startswith(("http://", "https://")):
+            self.app.state.error_message = t("login_fields.url_invalid", lc)
+            return None
         if not name:
-            self.app.state.error_message = t("login_fields.display_name_required", self.app.state.locale)
+            self.app.state.error_message = t("login_fields.display_name_required", lc)
             return None
         self._connecting = True
         self.app.state.error_message = ""
-        self.app.state.status_message = t("login_screen.connecting", self.app.state.locale)
+        self.app.state.status_message = t("login_screen.connecting", lc)
 
         # Copy field values into shared state.
-        self.app.state.server_url = self._fields[0].value.strip()
+        self.app.state.server_url = url
         self.app.state.display_name = name
         # kind defaults to "ai"; provider and model are set later by
         # the ProviderAuthScreen (no longer collected on the login form).

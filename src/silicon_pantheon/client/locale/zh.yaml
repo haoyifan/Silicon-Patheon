@@ -361,6 +361,7 @@ login_fields:
   cycle_hint: "左/右键切换"
   connect_failed: "连接失败"
   display_name_required: "必须填写显示名称"
+  url_invalid: "请输入有效的服务器地址（http:// 或 https://）"
 
 # 大厅操作
 lobby_actions:
