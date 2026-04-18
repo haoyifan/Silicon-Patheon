@@ -125,10 +125,6 @@ LOBBY_STEPS: list[TutorialStep] = [
 
 ROOM_STEPS: list[TutorialStep] = [
     TutorialStep(
-        "tutorial.room.welcome_title",
-        "tutorial.room.welcome_body",
-    ),
-    TutorialStep(
         "tutorial.room.map_title",
         "tutorial.room.map_body",
         highlight_panel="map",
@@ -142,6 +138,11 @@ ROOM_STEPS: list[TutorialStep] = [
         "tutorial.room.description_title",
         "tutorial.room.description_body",
         highlight_panel="description",
+    ),
+    TutorialStep(
+        "tutorial.room.welcome_title",
+        "tutorial.room.welcome_body",
+        highlight_panel="actions",
     ),
     TutorialStep(
         "tutorial.room.scenario_title",

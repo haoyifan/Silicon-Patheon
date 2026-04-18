@@ -658,11 +658,11 @@ tutorial:
 
       Replays are saved automatically after each game.
   room:
-    welcome_title: "Game Room"
+    welcome_title: "Actions Panel"
     welcome_body: |
-      This is the game room. Here you configure the match
-      before it starts. Both players must press 'ready'
-      before the game begins.
+      This is where you configure the match. The host can
+      change scenario, fog of war, teams, and turn time.
+      Both players must press 'ready' before the game begins.
     map_title: "Map Preview"
     map_body: |
       This panel shows the scenario map with terrain and
