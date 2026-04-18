@@ -21,6 +21,9 @@ coach_*.txt
 # Player strategy files — per-player secrets, not shared.
 strategies/
 
+# Agent-generated lessons — per-machine, not shared.
+lessons/
+
 # Personal deployment notes — keep real IPs / domains / hostnames OUT of repo.
 # See docs/DEPLOY_HETZNER.md for the generic guide.
 Silicon-Pantheon-Deployment.md
