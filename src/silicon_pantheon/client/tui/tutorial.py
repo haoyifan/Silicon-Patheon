@@ -129,6 +129,21 @@ ROOM_STEPS: list[TutorialStep] = [
         "tutorial.room.welcome_body",
     ),
     TutorialStep(
+        "tutorial.room.map_title",
+        "tutorial.room.map_body",
+        highlight_panel="map",
+    ),
+    TutorialStep(
+        "tutorial.room.player_title",
+        "tutorial.room.player_body",
+        highlight_panel="player",
+    ),
+    TutorialStep(
+        "tutorial.room.description_title",
+        "tutorial.room.description_body",
+        highlight_panel="description",
+    ),
+    TutorialStep(
         "tutorial.room.scenario_title",
         "tutorial.room.scenario_body",
         highlight_panel="actions",

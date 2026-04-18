@@ -66,8 +66,9 @@ class PlayerPanel(Panel):
     def title(self):
         return t("room_panels.player", self.app.state.locale)
 
-    def __init__(self, app: TUIApp) -> None:
+    def __init__(self, app: TUIApp, screen=None) -> None:
         self.app = app
+        self.screen = screen
 
     def key_hints(self) -> str:
         return t("room_player.read_only", self.app.state.locale)
@@ -119,6 +120,14 @@ class PlayerPanel(Panel):
                 if p_provider and p_provider != label:
                     label = f"{p_provider}/{label}" if label else p_provider
                 rows.append(Text(f"     {t('room_player.model_label', lc)}: {label}", style="dim"))
+        tut = getattr(self.screen, '_tutorial', None) if self.screen else None
+        if tut and tut.targets_panel("player"):
+            return RichPanel(
+                tut.render_inline(),
+                title=self.title,
+                border_style="bright_yellow",
+                padding=(0, 1),
+            )
         return RichPanel(
             Group(*rows),
             title=self.title,
@@ -135,8 +144,9 @@ class DescriptionPanel(Panel):
     def title(self):
         return t("room_panels.description", self.app.state.locale)
 
-    def __init__(self, app: TUIApp, *, fullscreen: bool = False) -> None:
+    def __init__(self, app: TUIApp, *, fullscreen: bool = False, screen=None) -> None:
         self.app = app
+        self.screen = screen
         self.scroll = 0  # number of rows scrolled down from the top
         self._gg: list[bool] = [False]
         self._fullscreen = fullscreen  # True when used as F3 overlay
@@ -283,6 +293,14 @@ class DescriptionPanel(Panel):
             self.scroll = max_scroll
         if self.scroll > 0 and rows:
             rows = rows[self.scroll :]
+        tut = getattr(self.screen, '_tutorial', None) if self.screen else None
+        if tut and tut.targets_panel("description"):
+            return RichPanel(
+                tut.render_inline(),
+                title=self.title,
+                border_style="bright_yellow",
+                padding=(0, 1),
+            )
         return RichPanel(
             Group(*rows),
             title=self.title,
@@ -298,8 +316,9 @@ from silicon_pantheon.client.tui.terrain import terrain_cell as _terrain_cell  #
 
 
 class ChatPanel(Panel):
-    def __init__(self, app: TUIApp) -> None:
+    def __init__(self, app: TUIApp, screen=None) -> None:
         self.app = app
+        self.screen = screen
 
     @property
     def title(self):
@@ -634,11 +653,15 @@ class MapPanel(Panel):
                     text.append(f" {g} ", style=st)
             text.append("\n")
         footer = self._cursor_tooltip(w, h, unit_at)
-        body = Group(text, Text(""), footer)
+        tut = getattr(self.screen, '_tutorial', None)
+        if tut and tut.targets_panel("map"):
+            body = Group(text, Text(""), tut.render_inline())
+        else:
+            body = Group(text, Text(""), footer)
         return RichPanel(
             body,
             title=self.title,
-            border_style=border_style(focused),
+            border_style="bright_yellow" if (tut and tut.targets_panel("map")) else border_style(focused),
             padding=(0, 1),
         )
 
@@ -770,10 +793,10 @@ class RoomScreen(Screen):
         self.actions_panel = ActionsPanel(self)
         self._panels: list[Panel] = [
             self.map_panel,
-            PlayerPanel(app),
+            PlayerPanel(app, screen=self),
             self.actions_panel,
-            DescriptionPanel(app),
-            ChatPanel(app),
+            DescriptionPanel(app, screen=self),
+            ChatPanel(app, screen=self),
         ]
         # Start focus on the Actions panel — that's where Toggle Ready
         # lives, which is what the player almost always wants first.

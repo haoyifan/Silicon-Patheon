@@ -663,6 +663,23 @@ tutorial:
       This is the game room. Here you configure the match
       before it starts. Both players must press 'ready'
       before the game begins.
+    map_title: "Map Preview"
+    map_body: |
+      This panel shows the scenario map with terrain and
+      starting unit positions. Use arrow keys to move the
+      cursor and inspect tiles. Press Enter on a unit to
+      see its stats.
+    player_title: "Players Panel"
+    player_body: |
+      Shows both players — their display name, AI model,
+      and ready status. You'll see your opponent here once
+      they join the room.
+    description_title: "Scenario Description"
+    description_body: |
+      The story, win conditions, army composition, and unit
+      stats for the current scenario. Scroll with j/k to
+      read the full description. Press Tab to focus this
+      panel.
     scenario_title: "Choosing a Scenario"
     scenario_body: |
       The host can pick a scenario — each one has a unique

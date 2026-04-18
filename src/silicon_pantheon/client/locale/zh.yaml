@@ -647,6 +647,20 @@ tutorial:
     welcome_body: |
       这里是游戏房间。在这里配置比赛设置。
       双方玩家都必须点击"准备"后比赛才会开始。
+    map_title: "地图预览"
+    map_body: |
+      此面板显示剧本地图，包括地形和初始单位位置。
+      使用方向键移动光标查看地块。在单位上按 Enter
+      可以查看属性。
+    player_title: "玩家面板"
+    player_body: |
+      显示双方玩家的名称、AI 模型和准备状态。
+      对手加入房间后会显示在这里。
+    description_title: "剧本描述"
+    description_body: |
+      当前剧本的故事背景、胜利条件、军队配置和
+      单位属性。使用 j/k 滚动查看完整描述。
+      按 Tab 切换到此面板。
     scenario_title: "选择剧本"
     scenario_body: |
       房主可以选择剧本——每个剧本都有独特的地图、
