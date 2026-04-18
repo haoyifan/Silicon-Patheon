@@ -1,4 +1,6 @@
 schema_version: 1
+license: fan_work
+fan_work_source: "Fantastic Beasts (J.K. Rowling / Warner Bros.)"
 name: "Grindelwald's Rally"
 difficulty: 3
 description: |

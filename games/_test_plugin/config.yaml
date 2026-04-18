@@ -1,3 +1,4 @@
+license: original
 name: Test Plugin Scenario
 description: Synthetic scenario used by the plugin-loader test suite.
 

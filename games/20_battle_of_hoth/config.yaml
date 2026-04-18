@@ -1,4 +1,6 @@
 schema_version: 1
+license: fan_work
+fan_work_source: "Star Wars (Lucasfilm / Disney)"
 name: Battle of Hoth
 difficulty: 4
 description: |

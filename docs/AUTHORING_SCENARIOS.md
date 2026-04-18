@@ -72,6 +72,8 @@ animation. See `games/journey_to_the_west/art/` for examples.
 
 ```yaml
 schema_version: 1         # optional; engine refuses > its support cap
+license: fan_work         # public_domain | fan_work | original
+fan_work_source: "Source IP (Author / Publisher)"   # required when license = fan_work
 name: My Scenario
 description: |
   Free-form longform description for the lobby screen.
@@ -134,6 +136,48 @@ narrative:                # optional — story beats
     - {trigger: on_turn_start, turn: 10, text: "A storm rolls in."}
     - {trigger: on_unit_killed, unit_id: u_r_boss_1, text: "The demon king falls!"}
 ```
+
+## Copyright / license tagging
+
+Every scenario in `games/` declares its copyright status via a top-level
+`license:` field. This metadata exists so the project can cleanly
+separate the freely-redistributable scenarios from the fan-made ones
+if we ever ship a commercial tier or need to respond to a rights
+holder's request. **Please tag every scenario you contribute.**
+
+Three values:
+
+| `license:` | When to use | Example |
+|---|---|---|
+| `public_domain` | Historical battles, classical literature (pre-1928 US / pre-life+70 elsewhere), mythology, folklore | Thermopylae, Cannae, Journey to the West, Arthurian legend |
+| `fan_work` | Scenarios referencing characters / places / events from works still under copyright. Also set `fan_work_source:` naming the source IP and its rights holder | Helm's Deep, Harry Potter, Game of Thrones, Dune |
+| `original` | Scenarios with characters, setting, and story fully original to you (and dedicated to the project under Apache-2.0) | `01_tiny_skirmish`, `02_basic_mirror` |
+
+Example for a fan-work scenario:
+
+```yaml
+schema_version: 1
+license: fan_work
+fan_work_source: "The Lord of the Rings (J.R.R. Tolkien / Warner Bros.)"
+name: Helm's Deep
+description: |
+  ...
+```
+
+Example for an original scenario:
+
+```yaml
+schema_version: 1
+license: original
+name: The Mirror Gambit
+description: |
+  ...
+```
+
+Fan-work scenarios are welcome here — the project exists to host them —
+but keep them clearly tagged so the boundary between fan and canon
+stays maintainable. If you're unsure which bucket a scenario falls into,
+tag it `fan_work` and we can reclassify during PR review.
 
 ## Built-in win-condition types
 

@@ -1,0 +1,32 @@
+Silicon Pantheon
+Copyright 2026 Yifan Hao
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+--------------------------------------------------------------------
+Scenario content notice
+--------------------------------------------------------------------
+
+Some scenarios shipped under `games/` reference characters, places,
+and situations from copyrighted third-party works (e.g. The Lord of
+the Rings, Harry Potter, Game of Thrones, Dune, One Piece, and
+others). These are unofficial fan-made scenarios, created for
+non-commercial educational and research use, and are not endorsed by
+or affiliated with the respective rights holders.
+
+Each scenario declares its copyright status in its `config.yaml` via
+the `license:` field (`public_domain`, `fan_work`, or `original`);
+`fan_work` scenarios additionally name the source material in
+`fan_work_source:`. Redistributors intending to use this project
+commercially should review and, where appropriate, remove or rework
+any scenarios tagged `fan_work`.

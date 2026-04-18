@@ -1,4 +1,6 @@
 schema_version: 1
+license: fan_work
+fan_work_source: "Dune (Frank Herbert estate / Legendary / Warner Bros.)"
 name: Battle of Arrakeen
 difficulty: 4
 description: |

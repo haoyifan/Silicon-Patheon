@@ -1,4 +1,6 @@
 schema_version: 1
+license: fan_work
+fan_work_source: "The Avengers (Marvel / Disney)"
 name: Battle of New York
 difficulty: 4
 description: |

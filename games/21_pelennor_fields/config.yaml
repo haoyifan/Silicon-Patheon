@@ -1,4 +1,6 @@
 schema_version: 1
+license: fan_work
+fan_work_source: "The Lord of the Rings (J.R.R. Tolkien / Warner Bros.)"
 name: Pelennor Fields
 difficulty: 5
 description: |

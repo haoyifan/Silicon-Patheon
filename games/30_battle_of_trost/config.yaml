@@ -1,4 +1,6 @@
 schema_version: 1
+license: fan_work
+fan_work_source: "Attack on Titan (Hajime Isayama / Kodansha)"
 name: Battle of Trost
 difficulty: 3
 description: |
