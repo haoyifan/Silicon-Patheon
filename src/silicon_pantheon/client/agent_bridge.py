@@ -445,6 +445,7 @@ class NetworkedAgent:
         self._history_cursor: int = 0
         # Accumulated per-turn timing for post-game stats.
         self._turn_times: list[float] = []
+        self._last_reported_tokens: int = 0
         # No-progress watchdog: if the adapter returns N times in a
         # row without the agent calling end_turn, the model is stuck
         # (often hallucinating tool-call XML, or just paralyzed by
@@ -587,12 +588,14 @@ class NetworkedAgent:
         if turn_ended:
             self._turns_played += 1
             self._no_progress_retries = 0
-            # Report token usage to the server so both sides' stats
-            # are available in post-game telemetry.
-            tokens = getattr(self.adapter, "total_tokens", 0)
-            if tokens > 0:
+            # Report token usage delta to the server so both sides'
+            # stats are available in post-game telemetry.
+            total_now = getattr(self.adapter, "total_tokens", 0)
+            delta = total_now - self._last_reported_tokens
+            if delta > 0:
+                self._last_reported_tokens = total_now
                 try:
-                    await self.client.call("report_tokens", tokens=tokens)
+                    await self.client.call("report_tokens", tokens=delta)
                 except Exception:
                     pass  # non-fatal
             try:
