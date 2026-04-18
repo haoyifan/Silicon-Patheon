@@ -205,7 +205,10 @@ class ReplayPickerScreen(Screen):
         )
 
     async def handle_key(self, key: str) -> Screen | None:
-        if key in ("q", "esc"):
+        if key == "q":
+            self.app.exit()
+            return None
+        if key in ("l", "esc"):
             from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
             return LobbyScreen(self.app)
         if key in ("down", "j"):

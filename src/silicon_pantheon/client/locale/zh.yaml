@@ -35,6 +35,8 @@ keys:
   help: "F2 帮助"
   scenario: "F3 剧情"
   quit: "q 退出"
+  leave: "l/Esc 大厅"
+  leave_esc: "Esc 大厅"
   close: "关闭"
   scroll: "j/k 滚动"
   page: "^f/^b 翻页"
@@ -594,7 +596,7 @@ replay_picker:
   col_winner: "胜方"
   col_turns: "回合"
   no_replays: "（未找到回放文件）"
-  footer: "↓/j 下一个   ↑/k 上一个   Enter 打开   r 刷新   Esc 返回"
+  footer: "↓/j 下一个   ↑/k 上一个   Enter 打开   r 刷新   l/Esc 大厅   q 退出"
 
 # 回放画面
 replay:

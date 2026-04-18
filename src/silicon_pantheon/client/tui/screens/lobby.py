@@ -258,68 +258,50 @@ class LobbyScreen(Screen):
         )
 
     async def _prefetch_scenarios(self) -> None:
-        """Background task: load all scenario descriptions from local
-        config files and cache in app.state.scenario_cache. No server
-        round-trips needed — the config.yaml files are on disk.
+        """Background task: fetch all scenario descriptions from the
+        server and cache in app.state.scenario_cache.
 
-        Falls back to server fetch for any scenarios that can't be
-        loaded locally (e.g., server-only scenarios)."""
+        The server is the single source of truth for scenarios — the
+        client may not have local config files (pip install, remote
+        machine, etc.).
+
+        Each describe_scenario call goes through the transport lock
+        (one at a time). To avoid blocking the UI, we yield between
+        calls and tolerate partial completion — the scenario picker
+        uses whatever is cached so far and lazy-loads the rest."""
         _log = logging.getLogger("silicon.tui.lobby")
-        from pathlib import Path as _Path
-        import yaml
-
-        from silicon_pantheon.client.locale.scenario import localize_scenario
-        from silicon_pantheon.server.engine.scenarios import _games_root
-
+        if self.app.client is None:
+            return
         try:
-            games_dir = _games_root()
+            r = await self.app.client.call("list_scenarios")
+            if not r.get("ok"):
+                return
+            scenarios = r.get("scenarios", [])
         except Exception:
-            _log.debug("scenario prefetch: games_root not found")
             return
-        if not games_dir.is_dir():
-            return
-
-        scenarios = sorted(
-            d.name for d in games_dir.iterdir()
-            if d.is_dir() and (d / "config.yaml").is_file()
-        )
-        _log.info("scenario prefetch: loading %d scenarios from disk", len(scenarios))
+        _log.info("scenario prefetch: %d scenarios to fetch", len(scenarios))
+        from silicon_pantheon.client.locale.scenario import localize_scenario
 
         for name in scenarios:
             if name in self.app.state.scenario_cache:
                 continue
             try:
-                cfg_path = games_dir / name / "config.yaml"
-                cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
-                # Build a describe_scenario-compatible dict from config.
-                raw: dict[str, Any] = {
-                    "ok": True,
-                    "name": cfg.get("name") or name,
-                    "description": cfg.get("description", ""),
-                    "difficulty": cfg.get("difficulty", 3),
-                    "board": cfg.get("board", {}),
-                    "armies": cfg.get("armies", {}),
-                    "unit_classes": cfg.get("unit_classes", {}),
-                    "rules": cfg.get("rules", {}),
-                    "terrain_types": cfg.get("terrain_types", {}),
-                    "scenario_slug": name,
-                }
-                # Extract win conditions from rules
-                rules = cfg.get("rules") or {}
-                if "win_conditions" in rules:
-                    raw["win_conditions"] = rules["win_conditions"]
-                self.app.state.scenario_cache[name] = localize_scenario(
-                    raw, self.app.state.locale,
-                )
+                r = await self.app.client.call("describe_scenario", name=name)
+                if r.get("ok"):
+                    r["scenario_slug"] = name
+                    self.app.state.scenario_cache[name] = localize_scenario(
+                        r, self.app.state.locale,
+                    )
+            except asyncio.CancelledError:
+                return
             except Exception:
-                _log.debug("scenario prefetch: failed to load %s", name, exc_info=True)
-
+                pass
+            # Yield so heartbeat + UI polls aren't starved.
+            await asyncio.sleep(0)
         _log.info(
             "scenario prefetch: done, cached %d scenarios",
             len(self.app.state.scenario_cache),
         )
-        # Yield to the event loop so we don't block.
-        await asyncio.sleep(0)
 
     async def _create_room(self) -> Screen | None:
         if self.app.client is None:

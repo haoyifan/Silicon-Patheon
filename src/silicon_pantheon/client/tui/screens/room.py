@@ -824,7 +824,7 @@ class RoomScreen(Screen):
                 hints.append(f"[{focused.title}] ", style="bold yellow")
                 hints.append(panel_hints, style="white")
                 hints.append("   ", style="dim")
-            hints.append(f"{t('keys.tab_next', lc)}   {t('keys.help', lc)}   {t('keys.quit', lc)}", style="dim")
+            hints.append(f"{t('keys.tab_next', lc)}   {t('keys.leave_esc', lc)}   {t('keys.help', lc)}   {t('keys.quit', lc)}", style="dim")
             footer_line = hints
 
         # Put header / body / footer all inside a single Layout with
@@ -923,9 +923,13 @@ class RoomScreen(Screen):
                 self._dropdown = None
             return None
 
-        # q / Esc leaves the room (back to lobby), not exit client.
-        # The Quit button in actions panel still exits entirely.
-        if key in ("q", "esc") and self.unit_card is None:
+        # q = quit client (with confirm), Esc = leave room to lobby.
+        # Note: 'l' is NOT used for leave here because it conflicts
+        # with vim cursor-right in the map panel.
+        if key == "q" and self.unit_card is None:
+            self._open_quit_confirm()
+            return None
+        if key == "esc" and self.unit_card is None:
             self._open_leave_confirm()
             return None
         if key == "\t":

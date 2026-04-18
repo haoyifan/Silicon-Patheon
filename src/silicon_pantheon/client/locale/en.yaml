@@ -36,6 +36,8 @@ keys:
   help: "F2 help"
   scenario: "F3 scenario"
   quit: "q quit"
+  leave: "l/Esc lobby"
+  leave_esc: "Esc lobby"
   close: "close"
   scroll: "j/k"
   page: "^f/^b page"
@@ -607,7 +609,7 @@ replay_picker:
   col_winner: "Winner"
   col_turns: "Turns"
   no_replays: "(no replays found)"
-  footer: "↓/j next   ↑/k prev   Enter open   r refresh   Esc back"
+  footer: "↓/j next   ↑/k prev   Enter open   r refresh   l/Esc lobby   q quit"
 
 # Replay screen
 replay:

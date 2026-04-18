@@ -380,6 +380,8 @@ class ReplayScreen(Screen):
         log.info("ReplayScreen: loaded %s (%d events)", self._replay_path, len(self._timeline))
 
     def render(self) -> RenderableType:
+        if hasattr(self, '_quit_confirm') and self._quit_confirm is not None:
+            return self._quit_confirm.render()
         lc = self.app.state.locale
         header_line = Text()
         header_line.append(f"▶ {t('replay.title', lc)}", style="bold magenta")
@@ -390,6 +392,7 @@ class ReplayScreen(Screen):
             f"{t('replay.nav_hints', lc)}   "
             f"Enter {t('replay.unit_card', lc)}   "
             f"{t('keys.tab_next', lc)}   "
+            f"{t('keys.leave', lc)}   "
             f"{t('keys.quit', lc)}",
             style="dim",
         )
@@ -434,6 +437,13 @@ class ReplayScreen(Screen):
         return body
 
     async def handle_key(self, key: str) -> Screen | None:
+        # Quit confirmation modal.
+        if hasattr(self, '_quit_confirm') and self._quit_confirm is not None:
+            close = await self._quit_confirm.handle_key(key)
+            if close:
+                self._quit_confirm = None
+            return None
+
         # Unit card overlay — Esc/Enter/q close it. Left/right
         # cycles between units (same as GameScreen).
         if self.unit_card is not None:
@@ -454,8 +464,19 @@ class ReplayScreen(Screen):
             self._focus_idx = (self._focus_idx + 1) % len(self._panels)
             return None
 
-        # Quit back to lobby.
-        if key == "q" or key == "esc":
+        # q = quit client, l/Esc = back to lobby.
+        if key == "q":
+            from silicon_pantheon.client.tui.widgets import ConfirmModal
+            async def _quit(yes: bool) -> None:
+                if yes:
+                    self.app.exit()
+            self._quit_confirm = ConfirmModal(
+                prompt=t("lobby_quit.confirm", self.app.state.locale),
+                on_confirm=_quit,
+                locale=self.app.state.locale,
+            )
+            return None
+        if key in ("l", "esc"):
             from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
             return LobbyScreen(self.app)
 
