@@ -1409,18 +1409,18 @@ class RoomScreen(Screen):
                 "message", "get_room_state rejected"
             )
             log.warning(
-                "refresh_state: get_room_state rejected cid=%s err=%s",
+                "refresh_state: get_room_state rejected cid=%s err=%s — "
+                "returning to lobby",
                 cid, err_msg,
             )
-            # If we got kicked or the room vanished, go back to lobby.
-            if "not_in_room" in err_msg or "not seated" in err_msg or "in_lobby" in err_msg:
-                log.info("refresh_state: kicked or room gone — returning to lobby")
-                self.app.state.room_id = None
-                self.app.state.slot = None
-                from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
-                return LobbyScreen(self.app)
-            self.app.state.error_message = err_msg
-            return None
+            # Any rejection means we're no longer in a room (kicked,
+            # room deleted, connection state reset, etc.). Go to lobby.
+            self.app.state.room_id = None
+            self.app.state.slot = None
+            from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
+            lobby = LobbyScreen(self.app)
+            await self.app.transition(lobby)
+            return lobby
         self.app.state.error_message = ""
         room = r.get("room", {})
         status = room.get("status")
