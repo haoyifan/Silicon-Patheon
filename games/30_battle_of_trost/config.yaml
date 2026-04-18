@@ -6,8 +6,9 @@ description: |
   in the wall and titans pour through the breach. The Survey Corps
   and Garrison mount a desperate defense of the district. Mikasa,
   Armin, and Captain Levi fight to hold the line while waiting for
-  Eren to transform at turn 8. Once in Titan form, Eren must reach
-  the breach at (7, 10) to seal it with the boulder.
+  Eren to transform at turn 8. Eren appears near the north wall and
+  must fight his way south through the titan-infested city to reach
+  the breach at (7, 10) and seal it with the boulder.
   Inspired by the Battle of Trost from Attack on Titan by Hajime Isayama.
 
 board:
@@ -264,18 +265,13 @@ armies:
     - {class: armin, pos: {x: 6, y: 8}}
     # Levi — rooftop position
     - {class: levi, pos: {x: 4, y: 7}}
-    # Survey Corps — mobile defense across the city
-    - {class: survey_corps, pos: {x: 3, y: 6}}
+    # Survey Corps — reduced squad, mobile defense
     - {class: survey_corps, pos: {x: 6, y: 6}}
     - {class: survey_corps, pos: {x: 9, y: 7}}
-    - {class: survey_corps, pos: {x: 10, y: 6}}
     - {class: survey_corps, pos: {x: 7, y: 5}}
-    - {class: survey_corps, pos: {x: 12, y: 7}}
-    # Garrison — near the wall breach
+    # Garrison — thin line near the wall breach
     - {class: garrison, pos: {x: 5, y: 9}}
-    - {class: garrison, pos: {x: 4, y: 9}}
     - {class: garrison, pos: {x: 9, y: 9}}
-    - {class: garrison, pos: {x: 6, y: 9}}
     - {class: medic_corps, pos: {x: 8, y: 9}}
 
   red:

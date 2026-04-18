@@ -95,8 +95,8 @@ def compute_match_stats(
         cls = u.get("class", "")
         spec = unit_classes.get(cls) or {}
         display = (
-            u.get("display_name")
-            or spec.get("display_name")
+            spec.get("display_name")
+            or u.get("display_name")
             or cls
             or uid
         )

@@ -37,7 +37,7 @@ _EREN_TITAN_SPEC = {
     "color": "bright_yellow",
 }
 
-_EREN_SPAWN = (7, 9)
+_EREN_SPAWN = (7, 2)
 
 
 def eren_reinforcement(state, turn: int, team: str, **_):

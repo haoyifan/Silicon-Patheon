@@ -84,7 +84,7 @@ class SharedState:
     have to race each other on the transport.
     """
 
-    server_url: str = "http://127.0.0.1:8080/mcp/"
+    server_url: str = "https://game.siliconpantheon.com/mcp/"
     locale: str = "en"  # set at login; threads through to TUI + prompts
     display_name: str = ""
     kind: str = "ai"
