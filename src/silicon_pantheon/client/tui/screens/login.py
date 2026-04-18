@@ -159,6 +159,81 @@ class LoginScreen(Screen):
         return ProviderAuthScreen(self.app)
 
 
+async def _fetch_scenario_bundle(app: TUIApp) -> None:
+    """Fetch all scenario descriptions in one server call.
+
+    Uses get_scenario_bundle which returns every scenario in a single
+    response (~200ms). The server includes a content hash; the client
+    caches the bundle + hash on disk so repeat logins skip the
+    download entirely (hash match → no data transfer).
+
+    Non-fatal: errors are logged but don't block login.
+    """
+    import json as _json
+    import logging as _logging
+    from pathlib import Path as _Path
+
+    from silicon_pantheon.client.locale.scenario import localize_scenario
+
+    _log = _logging.getLogger("silicon.tui.login")
+    cache_path = _Path.home() / ".silicon-pantheon" / "scenario_bundle_cache.json"
+
+    # Load cached hash from disk.
+    cached_hash: str | None = None
+    try:
+        if cache_path.is_file():
+            cached = _json.loads(cache_path.read_text(encoding="utf-8"))
+            cached_hash = cached.get("hash")
+            # Pre-populate from disk cache immediately.
+            lc = app.state.locale
+            for name, data in (cached.get("scenarios") or {}).items():
+                if name not in app.state.scenario_cache:
+                    app.state.scenario_cache[name] = localize_scenario(data, lc)
+            _log.info(
+                "scenario bundle: loaded %d from disk (hash=%s)",
+                len(app.state.scenario_cache), cached_hash,
+            )
+    except Exception:
+        pass
+
+    # Ask server for the bundle.
+    if app.client is None:
+        return
+    try:
+        r = await app.client.call(
+            "get_scenario_bundle",
+            cached_hash=cached_hash,
+        )
+        if not r.get("ok"):
+            _log.warning("get_scenario_bundle rejected: %s", r.get("error"))
+            return
+        result = r.get("result") or r
+    except Exception:
+        _log.debug("get_scenario_bundle failed — using disk cache", exc_info=True)
+        return
+
+    if result.get("match"):
+        _log.info("scenario bundle: hash match — cached data is current")
+        return
+
+    # New bundle — populate cache and save to disk.
+    bundle_hash = result.get("hash", "")
+    scenarios = result.get("scenarios") or {}
+    _log.info("scenario bundle: received %d scenarios (hash=%s)", len(scenarios), bundle_hash)
+    lc = app.state.locale
+    for name, data in scenarios.items():
+        app.state.scenario_cache[name] = localize_scenario(data, lc)
+
+    try:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            _json.dumps({"hash": bundle_hash, "scenarios": scenarios}),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+
 async def _validate_url(url: str) -> None:
     """Fast pre-flight check: probe the URL before attempting the full
     MCP handshake. Catches DNS errors, wrong ports, and non-MCP servers
@@ -244,3 +319,9 @@ async def _connect_and_declare(app: TUIApp) -> None:
         raise RuntimeError((r.get("error") or {}).get("message", "metadata rejected"))
     app.state.connection_id = client.connection_id
     await client.start_heartbeat()
+
+    # Fetch the scenario bundle in one call (~200ms). This blocks the
+    # login transition but is fast enough that users don't notice.
+    # The bundle is cached on disk with a hash — repeat logins skip
+    # the download if the hash matches.
+    await _fetch_scenario_bundle(app)

@@ -34,15 +34,8 @@ class LobbyScreen(Screen):
         # Immediate refresh on entry so the table is populated before the
         # first tick.
         await self._refresh_rooms()
-        # Kick off background scenario prefetch once (first lobby entry).
-        if (
-            not app.state.scenario_cache
-            and app.state._scenario_prefetch_task is None
-            and app.client is not None
-        ):
-            app.state._scenario_prefetch_task = asyncio.create_task(
-                self._prefetch_scenarios()
-            )
+        # Scenario cache is populated at login via get_scenario_bundle.
+        # No background prefetch needed here.
         # Tutorial: show on first visit or when replay is requested.
         self._maybe_start_tutorial()
 
@@ -255,52 +248,6 @@ class LobbyScreen(Screen):
             stage="lobby",
             locale=self.app.state.locale,
             on_complete=_on_done,
-        )
-
-    async def _prefetch_scenarios(self) -> None:
-        """Background task: fetch all scenario descriptions from the
-        server and cache in app.state.scenario_cache.
-
-        The server is the single source of truth for scenarios — the
-        client may not have local config files (pip install, remote
-        machine, etc.).
-
-        Each describe_scenario call goes through the transport lock
-        (one at a time). To avoid blocking the UI, we yield between
-        calls and tolerate partial completion — the scenario picker
-        uses whatever is cached so far and lazy-loads the rest."""
-        _log = logging.getLogger("silicon.tui.lobby")
-        if self.app.client is None:
-            return
-        try:
-            r = await self.app.client.call("list_scenarios")
-            if not r.get("ok"):
-                return
-            scenarios = r.get("scenarios", [])
-        except Exception:
-            return
-        _log.info("scenario prefetch: %d scenarios to fetch", len(scenarios))
-        from silicon_pantheon.client.locale.scenario import localize_scenario
-
-        for name in scenarios:
-            if name in self.app.state.scenario_cache:
-                continue
-            try:
-                r = await self.app.client.call("describe_scenario", name=name)
-                if r.get("ok"):
-                    r["scenario_slug"] = name
-                    self.app.state.scenario_cache[name] = localize_scenario(
-                        r, self.app.state.locale,
-                    )
-            except asyncio.CancelledError:
-                return
-            except Exception:
-                pass
-            # Yield so heartbeat + UI polls aren't starved.
-            await asyncio.sleep(0)
-        _log.info(
-            "scenario prefetch: done, cached %d scenarios",
-            len(self.app.state.scenario_cache),
         )
 
     async def _create_room(self) -> Screen | None:

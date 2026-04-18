@@ -347,6 +347,114 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         })
 
     @mcp.tool()
+    def get_scenario_bundle(
+        connection_id: str,
+        cached_hash: str | None = None,
+    ) -> dict:
+        """Return ALL scenario descriptions in a single response.
+
+        The bundle includes every scenario's full describe_scenario
+        output plus a content hash. The client caches the bundle
+        locally; on the next login it sends `cached_hash` — if it
+        matches, the server returns {ok, match: true} (no data
+        transfer). If it doesn't match (scenarios changed), the
+        full bundle is returned.
+
+        This replaces 30+ sequential describe_scenario calls with
+        one round-trip (~200ms vs ~7s).
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state == ConnectionState.ANONYMOUS:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "set_player_metadata first",
+            )
+        import hashlib
+        import json as _json
+
+        from silicon_pantheon.server.engine.scenarios import (
+            _games_root,
+            _is_safe_scenario_name,
+        )
+
+        try:
+            games_root = _games_root()
+        except FileNotFoundError:
+            return _ok({"scenarios": {}, "hash": ""})
+
+        scenarios: dict[str, dict] = {}
+        for sub in sorted(games_root.iterdir()):
+            if not sub.is_dir() or not (sub / "config.yaml").is_file():
+                continue
+            name = sub.name
+            # Reuse describe_scenario's logic inline.
+            try:
+                cfg = yaml.safe_load(
+                    (sub / "config.yaml").read_text(encoding="utf-8")
+                ) or {}
+            except Exception:
+                continue
+
+            from silicon_pantheon.server.engine.state import UnitClass
+            from silicon_pantheon.server.engine.units import make_stats
+
+            unit_classes: dict[str, dict] = {}
+            for cls in UnitClass:
+                s = make_stats(cls)
+                unit_classes[cls.value] = {
+                    "hp_max": s.hp_max, "atk": s.atk, "defense": s.defense,
+                    "res": s.res, "spd": s.spd, "move": s.move,
+                    "rng_min": s.rng_min, "rng_max": s.rng_max,
+                    "is_magic": s.is_magic, "can_heal": s.can_heal,
+                    "heal_amount": s.heal_amount,
+                    "can_enter_forest": s.can_enter_forest,
+                    "can_enter_mountain": s.can_enter_mountain,
+                    "tags": list(s.tags),
+                    "glyph": s.glyph, "color": s.color,
+                    "display_name": s.display_name,
+                    "description": s.description,
+                }
+            for cls_name, cls_data in (cfg.get("unit_classes") or {}).items():
+                if isinstance(cls_data, dict):
+                    unit_classes[cls_name] = {
+                        **unit_classes.get(cls_name, {}),
+                        **cls_data,
+                    }
+
+            terrain_types: dict[str, dict] = {
+                "plain": {"display_name": "Plain", "move_cost": 1},
+                "forest": {"display_name": "Forest", "move_cost": 2, "defense_bonus": 2},
+                "mountain": {"display_name": "Mountain", "move_cost": 2, "defense_bonus": 3, "res_bonus": 1},
+                "fort": {"display_name": "Fort", "move_cost": 1, "defense_bonus": 3, "res_bonus": 3, "heals": 3},
+            }
+            for tname, spec in (cfg.get("terrain_types") or {}).items():
+                terrain_types[tname] = dict(spec or {})
+
+            scenarios[name] = {
+                "name": cfg.get("name", name),
+                "difficulty": cfg.get("difficulty", 3),
+                "description": cfg.get("description", ""),
+                "board": cfg.get("board", {}),
+                "armies": cfg.get("armies", {}),
+                "rules": cfg.get("rules", {}),
+                "unit_classes": unit_classes,
+                "terrain_types": terrain_types,
+                "win_conditions": _enrich_win_conditions(
+                    cfg.get("win_conditions") or [], name
+                ),
+                "scenario_slug": name,
+            }
+
+        # Compute content hash from sorted JSON.
+        content = _json.dumps(scenarios, sort_keys=True, default=str)
+        bundle_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
+
+        if cached_hash and cached_hash == bundle_hash:
+            return _ok({"match": True, "hash": bundle_hash})
+
+        return _ok({"match": False, "hash": bundle_hash, "scenarios": scenarios})
+
+    @mcp.tool()
     async def update_room_config(
         connection_id: str,
         scenario: str | None = None,
