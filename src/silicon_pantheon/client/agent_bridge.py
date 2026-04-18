@@ -306,21 +306,20 @@ def _build_default_adapter(model: str) -> ProviderAdapter:
     model_lower = model.lower()
     creds = load()
     provider_id: str
-    # Saved default_provider wins so a user who picked "OpenAI
-    # (subscription)" once doesn't get routed to the api-key adapter
-    # the next time just because the model name starts with "gpt".
-    if creds.default_provider:
-        provider_id = creds.default_provider
-    elif "codex" in model_lower:
-        # gpt-5-codex etc. — Codex-namespaced models go through the
-        # Codex subscription adapter, not the regular OpenAI API.
-        provider_id = "openai-codex"
-    elif model_lower.startswith(("claude", "sonnet", "opus")):
+    # Model name determines the provider. The model name is
+    # authoritative — it's what the user picked in this session's
+    # provider auth screen. The saved default_provider is only used
+    # as a fallback for unrecognized model names.
+    if model_lower.startswith(("claude", "sonnet", "opus")):
         provider_id = "anthropic"
+    elif "codex" in model_lower or model_lower.startswith("gpt-5."):
+        provider_id = "openai-codex"
     elif model_lower.startswith(("gpt", "o1", "o3", "o4")):
         provider_id = "openai"
     elif model_lower.startswith("grok"):
         provider_id = "xai"
+    elif creds.default_provider:
+        provider_id = creds.default_provider
     else:
         provider_id = "anthropic"
 
