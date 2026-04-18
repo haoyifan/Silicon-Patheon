@@ -1,11 +1,13 @@
 schema_version: 1
 name: Astronomy Tower
+difficulty: 2
 description: |
   Hogwarts, June 1997. Death Eaters breach the castle through a
   Vanishing Cabinet. Draco Malfoy confronts a weakened Dumbledore
   atop the Astronomy Tower while dark wizards and a werewolf fight
   through the corridors below. The Order guards must hold long
   enough for Dumbledore to escape — or fall trying.
+  Inspired by the Battle of the Astronomy Tower from Harry Potter by J.K. Rowling.
 
 board:
   width: 10

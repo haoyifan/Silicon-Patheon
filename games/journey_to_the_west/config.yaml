@@ -1,5 +1,6 @@
 schema_version: 1
 name: Journey to the West
+difficulty: 2
 description: |
   The pilgrim Tang Monk and his three disciples — Sun Wukong (the Monkey
   King), Zhu Bajie, and Sha Wujing — must escort the White Dragon Horse
@@ -8,6 +9,7 @@ description: |
 
   Blue (pilgrims) wins by getting Tang Monk to the temple at (13, 4),
   OR by wiping out all the monsters. Blue loses if Tang Monk dies.
+  Inspired by Journey to the West (西游记) by Wu Cheng'en, Chinese classical literature.
 
 board:
   width: 14

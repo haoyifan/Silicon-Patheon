@@ -1,11 +1,13 @@
 schema_version: 1
 name: "Pain's Assault on Konoha"
+difficulty: 3
 description: |
   Konoha, the Hidden Leaf Village. The Six Paths of Pain — puppets
   controlled by Nagato — descend upon the village with godlike power.
   Kakashi leads the defense while Tsunade heals the wounded. The
   village must hold out until Naruto returns in Sage Mode at turn 10
   to turn the tide.
+  Inspired by Pain's Assault on Konoha from Naruto Shippūden by Masashi Kishimoto.
 
 board:
   width: 16

@@ -1,5 +1,6 @@
 schema_version: 1
 name: Department of Mysteries
+difficulty: 2
 description: |
   Ministry of Magic, June 1996. Harry Potter and five members of
   Dumbledore's Army have broken into the Department of Mysteries
@@ -8,6 +9,7 @@ description: |
   Six teenagers against ten dark wizards, in a labyrinth of stone
   corridors and shelves of glowing orbs. All they need to do is
   survive until the Order of the Phoenix arrives.
+  Inspired by the Battle of the Department of Mysteries from Harry Potter by J.K. Rowling.
 
 board:
   width: 12

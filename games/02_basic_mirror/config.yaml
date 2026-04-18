@@ -1,4 +1,5 @@
 name: Basic Mirror
+difficulty: 2
 description: |
   12x12 map, 5 units per side (2 knights, 1 archer, 1 cavalry, 1 mage).
   Mirror-symmetric armies. The main MVP scenario for real agent matches.

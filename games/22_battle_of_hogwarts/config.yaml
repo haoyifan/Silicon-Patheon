@@ -1,5 +1,6 @@
 schema_version: 1
 name: Battle of Hogwarts
+difficulty: 5
 description: |
   Hogwarts, 1998. The Dark Lord's forces assault the ancient castle.
   Harry Potter and the defenders of Hogwarts — students, teachers,
@@ -7,6 +8,7 @@ description: |
   Death Eaters, and dark creatures. All combat is magical: wands
   clash, curses fly, and the castle itself shakes under the onslaught.
   Harry must survive. Voldemort or Nagini must fall.
+  Inspired by the Battle of Hogwarts from Harry Potter by J.K. Rowling.
 
 board:
   width: 14

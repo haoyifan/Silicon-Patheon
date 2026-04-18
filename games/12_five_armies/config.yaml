@@ -1,5 +1,6 @@
 schema_version: 1
 name: Battle of Five Armies
+difficulty: 5
 description: |
   Smaug is dead, killed by Bard's black arrow. Thorin Oakenshield
   has reclaimed Erebor and the dragon-hoard within. Bard, leading
@@ -9,6 +10,7 @@ description: |
   the Lonely Mountain, a goblin army with Wargs pours off the
   northern slopes. The three would-be enemies suddenly become
   three allies. Then the Eagles arrive. Then Beorn.
+  Inspired by the Battle of Five Armies from The Hobbit by J.R.R. Tolkien.
 
 board:
   width: 18

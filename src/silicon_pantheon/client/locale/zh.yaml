@@ -533,6 +533,11 @@ button_val:
 # 帮助浮层底栏
 help_footer: "↑/↓ 滚动   PgUp/PgDn 翻页   Esc / F2 关闭"
 
+# 难度
+difficulty:
+  label: "难度"
+  levels: ["入门", "简单", "中等", "困难", "专家"]
+
 # 错误消息
 errors:
   not_connected: "未连接"

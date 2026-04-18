@@ -163,8 +163,11 @@ class DescriptionPanel(Panel):
         armies = desc.get("armies") or {}
         unit_classes = desc.get("unit_classes") or {}
 
+        difficulty = desc.get("difficulty", 3)
+
         rows: list[RenderableType] = []
         rows.append(Text(name, style="bold yellow"))
+        rows.append(Text("★" * difficulty + "☆" * (5 - difficulty), style="yellow"))
         if story:
             rows.append(Text(""))
             rows.append(Text(story))

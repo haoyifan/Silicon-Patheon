@@ -1,5 +1,6 @@
 schema_version: 1
 name: Agincourt
+difficulty: 5
 description: |
   October 25, 1415. St. Crispin's Day. Henry V's small, exhausted,
   dysentery-ridden English army is cornered by a French force three
@@ -10,6 +11,7 @@ description: |
   through churned bog under a sky black with arrows. Most never
   reach the English line; many drown in mud under the weight of
   their own armor.
+  Inspired by the Battle of Agincourt (1415), Hundred Years' War, England vs France.
 
 board:
   width: 10

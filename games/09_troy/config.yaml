@@ -1,5 +1,6 @@
 schema_version: 1
 name: Troy
+difficulty: 3
 description: |
   The ninth year of the siege. Achilles, sulking in his tent over a
   slight from Agamemnon, has stayed out of the war for weeks. Hector
@@ -8,6 +9,7 @@ description: |
   Achilles's borrowed armor — Achilles returns to the field. The
   two greatest warriors of the age, who have avoided each other for
   nine years, finally meet outside the Scaean Gate.
+  Inspired by the Trojan War, Homer's Iliad, ancient Greece.
 
 board:
   width: 16

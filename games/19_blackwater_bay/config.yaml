@@ -1,11 +1,13 @@
 schema_version: 1
 name: Blackwater Bay
+difficulty: 4
 description: |
   King's Landing, 299 AC. Stannis Baratheon's fleet sails into
   Blackwater Bay to seize the Iron Throne. Tyrion Lannister, acting
   Hand of the King, has prepared a surprise — a ship full of wildfire
   that turns the bay into green hell. But Stannis presses the beach
   assault. Tyrion must hold the walls until Tywin's army arrives.
+  Inspired by the Battle of the Blackwater from Game of Thrones by George R.R. Martin.
 
 board:
   width: 16

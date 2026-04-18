@@ -308,6 +308,7 @@ class ScenarioPicker:
                 padding=(0, 1),
             )
         title = desc.get("name") or _slug_to_title(name)
+        difficulty = desc.get("difficulty", 3)
         story = (desc.get("description") or "").strip()
         wcs = desc.get("win_conditions") or []
         armies = desc.get("armies") or {}
@@ -315,6 +316,7 @@ class ScenarioPicker:
         rules = desc.get("rules") or {}
 
         rows: list[RenderableType] = []
+        rows.append(Text("★" * difficulty + "☆" * (5 - difficulty), style="yellow"))
         if story:
             rows.append(Text(story))
         if wcs:

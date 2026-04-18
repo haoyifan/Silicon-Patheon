@@ -1,11 +1,13 @@
 schema_version: 1
 name: Marineford — Summit War
+difficulty: 4
 description: |
   Marineford, the Marine Headquarters. Whitebeard and his pirate
   alliance assault the stronghold to rescue Portgas D. Ace from
   execution. Three admirals, the Fleet Admiral, and the world's
   greatest swordsman stand in their way. The Whitebeard Pirates
   must reach the execution platform before time runs out.
+  Inspired by the Battle of Marineford from One Piece by Eiichiro Oda.
 
 board:
   width: 18

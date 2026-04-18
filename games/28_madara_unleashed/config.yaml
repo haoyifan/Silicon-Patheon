@@ -1,5 +1,6 @@
 schema_version: 1
 name: Madara Unleashed
+difficulty: 3
 description: |
   Fourth Great Ninja War. Madara Uchiha has been resurrected and
   stands alone against the entire Allied Shinobi Forces. With the
@@ -7,6 +8,7 @@ description: |
   Five Kage and Naruto in Sage Mode must survive long enough for
   the sealing jutsu to be prepared. Killing Madara is nearly
   impossible — the alliance wins through endurance, not force.
+  Inspired by Madara's rampage in the Fourth Shinobi World War from Naruto Shippūden by Masashi Kishimoto.
 
 board:
   width: 14

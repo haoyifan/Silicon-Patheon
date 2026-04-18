@@ -1,5 +1,6 @@
 schema_version: 1
 name: Red Cliffs
+difficulty: 4
 description: |
   Winter, 208 AD. The Han dynasty is collapsing. Cao Cao has united
   the north under his banner and brings 800,000 men (he claims) and
@@ -10,6 +11,7 @@ description: |
   Cao Cao's chained northern fleet on a borrowed wind. The Yangtze
   burns through the night and most of Cao Cao's army with it. The
   Three Kingdoms era begins for real.
+  Inspired by the Battle of Red Cliffs (208 AD), Three Kingdoms period, China.
 
 board:
   width: 18

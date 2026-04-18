@@ -1,5 +1,6 @@
 schema_version: 1
 name: Stirling Bridge
+difficulty: 4
 description: |
   September 11, 1297. The English army under the Earl of Surrey
   approaches the River Forth at Stirling, the lowest crossing
@@ -10,6 +11,7 @@ description: |
   charge down. The bridge becomes a bottleneck through which the
   English can neither retreat nor reinforce. They are destroyed
   against their own river.
+  Inspired by the Battle of Stirling Bridge (1297), Scottish Wars of Independence.
 
 board:
   width: 12

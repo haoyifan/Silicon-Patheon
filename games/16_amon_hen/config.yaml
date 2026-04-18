@@ -1,5 +1,6 @@
 schema_version: 1
 name: Amon Hen — Breaking of the Fellowship
+difficulty: 3
 description: |
   Parth Galen, February 26 T.A. 3019. The Fellowship rests on the
   western shore of Nen Hithoel, at the foot of Amon Hen. Frodo
@@ -8,6 +9,7 @@ description: |
   Merry and Pippin. Aragorn, Legolas, and Gimli fight through the
   trees. Frodo must reach the eastern bank — the boats at the
   ford — before the Uruks cut him off.
+  Inspired by the Breaking of the Fellowship at Amon Hen from The Lord of the Rings by J.R.R. Tolkien.
 
 board:
   width: 12

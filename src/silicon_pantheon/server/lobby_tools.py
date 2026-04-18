@@ -323,6 +323,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
         return _ok({
             "name": cfg.get("name", name),
+            "difficulty": cfg.get("difficulty", 3),
             "description": cfg.get("description", ""),
             "board": cfg.get("board", {}),
             "armies": cfg.get("armies", {}),

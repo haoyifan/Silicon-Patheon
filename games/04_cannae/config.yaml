@@ -1,5 +1,6 @@
 schema_version: 1
 name: Cannae
+difficulty: 4
 description: |
   August 216 BC. Hannibal Barca has already crushed three Roman
   armies in Italy; now Rome fields 80,000 men — the largest it has
@@ -10,6 +11,7 @@ description: |
   in from both flanks. The Numidian cavalry closes the back. By
   sunset, 50,000 Romans are dead. It is the textbook example of
   the double envelopment — still taught at war colleges.
+  Inspired by the Battle of Cannae (216 BC), Second Punic War, ancient Rome.
 
 board:
   width: 16

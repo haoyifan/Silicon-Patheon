@@ -1,11 +1,13 @@
 schema_version: 1
 name: Pelennor Fields
+difficulty: 5
 description: |
   Minas Tirith, March 15, T.A. 3019. The forces of Mordor besiege
   the White City. The Witch-King of Angmar leads a vast army of orcs,
   Haradrim, and trolls against the walls of Gondor. Gandalf holds the
   gate. Aragorn rallies the defenders. If the orcs breach the city,
   Middle-earth falls — unless the Rohirrim ride to the rescue.
+  Inspired by the Battle of the Pelennor Fields from The Lord of the Rings by J.R.R. Tolkien.
 
 board:
   width: 18

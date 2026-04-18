@@ -546,6 +546,11 @@ button_val:
 # Help overlay footer
 help_footer: "↑/↓ scroll   PgUp/PgDn page   Esc / F2 close"
 
+# Difficulty
+difficulty:
+  label: "Difficulty"
+  levels: ["Beginner", "Easy", "Medium", "Hard", "Expert"]
+
 # Error messages
 errors:
   not_connected: "not connected"

@@ -1,5 +1,6 @@
 schema_version: 1
 name: Siege of the North
+difficulty: 4
 description: |
   The Northern Water Tribe, the last great waterbending stronghold.
   Admiral Zhao's Fire Nation armada has reached the ice walls after
@@ -7,6 +8,7 @@ description: |
   fortress while Zhao seeks to reach the Spirit Oasis and kill the
   Moon Spirit. If Aang survives to the turn cap, the Avatar State
   will unleash the Ocean Spirit and end the siege.
+  Inspired by the Siege of the North from Avatar: The Last Airbender.
 
 board:
   width: 16

@@ -1,5 +1,6 @@
 schema_version: 1
 name: Battle of Zion Dock
+difficulty: 4
 description: |
   Zion, the last human city. The machines have breached the dock
   ceiling and sentinels pour in by the thousand. APU pilots man
@@ -8,6 +9,7 @@ description: |
   Niobe races through the chaos to reach the power terminal and
   restore the city's EMP grid. Two massive drill machines grind
   toward the Zion core — if even one reaches it, the city falls.
+  Inspired by the Battle of Zion from The Matrix Revolutions.
 
 board:
   width: 16

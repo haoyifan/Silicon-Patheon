@@ -1,5 +1,6 @@
 schema_version: 1
 name: Kadesh
+difficulty: 4
 description: |
   May, 1274 BC. Pharaoh Ramses II marches north into Hittite
   territory to retake the city of Kadesh on the Orontes. Bedouins,
@@ -11,6 +12,7 @@ description: |
   claim victory; the surviving treaty is the earliest recorded
   peace agreement in history. The chariot is the showpiece of the
   Bronze Age, and this is its biggest stage.
+  Inspired by the Battle of Kadesh (1274 BC), ancient Egypt vs Hittite Empire.
 
 board:
   width: 14

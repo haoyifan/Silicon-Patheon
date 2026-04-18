@@ -1,11 +1,13 @@
 schema_version: 1
 name: The Long Night
+difficulty: 5
 description: |
   Winterfell, 305 AC. The Army of the Dead marches south. Jon Snow,
   Daenerys Targaryen, and the combined forces of the living make their
   stand at Winterfell. The Dothraki charge into darkness, the Unsullied
   hold the trench line, and dragonfire lights up the night. But the
   dead keep coming. The only way to end it: kill the Night King.
+  Inspired by the Long Night from Game of Thrones by George R.R. Martin.
 
 board:
   width: 16

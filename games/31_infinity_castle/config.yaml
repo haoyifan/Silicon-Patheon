@@ -1,5 +1,6 @@
 schema_version: 1
 name: Infinity Castle
+difficulty: 3
 description: |
   The Infinity Castle — Muzan Kibutsuji's dimensional fortress that
   shifts and warps at his will. The Demon Slayer Corps launches its
@@ -8,6 +9,7 @@ description: |
   survives until the turn cap, sunrise will disintegrate the demons.
   Muzan's throne room fort grants him regeneration — he must be
   drawn away from it or overwhelmed.
+  Inspired by the Infinity Castle arc from Demon Slayer by Koyoharu Gotouge.
 
 board:
   width: 16

@@ -1,5 +1,6 @@
 schema_version: 1
 name: Battle of Trost
+difficulty: 3
 description: |
   Trost District, Wall Rose. The Colossal Titan has kicked a hole
   in the wall and titans pour through the breach. The Survey Corps
@@ -7,6 +8,7 @@ description: |
   Armin, and Captain Levi fight to hold the line while waiting for
   Eren to transform at turn 8. Once in Titan form, Eren must reach
   the breach at (7, 10) to seal it with the boulder.
+  Inspired by the Battle of Trost from Attack on Titan by Hajime Isayama.
 
 board:
   width: 14

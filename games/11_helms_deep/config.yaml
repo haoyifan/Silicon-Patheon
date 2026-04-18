@@ -1,5 +1,6 @@
 schema_version: 1
 name: Helm's Deep
+difficulty: 5
 description: |
   Saruman has marched his Uruk-hai out of Isengard with one
   purpose — to destroy the men of Rohan. King Théoden, with his
@@ -10,6 +11,7 @@ description: |
   explosives in the culvert. Aragorn buys time at the dawn-line;
   Gandalf rides up the road at sunrise with Éomer's cavalry and
   scatters the host.
+  Inspired by the Battle of Helm's Deep from The Lord of the Rings by J.R.R. Tolkien.
 
 board:
   width: 16

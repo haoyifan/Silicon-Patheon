@@ -1,11 +1,13 @@
 schema_version: 1
 name: "Enies Lobby — Rescue Robin"
+difficulty: 3
 description: |
   Enies Lobby, the Judicial Island. The Straw Hat Pirates storm the
   Bridge of Hesitation to rescue Nico Robin from CP9 and the World
   Government. Luffy's crew must fight through the elite assassins
   and reach Spandam before Robin is dragged through the Gates of
   Justice forever.
+  Inspired by the Enies Lobby arc from One Piece by Eiichiro Oda.
 
 board:
   width: 14

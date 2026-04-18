@@ -1,5 +1,6 @@
 schema_version: 1
 name: Battle of the Bastards
+difficulty: 4
 description: |
   Winterfell, 303 AC. Jon Snow, risen from the dead, rides north
   with a ragtag force of Free Folk, minor Stark bannermen, and one
@@ -9,6 +10,7 @@ description: |
   force in a closing vice. Jon must hold out long enough for
   Sansa's letter to bring the Knights of the Vale — or kill Ramsay
   before the trap closes.
+  Inspired by the Battle of the Bastards from Game of Thrones by George R.R. Martin.
 
 board:
   width: 14

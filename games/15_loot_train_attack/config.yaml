@@ -1,5 +1,6 @@
 schema_version: 1
 name: Loot Train Attack
+difficulty: 4
 description: |
   The Roseroad, 305 AC. Daenerys Targaryen has had enough of clever
   plans. She mounts Drogon and leads her Dothraki horde against the
@@ -7,6 +8,7 @@ description: |
   King's Landing. The column stretches along the road, laden with
   gold and grain — easy prey for dragonfire and screaming cavalry.
   Jaime Lannister must hold the line or lose everything.
+  Inspired by the Loot Train Attack from Game of Thrones by George R.R. Martin.
 
 board:
   width: 14

@@ -1,5 +1,6 @@
 schema_version: 1
 name: Thermopylae
+difficulty: 3
 description: |
   480 BC. Xerxes I of Persia marches the largest army the ancient
   world has ever seen down the coast road toward Athens. Leonidas,
@@ -8,6 +9,7 @@ description: |
   coastal pass 50 feet wide between sheer cliffs and the sea. For
   three days a handful of heavily-armored infantry holds the
   narrowest chokepoint on the road. The textbook hold-the-line.
+  Inspired by the Battle of Thermopylae (480 BC), ancient Greece.
 
 board:
   width: 14

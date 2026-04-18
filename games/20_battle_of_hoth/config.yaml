@@ -1,5 +1,6 @@
 schema_version: 1
 name: Battle of Hoth
+difficulty: 4
 description: |
   Hoth, 3 ABY. The Galactic Empire has found the Rebel Alliance's
   hidden base on the ice planet Hoth. General Veers leads a ground
@@ -7,6 +8,7 @@ description: |
   off blaster fire. The Rebels must hold long enough to evacuate
   their transports. Snowspeeders weave between walker legs while
   turrets hammer the Imperial advance.
+  Inspired by the Battle of Hoth from Star Wars: The Empire Strikes Back.
 
 board:
   width: 16

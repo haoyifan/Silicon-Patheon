@@ -1,4 +1,5 @@
 name: Tiny Skirmish
+difficulty: 1
 description: |
   6x6 map, 2 units per side (knight + archer). Smallest viable game;
   used to validate engine mechanics and as a smoke test for harness/renderer.

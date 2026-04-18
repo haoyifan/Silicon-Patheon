@@ -1,5 +1,6 @@
 schema_version: 1
 name: Strait of Hormuz
+difficulty: 4
 description: |
   February 2026 — the United States and Israel open "Operation
   Epic Fury" with nearly 900 coordinated strikes on Iranian
@@ -27,6 +28,7 @@ description: |
   coastal-missile batteries, a Basij infantry line, an IRGC
   commando core around the bunker, and sea mines in the Strait
   corridor that damage any unit stepping on them.
+  Inspired by modern geopolitical tensions in the Strait of Hormuz.
 
 board:
   width: 18

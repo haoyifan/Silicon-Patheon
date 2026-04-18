@@ -1,5 +1,6 @@
 schema_version: 1
 name: Little Bighorn
+difficulty: 5
 description: |
   June 25, 1876. Lt. Colonel George Armstrong Custer's 7th Cavalry
   attacks a vast Lakota and Cheyenne encampment on the Little
@@ -9,6 +10,7 @@ description: |
   on a force outnumbering him three to one. His battalion is
   surrounded on a low ridge and annihilated to the last man.
   "Custer's Last Stand."
+  Inspired by the Battle of Little Bighorn (1876), American frontier history.
 
 board:
   width: 12
