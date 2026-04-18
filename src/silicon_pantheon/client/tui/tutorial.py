@@ -220,7 +220,8 @@ class TutorialOverlay:
             return self.steps[self._step_idx].highlight_panel
         return None
 
-    def render(self) -> RenderableType:
+    def _build_content(self) -> tuple[Text, Text]:
+        """Build the body text and footer for the current step."""
         lc = self.locale
         step = self.steps[self._step_idx]
         total = len(self.steps)
@@ -229,33 +230,45 @@ class TutorialOverlay:
         title_text = t(step.title_key, lc)
         body_text = t(step.body_key, lc)
 
-        body = Text()
-        body.append(f"{title_text}\n\n", style="bold yellow")
-        body.append(body_text, style="white")
-        body.append("\n\n")
+        body = Text(no_wrap=False, overflow="fold")
+        body.append(f"{title_text}\n", style="bold yellow")
+        body.append(body_text.strip(), style="white")
+        body.append("\n")
 
         # Progress indicator
         dots = ""
         for i in range(total):
             dots += "●" if i == self._step_idx else "○"
-        body.append(f"{dots}  ", style="dim")
-        body.append(f"({idx}/{total})", style="dim")
+        body.append(f"{dots} ({idx}/{total})  ", style="dim")
+        body.append(t("tutorial.nav", lc), style="dim")
 
-        footer = Text()
-        footer.append(
-            t("tutorial.nav", lc),
-            style="dim",
-        )
+        return body, Text("")
 
+    def render(self) -> RenderableType:
+        """Full-screen centered modal (used by lobby tutorial)."""
+        body, _ = self._build_content()
         return Align.center(
             RichPanel(
-                Group(body, Text(""), footer),
-                title=f"📖 {t('tutorial.title', lc)}",
+                body,
+                title=f"📖 {t('tutorial.title', self.locale)}",
                 border_style="bright_yellow",
-                padding=(1, 3),
-                width=60,
+                padding=(1, 2),
+                width=56,
             ),
             vertical="middle",
+        )
+
+    def render_inline(self) -> RenderableType:
+        """Compact inline box for embedding inside a panel.
+
+        Used by room and game panels — the tutorial renders inside
+        the panel it's explaining, not as a separate overlay."""
+        body, _ = self._build_content()
+        return RichPanel(
+            body,
+            title=f"📖 {t('tutorial.title', self.locale)}",
+            border_style="bright_yellow",
+            padding=(0, 1),
         )
 
     def handle_key(self, key: str) -> None:
@@ -277,3 +290,10 @@ class TutorialOverlay:
         self.is_done = True
         if self._on_complete:
             self._on_complete()
+
+    def targets_panel(self, panel_name: str) -> bool:
+        """Check if the current step targets a specific panel."""
+        return (
+            not self.is_done
+            and self.highlight_panel == panel_name
+        )

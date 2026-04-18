@@ -404,10 +404,16 @@ class ActionsPanel(Panel):
                     style = "white"
                 lines.append(Text(f"{marker}{label}", style=style))
             body = Group(*lines)
+        tut = getattr(self.screen, '_tutorial', None)
+        tut_here = tut and not tut.is_done and (
+            tut.targets_panel("actions") or tut.highlight_panel is None
+        )
+        if tut_here:
+            body = Group(body, Text(""), tut.render_inline())
         return RichPanel(
             body,
             title=self.title,
-            border_style=border_style(focused),
+            border_style="bright_yellow" if tut_here else border_style(focused),
             padding=(0, 1),
         )
 
@@ -833,24 +839,14 @@ class RoomScreen(Screen):
         # accounted for — the bottom panels no longer get clipped in
         # tmux or short terminals.
         root = Layout()
-        if self._tutorial is not None and not self._tutorial.is_done:
-            root.split_column(
-                Layout(name="hdr", size=1),
-                Layout(name="body"),
-                Layout(name="tutorial", size=14),
-            )
-            root["hdr"].update(header_line)
-            root["body"].update(self._build_body())
-            root["tutorial"].update(self._tutorial.render())
-        else:
-            root.split_column(
-                Layout(name="hdr", size=1),
-                Layout(name="body"),
-                Layout(name="ftr", size=1),
-            )
-            root["hdr"].update(header_line)
-            root["body"].update(self._build_body())
-            root["ftr"].update(footer_line)
+        root.split_column(
+            Layout(name="hdr", size=1),
+            Layout(name="body"),
+            Layout(name="ftr", size=1),
+        )
+        root["hdr"].update(header_line)
+        root["body"].update(self._build_body())
+        root["ftr"].update(footer_line)
         return root
 
     def _build_body(self) -> Layout:

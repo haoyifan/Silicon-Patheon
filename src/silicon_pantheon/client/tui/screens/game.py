@@ -337,10 +337,14 @@ class PlayerPanel(Panel):
             self.scroll = max_scroll
         if self.scroll > 0 and rows:
             rows = rows[self.scroll :]
+        tut = getattr(self.screen, '_tutorial', None)
+        if tut and tut.targets_panel("player"):
+            rows.append(Text(""))
+            rows.append(tut.render_inline())
         return RichPanel(
             Group(*rows),
             title=self.title,
-            border_style=border_style(focused),
+            border_style="bright_yellow" if (tut and tut.targets_panel("player")) else border_style(focused),
             padding=(0, 1),
         )
 
@@ -445,10 +449,21 @@ class GameMapPanel(Panel):
                     text.append(f" {g} ", style=st)
             text.append("\n")
         footer_body = self._cursor_tooltip(w, h, tile_by_pos, unit_at)
+        parts: list[RenderableType] = [text, Text(""), footer_body]
+        # Inline tutorial: embed inside this panel when it's the target,
+        # OR when the step has no target panel (welcome/flow → default
+        # to the map panel as it's the largest).
+        tut = getattr(self.screen, '_tutorial', None)
+        tut_here = tut and not tut.is_done and (
+            tut.targets_panel("map") or tut.highlight_panel is None
+        )
+        if tut_here:
+            parts.append(Text(""))
+            parts.append(tut.render_inline())
         return RichPanel(
-            Group(text, Text(""), footer_body),
+            Group(*parts),
             title=self.title,
-            border_style=border_style(focused),
+            border_style="bright_yellow" if tut_here else border_style(focused),
             padding=(0, 1),
         )
 
@@ -690,10 +705,14 @@ class ReasoningPanel(Panel):
                    if hidden_below > 0 else "")
                 + ")"
             )
+        tut = getattr(self.screen, '_tutorial', None)
+        if tut and tut.targets_panel("reasoning"):
+            body = tut.render_inline()
+            title = self.title
         return RichPanel(
             body,
             title=title,
-            border_style=border_style(focused),
+            border_style="bright_yellow" if (tut and tut.targets_panel("reasoning")) else border_style(focused),
             padding=(0, 1),
         )
 
@@ -795,10 +814,13 @@ class CoachPanel(Panel):
             rows.append(Text(t("game_coach.recent", lc), style="dim"))
             for m in list(self.history)[-3:]:
                 rows.append(Text(f"  • {m}", style="dim"))
+        tut = getattr(self.screen, '_tutorial', None)
+        if tut and tut.targets_panel("coach"):
+            rows = [tut.render_inline()]
         return RichPanel(
             Group(*rows),
             title=self.title,
-            border_style=border_style(focused),
+            border_style="bright_yellow" if (tut and tut.targets_panel("coach")) else border_style(focused),
             padding=(0, 1),
         )
 
@@ -1134,24 +1156,14 @@ class GameScreen(Screen):
             footer_line = hints
 
         root = Layout()
-        if self._tutorial is not None and not self._tutorial.is_done:
-            root.split_column(
-                Layout(name="hdr", size=1),
-                Layout(name="body"),
-                Layout(name="tutorial", size=14),
-            )
-            root["hdr"].update(header_line)
-            root["body"].update(self._build_body())
-            root["tutorial"].update(self._tutorial.render())
-        else:
-            root.split_column(
-                Layout(name="hdr", size=1),
-                Layout(name="body"),
-                Layout(name="ftr", size=1),
-            )
-            root["hdr"].update(header_line)
-            root["body"].update(self._build_body())
-            root["ftr"].update(footer_line)
+        root.split_column(
+            Layout(name="hdr", size=1),
+            Layout(name="body"),
+            Layout(name="ftr", size=1),
+        )
+        root["hdr"].update(header_line)
+        root["body"].update(self._build_body())
+        root["ftr"].update(footer_line)
         return root
 
     def _build_body(self) -> Layout:
