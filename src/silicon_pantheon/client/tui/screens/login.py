@@ -127,9 +127,15 @@ class LoginScreen(Screen):
         lc = self.app.state.locale
         url = self._fields[0].value.strip()
         name = self._fields[1].value.strip()
-        # Validate before connecting.
-        if not url or not url.startswith(("http://", "https://")):
-            self.app.state.error_message = t("login_fields.url_invalid", lc)
+        # Validate URL format before connecting.
+        import re
+        if not url or not re.match(
+            r'^https?://[a-zA-Z0-9._-]+(:\d+)?(/[a-zA-Z0-9._/-]*)?/?$', url
+        ):
+            self.app.state.error_message = (
+                f"{t('login_fields.url_invalid', lc)} "
+                f"(expected: http://host:port/mcp/)"
+            )
             return None
         if not name:
             self.app.state.error_message = t("login_fields.display_name_required", lc)
@@ -237,37 +243,38 @@ async def _fetch_scenario_bundle(app: TUIApp) -> None:
 async def _validate_url(url: str) -> None:
     """Fast pre-flight check: probe the URL before attempting the full
     MCP handshake. Catches DNS errors, wrong ports, and non-MCP servers
-    in ~1s instead of hanging for 10s.
+    in ~2s instead of hanging for 10s.
 
     MCP servers respond to GET with 405 Method Not Allowed (they only
-    accept POST). A connection error or HTML response means the URL
-    is wrong."""
+    accept POST). Any other response means the URL is wrong or points
+    to a non-MCP server."""
     import httpx
 
+    _fmt = "Expected format: http://host:port/mcp/"
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=3.0) as client:
             r = await client.get(url)
-            # MCP endpoints return 405 on GET — that's correct.
+            # MCP endpoints return 405 on GET — that's the signal.
             if r.status_code == 405:
                 return  # looks like an MCP server
-            # 200 with HTML = web page, not MCP
+            # Anything else = not an MCP endpoint.
             ct = r.headers.get("content-type", "")
             if "html" in ct:
                 raise ConnectionError(
-                    f"URL returned a web page, not an MCP server. "
-                    f"Expected format: http://host:port/mcp/"
+                    f"URL returned a web page (HTTP {r.status_code}), "
+                    f"not an MCP server. {_fmt}"
                 )
-            # Other 2xx/3xx — might be OK, let MCP handshake decide
-            return
+            raise ConnectionError(
+                f"URL returned HTTP {r.status_code}, expected 405. "
+                f"This doesn't look like an MCP server. {_fmt}"
+            )
     except httpx.ConnectError as e:
         raise ConnectionError(
-            f"cannot connect to {url} — check host and port. "
-            f"Expected format: http://host:port/mcp/"
+            f"Cannot connect — check host and port. {_fmt}"
         ) from e
     except httpx.ConnectTimeout:
         raise ConnectionError(
-            f"connection timed out — server not responding. "
-            f"Expected format: http://host:port/mcp/"
+            f"Connection timed out — server not responding. {_fmt}"
         )
     except ConnectionError:
         raise
