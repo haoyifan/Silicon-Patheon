@@ -170,6 +170,8 @@ lobby_val:
 # Room action buttons
 room_buttons:
   toggle_ready: "Toggle Ready"
+  ready_yes: "ready"
+  ready_no: "not ready"
   strategy: "Strategy"
   lessons: "Lessons"
   change_scenario: "Change Scenario"

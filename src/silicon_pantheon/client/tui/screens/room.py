@@ -428,8 +428,21 @@ class ActionsPanel(Panel):
             lessons_label = f"{len(sel)} selected"
         else:
             lessons_label = t("button_val.none", lc)
+        # Show [ready] / [not ready] next to the toggle button so the
+        # player always knows their current state at a glance.
+        my_seat = rs.get("seats", {}).get(self.screen.app.state.slot or "", {})
+        ready_tag = (
+            f"[{t('room_buttons.ready_yes', lc)}]"
+            if my_seat.get("ready")
+            else f"[{t('room_buttons.ready_no', lc)}]"
+        )
         buttons: list[Button] = [
-            Button(label=t("room_buttons.toggle_ready", lc), action="toggle_ready", enabled=editable),
+            Button(
+                label=t("room_buttons.toggle_ready", lc),
+                action="toggle_ready",
+                value=ready_tag,
+                enabled=editable,
+            ),
             Button(
                 label=t("room_buttons.strategy", lc),
                 action="change_strategy",
