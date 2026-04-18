@@ -66,11 +66,11 @@ RESPONSES_ENDPOINT = "https://chatgpt.com/backend-api/codex/responses"
 # the version string is harmless.
 USER_AGENT = "codex_cli_rs/0.0.0 silicon-pantheon"
 
-# Default model when the caller doesn't override. Codex models live
-# in their own namespace; we pick a reasonable default that's known
-# to support tool calling. Model ids track the OpenClaw catalog —
-# update when upstream ships new codex-tuned models.
-DEFAULT_MODEL = "gpt-5.4"
+# Default model when the caller doesn't override. The codex backend's
+# /codex/models endpoint returns which models are available; as of
+# 2026-04 that's gpt-5.2. OpenClaw's catalog lists gpt-5.4 but those
+# are forward-compat entries that may not be live yet.
+DEFAULT_MODEL = "gpt-5.2"
 
 
 class CodexAdapter:
@@ -177,7 +177,7 @@ class CodexAdapter:
             # rely on it for dispatch.
             raw = resp.text
             content_type = resp.headers.get("content-type", "")
-            log.debug(
+            log.info(
                 "Codex response: status=%d content_type=%s body_bytes=%d",
                 resp.status_code, content_type, len(raw),
             )
@@ -506,6 +506,7 @@ class CodexAdapter:
     def _parse_sse_body(text: str) -> dict:
         """Extract the response from an SSE-formatted body."""
         result: dict = {}
+        event_types: list[str] = []
         for line in text.split("\n"):
             if not line.startswith("data: "):
                 continue
@@ -517,6 +518,7 @@ class CodexAdapter:
             except json.JSONDecodeError:
                 continue
             etype = event.get("type", "")
+            event_types.append(etype)
             if etype == "response.completed":
                 result = event.get("response", event)
             elif etype == "response.failed":
@@ -524,8 +526,18 @@ class CodexAdapter:
                               .get("error", {}).get("message", "unknown"))
                 raise RuntimeError(f"Codex response failed: {err_detail}")
         if not result:
-            log.warning("Codex stream ended without response.completed")
+            log.warning(
+                "Codex stream ended without response.completed; "
+                "event_types=%s body_head=%s",
+                event_types, text[:500],
+            )
             result = {"output": []}
+        else:
+            output = result.get("output") or []
+            log.info(
+                "Codex SSE parsed: event_types=%s output_items=%d",
+                event_types, len(output),
+            )
         return result
 
     def _build_request_body(self, tools: list[dict]) -> dict:
