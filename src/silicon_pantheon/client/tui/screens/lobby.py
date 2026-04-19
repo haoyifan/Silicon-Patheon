@@ -66,10 +66,15 @@ class LobbyScreen(Screen):
                 # Scenario: show human-readable name from config
                 scenario_raw = r.get("scenario", "")
                 scenario_display = r.get("scenario_display_name") or scenario_raw.replace("_", " ").lstrip("0123456789_")
+                # Players: host + joiner if present
+                players = r.get("host_name", "")
+                joiner = seats.get("b", {}).get("player", {})
+                if joiner and joiner.get("display_name"):
+                    players += f" vs {joiner['display_name']}"
                 table.add_row(
                     marker,
                     r.get("room_id", "")[:10],
-                    r.get("host_name", ""),
+                    players,
                     scenario_display,
                     t(f"lobby_val.team_{r.get('team_assignment', 'fixed')}", lc),
                     t(f"lobby_val.fog_{r.get('fog_of_war', 'none')}", lc),

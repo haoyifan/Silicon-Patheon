@@ -159,10 +159,16 @@ class BotWorker:
         log.info("worker %s room=%s waiting", cfg.name, room_id[:8])
 
         # ---- wait for game start ----
+        _wait_polls = 0
         while True:
             r = await client.call("get_room_state")
             if not r.get("ok"):
-                raise RuntimeError(f"get_room_state failed: {r}")
+                err = (r.get("error") or {}).get("message", str(r))
+                log.warning(
+                    "worker %s get_room_state failed (poll #%d): %s",
+                    cfg.name, _wait_polls, err,
+                )
+                raise RuntimeError(f"get_room_state failed: {err}")
             room = r.get("room", {})
             status = room.get("status")
             if status == "in_game":
@@ -174,6 +180,12 @@ class BotWorker:
             if opp_player.get("display_name"):
                 self.opponent = opp_player["display_name"]
                 self.status = f"waiting for {self.opponent} to ready"
+            _wait_polls += 1
+            if _wait_polls % 60 == 0:
+                log.info(
+                    "worker %s still waiting in room=%s (poll #%d, status=%s)",
+                    cfg.name, room_id[:8], _wait_polls, status,
+                )
             await asyncio.sleep(POLL_INTERVAL_S)
 
         # ---- play ----

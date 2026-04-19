@@ -144,34 +144,26 @@ class PlayerPanel(Panel):
     def key_hints(self) -> str:
         return t("game_player.key_hints", self.screen.app.state.locale)
 
-    def _team_model(self, team: str) -> str:
-        """Look up the model/provider for a team from room state."""
+    def _team_player_info(self, team: str) -> tuple[str, str]:
+        """Look up (display_name, model) for a team from room state."""
         rs = self.screen.app.state.last_room_state or {}
         seats = rs.get("seats") or {}
-        # slot_to_team mapping: need to find which slot plays this team.
-        # The room state doesn't directly map team→model, but we can
-        # check each seat's player metadata.
+        host_team = rs.get("host_team") or rs.get("config", {}).get("host_team", "blue")
+        team_assignment = rs.get("team_assignment", "fixed")
         for slot_id, seat in seats.items():
             player = seat.get("player") or {}
-            # Match seat to team via the slot_to_team mapping stored
-            # during game start. Fallback: slot a=host_team, b=other.
-            host_team = rs.get("host_team") or rs.get("config", {}).get("host_team", "blue")
-            team_assignment = rs.get("team_assignment", "fixed")
             if team_assignment == "fixed":
                 seat_team = host_team if slot_id == "a" else (
                     "red" if host_team == "blue" else "blue"
                 )
             else:
-                # Random assignment — we don't know from room state alone.
-                # Show display_name instead.
-                return player.get("display_name") or ""
-            if seat_team == team:
-                model = player.get("model") or ""
-                name = player.get("display_name") or ""
-                if model:
-                    return model
-                return name
-        return ""
+                seat_team = None
+            if seat_team == team or (seat_team is None and player):
+                return (
+                    player.get("display_name") or "",
+                    player.get("model") or "",
+                )
+        return ("", "")
 
     async def handle_key(self, key: str) -> "Screen | None":
         n = len(self._roster)
@@ -275,9 +267,12 @@ class PlayerPanel(Panel):
             rows.append(Text(""))
             header_style = "bold cyan" if team == "blue" else "bold red"
             from silicon_pantheon.client.tui.scenario_display import localized_team
-            # Show model next to the team name.
-            model_label = self._team_model(team)
-            header = Text(f"{localized_team(team, lc)}:", style=header_style)
+            # Show player name + model next to the team name.
+            player_name, model_label = self._team_player_info(team)
+            header = Text(f"{localized_team(team, lc)}", style=header_style)
+            if player_name:
+                header.append(f" ({player_name})", style="white")
+            header.append(":", style=header_style)
             if model_label:
                 header.append(f" {model_label}", style="dim")
             rows.append(header)
