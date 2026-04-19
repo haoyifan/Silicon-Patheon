@@ -18,7 +18,6 @@ import asyncio
 import glob
 import logging
 import random
-import time
 from pathlib import Path
 from typing import Any
 
@@ -43,25 +42,44 @@ class BotWorker:
         self.opponent: str | None = None
         self.turn_info: str = ""
         self._client = None
+        self._transport_ctx = None
         self._scenario: str = ""
 
     # ---- public interface ----
 
     async def run_forever(self) -> None:
         """Main loop — never returns unless cancelled."""
-        while True:
-            try:
-                await self._ensure_connected()
-                await self._game_loop()
-            except asyncio.CancelledError:
-                raise
-            except Exception as e:
-                log.exception("worker %s crashed: %s", self.config.name, e)
-                self.status = f"error: {e}"
-                self._client = None
-                await asyncio.sleep(TRANSPORT_RETRY_S)
+        try:
+            while True:
+                try:
+                    await self._ensure_connected()
+                    await self._game_loop()
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:
+                    log.exception("worker %s crashed: %s", self.config.name, e)
+                    self.status = f"error: {e}"
+                    await self._disconnect()
+                    await asyncio.sleep(TRANSPORT_RETRY_S)
+        finally:
+            await self._disconnect()
 
     # ---- connection ----
+
+    async def _disconnect(self) -> None:
+        """Clean up transport context and client."""
+        if self._client is not None:
+            try:
+                await self._client.stop_heartbeat()
+            except Exception:
+                pass
+        if self._transport_ctx is not None:
+            try:
+                await self._transport_ctx.__aexit__(None, None, None)
+            except Exception:
+                pass
+            self._transport_ctx = None
+        self._client = None
 
     async def _ensure_connected(self) -> None:
         if self._client is not None:
