@@ -123,9 +123,11 @@ class LobbyScreen(Screen):
         )
         # Tag the header with the active model so the user can see at
         # a glance which agent they've authorized for this session
-        # — handy when juggling multiple providers / keys.
+        # — handy when juggling multiple providers / keys. No explicit
+        # style so it inherits the header's bold-yellow (keeps the
+        # whole line visually as one unit).
         if self.app.state.model:
-            header.append(f"  ({self.app.state.model})", style="cyan")
+            header.append(f"  ({self.app.state.model})")
         subtitle = Text(f"{len(rooms)} {t('lobby_table.room', lc)} {t('lobby_table.open', lc)}", style="dim")
         view_bar = self._render_view_bar(lc)
 
