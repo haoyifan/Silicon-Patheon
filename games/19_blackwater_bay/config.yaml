@@ -12,59 +12,116 @@ description: |
   Inspired by the Battle of the Blackwater from Game of Thrones by George R.R. Martin.
 
 board:
-  width: 12
-  height: 10
+  width: 16
+  height: 14
   terrain:
-    # Blackwater Bay — water along the left edge
+    # ── Blackwater Bay — deep water, impassable (columns 0-2) ──
     - {x: 0, y: 0, type: water}
     - {x: 1, y: 0, type: water}
+    - {x: 2, y: 0, type: water}
     - {x: 0, y: 1, type: water}
     - {x: 1, y: 1, type: water}
+    - {x: 2, y: 1, type: water}
     - {x: 0, y: 2, type: water}
     - {x: 1, y: 2, type: water}
+    - {x: 2, y: 2, type: water}
     - {x: 0, y: 3, type: water}
     - {x: 1, y: 3, type: water}
+    - {x: 2, y: 3, type: water}
     - {x: 0, y: 4, type: water}
     - {x: 1, y: 4, type: water}
+    - {x: 2, y: 4, type: water}
     - {x: 0, y: 5, type: water}
     - {x: 1, y: 5, type: water}
+    - {x: 2, y: 5, type: water}
     - {x: 0, y: 6, type: water}
     - {x: 1, y: 6, type: water}
+    - {x: 2, y: 6, type: water}
     - {x: 0, y: 7, type: water}
     - {x: 1, y: 7, type: water}
+    - {x: 2, y: 7, type: water}
     - {x: 0, y: 8, type: water}
     - {x: 1, y: 8, type: water}
+    - {x: 2, y: 8, type: water}
     - {x: 0, y: 9, type: water}
     - {x: 1, y: 9, type: water}
-    # Wildfire zone — the burning bay between beach and shore
-    - {x: 3, y: 3, type: wildfire}
-    - {x: 4, y: 3, type: wildfire}
-    - {x: 3, y: 4, type: wildfire}
-    - {x: 4, y: 4, type: wildfire}
-    - {x: 3, y: 5, type: wildfire}
-    - {x: 4, y: 5, type: wildfire}
-    - {x: 3, y: 6, type: wildfire}
-    - {x: 4, y: 6, type: wildfire}
-    # City walls — eastern edge with Mud Gate gap at (10, 5)
-    - {x: 10, y: 0, type: city_wall}
-    - {x: 11, y: 0, type: city_wall}
-    - {x: 10, y: 1, type: city_wall}
-    - {x: 11, y: 1, type: city_wall}
-    - {x: 10, y: 2, type: city_wall}
-    - {x: 11, y: 2, type: city_wall}
-    - {x: 10, y: 3, type: city_wall}
-    - {x: 11, y: 3, type: city_wall}
-    - {x: 11, y: 4, type: city_wall}
-    # (10, 4) and (10, 5) form the Mud Gate — passable, 2 tiles wide
-    - {x: 11, y: 5, type: city_wall}
-    - {x: 10, y: 6, type: city_wall}
-    - {x: 11, y: 6, type: city_wall}
-    - {x: 10, y: 7, type: city_wall}
-    - {x: 11, y: 7, type: city_wall}
-    - {x: 10, y: 8, type: city_wall}
-    - {x: 11, y: 8, type: city_wall}
-    - {x: 10, y: 9, type: city_wall}
-    - {x: 11, y: 9, type: city_wall}
+    - {x: 2, y: 9, type: water}
+    - {x: 0, y: 10, type: water}
+    - {x: 1, y: 10, type: water}
+    - {x: 2, y: 10, type: water}
+    - {x: 0, y: 11, type: water}
+    - {x: 1, y: 11, type: water}
+    - {x: 2, y: 11, type: water}
+    - {x: 0, y: 12, type: water}
+    - {x: 1, y: 12, type: water}
+    - {x: 2, y: 12, type: water}
+    - {x: 0, y: 13, type: water}
+    - {x: 1, y: 13, type: water}
+    - {x: 2, y: 13, type: water}
+    # ── Beach landing zones — soft sand along the shore (column 3) ──
+    - {x: 3, y: 0, type: beach}
+    - {x: 3, y: 1, type: beach}
+    - {x: 3, y: 2, type: beach}
+    - {x: 3, y: 3, type: beach}
+    - {x: 3, y: 4, type: beach}
+    - {x: 3, y: 5, type: beach}
+    - {x: 3, y: 6, type: beach}
+    - {x: 3, y: 7, type: beach}
+    - {x: 3, y: 8, type: beach}
+    - {x: 3, y: 9, type: beach}
+    - {x: 3, y: 10, type: beach}
+    - {x: 3, y: 11, type: beach}
+    - {x: 3, y: 12, type: beach}
+    - {x: 3, y: 13, type: beach}
+    - {x: 4, y: 0, type: beach}
+    - {x: 4, y: 13, type: beach}
+    # ── Wildfire zone — the burning bay, a diagonal barrier ──
+    # Forces blue to route north or south around it
+    - {x: 7, y: 3, type: wildfire}
+    - {x: 7, y: 4, type: wildfire}
+    - {x: 7, y: 5, type: wildfire}
+    - {x: 7, y: 6, type: wildfire}
+    - {x: 7, y: 7, type: wildfire}
+    - {x: 7, y: 8, type: wildfire}
+    - {x: 8, y: 4, type: wildfire}
+    - {x: 8, y: 5, type: wildfire}
+    - {x: 8, y: 6, type: wildfire}
+    - {x: 8, y: 7, type: wildfire}
+    - {x: 6, y: 5, type: wildfire}
+    - {x: 6, y: 6, type: wildfire}
+    # ── Burning wreckage — debris from wildfire ships ──
+    - {x: 5, y: 4, type: wreckage}
+    - {x: 6, y: 3, type: wreckage}
+    - {x: 6, y: 8, type: wreckage}
+    - {x: 5, y: 7, type: wreckage}
+    - {x: 9, y: 5, type: wreckage}
+    # ── Docks — wooden piers along the shore, north and south ──
+    - {x: 8, y: 1, type: dock}
+    - {x: 9, y: 1, type: dock}
+    - {x: 8, y: 11, type: dock}
+    - {x: 9, y: 11, type: dock}
+    # ── Siege rubble — bombardment debris near the walls ──
+    - {x: 10, y: 3, type: rubble}
+    - {x: 9, y: 7, type: rubble}
+    - {x: 10, y: 9, type: rubble}
+    - {x: 10, y: 6, type: rubble}
+    - {x: 9, y: 10, type: rubble}
+    # ── Battlement — Bronn's elevated firing position ──
+    - {x: 13, y: 2, type: battlement}
+    # ── City walls — with Mud Gate gap at y=6..7 ──
+    - {x: 12, y: 0, type: city_wall}
+    - {x: 12, y: 1, type: city_wall}
+    - {x: 12, y: 2, type: city_wall}
+    - {x: 12, y: 3, type: city_wall}
+    - {x: 12, y: 4, type: city_wall}
+    - {x: 12, y: 5, type: city_wall}
+    # (12, 6) and (12, 7) — the Mud Gate, passable gap in the wall
+    - {x: 12, y: 8, type: city_wall}
+    - {x: 12, y: 9, type: city_wall}
+    - {x: 12, y: 10, type: city_wall}
+    - {x: 12, y: 11, type: city_wall}
+    - {x: 12, y: 12, type: city_wall}
+    - {x: 12, y: 13, type: city_wall}
   forts: []
 
 terrain_types:
@@ -77,6 +134,15 @@ terrain_types:
     color: blue
     description: |
       The waters of Blackwater Bay. Deep and impassable on foot.
+  beach:
+    display_name: Beach
+    move_cost: 2
+    defense_bonus: 0
+    glyph: ","
+    color: yellow
+    description: |
+      Soft sand along the shoreline. Troops wade ashore here,
+      struggling through surf and shingle. Slow going but passable.
   wildfire:
     display_name: Wildfire
     move_cost: 1
@@ -88,6 +154,46 @@ terrain_types:
       Wildfire — the Alchemists' Guild's most terrible weapon.
       Burns green, burns hot, burns everything. Any unit standing
       in it takes massive damage each turn.
+  wreckage:
+    display_name: Burning Wreckage
+    move_cost: 2
+    defense_bonus: 1
+    heals: -3
+    glyph: "W"
+    color: bright_yellow
+    description: |
+      The charred remains of ships caught in the wildfire blast.
+      Smouldering timber and twisted hulls — dangerous to cross
+      but offers some cover among the debris.
+  dock:
+    display_name: Dock
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "="
+    color: yellow
+    description: |
+      Wooden piers jutting into the bay. Provides a clear landing
+      point away from the burning center — a flanking route.
+  rubble:
+    display_name: Siege Rubble
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "%"
+    color: yellow
+    description: |
+      Collapsed stone and splintered timber from catapult
+      bombardment. Difficult terrain but excellent cover for
+      troops advancing on the walls.
+  battlement:
+    display_name: Battlement
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "^"
+    color: bright_white
+    description: |
+      A fortified tower position atop the walls. Provides
+      commanding views and excellent protection for ranged units.
+      Bronn fires from here.
   city_wall:
     display_name: City Wall
     move_cost: 1
@@ -364,32 +470,38 @@ unit_classes:
 
 armies:
   blue:
-    # Stannis — leading from the front on the beach
-    - {class: stannis, pos: {x: 5, y: 4}}
-    # Davos — beside Stannis
+    # ── North landing group ──
+    # Melisandre — ranged magic from the north beach
+    - {class: melisandre, pos: {x: 4, y: 1}}
+    # Ser Guyard — leads the north beach assault
+    - {class: ser_guyard, pos: {x: 4, y: 2}}
+    # ── Center landing group (main assault) ──
+    # Stannis — leading from the front, center beach
+    - {class: stannis, pos: {x: 4, y: 6}}
+    # Davos — beside Stannis, ready to advance
     - {class: davos, pos: {x: 5, y: 5}}
-    # Salladhor Saan — ranged support from the flank
-    - {class: salladhor_saan, pos: {x: 3, y: 8}}
-    # Melisandre — magical fire from the rear
-    - {class: melisandre, pos: {x: 2, y: 2}}
-    # Three named knights — beach assault wave
-    - {class: ser_guyard, pos: {x: 5, y: 3}}
-    - {class: ser_rolland, pos: {x: 6, y: 5}}
-    - {class: ser_parmen, pos: {x: 6, y: 6}}
+    # Ser Rolland — center assault, south of Stannis
+    - {class: ser_rolland, pos: {x: 4, y: 8}}
+    # ── South landing group ──
+    # Ser Parmen — leads the south beach push
+    - {class: ser_parmen, pos: {x: 5, y: 10}}
+    # Salladhor Saan — ranged fire from the south flank
+    - {class: salladhor_saan, pos: {x: 3, y: 12}}
 
   red:
-    # Tyrion — behind the walls, commanding the defense
-    - {class: tyrion, pos: {x: 9, y: 5}}
-    # Bronn — on the walls, ready to shoot
-    - {class: bronn, pos: {x: 9, y: 3}}
-    # The Hound — at the Mud Gate
-    - {class: the_hound, pos: {x: 9, y: 4}}
-    # Podrick — support behind the line
-    - {class: podrick, pos: {x: 9, y: 6}}
-    # Cersei — deep behind walls
-    - {class: cersei, pos: {x: 9, y: 7}}
-    # Joffrey — cowering behind everyone
-    - {class: joffrey, pos: {x: 9, y: 8}}
+    # ── Wall defense, spread along the fortifications ──
+    # Bronn — on the battlement, ranged overwatch from the north
+    - {class: bronn, pos: {x: 13, y: 2}}
+    # The Hound — at the Mud Gate, blocking the breach
+    - {class: the_hound, pos: {x: 11, y: 7}}
+    # Tyrion — commanding the defense behind the gate
+    - {class: tyrion, pos: {x: 14, y: 7}}
+    # Podrick — support near Tyrion
+    - {class: podrick, pos: {x: 13, y: 9}}
+    # Cersei — deep behind the walls, southern section
+    - {class: cersei, pos: {x: 14, y: 11}}
+    # Joffrey — cowering as far back as possible
+    - {class: joffrey, pos: {x: 15, y: 12}}
     # Tywin — arrives as reinforcement at turn 8 (spawns via plugin)
 
 rules:
@@ -403,8 +515,8 @@ win_conditions:
   # Tyrion dies -> red loses
   - {type: protect_unit, unit_id: u_r_tyrion_1, owning_team: red}
   # Blue reaches the Mud Gate -> blue wins (city falls)
-  - {type: reach_tile, team: blue, pos: {x: 10, y: 4}}
-  - {type: reach_tile, team: blue, pos: {x: 10, y: 5}}
+  - {type: reach_tile, team: blue, pos: {x: 12, y: 6}}
+  - {type: reach_tile, team: blue, pos: {x: 12, y: 7}}
   # Tyrion survives the turn cap -> Tywin arrives in force, red wins
   - {type: protect_unit_survives, unit_id: u_r_tyrion_1, owning_team: red}
   # Either side wins by total elimination
