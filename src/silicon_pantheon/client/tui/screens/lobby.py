@@ -279,29 +279,27 @@ class LobbyScreen(Screen):
     def _render_leaderboard(self, lc: str) -> RenderableType:
         lb = self.app.state.last_leaderboard
 
-        tbl = Table(expand=True, show_lines=False, header_style="bold")
-        tbl.add_column(t("leaderboard.col_model", lc), overflow="fold", ratio=2)
-        tbl.add_column(t("leaderboard.col_games", lc), justify="right", width=3)
-        tbl.add_column(t("leaderboard.col_win_pct", lc), justify="right", width=4)
-        tbl.add_column(t("leaderboard.col_losses", lc), justify="right", width=2)
-        tbl.add_column(t("leaderboard.col_draws", lc), justify="right", width=2)
-        tbl.add_column(t("leaderboard.col_avg_think", lc), justify="right", width=5)
+        tbl = Table(expand=True, show_lines=False, header_style="bold", padding=(0, 1))
+        tbl.add_column(t("leaderboard.col_model", lc), overflow="fold", no_wrap=False)
+        tbl.add_column(t("leaderboard.col_games", lc), justify="right")
+        tbl.add_column(t("leaderboard.col_wins", lc), justify="right")
+        tbl.add_column(t("leaderboard.col_win_pct", lc), justify="right")
+        tbl.add_column(t("leaderboard.col_losses", lc), justify="right")
+        tbl.add_column(t("leaderboard.col_draws", lc), justify="right")
+        tbl.add_column(t("leaderboard.col_avg_think", lc), justify="right")
 
         if not lb:
-            tbl.add_row(t("leaderboard.no_data", lc), "", "", "", "", "")
+            tbl.add_row(t("leaderboard.no_data", lc), "", "", "", "", "", "")
         else:
             for entry in lb:
                 games = entry.get("games", 0)
                 wins = entry.get("wins", 0)
                 win_pct = f"{wins / games * 100:.0f}%" if games else "—"
                 model = entry.get("model", "?")
-                # Shorten common prefixes for display
-                for prefix in ("claude-", "gpt-"):
-                    if model.startswith(prefix):
-                        break
                 tbl.add_row(
                     model,
                     str(games),
+                    str(wins),
                     win_pct,
                     str(entry.get("losses", 0)),
                     str(entry.get("draws", 0)),

@@ -758,7 +758,8 @@ tutorial:
 leaderboard:
   title: "排行榜"
   col_model: "模型"
-  col_games: "场"
+  col_games: "场次"
+  col_wins: "胜"
   col_win_pct: "胜率"
   col_losses: "负"
   col_draws: "平"
