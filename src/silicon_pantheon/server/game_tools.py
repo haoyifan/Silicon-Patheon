@@ -95,7 +95,6 @@ def _maybe_update_ever_seen(session: Session, result: dict, viewer: Team) -> Non
 
 
 def start_game_for_room(app: App, room_id: str) -> None:
-    log.info("start_game_for_room: room=%s", room_id)
     """Promote a room from COUNTING_DOWN to IN_GAME.
 
     Builds the engine Session from the room's scenario, pins the
@@ -103,75 +102,100 @@ def start_game_for_room(app: App, room_id: str) -> None:
     coin-flipped for random), and flips every connection seated in
     the room into state IN_GAME. Idempotent if the room has already
     started.
+
+    ── Locking ──
+    The whole promotion is done under ``app.state_lock()``. Scenario
+    load + run_dir creation are inside the lock too — they're fast
+    (sub-10ms typically) and keeping them inline preserves the
+    atomicity of the whole transition. A per-room promotion is a
+    one-shot operation that happens at most once per match lifetime;
+    holding state_lock for ~10ms during that window is cheap.
+
+    ``session.log_match_players`` is called **outside** state_lock —
+    it writes to the replay file (which has its own lock) and only
+    reads the newly-created Session, which is already fully
+    initialised.
     """
-    room = app.rooms.get(room_id)
-    if room is None:
-        return
-    if room.status == RoomStatus.IN_GAME:
-        return
-    if not room.all_ready():
-        return
-    state = load_scenario(room.config.scenario)
-    state.max_turns = room.config.max_turns
-    # Give each match its own per-run directory so the replay + any
-    # future artifacts live together. Used directly by download_replay.
+    log.info("start_game_for_room: room=%s", room_id)
     from datetime import datetime
     from pathlib import Path as _Path
-
-    runs_dir = _Path("runs-server")
-    ts = datetime.now().strftime("%Y%m%dT%H%M%S")
-    run_dir = runs_dir / f"{ts}_{room.config.scenario}_{room_id}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    replay_path = run_dir / "replay.jsonl"
-    log.info("start_game_for_room: run_dir=%s", run_dir)
-    session = new_session(
-        state,
-        replay_path=replay_path,
-        scenario=room.config.scenario,
-        fog_of_war=room.config.fog_of_war,
-    )
     import time as _time
-    session.turn_start_time = _time.monotonic()
-    app.sessions[room_id] = session
-    if room.config.team_assignment == "fixed":
-        host_team = Team.BLUE if room.config.host_team == "blue" else Team.RED
-        other = Team.RED if host_team is Team.BLUE else Team.BLUE
-        app.slot_to_team[room_id] = {Slot.A: host_team, Slot.B: other}
-    else:  # "random"
-        coin = random.random() < 0.5
-        app.slot_to_team[room_id] = (
-            {Slot.A: Team.BLUE, Slot.B: Team.RED}
-            if coin
-            else {Slot.A: Team.RED, Slot.B: Team.BLUE}
-        )
-    room.status = RoomStatus.IN_GAME
-    promoted = []
-    for cid, (rid, _slot) in app.conn_to_room.items():
-        if rid == room_id:
-            c = app.get_connection(cid)
-            if c is not None:
-                c.state = ConnectionState.IN_GAME
-                promoted.append(cid[:8])
-    log.info(
-        "start_game_for_room: room=%s promoted connections=%s slot_to_team=%s",
-        room_id,
-        promoted,
-        {s.value: t.value for s, t in app.slot_to_team.get(room_id, {}).items()},
-    )
-    # Log player metadata to the replay so downstream tools (replay
-    # picker, analytics) know which models played which team.
-    slot_team = app.slot_to_team.get(room_id, {})
+
     players: dict[str, dict] = {}
-    for slot, seat in room.seats.items():
-        team = slot_team.get(slot)
-        if team is not None and seat.player is not None:
-            players[team.value] = {
-                "display_name": seat.player.display_name,
-                "kind": seat.player.kind,
-                "provider": seat.player.provider,
-                "model": seat.player.model,
-            }
-    session.log_match_players(players)
+    session: Session | None = None
+    with app.state_lock():
+        room = app.rooms.get(room_id)
+        if room is None:
+            return
+        # Idempotency re-check under the lock — two concurrent
+        # countdown tasks or a countdown + dev-game shortcut can
+        # both call us; only the first one wins.
+        if room.status == RoomStatus.IN_GAME:
+            return
+        if not room.all_ready():
+            return
+
+        state = load_scenario(room.config.scenario)
+        state.max_turns = room.config.max_turns
+        runs_dir = _Path("runs-server")
+        ts = datetime.now().strftime("%Y%m%dT%H%M%S")
+        run_dir = runs_dir / f"{ts}_{room.config.scenario}_{room_id}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        replay_path = run_dir / "replay.jsonl"
+        log.info("start_game_for_room: run_dir=%s", run_dir)
+        session = new_session(
+            state,
+            replay_path=replay_path,
+            scenario=room.config.scenario,
+            fog_of_war=room.config.fog_of_war,
+        )
+        session.turn_start_time = _time.monotonic()
+        app.sessions[room_id] = session
+        if room.config.team_assignment == "fixed":
+            host_team = Team.BLUE if room.config.host_team == "blue" else Team.RED
+            other = Team.RED if host_team is Team.BLUE else Team.BLUE
+            app.slot_to_team[room_id] = {Slot.A: host_team, Slot.B: other}
+        else:  # "random"
+            coin = random.random() < 0.5
+            app.slot_to_team[room_id] = (
+                {Slot.A: Team.BLUE, Slot.B: Team.RED}
+                if coin
+                else {Slot.A: Team.RED, Slot.B: Team.BLUE}
+            )
+        room.status = RoomStatus.IN_GAME
+        promoted = []
+        for cid, (rid, _slot) in app.conn_to_room.items():
+            if rid == room_id:
+                c = app._connections.get(cid)  # noqa: SLF001
+                if c is not None:
+                    c.state = ConnectionState.IN_GAME
+                    promoted.append(cid[:8])
+        log.info(
+            "start_game_for_room: room=%s promoted connections=%s "
+            "slot_to_team=%s",
+            room_id,
+            promoted,
+            {s.value: t.value for s, t in app.slot_to_team[room_id].items()},
+        )
+        # Build the players payload under the lock (seats + slot_team
+        # are state_lock-guarded). The actual replay write happens
+        # OUTSIDE the lock below.
+        slot_team = app.slot_to_team[room_id]
+        for slot, seat in room.seats.items():
+            team = slot_team.get(slot)
+            if team is not None and seat.player is not None:
+                players[team.value] = {
+                    "display_name": seat.player.display_name,
+                    "kind": seat.player.kind,
+                    "provider": seat.player.provider,
+                    "model": seat.player.model,
+                }
+
+    # Replay I/O outside state_lock. ReplayWriter has its own lock.
+    # Safe: session is fully initialised and no other thread has yet
+    # seen it mutate (we released state_lock after the writes above).
+    if session is not None:
+        session.log_match_players(players)
 
 
 def _note_game_over_if_needed(app: App, room_id: str) -> None:
@@ -179,30 +203,68 @@ def _note_game_over_if_needed(app: App, room_id: str) -> None:
 
     Called after every game-tool dispatch and any other code path that
     might cause termination (concede, auto-concede). Idempotent.
+
+    ── Locking ──
+    Three phases:
+
+    1. Read ``session.state.status`` under ``session.lock``. (The flip
+       to GAME_OVER is always done under session.lock by whichever
+       mutation caused it.)
+    2. If game is over, flip ``room.status = FINISHED`` and grab
+       snapshots of ``room`` + ``slot_to_team`` under ``state_lock``.
+       Use a did-we-win-the-race flag to make the leaderboard write
+       idempotent — only the thread that actually performs the
+       FINISHED transition does the I/O.
+    3. OUTSIDE all locks, do the slow I/O (log_match_end, record_match).
+       log_match_end reads session.state (immutable after GAME_OVER is
+       set) and writes the replay (which has its own lock); safe
+       without re-acquiring session.lock.
+
+    Strict acquisition order is honoured: session.lock is released
+    before state_lock is taken (never reversed). The two critical
+    sections don't nest.
     """
     from silicon_pantheon.server.engine.state import GameStatus
 
-    session = app.sessions.get(room_id)
+    session = app.get_session(room_id)
     if session is None:
         return
-    if session.state.status != GameStatus.GAME_OVER:
-        return
-    room = app.rooms.get(room_id)
-    if room is None:
-        return
-    if room.status == RoomStatus.FINISHED:
-        return
-    log.info("room %s transitioning IN_GAME -> FINISHED (game_over)", room_id)
-    session.log_match_end()
-    # Record match result to leaderboard DB.
-    try:
-        from silicon_pantheon.server.leaderboard import record_match
 
-        slot_to_team = app.slot_to_team.get(room_id, {})
-        record_match(session, room, slot_to_team)
-    except Exception:
-        log.exception("leaderboard record_match failed for room %s", room_id)
-    room.status = RoomStatus.FINISHED
+    # Phase 1: read session.state.status under session.lock.
+    with session.lock:
+        if session.state.status != GameStatus.GAME_OVER:
+            return
+
+    # Phase 2: transition room + snapshot under state_lock.
+    won_race = False
+    room_snap = None
+    slot_to_team_snap: dict = {}
+    with app.state_lock():
+        room = app.rooms.get(room_id)
+        if room is None:
+            return
+        if room.status != RoomStatus.FINISHED:
+            log.info(
+                "room %s transitioning IN_GAME -> FINISHED (game_over)",
+                room_id,
+            )
+            room.status = RoomStatus.FINISHED
+            won_race = True
+            room_snap = room
+            slot_to_team_snap = dict(app.slot_to_team.get(room_id, {}))
+
+    # Phase 3: slow I/O outside all app locks. Only the winner of the
+    # FINISHED-transition race performs the writes.
+    if won_race:
+        try:
+            session.log_match_end()
+        except Exception:
+            log.exception("log_match_end failed for room %s", room_id)
+        try:
+            from silicon_pantheon.server.leaderboard import record_match
+            record_match(session, room_snap, slot_to_team_snap)
+        except Exception:
+            log.exception("leaderboard record_match failed for room %s", room_id)
 
 
 def _viewer_for(conn: Connection, app: App) -> tuple[Any, Team] | None:
@@ -210,66 +272,115 @@ def _viewer_for(conn: Connection, app: App) -> tuple[Any, Team] | None:
 
     Returns None if the connection isn't in a game or the room/session
     has gone away.
+
+    Locking: takes ``app.state_lock()`` for the duration of the
+    multi-dict read so the resolution is atomic under concurrency.
     """
-    if conn.state != ConnectionState.IN_GAME:
-        return None
-    info = app.conn_to_room.get(conn.id)
-    if info is None:
-        return None
-    room_id, slot = info
-    session = app.sessions.get(room_id)
-    if session is None:
-        return None
-    # Slot → Team mapping is pinned at game-start time on the App.
-    mapping = app.slot_to_team.get(room_id)
-    if mapping is None:
-        return None
-    return session, mapping[slot]
+    with app.state_lock():
+        if conn.state != ConnectionState.IN_GAME:
+            return None
+        info = app.conn_to_room.get(conn.id)
+        if info is None:
+            return None
+        room_id, slot = info
+        session = app.sessions.get(room_id)
+        if session is None:
+            return None
+        # Slot → Team mapping is pinned at game-start time on the App.
+        mapping = app.slot_to_team.get(room_id)
+        if mapping is None:
+            return None
+        return session, mapping[slot]
 
 
 def _viewer_for_any_state(app: App, connection_id: str) -> tuple[Any, Team] | None:
-    """Like _viewer_for but works even after the game has finished."""
-    conn = app.get_connection(connection_id)
-    if conn is None:
-        return None
-    info = app.conn_to_room.get(connection_id)
-    if info is None:
-        return None
-    room_id, slot = info
-    session = app.sessions.get(room_id)
-    if session is None:
-        return None
-    mapping = app.slot_to_team.get(room_id)
-    if mapping is None:
-        return None
-    return session, mapping[slot]
+    """Like _viewer_for but works even after the game has finished.
+
+    Locking: takes ``app.state_lock()`` for the duration of the
+    multi-dict read so the resolution is atomic under concurrency.
+    """
+    with app.state_lock():
+        conn = app._connections.get(connection_id)  # noqa: SLF001
+        if conn is None:
+            return None
+        info = app.conn_to_room.get(connection_id)
+        if info is None:
+            return None
+        room_id, slot = info
+        session = app.sessions.get(room_id)
+        if session is None:
+            return None
+        mapping = app.slot_to_team.get(room_id)
+        if mapping is None:
+            return None
+        return session, mapping[slot]
 
 
 def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
-    """Shared body for every game tool wrapper."""
-    conn = app.get_connection(connection_id)
-    if conn is None:
-        return _error(ErrorCode.NOT_REGISTERED, "call set_player_metadata first")
-    if conn.state != ConnectionState.IN_GAME:
-        return _error(
-            ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-            f"game tools require state=in_game (current: {conn.state.value})",
-        )
-    # Track last meaningful tool call so the heartbeat sweeper can
-    # detect "transport alive, game loop dead" — the case where a
-    # client's heartbeat task keeps pinging but the TUI's tick loop
-    # has crashed and the player can no longer act. Without this the
-    # heartbeat lies about liveness and the opponent waits forever.
+    """Shared body for every game tool wrapper.
+
+    ── Locking ──
+    Three-phase execution:
+
+    1. **Resolve phase (state_lock):** atomically look up the
+       Connection, validate its state, resolve the viewer session +
+       team mapping, and bump ``conn.last_game_activity_at``. This
+       phase guarantees a consistent snapshot: if a concurrent
+       ``leave_room`` / sweep eviction races with us, either we saw
+       the connection in a valid state and proceed, or we return an
+       error — no torn reads.
+    2. **Execute phase (session.lock):** run the actual tool logic
+       against the game state. Hooks (session.action_hooks) fire
+       INSIDE this lock to preserve their ordering w.r.t. the
+       mutations they observe.
+    3. **Post-process phase (no app-level lock held):** check for
+       game-over transition via ``_note_game_over_if_needed``, which
+       has its own locking protocol.
+
+    Critical: no ``await`` is ever issued while either lock is held.
+    The handler is sync ``def``, so it cannot await anyway; this is
+    guaranteed by construction.
+    """
     import time as _time
-    conn.last_game_activity_at = _time.time()
-    resolved = _viewer_for(conn, app)
-    if resolved is None:
-        return _error(ErrorCode.GAME_NOT_STARTED, "no active game for this connection")
-    session, viewer = resolved
-    # Log every dispatch so a server log alone can reconstruct the
-    # full sequence of actions a client took (correlate with the
-    # client log via connection_id and tool name). Args are dumped
-    # short — full payloads are visible on the client side.
+
+    # ── Phase 1: resolve under state_lock ────────────────────────
+    with app.state_lock():
+        conn = app._connections.get(connection_id)  # noqa: SLF001
+        if conn is None:
+            return _error(
+                ErrorCode.NOT_REGISTERED, "call set_player_metadata first"
+            )
+        if conn.state != ConnectionState.IN_GAME:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                f"game tools require state=in_game (current: {conn.state.value})",
+            )
+        # Track last meaningful tool call so the heartbeat sweeper can
+        # detect "transport alive, game loop dead" — the case where a
+        # client's heartbeat task keeps pinging but the TUI's tick loop
+        # has crashed and the player can no longer act. Written under
+        # state_lock for atomicity with the conn.state read above.
+        conn.last_game_activity_at = _time.time()
+        info = app.conn_to_room.get(connection_id)
+        if info is None:
+            return _error(
+                ErrorCode.GAME_NOT_STARTED,
+                "no active game for this connection",
+            )
+        room_id, slot = info
+        session = app.sessions.get(room_id)
+        mapping = app.slot_to_team.get(room_id)
+        if session is None or mapping is None:
+            return _error(
+                ErrorCode.GAME_NOT_STARTED,
+                "no active game for this connection",
+            )
+        viewer = mapping[slot]
+
+    # Log every dispatch. Reads on session.state (turn + active_player)
+    # here are not strictly locked — they're written under session.lock
+    # by the engine, but single-field scalars are GIL-atomic and this
+    # line is diagnostic only.
     log.info(
         "tool dispatch: cid=%s tool=%s viewer=%s active=%s "
         "turn=%s args=%s",
@@ -280,6 +391,8 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
         session.state.turn,
         str(args)[:200] if args else "{}",
     )
+
+    # ── Phase 2: execute under session.lock ──────────────────────
     _t0_dispatch = _time.time()
     with session.lock:
         try:
@@ -312,12 +425,11 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
                 ),
             )
         filtered = _apply_filter(tool_name, result, session, viewer)
-    # After any tool that could flip status (end_turn / concede), make
-    # sure the room object reflects the game_over state so list_rooms
-    # can hide it and leave_room can accept.
-    info = app.conn_to_room.get(connection_id)
-    if info is not None:
-        _note_game_over_if_needed(app, info[0])
+
+    # ── Phase 3: post-process (no app-level lock held) ──────────
+    # _note_game_over_if_needed has its own 3-phase locking protocol;
+    # we just invoke it with the room_id we captured in phase 1.
+    _note_game_over_if_needed(app, room_id)
     _dt_dispatch = _time.time() - _t0_dispatch
     if _dt_dispatch > 1.0:
         log.warning(
