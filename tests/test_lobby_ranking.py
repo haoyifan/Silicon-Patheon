@@ -120,6 +120,61 @@ def test_model_details_renders_empty_state():
     assert "Head-to-Head" in out or "Opponent" in out
 
 
+def test_lobby_ranking_scrolls_when_selection_goes_past_viewport():
+    """Selecting row N (N > viewport size) should advance the scroll
+    offset so the row stays visible when render slices the window."""
+    from silicon_pantheon.client.tui.screens.lobby import LEADERBOARD_VISIBLE_ROWS
+    app = _FakeApp()
+    app.state.display_name = "alice"
+    app.state.last_leaderboard = [
+        {"model": f"m{i:02d}", "provider": "p", "games": 5, "wins": 2,
+         "losses": 3, "draws": 0, "avg_think_time_s": 1.0}
+        for i in range(LEADERBOARD_VISIBLE_ROWS + 5)
+    ]
+    screen = LobbyScreen(app)
+    asyncio.run(screen.handle_key("\t"))
+    for _ in range(LEADERBOARD_VISIBLE_ROWS + 3):
+        asyncio.run(screen.handle_key("j"))
+    _render(screen)  # triggers scroll adjustment
+    selected = screen._ranking_selected
+    scroll = screen._ranking_scroll
+    assert scroll > 0, "scroll should have advanced past initial 0"
+    assert scroll <= selected < scroll + LEADERBOARD_VISIBLE_ROWS, (
+        f"selected row {selected} must lie in viewport [{scroll}, "
+        f"{scroll + LEADERBOARD_VISIBLE_ROWS})"
+    )
+
+
+def test_lobby_layout_is_vertical_rooms_above_leaderboard():
+    """split_column puts rooms on top, leaderboard below — verify
+    text ordering in the rendered output."""
+    app = _FakeApp()
+    app.state.display_name = "alice"
+    app.state.last_leaderboard = [
+        {"model": "m1", "provider": "p", "games": 1, "wins": 1,
+         "losses": 0, "draws": 0, "avg_think_time_s": 1.0}
+    ]
+    out = _render(LobbyScreen(app))
+    rooms_idx = out.find("Lobby — alice")
+    lb_idx = out.find("Leaderboard")
+    assert 0 <= rooms_idx < lb_idx, "rooms panel must render above leaderboard"
+
+
+def test_leaderboard_table_has_row_dividers():
+    """Regression guard: show_lines=True must be preserved so each
+    model row is visually separated."""
+    app = _FakeApp()
+    app.state.display_name = "alice"
+    app.state.last_leaderboard = [
+        {"model": f"m{i}", "provider": "p", "games": 5, "wins": 3,
+         "losses": 2, "draws": 0, "avg_think_time_s": 1.0}
+        for i in range(4)
+    ]
+    out = _render(LobbyScreen(app))
+    # Rich's show_lines=True emits box-drawing chars for row separators.
+    assert "├" in out, "leaderboard rows should be separated by dividers"
+
+
 def test_model_details_renders_with_data():
     app = _FakeApp()
     screen = ModelDetailsScreen(app, model="claude-opus-4-7", provider="anthropic")

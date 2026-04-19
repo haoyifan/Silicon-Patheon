@@ -129,11 +129,14 @@ class SharedState:
     # server per-scenario. Cleared on exit (in-memory only).
     scenario_cache: dict[str, dict[str, Any]] = field(default_factory=dict)
     last_leaderboard: list[dict[str, Any]] = field(default_factory=list)
-    # Persist the lobby sub-view ("rooms" | "ranking") and the selected
-    # ranking row across screen transitions — otherwise going back from
-    # the model-details screen resets the user to the rooms view.
+    # Persist the lobby sub-view ("rooms" | "ranking"), the selected
+    # ranking row, and both scroll offsets across screen transitions —
+    # otherwise going back from the model-details screen resets the
+    # user's position.
     lobby_active_view: str = "rooms"
     lobby_ranking_selected: int = 0
+    lobby_rooms_scroll: int = 0
+    lobby_ranking_scroll: int = 0
     # Tutorial completion state — loaded from disk on startup.
     tutorial_state: Any = None  # TutorialState, lazy-loaded
 

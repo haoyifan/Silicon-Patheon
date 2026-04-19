@@ -21,6 +21,14 @@ from rich.text import Text
 from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 
+# Viewport sizes for the two stacked panels. Each panel windows its
+# list to these many rows; j/k auto-scrolls to keep the selected row
+# visible. Tuned for an 80×30 terminal where the split_column 2:3
+# gives the rooms panel ~12 lines and leaderboard ~18 lines after
+# borders/headers.
+ROOMS_VISIBLE_ROWS = 8
+LEADERBOARD_VISIBLE_ROWS = 12
+
 
 class LobbyScreen(Screen):
     def __init__(self, app: TUIApp):
@@ -50,6 +58,42 @@ class LobbyScreen(Screen):
     def _ranking_selected(self, value: int) -> None:
         self.app.state.lobby_ranking_selected = value
 
+    @property
+    def _rooms_scroll(self) -> int:
+        return self.app.state.lobby_rooms_scroll
+
+    @_rooms_scroll.setter
+    def _rooms_scroll(self, value: int) -> None:
+        self.app.state.lobby_rooms_scroll = value
+
+    @property
+    def _ranking_scroll(self) -> int:
+        return self.app.state.lobby_ranking_scroll
+
+    @_ranking_scroll.setter
+    def _ranking_scroll(self, value: int) -> None:
+        self.app.state.lobby_ranking_scroll = value
+
+    @staticmethod
+    def _slice_for_viewport(
+        items: list, selected: int, scroll: int, size: int
+    ) -> tuple[list, int]:
+        """Return the visible window and the (possibly adjusted) scroll.
+
+        Keeps the selected row inside [scroll, scroll+size) — classic
+        cursor-follow windowing. When the full list fits, scroll stays
+        at 0 so short lists don't look like they're mid-scroll.
+        """
+        total = len(items)
+        if total <= size:
+            return items, 0
+        if selected < scroll:
+            scroll = selected
+        elif selected >= scroll + size:
+            scroll = selected - size + 1
+        scroll = max(0, min(scroll, max(0, total - size)))
+        return items[scroll:scroll + size], scroll
+
     async def on_enter(self, app: TUIApp) -> None:
         # Immediate refresh on entry so the table is populated before the
         # first tick.
@@ -78,7 +122,11 @@ class LobbyScreen(Screen):
         if not rooms:
             table.add_row("", "", t("lobby_table.no_rooms", lc), "", "", "")
         else:
-            for i, r in enumerate(rooms):
+            visible_rooms, self._rooms_scroll = self._slice_for_viewport(
+                rooms, self._selected, self._rooms_scroll, ROOMS_VISIBLE_ROWS
+            )
+            for offset, r in enumerate(visible_rooms):
+                i = offset + self._rooms_scroll
                 marker = "➤" if i == self._selected else " "
                 seats = r.get("seats", {})
                 # Room ID: show short prefix for easy identification
@@ -125,18 +173,28 @@ class LobbyScreen(Screen):
         elif self.app.state.status_message:
             status.append(self.app.state.status_message, style="green")
 
+        # More-rows indicator so the user knows the list is windowed.
+        rooms_more = ""
+        if len(rooms) > ROOMS_VISIBLE_ROWS:
+            shown = min(ROOMS_VISIBLE_ROWS, len(rooms) - self._rooms_scroll)
+            rooms_more = f"[{self._rooms_scroll + 1}–{self._rooms_scroll + shown} of {len(rooms)}]"
+
         rooms_border = "green" if self._active_view == "rooms" else "dim"
         ranking_border = "cyan" if self._active_view == "ranking" else "dim"
-        body = Group(header, subtitle, view_bar, Text(""), table, Text(""), keys, status)
+        subtitle_line = Text(
+            f"{len(rooms)} {t('lobby_table.room', lc)} {t('lobby_table.open', lc)}  {rooms_more}",
+            style="dim",
+        )
+        body = Group(header, subtitle_line, view_bar, Text(""), table, Text(""), keys, status)
         room_panel = Panel(body, border_style=rooms_border, title=t("lobby_title", lc))
         lb_panel = self._render_leaderboard(lc, border_style=ranking_border)
 
         from rich.layout import Layout
 
         main = Layout()
-        main.split_row(
+        main.split_column(
             Layout(name="rooms", ratio=2),
-            Layout(name="leaderboard", ratio=1),
+            Layout(name="leaderboard", ratio=3),
         )
         main["rooms"].update(room_panel)
         main["leaderboard"].update(lb_panel)
@@ -353,7 +411,7 @@ class LobbyScreen(Screen):
 
         disclaimer = Text(t("leaderboard.disclaimer", lc), style="dim italic")
 
-        tbl = Table(expand=True, show_lines=False, header_style="bold", padding=(0, 1))
+        tbl = Table(expand=True, show_lines=True, header_style="bold", padding=(0, 1))
         tbl.add_column(" ", width=2)
         tbl.add_column(t("leaderboard.col_model", lc), overflow="fold", no_wrap=False)
         tbl.add_column(t("leaderboard.col_games", lc), justify="right")
@@ -368,7 +426,11 @@ class LobbyScreen(Screen):
         if not lb:
             tbl.add_row("", t("leaderboard.no_data", lc), "", "", "", "", "", "")
         else:
-            for i, entry in enumerate(lb):
+            visible, self._ranking_scroll = self._slice_for_viewport(
+                lb, self._ranking_selected, self._ranking_scroll, LEADERBOARD_VISIBLE_ROWS
+            )
+            for offset, entry in enumerate(visible):
+                i = offset + self._ranking_scroll
                 games = entry.get("games", 0)
                 wins = entry.get("wins", 0)
                 win_pct = f"{wins / games * 100:.0f}%" if games else "—"
@@ -388,8 +450,12 @@ class LobbyScreen(Screen):
                 )
 
         total = sum(e.get("games", 0) for e in lb) // 2 if lb else 0
+        lb_more = ""
+        if lb and len(lb) > LEADERBOARD_VISIBLE_ROWS:
+            shown = min(LEADERBOARD_VISIBLE_ROWS, len(lb) - self._ranking_scroll)
+            lb_more = f"  [{self._ranking_scroll + 1}–{self._ranking_scroll + shown} of {len(lb)}]"
         subtitle = Text(
-            f"{total} {t('leaderboard.total_games', lc)}",
+            f"{total} {t('leaderboard.total_games', lc)}{lb_more}",
             style="dim",
         )
         hint_text = (
