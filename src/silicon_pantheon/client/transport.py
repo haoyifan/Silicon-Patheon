@@ -24,12 +24,12 @@ log = logging.getLogger("silicon.transport")
 
 CLIENT_HEARTBEAT_INTERVAL_S = 10.0
 
-# Hard timeout for call_tool inside the lock. If the MCP SDK's SSE
-# stream silently dies, call_tool hangs forever. With the lock, one
-# hung call blocks ALL subsequent calls (heartbeat, state polls,
-# agent tools). This timeout surfaces the failure so the caller can
-# reconnect instead of hanging indefinitely.
-CALL_TOOL_TIMEOUT_S = 60.0
+# Watchdog interval: if call_tool hasn't returned after this many
+# seconds, log a detailed diagnostic snapshot. Does NOT cancel the
+# call — the hang remains visible so we can investigate the root
+# cause. The watchdog fires repeatedly every WATCHDOG_S until the
+# call completes or the process is killed.
+WATCHDOG_INTERVAL_S = 30.0
 
 # Tools that are purely noisy (heartbeat / state polls) are logged at
 # DEBUG so the file stays readable; everything else at INFO.
@@ -111,35 +111,39 @@ class ServerClient:
                 {k: v for k, v in kwargs.items()},
             )
             _t0 = _time.monotonic()
+            # Watchdog: periodically log diagnostics if the call is
+            # still pending. Does NOT cancel — we want the hang to be
+            # visible so we can find the root cause.
+            async def _watchdog():
+                while True:
+                    await asyncio.sleep(WATCHDOG_INTERVAL_S)
+                    elapsed = _time.monotonic() - _t0
+                    ws2 = getattr(self._session, "_write_stream", None)
+                    rs2 = getattr(self._session, "_read_stream", None)
+                    ws2_closed = getattr(ws2, "_closed", "?") if ws2 is not None else "?"
+                    rs2_closed = getattr(rs2, "_closed", "?") if rs2 is not None else "?"
+                    # Try to inspect MCP SDK internal state.
+                    pending_requests = "?"
+                    try:
+                        # ClientSession tracks pending requests internally.
+                        pending_requests = str(len(getattr(
+                            self._session, "_response_streams", {}
+                        )))
+                    except Exception:
+                        pass
+                    log.error(
+                        "call HUNG %s cid=%s pending=%.0fs — "
+                        "ws_closed=%s rs_closed=%s pending_requests=%s "
+                        "sess=%s ws=%s rs=%s",
+                        tool_name, self.connection_id, elapsed,
+                        ws2_closed, rs2_closed, pending_requests,
+                        id(self._session),
+                        id(ws2) if ws2 else None,
+                        id(rs2) if rs2 else None,
+                    )
+            wd_task = asyncio.create_task(_watchdog())
             try:
-                result = await asyncio.wait_for(
-                    self._session.call_tool(tool_name, args),
-                    timeout=CALL_TOOL_TIMEOUT_S,
-                )
-            except asyncio.TimeoutError:
-                elapsed = _time.monotonic() - _t0
-                # Capture diagnostic state to understand WHY the call hung.
-                ws2 = getattr(self._session, "_write_stream", None)
-                rs2 = getattr(self._session, "_read_stream", None)
-                ws2_closed = getattr(ws2, "_closed", "?") if ws2 is not None else "?"
-                # Check if the SSE read stream has pending data or is dead.
-                rs2_stats = ""
-                try:
-                    rs2_stats = f" rs_closed={getattr(rs2, '_closed', '?')}"
-                except Exception:
-                    pass
-                log.error(
-                    "call TIMEOUT %s cid=%s dt=%.1fs — "
-                    "session.call_tool did not return within %.0fs. "
-                    "Diagnostics: ws_closed=%s%s sess=%s. "
-                    "Possible causes: SSE stream dead, server never "
-                    "sent response, proxy (Caddy) closed connection, "
-                    "MCP SDK response matching bug.",
-                    tool_name, self.connection_id, elapsed,
-                    CALL_TOOL_TIMEOUT_S,
-                    ws2_closed, rs2_stats, id(self._session),
-                )
-                raise
+                result = await self._session.call_tool(tool_name, args)
             except Exception as e:
                 ws2 = getattr(self._session, "_write_stream", None)
                 rs2 = getattr(self._session, "_read_stream", None)
@@ -154,6 +158,8 @@ class ServerClient:
                     id(rs2) if rs2 is not None else None,
                 )
                 raise
+            finally:
+                wd_task.cancel()
         _dt = _time.monotonic() - _t0
         if _dt > 5.0:
             log.warning(
