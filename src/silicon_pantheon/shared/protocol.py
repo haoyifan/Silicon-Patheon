@@ -51,6 +51,9 @@ class ErrorCode(str, Enum):
     # Internal
     INTERNAL = "internal"
 
+    # Registration
+    NOT_REGISTERED = "not_registered"
+
     # Version handshake
     VERSION_MISMATCH = "version_mismatch"
 

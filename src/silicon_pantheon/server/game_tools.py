@@ -250,7 +250,7 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
     """Shared body for every game tool wrapper."""
     conn = app.get_connection(connection_id)
     if conn is None:
-        return _error(ErrorCode.TOKEN_INVALID, "unknown connection_id")
+        return _error(ErrorCode.NOT_REGISTERED, "call set_player_metadata first")
     if conn.state != ConnectionState.IN_GAME:
         return _error(
             ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
@@ -509,7 +509,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         """
         conn = app.get_connection(connection_id)
         if conn is None:
-            return _error(ErrorCode.TOKEN_INVALID, "unknown connection_id")
+            return _error(ErrorCode.NOT_REGISTERED, "call set_player_metadata first")
         if conn.state != ConnectionState.IN_GAME:
             return _error(
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
@@ -563,7 +563,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
                 connection_id, len(app._connections),
                 list(app.conn_to_room.keys())[:5],
             )
-            return _error(ErrorCode.TOKEN_INVALID, "unknown connection_id")
+            return _error(ErrorCode.NOT_REGISTERED, "call set_player_metadata first")
         if conn.state != ConnectionState.IN_GAME:
             # Diagnostic for the "winner pressed d on post-match,
             # got download_replay requires state=in_game" report.

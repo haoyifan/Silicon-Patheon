@@ -82,10 +82,21 @@ def test_heartbeat_returns_server_time() -> None:
     assert isinstance(out["server_time"], float)
 
 
+def test_heartbeat_does_not_create_connection() -> None:
+    """Heartbeat must not auto-create connections (registration backdoor)."""
+    app = App()
+    mcp = build_mcp_server(app)
+    _call(mcp, "heartbeat", connection_id="ghost")
+    assert app.get_connection("ghost") is None
+    assert app.connection_count() == 0
+
+
 def test_heartbeat_updates_last_heartbeat_at() -> None:
     app = App()
     mcp = build_mcp_server(app)
-    _call(mcp, "heartbeat", connection_id="c1")
+    # Register first — heartbeat no longer creates connections.
+    _call(mcp, "set_player_metadata", connection_id="c1",
+          display_name="Tester", kind="human")
     conn1 = app.get_connection("c1")
     assert conn1 is not None
     t1 = conn1.last_heartbeat_at

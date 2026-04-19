@@ -128,11 +128,11 @@ def test_game_tool_rejects_unknown_connection(server) -> None:
 
     async def go() -> None:
         async with ServerClient.connect(url) as c:
-            # Fresh connection, never called any tool. `_dispatch` sees an
-            # unknown connection_id and returns TOKEN_INVALID — which is
-            # semantically correct for the Phase 1a connection_id model.
+            # Fresh connection, never called set_player_metadata.
+            # `_dispatch` sees an unknown connection_id and returns
+            # NOT_REGISTERED — only set_player_metadata creates connections.
             r = await c.call("get_state")
             assert r["ok"] is False
-            assert r["error"]["code"] == "token_invalid"
+            assert r["error"]["code"] == "not_registered"
 
     asyncio.run(go())

@@ -3,18 +3,19 @@
 Holds the authoritative in-memory state (connections, rooms, tokens)
 and exposes the game + lobby tool surface over MCP streamable HTTP.
 
-Connection identity model for Phase 1a
----------------------------------------
+Connection identity model
+-------------------------
 
-Proper MCP auth via HTTP headers will land in Phase 1b alongside the
-join-room / per-match token flow. For Phase 1a we keep the
-state-shape clean by having the client pass a `connection_id`
-argument on every tool call. The server treats that argument as the
-primary key for its per-connection state table.
+Clients pass a `connection_id` argument on every tool call. The
+server treats that argument as the primary key for its per-connection
+state table.
 
-This is functionally equivalent to carrying a header token and lets
-us validate the tool contract end-to-end; switching to headers in 1b
-is a middleware-only change that does not touch tool handlers.
+Registration gate: only `set_player_metadata` may create a new
+Connection for an unknown connection_id. All other tools look up the
+connection via `get_connection()` and reject unknown IDs with a
+NOT_REGISTERED error. `heartbeat` tolerates unknown IDs (returns
+server_time without creating state) so it cannot be used as a
+registration backdoor.
 """
 
 from __future__ import annotations
@@ -211,12 +212,10 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
     @mcp.tool()
     def heartbeat(connection_id: str) -> dict:
         """Lightweight liveness ping. Returns server time in seconds."""
-        try:
-            conn = app.ensure_connection(connection_id)
-        except ValueError as e:
-            return _error(ErrorCode.BAD_INPUT, str(e))
+        conn = app.get_connection(connection_id)
         now = time.time()
-        conn.last_heartbeat_at = now
+        if conn is not None:
+            conn.last_heartbeat_at = now
         return _ok({"server_time": now})
 
     @mcp.tool()
