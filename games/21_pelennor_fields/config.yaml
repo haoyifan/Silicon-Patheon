@@ -502,6 +502,10 @@ rules:
   fog_of_war: false
   first_player: blue
 
+plugin_hooks:
+  on_turn_start:
+    - rohirrim_reinforcement
+
 win_conditions:
   # Gandalf dies -> blue loses (he's holding the gate).
   - {type: protect_unit, unit_id: u_b_gandalf_1, owning_team: blue}
@@ -532,7 +536,7 @@ narrative:
         of Minas Tirith. The stone cracks. Gandalf rides forward
         on Shadowfax, staff blazing.
     - trigger: on_turn_start
-      turn: 7
+      turn: 5
       text: |
         A horn sounds from the north — deep, resonant, echoing
         across the Pelennor. "Rohan has come!" Éomer raises his

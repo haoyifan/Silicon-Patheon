@@ -452,7 +452,7 @@ unit_classes:
   tywin:
     display_name: Tywin Lannister
     description: |
-      The Old Lion. Lord of Casterly Rock. Arrives at turn 8 with
+      The Old Lion. Lord of Casterly Rock. Arrives at turn 5 with
       fresh cavalry from the Kingsroad. The battle turns when his
       banner appears.
     hp_max: 28
@@ -502,7 +502,7 @@ armies:
     - {class: cersei, pos: {x: 14, y: 11}}
     # Joffrey — cowering as far back as possible
     - {class: joffrey, pos: {x: 15, y: 12}}
-    # Tywin — arrives as reinforcement at turn 8 (spawns via plugin)
+    # Tywin — arrives as reinforcement at turn 5 (spawns via plugin)
 
 rules:
   max_turns: 14
@@ -526,7 +526,7 @@ win_conditions:
 
 plugin_hooks:
   on_turn_start:
-    - tywin_reinforcements
+    - tyrell_reinforcements
 
 narrative:
   title: Battle of the Blackwater
@@ -546,14 +546,12 @@ narrative:
     - trigger: on_turn_start
       turn: 5
       text: |
-        The Hound throws down his sword. "F*** the Kingsguard.
-        F*** the city. F*** the king." Tyrion must lead the sortie
-        himself.
-    - trigger: on_turn_start
-      turn: 8
-      text: |
-        A horn sounds from the Kingsroad. Tywin Lannister rides at
-        the head of a fresh column. The Old Lion has arrived.
+        The Hound throws down his sword — "F*** the Kingsguard,
+        f*** the city, f*** the king" — AND at that same moment a
+        horn sounds from the Kingsroad. Tywin's banners crest the
+        ridge. Tyrell knights and the Old Lion charge the eastern
+        walls. Tyrion must still lead the sortie himself, but the
+        relief he was praying for has arrived.
     - trigger: on_unit_killed
       unit_id: u_r_tyrion_1
       text: |

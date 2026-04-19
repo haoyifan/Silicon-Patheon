@@ -18,22 +18,12 @@ unit_classes:
     description: |
       孙权麾下年轻的大都督，联军实际战场指挥官。
       才华横溢，风度翩翩，与诸葛亮暗中较劲。
-  guan_yu:
-    display_name: 关羽
-    description: |
-      刘备的结义兄弟——武圣，美髯公，青龙偃月刀在手，
-      一人抵得上一支小军队。后世被尊为武神。
   huang_gai:
     display_name: 黄盖
     description: |
       孙权帐下老将。主动请缨执行苦肉计：当众被周瑜
       杖打，使曹操相信他的投降是真的，然后驾火船
       直冲铁索连环的战舰。
-  wu_archer:
-    display_name: 吴军弓箭手
-    description: |
-      孙权麾下弓箭手——在摇晃的甲板上射箭训练了一辈子
-      的江边子弟。
   cao_cao:
     display_name: 曹操
     description: |
@@ -55,10 +45,6 @@ unit_classes:
     description: |
       三朝元老——先后侍奉孙坚、孙策、孙权。
       经验丰富的老将，铁矛在手沉稳如山。
-  cao_guard:
-    display_name: 虎豹骑
-    description: |
-      曹操的精锐亲卫。黄河以北最精锐的士兵。
   xiahou_dun:
     display_name: 夏侯惇
     description: |
@@ -89,10 +75,6 @@ unit_classes:
     description: |
       中原弩手。在铁索连环的稳固甲板上射击精准。
       不会游泳。
-  northern_infantry:
-    display_name: 北方步兵
-    description: |
-      中原征召的士兵。不会游泳，不想上船。
 
 terrain_types:
   river:
@@ -146,26 +128,27 @@ narrative:
     一柱清香，静待天时。黄盖的信号旗升起了。
   events:
     - trigger: on_turn_start
+      turn: 3
+      text: |
+        旗帜微动。东南方传来一阵风。诸葛亮在祭坛上睁开眼睛：
+        "风向已转。"周瑜拔剑："给黄盖发信号。全军——进攻！"
+    - trigger: on_turn_start
       turn: 5
       text: |
-        风向转东。诸葛亮微微一笑："时候到了。"
-    - trigger: on_turn_start
-      turn: 7
-      text: |
-        黄盖的先导火船撞上铁链。火焰跃向相邻的船只。
+        东风呼啸。黄盖的火船扬满帆疾冲而出，船头已起火舌。
+        曹军瞭望兵高声示警，可铁索连环的舰队无法四散。
     - trigger: on_turn_start
       turn: 8
       text: |
-        黄盖的火船撞上铁链。火焰从甲板跃向甲板。长江燃烧了。
-    - trigger: on_turn_start
-      turn: 12
-      text: |
-        江面亮如白昼。曹操大军在浓烟中哀嚎。
+        黄盖的火船撞上铁链。火焰顺着铁链从一艘船跃向另一艘。
+        长江自身仿佛在燃烧。士兵跳入黑水，在重甲中沉没。
     - trigger: on_turn_start
       turn: 14
       text: |
-        江面亮如白昼。曹操大军在浓烟中哀嚎惨叫。
+        江面亮如白昼。曹操大军在浓烟中哀嚎。
+        铁索连环——他最得意的创新——如今成了他的葬身柴堆。
     - trigger: on_unit_killed
       unit_id: u_r_cao_cao_1
       text: |
-        曹操阵亡。北方大军土崩瓦解。三国鼎立由此开始。
+        曹操在燃烧的甲板上倒下。统一北方的丞相，死于长江之上。
+        三国鼎立由此开始。

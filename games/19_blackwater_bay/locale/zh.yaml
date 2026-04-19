@@ -43,27 +43,6 @@ unit_classes:
     description: |
       史坦尼斯彩虹护卫的另一位骑士。沉稳、有纪律，
       坚守他负责的防线。
-  baratheon_infantry:
-    display_name: 拜拉席恩步兵
-    description: |
-      史坦尼斯的步兵。训练有素、意志坚定，在箭雨和
-      野火中强行登陆。
-  baratheon_archer:
-    display_name: 拜拉席恩弓箭手
-    description: |
-      从船上和海滩提供掩护射击的弓手。
-  siege_tower:
-    display_name: 攻城塔
-    description: |
-      用于攀登城墙的巨型轮式塔楼。慢如蜗牛但坚如堡垒。
-  baratheon_maester:
-    display_name: 拜拉席恩学士
-    description: |
-      随军学士。在箭雨和野火的间隙照料海滩上的伤员。
-  lannister_maester:
-    display_name: 兰尼斯特学士
-    description: |
-      服务于君临城的学城学士。在城墙后方包扎伤口。
   tyrion:
     display_name: 提利昂·兰尼斯特
     description: |
@@ -92,21 +71,13 @@ unit_classes:
   tywin:
     display_name: 泰温·兰尼斯特
     description: |
-      老狮子。凯岩城之主。第八回合率领精锐骑兵从国王大道
+      老狮子。凯岩城之主。第五回合率领精锐骑兵从国王大道
       赶到。他的旗帜出现时，战局逆转。
   bronn:
     display_name: 波隆
     description: |
       佣兵变骑士。射出点燃野火船的那一箭的人。
       远近皆致命。
-  lannister_guard:
-    display_name: 兰尼斯特卫兵
-    description: |
-      西境武装步兵。装甲精良、薪酬丰厚，守卫首都城墙。
-  city_watch:
-    display_name: 都城守卫
-    description: |
-      君临城的金袍卫。训练不足、不可靠，但填补城墙上的空隙。
   tyrell_knight:
     display_name: 提利尔骑士
     description: |
@@ -170,13 +141,10 @@ narrative:
     - trigger: on_turn_start
       turn: 5
       text: |
-        猎狗扔下了剑。"去他的御林铁卫。去他的这座城。
-        去他的国王。"提利昂必须亲自率领突击。
-    - trigger: on_turn_start
-      turn: 8
-      text: |
-        国王大道传来号角。泰温·兰尼斯特率领精锐骑兵
-        赶到。老狮子驾临了。
+        猎狗扔下了剑——"去他的御林铁卫，去他的这座城，
+        去他的国王。"就在同一刻，国王大道传来号角。
+        泰温的旗帜翻过山脊，提利尔骑士与老狮子直扑东墙。
+        提利昂仍须亲自率领突击，但他祈祷的援军已经到了。
     - trigger: on_unit_killed
       unit_id: u_r_tyrion_1
       text: |

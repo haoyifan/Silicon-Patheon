@@ -622,6 +622,9 @@ rules:
   fog_of_war: false
   first_player: blue
 
+plugin_hooks:
+  on_turn_start: [light_fire]
+
 win_conditions:
   - {type: protect_unit, unit_id: u_r_cao_cao_1, owning_team: red}
   - {type: eliminate_all_enemy_units}

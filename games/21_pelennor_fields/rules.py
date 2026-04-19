@@ -1,6 +1,6 @@
-"""Pelennor Fields — Rohan reinforcement at turn 8.
+"""Pelennor Fields — Rohan reinforcement at turn 5.
 
-Turn 8: six Rohirrim cavalry spawn at the south edge for blue.
+Turn 5: four Rohirrim cavalry spawn at the south edge for blue.
 The Riders of Rohan answer Gondor's call.
 
 Guarded by a once-only flag so repeated on_turn_start invocations
@@ -36,16 +36,16 @@ _ROHIRRIM_SPEC = {
     "color": "bright_cyan",
 }
 
-# Spawn positions — south edge of the 18x12 map, spread across.
+# Spawn positions — south edge of the 24x16 map, spread across.
 _ROHIRRIM_SPAWNS = [
-    (4, 11), (6, 11), (8, 11), (10, 11), (12, 11), (14, 11),
+    (5, 11), (8, 11), (11, 11), (14, 11),
 ]
 
 
-def rohan_reinforcements(state, turn: int, team: str, **_):
+def rohirrim_reinforcement(state, turn: int, team: str, **_):
     """Called every on_turn_start. Spawns Rohirrim cavalry on
-    turn 8 (one-shot)."""
-    if turn != 8 or state.__dict__.get("_rohan_arrived"):
+    turn 5 (one-shot)."""
+    if turn != 5 or state.__dict__.get("_rohan_arrived"):
         return
     state.__dict__["_rohan_arrived"] = True
     for i, (x, y) in enumerate(_ROHIRRIM_SPAWNS, start=1):

@@ -546,6 +546,9 @@ rules:
   fog_of_war: false
   first_player: blue
 
+plugin_hooks:
+  on_turn_start: [second_goblin_wave, eagles_arrive, beorn_arrives]
+
 win_conditions:
   - {type: protect_unit, unit_id: u_b_thorin_1, owning_team: blue}
   - {type: protect_unit, unit_id: u_r_azog_1, owning_team: red}
@@ -573,6 +576,15 @@ narrative:
     - trigger: on_turn_start
       turn: 1
       text: "Azog raises his mace. The goblin drums begin."
+    - trigger: on_turn_start
+      turn: 5
+      text: "More goblins pour from the northwestern gap — a second wave floods the field."
+    - trigger: on_turn_start
+      turn: 15
+      text: "A great cry rises: 'The Eagles! The Eagles are coming!'"
+    - trigger: on_turn_start
+      turn: 18
+      text: "Beorn charges in bear form from the south, tearing warg riders apart."
     - trigger: on_unit_killed
       unit_id: u_b_thorin_1
       text: "Thorin has fallen. The line breaks. Erebor is lost."

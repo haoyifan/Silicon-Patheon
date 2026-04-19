@@ -24,30 +24,16 @@ unit_classes:
     description: |
       远征队的霍比特飞贼。战斗中大部分时间戴着魔戒。
       弱小、隐蔽，速度对身材来说异常快。
-  dwarf_warrior:
-    display_name: 矮人战士
-    description: |
-      铁丘陵丹恩麾下的矮人，刚到增援索林。
-      矮壮、缓慢、重击。
   thranduil:
     display_name: 瑟兰迪尔
     description: |
       林地精灵之王。本为龙之宝藏而来，留下来对抗哥布林。
       不情不愿的盟友；杰出的剑士。
-  wood_elf_archer:
-    display_name: 木精灵弓箭手
-    description: |
-      幽暗密林精灵。轻便、快速、远程致命。
   bard:
     display_name: 弓箭手巴德
     description: |
       河谷城吉里安的后裔。用家族最后一支黑箭射杀了
       史矛革。现在领导着无家可归的长湖镇居民。
-  laketown_militia:
-    display_name: 长湖镇民兵
-    description: |
-      史矛革焚毁埃斯加罗斯后的幸存者——渔民和镇民，
-      拿着能找到的任何武器。
   bolg:
     display_name: 北方的波格
     description: |
@@ -56,22 +42,18 @@ unit_classes:
   goblin_warrior:
     display_name: 哥布林战士
     description: |
-      歪歪扭扭、龇牙咧嘴、数量众多。便宜；
-      哥布林大军主要是这些。
-  goblin_archer:
-    display_name: 哥布林弓箭手
-    description: |
-      矮弓，毒箭尖。脆弱但在掩体后很烦人。
-  warg_rider:
-    display_name: 座狼骑手
-    description: |
-      骑在座狼上的哥布林——充满恶意狡猾的狼形生物。
-      快速、嗥叫、侧翼极为危险。
+      来自山脉的哥布林增援。第5回合从西北裂口涌出。
   eagle:
     display_name: 巨鹰
     description: |
-      鹰王应关赫之召而来。第15回合从南方天空出现
-      （如果哥布林还没赢的话）。可以飞越山脉。
+      响应巨鹰之王格瓦希尔号召的大鹰。第15回合
+      从南方边缘赶到，迅猛、毁灭性、可飞越任何地形。
+  eagles:
+    display_name: 巨鹰
+    description: |
+      迷雾山脉的巨鹰，由鹰王率领。乘战争之风而至——
+      迅猛、毁灭性、可飞越任何地形。鹰爪撕裂半兽人
+      铠甲，从空中击散座狼骑手。
   gandalf:
     display_name: 甘道夫（灰袍）
     description: |
