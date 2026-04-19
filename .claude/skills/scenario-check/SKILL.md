@@ -89,6 +89,24 @@ For each scenario, read the full `config.yaml` and the `locale/zh.yaml` (if it e
 - `name` should contain a source tag after " — " (era for historical, franchise for fiction)
 - `difficulty` should be 1-5
 
+### 9b. Non-Breaking YAML Discipline (HIGH severity when violated)
+Scenario YAML is served from server to client via `get_scenario_bundle`. Old clients will parse YAML the new server sends, so every scenario edit is effectively a wire-format change. Most edits are safe; these patterns are **breaking** and require coordinating with the wire-protocol version gate in `docs/VERSIONING.md`:
+
+- **Renaming a field** (`unit_classes` → `classes`, `move_cost` → `mv_cost`): old clients look for the old key, find nothing, unit list is empty / move costs are all 1. Breaking.
+- **Retyping a field** (e.g. `move_cost: 2` → `move_cost: {base: 2, cavalry: 1}`): old clients type-error or compute garbage. Breaking.
+- **Adding a field that REQUIRES new-client behavior to interpret correctly** (e.g. a new `flying` tag that must bypass impassable terrain): old clients ignore the tag, compute normal movement, units get stuck or move where they shouldn't. Semantically breaking even if syntactically additive.
+- **Renaming/removing a tool** used in scenario plugin hooks (`plugin_hooks.on_turn_start: [rename_me]`): old clients' plugin registry can't find it, hooks don't fire. Breaking.
+
+These are **safe** (additive, default-tolerant):
+- Adding a new scalar field with a meaningful default for old clients (`description_long: "..."`, `difficulty: 3`): old clients ignore the extra key, keep playing.
+- Adding a new unit-class stat that defaults to 0 on absent (`armor_piercing: 2`): old clients never read the field, compute with the default.
+- Adding a new unit_class that isn't deployed anywhere yet.
+- Adding a new `terrain_type` entry alongside existing ones.
+
+When the check finds a breaking scenario change, flag it HIGH and recommend either:
+1. Restructuring the change to be additive + default-tolerant (e.g. leave `move_cost: 2` as int; add a separate `move_costs_per_tag: {...}` dict that old clients ignore), or
+2. Accompanying it with a `PROTOCOL_VERSION` bump per the four-phase rollout in `docs/VERSIONING.md`.
+
 ### 10. Plugin Security (if `plugin_hooks` exists)
 - Check that referenced plugin names correspond to a `rules.py` file in the scenario directory
 - Read the `rules.py` and check for: `import os`, `import subprocess`, `import socket`, `exec(`, `eval(`, `open(` on paths outside the game directory, `__import__`, network calls

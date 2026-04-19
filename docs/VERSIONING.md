@@ -183,6 +183,48 @@ upgrade-required screen; v2+ clients keep playing.
   A new shape produces a new hash → clients refetch → usually fine
   without a protocol bump. But if the new shape has a field older
   clients *fail to render on* (not just ignore), it IS a bump.
+  See the "non-breaking scenario discipline" section below — the
+  rules there are a superset of the ones on MCP tool responses
+  because scenarios also cross the wire via `get_scenario_bundle`.
+
+### Non-breaking scenario (YAML) discipline
+
+Scenario YAML is served from server to client via
+`get_scenario_bundle`. Any edit to `games/*/config.yaml` that
+reaches production without a coordinated version bump must
+preserve the shape that older clients already know how to read.
+
+**Safe (additive + default-tolerant — no version bump needed):**
+
+- Adding a new scalar field at any level with a default that
+  matches old-client behavior: `description_long: "..."`,
+  `narrative.events[].trigger: "on_turn_start"` where absence
+  already defaulted to that same trigger.
+- Adding a new stat on a unit class that defaults to 0 when
+  missing (`armor_piercing: 2`, `ranged_reach_bonus: 1`) — old
+  clients never read it, computations stay identical.
+- Adding a new unit_class, terrain_type, or scenario — old
+  clients see the new scenario as "unknown but parseable" and
+  lobby-filter handles the rest.
+
+**Breaking (coordinated with a `PROTOCOL_VERSION` bump and the
+four-phase rollout):**
+
+- Renaming an existing field (`unit_classes` → `classes`).
+- Changing a field's type (`move_cost: 2` → `move_cost: {base: 2,
+  cavalry: 1}`).
+- Adding a field that REQUIRES new-client logic to interpret
+  correctly. A concrete example: a new unit tag `flying` that
+  must bypass impassable terrain. Old clients ignore the tag and
+  compute normal movement — the unit then either gets stuck or
+  moves where it shouldn't. Syntactically additive, semantically
+  breaking.
+- Renaming / removing a tool that scenario plugin hooks call by
+  name (`plugin_hooks.on_turn_start: [old_fn_name]`).
+
+The `scenario-check` skill has a matching section (9b) that flags
+violations when you run it, so the check catches these at PR time
+rather than at "user reports a broken game" time.
 
 ### Verifying each phase
 
