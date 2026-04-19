@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,7 @@ DB_PATH = Path.home() / ".silicon-pantheon" / "leaderboard.db"
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS match_results (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    match_id         TEXT,
     model            TEXT NOT NULL,
     provider         TEXT NOT NULL,
     scenario         TEXT NOT NULL,
@@ -29,13 +31,33 @@ CREATE TABLE IF NOT EXISTS match_results (
     outcome          TEXT NOT NULL,
     turns_played     INTEGER NOT NULL,
     avg_think_time_s REAL NOT NULL,
+    max_think_time_s REAL,
     total_tokens     INTEGER NOT NULL,
     tool_calls       INTEGER NOT NULL,
     errors           INTEGER NOT NULL,
+    units_killed     INTEGER,
+    units_lost       INTEGER,
+    damage_dealt     INTEGER,
+    damage_taken     INTEGER,
+    thoughts_count   INTEGER,
+    match_duration_s REAL,
     timestamp        REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_model ON match_results(model);
 """
+
+# Columns added after the initial schema. Each is applied via
+# ALTER TABLE ADD COLUMN on existing DBs if missing.
+_MIGRATIONS = [
+    ("match_id", "TEXT"),
+    ("max_think_time_s", "REAL"),
+    ("units_killed", "INTEGER"),
+    ("units_lost", "INTEGER"),
+    ("damage_dealt", "INTEGER"),
+    ("damage_taken", "INTEGER"),
+    ("thoughts_count", "INTEGER"),
+    ("match_duration_s", "REAL"),
+]
 
 
 def _get_db() -> sqlite3.Connection:
@@ -43,6 +65,12 @@ def _get_db() -> sqlite3.Connection:
     conn = sqlite3.connect(str(DB_PATH))
     conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(_SCHEMA)
+    existing = {r[1] for r in conn.execute("PRAGMA table_info(match_results)").fetchall()}
+    for col, sql_type in _MIGRATIONS:
+        if col not in existing:
+            conn.execute(f"ALTER TABLE match_results ADD COLUMN {col} {sql_type}")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_match_id ON match_results(match_id)")
+    conn.commit()
     return conn
 
 
@@ -51,16 +79,32 @@ def record_match(
     room: Any,
     slot_to_team: dict,
 ) -> None:
-    """Write 2 rows (one per team) into match_results.
+    """Write 2 rows (one per team) into match_results, linked by match_id.
 
     Called from _note_game_over_if_needed after the game ends.
     Non-fatal: exceptions are caught by the caller.
     """
-    from silicon_pantheon.server.engine.state import Team
-    from silicon_pantheon.server.rooms import Slot
+    from silicon_pantheon.server.rooms import Slot  # noqa: F401
 
     db = _get_db()
     try:
+        match_id = uuid.uuid4().hex
+        now = time.time()
+        duration = now - session.match_start_time if session.match_start_time > 0 else 0.0
+
+        # Starting unit counts per team = alive + fallen. State keeps
+        # fallen units in state.fallen_units for replay; summing with
+        # live units gives the starting roster.
+        fallen = getattr(session.state, "fallen_units", {}) or {}
+        from silicon_pantheon.server.engine.state import Team
+        start_counts: dict = {}
+        end_alive: dict = {}
+        for team in (Team.BLUE, Team.RED):
+            alive = sum(1 for u in session.state.units.values() if u.owner == team and u.alive)
+            dead = sum(1 for u in fallen.values() if u.owner == team)
+            start_counts[team] = alive + dead
+            end_alive[team] = alive
+
         for slot, seat in room.seats.items():
             if seat.player is None:
                 continue
@@ -80,13 +124,26 @@ def record_match(
 
             times = session.turn_times_by_team.get(team, [])
             avg_think = sum(times) / len(times) if times else 0.0
+            max_think = max(times) if times else 0.0
+
+            thoughts_count = sum(1 for th in session.thoughts if th.team == team)
+
+            units_lost = start_counts.get(team, 0) - end_alive.get(team, 0)
+            units_killed = session.kills_by_team.get(team, 0)
+            damage_dealt = session.damage_dealt_by_team.get(team, 0)
+            damage_taken = session.damage_taken_by_team.get(team, 0)
 
             db.execute(
                 """INSERT INTO match_results
-                   (model, provider, scenario, team, outcome, turns_played,
-                    avg_think_time_s, total_tokens, tool_calls, errors, timestamp)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   (match_id, model, provider, scenario, team, outcome,
+                    turns_played, avg_think_time_s, max_think_time_s,
+                    total_tokens, tool_calls, errors,
+                    units_killed, units_lost,
+                    damage_dealt, damage_taken,
+                    thoughts_count, match_duration_s, timestamp)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
+                    match_id,
                     model,
                     provider,
                     session.scenario or "?",
@@ -94,17 +151,25 @@ def record_match(
                     outcome,
                     session.state.turn,
                     round(avg_think, 2),
+                    round(max_think, 2),
                     session.tokens_by_team.get(team, 0),
                     session.tool_calls_by_team.get(team, 0),
                     session.tool_errors_by_team.get(team, 0),
-                    time.time(),
+                    units_killed,
+                    units_lost,
+                    damage_dealt,
+                    damage_taken,
+                    thoughts_count,
+                    round(duration, 2),
+                    now,
                 ),
             )
         db.commit()
         log.info(
-            "leaderboard: recorded match scenario=%s winner=%s",
+            "leaderboard: recorded match scenario=%s winner=%s match_id=%s",
             session.scenario,
             session.state.winner.value if session.state.winner else "draw",
+            match_id,
         )
     finally:
         db.close()
@@ -149,5 +214,155 @@ def query_leaderboard() -> list[dict]:
             }
             for r in rows
         ]
+    finally:
+        db.close()
+
+
+def query_head_to_head(model: str, provider: str) -> list[dict]:
+    """Per-opponent stats for a single model. Self-join on match_id.
+
+    Requires both rows to have a non-NULL match_id (historical rows
+    written before the migration are skipped).
+    """
+    try:
+        db = _get_db()
+    except Exception:
+        return []
+    try:
+        rows = db.execute(
+            """
+            SELECT
+                opp.model                                              AS opponent,
+                opp.provider                                           AS opp_provider,
+                COUNT(*)                                               AS games,
+                SUM(CASE WHEN me.outcome='win'  THEN 1 ELSE 0 END)    AS wins,
+                SUM(CASE WHEN me.outcome='loss' THEN 1 ELSE 0 END)    AS losses,
+                SUM(CASE WHEN me.outcome='draw' THEN 1 ELSE 0 END)    AS draws,
+                AVG(me.turns_played)                                  AS avg_turns
+            FROM match_results me
+            JOIN match_results opp
+              ON me.match_id = opp.match_id
+             AND me.team    != opp.team
+            WHERE me.model = ? AND me.provider = ?
+              AND me.match_id IS NOT NULL
+            GROUP BY opp.model, opp.provider
+            ORDER BY games DESC,
+                     CAST(SUM(CASE WHEN me.outcome='win' THEN 1 ELSE 0 END) AS REAL)
+                         / MAX(COUNT(*), 1) DESC
+            """,
+            (model, provider),
+        ).fetchall()
+        return [
+            {
+                "opponent": r[0],
+                "provider": r[1],
+                "games": r[2],
+                "wins": r[3],
+                "losses": r[4],
+                "draws": r[5],
+                "avg_turns": round(r[6], 1) if r[6] else 0.0,
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def query_per_scenario(model: str, provider: str) -> list[dict]:
+    """Per-scenario stats for a single model, sorted by win% descending."""
+    try:
+        db = _get_db()
+    except Exception:
+        return []
+    try:
+        rows = db.execute(
+            """
+            SELECT
+                scenario,
+                COUNT(*)                                         AS games,
+                SUM(CASE WHEN outcome='win'  THEN 1 ELSE 0 END) AS wins,
+                SUM(CASE WHEN outcome='loss' THEN 1 ELSE 0 END) AS losses,
+                SUM(CASE WHEN outcome='draw' THEN 1 ELSE 0 END) AS draws
+            FROM match_results
+            WHERE model = ? AND provider = ?
+            GROUP BY scenario
+            ORDER BY
+                CAST(SUM(CASE WHEN outcome='win' THEN 1 ELSE 0 END) AS REAL)
+                    / MAX(COUNT(*), 1) DESC,
+                COUNT(*) DESC
+            """,
+            (model, provider),
+        ).fetchall()
+        return [
+            {
+                "scenario": r[0],
+                "games": r[1],
+                "wins": r[2],
+                "losses": r[3],
+                "draws": r[4],
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def query_model_details(model: str, provider: str) -> dict:
+    """Aggregated detail stats for the model-details drill-down.
+
+    Returns totals + computed metrics (tokens-per-win, error rate,
+    avg units killed/lost, avg/max think time, avg match duration).
+    """
+    try:
+        db = _get_db()
+    except Exception:
+        return {}
+    try:
+        row = db.execute(
+            """
+            SELECT
+                COUNT(*)                                                AS games,
+                SUM(CASE WHEN outcome='win'  THEN 1 ELSE 0 END)        AS wins,
+                SUM(CASE WHEN outcome='loss' THEN 1 ELSE 0 END)        AS losses,
+                SUM(CASE WHEN outcome='draw' THEN 1 ELSE 0 END)        AS draws,
+                SUM(total_tokens)                                      AS tokens,
+                SUM(tool_calls)                                        AS tool_calls,
+                SUM(errors)                                            AS errors,
+                AVG(avg_think_time_s)                                  AS avg_think,
+                MAX(max_think_time_s)                                  AS max_think,
+                AVG(units_killed)                                      AS avg_kills,
+                AVG(units_lost)                                        AS avg_lost,
+                AVG(match_duration_s)                                  AS avg_duration
+            FROM match_results
+            WHERE model = ? AND provider = ?
+            """,
+            (model, provider),
+        ).fetchone()
+        if row is None or row[0] == 0:
+            return {}
+        games, wins, losses, draws, tokens, tool_calls, errors = row[:7]
+        avg_think, max_think, avg_kills, avg_lost, avg_duration = row[7:]
+        tokens = tokens or 0
+        tool_calls = tool_calls or 0
+        errors = errors or 0
+        return {
+            "model": model,
+            "provider": provider,
+            "games": games,
+            "wins": wins,
+            "losses": losses,
+            "draws": draws,
+            "win_pct": (wins / games * 100) if games else 0.0,
+            "total_tokens": tokens,
+            "tokens_per_win": (tokens / wins) if wins else None,
+            "total_tool_calls": tool_calls,
+            "total_errors": errors,
+            "error_rate_pct": (errors / tool_calls * 100) if tool_calls else 0.0,
+            "avg_think_time_s": round(avg_think, 1) if avg_think else 0.0,
+            "max_think_time_s": round(max_think, 1) if max_think else 0.0,
+            "avg_units_killed": round(avg_kills, 1) if avg_kills is not None else None,
+            "avg_units_lost": round(avg_lost, 1) if avg_lost is not None else None,
+            "avg_match_duration_s": round(avg_duration, 1) if avg_duration else 0.0,
+        }
     finally:
         db.close()

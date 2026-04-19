@@ -159,6 +159,17 @@ def attack(session: Session, viewer: Team, unit_id: str, target_id: str) -> dict
     result["attacker_status"] = (
         attacker_after.status.value if attacker_after else "killed"
     )
+    defender = viewer.other()
+    dmg_dealt = int(result.get("damage_dealt") or 0)
+    counter = int(result.get("counter_damage") or 0)
+    session.damage_dealt_by_team[viewer] += dmg_dealt
+    session.damage_taken_by_team[defender] += dmg_dealt
+    session.damage_dealt_by_team[defender] += counter
+    session.damage_taken_by_team[viewer] += counter
+    if result.get("target_killed"):
+        session.kills_by_team[viewer] += 1
+    if result.get("attacker_killed"):
+        session.kills_by_team[defender] += 1
     _record_action(session, result)
     return result
 

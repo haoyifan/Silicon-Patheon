@@ -92,6 +92,18 @@ class Session:
     tokens_by_team: dict[Team, int] = field(
         default_factory=lambda: {Team.BLUE: 0, Team.RED: 0}
     )
+    damage_dealt_by_team: dict[Team, int] = field(
+        default_factory=lambda: {Team.BLUE: 0, Team.RED: 0}
+    )
+    damage_taken_by_team: dict[Team, int] = field(
+        default_factory=lambda: {Team.BLUE: 0, Team.RED: 0}
+    )
+    kills_by_team: dict[Team, int] = field(
+        default_factory=lambda: {Team.BLUE: 0, Team.RED: 0}
+    )
+    # Wall-clock timestamp when the match actually started (set by
+    # log_match_players). Used for match_duration_s in leaderboard.
+    match_start_time: float = 0.0
     # Serialises concurrent tool dispatches for the same game session.
     lock: threading.Lock = field(default_factory=threading.Lock)
     # Fog-of-war mode for this session. "none" = no filtering.
@@ -113,6 +125,8 @@ class Session:
         known. ``players`` maps team name → {display_name, kind,
         provider, model}.
         """
+        import time as _time
+        self.match_start_time = _time.time()
         self.log("match_players", {"players": players})
 
     def log_match_end(self) -> None:

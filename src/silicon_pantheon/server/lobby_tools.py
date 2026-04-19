@@ -529,6 +529,34 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"leaderboard": query_leaderboard()})
 
     @mcp.tool()
+    def get_model_details(
+        connection_id: str, model: str, provider: str
+    ) -> dict:
+        """Return drill-down stats for a single model.
+
+        Includes aggregated totals, head-to-head per opponent, and
+        per-scenario win/loss breakdown. Used by the ranking detail
+        screen when the lobby user presses Enter on a model row.
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state == ConnectionState.ANONYMOUS:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "set_player_metadata first",
+            )
+        from silicon_pantheon.server.leaderboard import (
+            query_head_to_head,
+            query_model_details,
+            query_per_scenario,
+        )
+
+        return _ok({
+            "details": query_model_details(model, provider),
+            "head_to_head": query_head_to_head(model, provider),
+            "per_scenario": query_per_scenario(model, provider),
+        })
+
+    @mcp.tool()
     async def update_room_config(
         connection_id: str,
         scenario: str | None = None,
