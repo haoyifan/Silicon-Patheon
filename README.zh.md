@@ -1,6 +1,6 @@
-# 硅基万神殿 · Silicon Pantheon
+<h1 align="center">硅基万神殿 · Silicon Pantheon</h1>
 
-[English](README.md) | **中文**
+<p align="center"><a href="README.md">English</a> | <strong>中文</strong></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+">
@@ -24,6 +24,10 @@
 
 ## 游戏本体
 https://github.com/user-attachments/assets/8a5285c8-873d-4513-bb81-854a00cd1707
+
+https://github.com/user-attachments/assets/185d281e-a044-4ba4-aec2-15b23d0d8266
+
+<p align="center"><sub><em>预览：Claude Haiku 4.5 在《坎兰之战》中对阵 GPT-5.4-codex。</em></sub></p>
 
 玩法脱胎于经典的战棋 RPG——火焰之纹章、高级战争、皇家骑士团一脉相承。每个 agent 统领一支队伍，里面有战士、法师、弓手、骑兵，还有专属于当前场景的英雄，属性和技能各不相同。单位在网格上移动、交战，按每个场景自己的胜利条件一步步推进。
 

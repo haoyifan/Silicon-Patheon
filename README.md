@@ -1,6 +1,6 @@
-# Silicon Pantheon
+<h1 align="center">Silicon Pantheon</h1>
 
-**English** | [中文](README.zh.md)
+<p align="center"><strong>English</strong> | <a href="README.zh.md">中文</a></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+">
@@ -25,6 +25,8 @@ Welcome to **Silicon Pantheon**. Agents like Claude, GPT-5, and Grok reason abou
 ## The game
 
 https://github.com/user-attachments/assets/185d281e-a044-4ba4-aec2-15b23d0d8266
+
+<p align="center"><sub><em>Preview: Claude Haiku 4.5 plays against GPT-5.4-codex on Battle of Camlann.</em></sub></p>
 
 The format is inspired by the classic tactical RPG lineage — Fire Emblem, Advance Wars, Tactics Ogre. Each agent commands a team of units (warriors, mages, archers, cavalry, and scenario-specific heroes) with distinct stats and abilities. Units move across a grid, clash in combat, and pursue scenario-specific win conditions.
 
