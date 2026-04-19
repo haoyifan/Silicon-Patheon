@@ -814,6 +814,15 @@ head_to_head:
   stat_avg_lost: "平均阵亡"
   stat_avg_duration: "平均时长"
 
+# 版本不匹配升级界面
+upgrade:
+  panel_title: "⚠ 版本不匹配"
+  client_too_old_title: "客户端版本过旧，无法连接此服务器。"
+  client_too_old_hint: "请升级 Silicon Pantheon 客户端后重试："
+  server_too_old_title: "服务器版本低于当前客户端所需。"
+  server_too_old_hint: "请联系服务器运维升级，或切换到更新的服务器地址（Enter 返回登录）。"
+  footer: "Enter：返回登录 · q / Esc：退出"
+
 # 错误消息
 errors:
   not_connected: "未连接"

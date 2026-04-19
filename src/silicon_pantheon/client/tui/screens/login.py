@@ -24,6 +24,18 @@ if TYPE_CHECKING:
     from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
 
 
+class VersionMismatchError(Exception):
+    """Raised by _connect_and_declare when the server/client version
+    gap is too wide to play. The login screen catches this and routes
+    to a dedicated upgrade-prompt screen rather than rendering a raw
+    exception string in the status bar."""
+
+    def __init__(self, *, kind: str, message: str, data: dict) -> None:
+        super().__init__(message)
+        self.kind = kind  # "client_too_old" | "server_too_old"
+        self.data = data
+
+
 import unicodedata
 
 
@@ -162,6 +174,16 @@ class LoginScreen(Screen):
 
         try:
             await _connect_and_declare(self.app)
+        except VersionMismatchError as e:
+            self._connecting = False
+            self.app.state.status_message = ""
+            self.app.state.error_message = ""
+            from silicon_pantheon.client.tui.screens.upgrade_required import (
+                UpgradeRequiredScreen,
+            )
+            return UpgradeRequiredScreen(
+                self.app, kind=e.kind, message=str(e), data=e.data,
+            )
         except Exception as e:
             self._connecting = False
             self.app.state.status_message = ""
@@ -335,7 +357,12 @@ async def _connect_and_declare(app: TUIApp) -> None:
 
     app._transport_cleanup = _cleanup  # type: ignore[attr-defined]
 
-    from silicon_pantheon.shared.protocol import PROTOCOL_VERSION
+    from silicon_pantheon.shared.protocol import (
+        ErrorCode,
+        MINIMUM_SERVER_PROTOCOL_VERSION,
+        PROTOCOL_VERSION,
+        UPGRADE_COMMAND_HINT,
+    )
 
     r = await client.call(
         "set_player_metadata",
@@ -346,7 +373,31 @@ async def _connect_and_declare(app: TUIApp) -> None:
         client_protocol_version=PROTOCOL_VERSION,
     )
     if not r.get("ok"):
-        raise RuntimeError((r.get("error") or {}).get("message", "metadata rejected"))
+        err = r.get("error") or {}
+        code = err.get("code", "")
+        msg = err.get("message", "metadata rejected")
+        # Raise a typed error for version mismatch so the caller can
+        # route to the upgrade screen instead of rendering a raw
+        # "metadata rejected" in the login status bar.
+        if code == ErrorCode.CLIENT_TOO_OLD.value:
+            raise VersionMismatchError(kind="client_too_old", message=msg, data=err.get("data") or {})
+        raise RuntimeError(msg)
+    # Server reachable; also verify server isn't too old for THIS client.
+    result = r.get("result") or r
+    server_version = int(result.get("server_protocol_version") or 0)
+    if server_version > 0 and server_version < MINIMUM_SERVER_PROTOCOL_VERSION:
+        raise VersionMismatchError(
+            kind="server_too_old",
+            message=(
+                f"Server is on protocol v{server_version} but this client "
+                f"requires at least v{MINIMUM_SERVER_PROTOCOL_VERSION}. "
+                "Ask the server operator to update."
+            ),
+            data={
+                "server_protocol_version": server_version,
+                "minimum_server_protocol_version": MINIMUM_SERVER_PROTOCOL_VERSION,
+            },
+        )
     app.state.connection_id = client.connection_id
     await client.start_heartbeat()
 

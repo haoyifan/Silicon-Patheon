@@ -840,6 +840,15 @@ head_to_head:
   stat_avg_lost: "Avg Losses"
   stat_avg_duration: "Avg Duration"
 
+# Version-mismatch upgrade screen
+upgrade:
+  panel_title: "⚠ Version Mismatch"
+  client_too_old_title: "Your client is too old for this server."
+  client_too_old_hint: "Upgrade the Silicon Pantheon client to continue:"
+  server_too_old_title: "This server is older than your client supports."
+  server_too_old_hint: "Ask the server operator to update, or point at a newer server URL (login → Enter to retry)."
+  footer: "Enter: back to login · q / Esc: quit"
+
 # Error messages
 errors:
   not_connected: "not connected"
