@@ -1,44 +1,257 @@
+schema_version: 1
 license: original
-name: Basic Mirror
+name: Battle at Broken Bridge
 difficulty: 2
 description: |
-  12x12 map, 5 units per side (2 knights, 1 archer, 1 cavalry, 1 mage).
-  Mirror-symmetric armies. The main MVP scenario for real agent matches.
+  14x12 mirror match. Two rival companies clash at a ruined river crossing.
+  A crumbling stone bridge spans the center, a shallow ford hides on the
+  eastern flank, and dense forest screens the west. Each side holds a
+  fortress — seize the enemy's to win. 5 units per side: commander,
+  knight, archer, cavalry, mage. The introductory scenario: simple enough
+  to learn, deep enough to reward good tactics.
+
+# ───────────────────────────────────────────────────────────────────
+# MAP LAYOUT (14 wide x 12 tall)
+#
+#   Y=0  (north edge — Red's back line)
+#   Y=1  Red fort at (7,1), red deployment zone
+#   Y=2  Red front: hills, forest
+#   Y=3  Approach — open ground, forest flanks
+#   Y=4  River bank north — trees and rocks along the water
+#   Y=5  ~~~ RIVER (impassable except bridge & ford) ~~~
+#   Y=6  ~~~ RIVER (impassable except bridge & ford) ~~~
+#   Y=7  River bank south — trees and rocks along the water
+#   Y=8  Approach — open ground, forest flanks
+#   Y=9  Blue front: hills, forest
+#   Y=10 Blue fort at (6,10), blue deployment zone
+#   Y=11 (south edge — Blue's back line)
+#
+#   Bridge: x=6,7 on y=5 and y=6  (2 wide, the obvious route)
+#   Ford:   x=12 on y=5 and y=6   (1 wide, costs extra movement)
+#   Western forest corridor: x=0-2 (dense, slows movement but
+#     cavalry can't enter — infantry/mage flanking route)
+# ───────────────────────────────────────────────────────────────────
 
 board:
-  width: 12
+  width: 14
   height: 12
   terrain:
-    # central forest belt
-    - {x: 5, y: 5, type: forest}
-    - {x: 6, y: 5, type: forest}
-    - {x: 5, y: 6, type: forest}
-    - {x: 6, y: 6, type: forest}
-    # side forests
-    - {x: 2, y: 6, type: forest}
-    - {x: 9, y: 5, type: forest}
-    # a mountain on each flank
-    - {x: 0, y: 5, type: mountain}
-    - {x: 11, y: 6, type: mountain}
+    # ── RIVER (y=5 and y=6, impassable) ──
+    - {x: 0,  y: 5, type: river}
+    - {x: 1,  y: 5, type: river}
+    - {x: 2,  y: 5, type: river}
+    - {x: 3,  y: 5, type: river}
+    - {x: 4,  y: 5, type: river}
+    - {x: 5,  y: 5, type: river}
+    # x=6,7 y=5 → bridge (below)
+    - {x: 8,  y: 5, type: river}
+    - {x: 9,  y: 5, type: river}
+    - {x: 10, y: 5, type: river}
+    - {x: 11, y: 5, type: river}
+    # x=12 y=5 → ford (below)
+    - {x: 13, y: 5, type: river}
+
+    - {x: 0,  y: 6, type: river}
+    - {x: 1,  y: 6, type: river}
+    - {x: 2,  y: 6, type: river}
+    - {x: 3,  y: 6, type: river}
+    - {x: 4,  y: 6, type: river}
+    - {x: 5,  y: 6, type: river}
+    # x=6,7 y=6 → bridge (below)
+    - {x: 8,  y: 6, type: river}
+    - {x: 9,  y: 6, type: river}
+    - {x: 10, y: 6, type: river}
+    - {x: 11, y: 6, type: river}
+    # x=12 y=6 → ford (below)
+    - {x: 13, y: 6, type: river}
+
+    # ── BRIDGE (2 tiles wide, center crossing) ──
+    - {x: 6, y: 5, type: bridge}
+    - {x: 7, y: 5, type: bridge}
+    - {x: 6, y: 6, type: bridge}
+    - {x: 7, y: 6, type: bridge}
+
+    # ── FORD (1 tile wide, eastern flanking crossing) ──
+    - {x: 12, y: 5, type: ford}
+    - {x: 12, y: 6, type: ford}
+
+    # ── WESTERN FOREST CORRIDOR (x=0-2, both banks) ──
+    # North bank forest (Red side)
+    - {x: 0, y: 3, type: forest}
+    - {x: 1, y: 3, type: forest}
+    - {x: 2, y: 3, type: forest}
+    - {x: 0, y: 4, type: forest}
+    - {x: 1, y: 4, type: forest}
+    - {x: 2, y: 4, type: forest}
+    # South bank forest (Blue side)
+    - {x: 0, y: 7, type: forest}
+    - {x: 1, y: 7, type: forest}
+    - {x: 2, y: 7, type: forest}
+    - {x: 0, y: 8, type: forest}
+    - {x: 1, y: 8, type: forest}
+    - {x: 2, y: 8, type: forest}
+
+    # ── HILLS (elevated positions overlooking the bridge) ──
+    # Red side hill — archer perch with bridge sightlines
+    - {x: 5, y: 3, type: hill}
+    - {x: 6, y: 3, type: hill}
+    # Blue side hill — mirror position
+    - {x: 7, y: 8, type: hill}
+    - {x: 8, y: 8, type: hill}
+
+    # ── SCATTERED ROCKS (light cover near the river) ──
+    - {x: 4, y: 4, type: rocks}
+    - {x: 9, y: 7, type: rocks}
+
+    # ── ROADSIDE TREES (a few trees near the forts for flavor) ──
+    - {x: 10, y: 2, type: forest}
+    - {x: 3,  y: 9, type: forest}
+
   forts:
-    - {x: 0, y: 0, owner: blue}
-    - {x: 11, y: 11, owner: red}
+    - {x: 6,  y: 10, owner: blue}
+    - {x: 7,  y: 1,  owner: red}
+
+# ───────────────────────────────────────────────────────────────────
+# TERRAIN TYPES
+# ───────────────────────────────────────────────────────────────────
+
+terrain_types:
+  river:
+    display_name: River
+    description: |
+      A wide, fast-flowing river. Impassable on foot — find a bridge
+      or ford to cross.
+    passable: false
+    move_cost: 99
+    glyph: "~"
+    color: blue
+
+  bridge:
+    display_name: Stone Bridge
+    description: |
+      A crumbling stone bridge. The main crossing — wide enough for
+      two abreast, but no room to dodge. No defensive cover.
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "="
+    color: yellow
+
+  ford:
+    display_name: Shallow Ford
+    description: |
+      A rocky ford where the river runs shallow. Crossable, but the
+      slippery stones and knee-deep water slow you down. Cavalry
+      handles it better than infantry, but it's no road.
+    move_cost: 2
+    defense_bonus: -1
+    glyph: ";"
+    color: cyan
+    class_overrides:
+      cavalry: {move_cost: 1}
+
+  hill:
+    display_name: Hill
+    description: |
+      Elevated ground with good sightlines. Costs extra movement to
+      climb, but grants a solid defensive bonus. Ideal for archers.
+    move_cost: 2
+    defense_bonus: 3
+    blocks_sight: false
+    glyph: "^"
+    color: green
+
+  rocks:
+    display_name: Rocks
+    description: |
+      Loose boulders and rubble. Decent cover (+1 DEF) but rough
+      footing. Cavalry cannot enter.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "%"
+    color: bright_black
+    class_overrides:
+      cavalry: {move_cost: 99, passable: false}
+
+# ───────────────────────────────────────────────────────────────────
+# ARMIES (5v5 mirror)
+# ───────────────────────────────────────────────────────────────────
+#
+# Placement philosophy:
+#   Commander  — in the fort, protected but needs to advance to seize
+#   Knight     — at the bridge approach, front-line tank
+#   Archer     — on the hill overlooking the bridge
+#   Cavalry    — on the eastern flank near the ford
+#   Mage       — behind the front line, healing/magic support
 
 armies:
   blue:
-    - {class: knight, pos: {x: 1, y: 1}}
-    - {class: knight, pos: {x: 2, y: 0}}
-    - {class: archer, pos: {x: 0, y: 2}}
-    - {class: cavalry, pos: {x: 3, y: 1}}
-    - {class: mage, pos: {x: 1, y: 3}}
+    - {class: knight,  pos: {x: 7,  y: 8}}   # bridge approach, tank
+    - {class: archer,  pos: {x: 8,  y: 8}}   # hill, overwatching bridge
+    - {class: cavalry, pos: {x: 12, y: 9}}   # east flank, near ford
+    - {class: mage,    pos: {x: 5,  y: 9}}   # behind the line, support
+    - {class: knight,  pos: {x: 6,  y: 10}}  # fort garrison / commander escort
   red:
-    - {class: knight, pos: {x: 10, y: 10}}
-    - {class: knight, pos: {x: 9, y: 11}}
-    - {class: archer, pos: {x: 11, y: 9}}
-    - {class: cavalry, pos: {x: 8, y: 10}}
-    - {class: mage, pos: {x: 10, y: 8}}
+    - {class: knight,  pos: {x: 6,  y: 3}}   # bridge approach, tank
+    - {class: archer,  pos: {x: 5,  y: 3}}   # hill, overwatching bridge
+    - {class: cavalry, pos: {x: 12, y: 2}}   # east flank, near ford
+    - {class: mage,    pos: {x: 8,  y: 2}}   # behind the line, support
+    - {class: knight,  pos: {x: 7,  y: 1}}   # fort garrison / commander escort
+
+# ───────────────────────────────────────────────────────────────────
+# RULES
+# ───────────────────────────────────────────────────────────────────
 
 rules:
-  max_turns: 30
+  max_turns: 25
   fog_of_war: false
   first_player: blue
+
+# ───────────────────────────────────────────────────────────────────
+# WIN CONDITIONS (checked in order — first match ends the game)
+# ───────────────────────────────────────────────────────────────────
+#
+# 1. Seize the enemy fort — march a unit onto their fortress tile.
+# 2. Eliminate all enemy units — wipe them out entirely.
+# 3. Turn cap draw — if neither side wins in 25 turns, it's a draw.
+
+win_conditions:
+  - {type: seize_enemy_fort}
+  - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
+
+# ───────────────────────────────────────────────────────────────────
+# NARRATIVE
+# ───────────────────────────────────────────────────────────────────
+
+narrative:
+  title: Battle at Broken Bridge
+  description: |
+    Two rival companies converge on a ruined river crossing.
+    The old stone bridge still stands — barely. A hidden ford
+    lies to the east. Forests screen the western flank. Each
+    side holds a fortress. The first to seize the other's wins.
+  intro: |
+    Morning fog clings to the river. Across the water, enemy
+    banners are just visible through the mist. The stone bridge
+    ahead is crumbling but passable. Your scouts report a
+    shallow ford to the east, and thick forest to the west.
+    Your orders are simple: cross the river, take their fort.
+  events:
+    - trigger: on_turn_start
+      turn: 2
+      text: |
+        The fog lifts. Both sides can see each other clearly now.
+        The bridge yawns between the armies — whoever controls it
+        controls the crossing.
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        Steel rings on stone. The first blows are traded at the
+        bridge. Somewhere to the east, hooves splash through
+        shallow water.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        The battle grinds on. The river runs red beneath the
+        bridge. Time is running out — press the attack or
+        risk a stalemate.
