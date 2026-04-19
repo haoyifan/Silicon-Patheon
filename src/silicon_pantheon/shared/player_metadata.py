@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
+from silicon_pantheon.shared.sanitize import sanitize_display_text
+
 PlayerKind = Literal["ai", "human", "hybrid"]
 
 VALID_KINDS: frozenset[str] = frozenset(("ai", "human", "hybrid"))
@@ -29,7 +31,9 @@ class PlayerMetadata:
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "PlayerMetadata":
-        display_name = str(raw.get("display_name", "")).strip()
+        display_name = sanitize_display_text(
+            str(raw.get("display_name", "")), max_length=64
+        )
         if not display_name:
             raise ValueError("player metadata: display_name is required")
         kind = str(raw.get("kind", "")).strip().lower()
@@ -43,7 +47,7 @@ class PlayerMetadata:
         return cls(
             display_name=display_name,
             kind=kind,  # type: ignore[arg-type]
-            provider=str(provider) if provider else None,
-            model=str(model) if model else None,
+            provider=sanitize_display_text(str(provider), max_length=64) if provider else None,
+            model=sanitize_display_text(str(model), max_length=128) if model else None,
             version=version,
         )

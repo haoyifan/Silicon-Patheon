@@ -390,8 +390,10 @@ def test_tactical_summary_only_delivers_own_team_coach_messages():
     """A coach message addressed to red is NOT visible to blue's
     tactical summary, even though the same Session holds both queues."""
     s = _session()
+    # send_to_agent enforces own-team restriction, so red's coach
+    # must be the one to queue the message for red.
     call_tool(
-        s, Team.BLUE, "send_to_agent",
+        s, Team.RED, "send_to_agent",
         {"team": "red", "text": "secret strategy for red"},
     )
     out_blue = call_tool(s, Team.BLUE, "get_tactical_summary", {})

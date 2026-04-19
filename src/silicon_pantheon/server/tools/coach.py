@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+from silicon_pantheon.shared.sanitize import sanitize_freetext
+
 from ..engine.state import Team
 from ..session import CoachMessage, Session
 
 
 def send_to_agent(session: Session, viewer: Team, team: str, text: str) -> dict:
     target = Team(team)
+    if target != viewer:
+        return {"ok": False, "error": "can only message your own team's agent"}
+    text = sanitize_freetext(text, max_length=2_000)
     session.coach_queues[target].append(CoachMessage(turn=session.state.turn, text=text))
     session.log("coach_message", {"to": target.value, "text": text, "turn": session.state.turn})
     return {"ok": True, "queued_for": target.value, "turn": session.state.turn}

@@ -20,10 +20,15 @@ is a middleware-only change that does not touch tool handlers.
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from threading import Lock
+
+_CONNECTION_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
+
+MAX_CONNECTIONS = 500
 
 from mcp.server.fastmcp import FastMCP
 
@@ -90,10 +95,22 @@ class App:
     # ---- connection bookkeeping ----
 
     def ensure_connection(self, connection_id: str) -> Connection:
-        """Return the Connection for this id, creating it if new."""
+        """Return the Connection for this id, creating it if new.
+
+        Raises ValueError if *connection_id* contains characters outside
+        the allowed set ``[a-zA-Z0-9_-]`` or exceeds 128 characters.
+        """
+        if not _CONNECTION_ID_RE.match(connection_id):
+            raise ValueError(
+                "connection_id must match [a-zA-Z0-9_-]{1,128}"
+            )
         with self._conn_lock:
             conn = self._connections.get(connection_id)
             if conn is None:
+                if len(self._connections) >= MAX_CONNECTIONS:
+                    raise ValueError(
+                        f"server connection limit ({MAX_CONNECTIONS}) reached"
+                    )
                 conn = Connection(id=connection_id)
                 self._connections[connection_id] = conn
             return conn
@@ -175,7 +192,10 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
             )
         except ValueError as e:
             return _error(ErrorCode.BAD_INPUT, str(e))
-        conn = app.ensure_connection(connection_id)
+        try:
+            conn = app.ensure_connection(connection_id)
+        except ValueError as e:
+            return _error(ErrorCode.BAD_INPUT, str(e))
         conn.player = meta
         if conn.state == ConnectionState.ANONYMOUS:
             conn.state = ConnectionState.IN_LOBBY
@@ -191,7 +211,10 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
     @mcp.tool()
     def heartbeat(connection_id: str) -> dict:
         """Lightweight liveness ping. Returns server time in seconds."""
-        conn = app.ensure_connection(connection_id)
+        try:
+            conn = app.ensure_connection(connection_id)
+        except ValueError as e:
+            return _error(ErrorCode.BAD_INPUT, str(e))
         now = time.time()
         conn.last_heartbeat_at = now
         return _ok({"server_time": now})

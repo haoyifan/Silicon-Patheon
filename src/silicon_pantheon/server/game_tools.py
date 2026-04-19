@@ -26,6 +26,7 @@ from mcp.server.fastmcp import FastMCP
 log = logging.getLogger("silicon.game")
 
 from silicon_pantheon.server.app import App, Connection, _error, _ok
+from silicon_pantheon.shared.sanitize import sanitize_freetext
 from silicon_pantheon.server.engine.scenarios import load_scenario
 from silicon_pantheon.server.engine.state import Team
 from silicon_pantheon.server.rooms import RoomConfig, RoomStatus, Slot
@@ -281,36 +282,37 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
         json.dumps(args, default=str)[:200] if args else "{}",
     )
     _t0_dispatch = _time.time()
-    try:
-        result = call_tool(session, viewer, tool_name, args)
-    except ToolError as e:
-        log.info(
-            "tool rejected: cid=%s tool=%s viewer=%s err=%s",
-            connection_id[:8],
-            tool_name,
-            viewer.value,
-            e,
-        )
-        return _error(ErrorCode.BAD_INPUT, str(e))
-    # Grow ever_seen *before* filtering the response so the viewer sees
-    # tiles they just observed at the boundary. Currently only end_turn
-    # updates ever_seen; if we later want live memory during a turn we
-    # can expand this.
-    _maybe_update_ever_seen(session, result, viewer)
-    # Log the authoritative unit statuses around state-revealing tools
-    # so we can tell if any client is confused about unit readiness.
-    if tool_name in _FILTERED_STATE_TOOLS or tool_name == "end_turn":
-        log.info(
-            "post-%s viewer=%s active=%s turn=%s units=%s",
-            tool_name,
-            viewer.value,
-            session.state.active_player.value,
-            session.state.turn,
-            ",".join(
-                f"{u.id}={u.status.value}" for u in session.state.units.values()
-            ),
-        )
-    filtered = _apply_filter(tool_name, result, session, viewer)
+    with session.lock:
+        try:
+            result = call_tool(session, viewer, tool_name, args)
+        except ToolError as e:
+            log.info(
+                "tool rejected: cid=%s tool=%s viewer=%s err=%s",
+                connection_id[:8],
+                tool_name,
+                viewer.value,
+                e,
+            )
+            return _error(ErrorCode.BAD_INPUT, str(e))
+        # Grow ever_seen *before* filtering the response so the viewer sees
+        # tiles they just observed at the boundary. Currently only end_turn
+        # updates ever_seen; if we later want live memory during a turn we
+        # can expand this.
+        _maybe_update_ever_seen(session, result, viewer)
+        # Log the authoritative unit statuses around state-revealing tools
+        # so we can tell if any client is confused about unit readiness.
+        if tool_name in _FILTERED_STATE_TOOLS or tool_name == "end_turn":
+            log.info(
+                "post-%s viewer=%s active=%s turn=%s units=%s",
+                tool_name,
+                viewer.value,
+                session.state.active_player.value,
+                session.state.turn,
+                ",".join(
+                    f"{u.id}={u.status.value}" for u in session.state.units.values()
+                ),
+            )
+        filtered = _apply_filter(tool_name, result, session, viewer)
     # After any tool that could flip status (end_turn / concede), make
     # sure the room object reflects the game_over state so list_rooms
     # can hide it and leave_room can accept.
@@ -522,6 +524,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         # the agent loop is alive but doesn't prove the player can
         # still ACT, so keep it out of the liveness signal. Bare
         # heartbeat handles transport-level liveness already.
+        text = sanitize_freetext(text, max_length=10_000)
         try:
             session.add_thought(viewer, text)
         except Exception as e:  # pragma: no cover - defensive
