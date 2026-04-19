@@ -1,23 +1,23 @@
 schema_version: 1
 license: public_domain
 name: Thermopylae
-difficulty: 3
+difficulty: 4
 description: |
   480 BC. Xerxes I of Persia marches the largest army the ancient
   world has ever seen down the coast road toward Athens. Leonidas,
-  king of Sparta, with 300 of his royal guard plus several thousand
-  allied Greek hoplites, bottles him up at the Hot Gates — a
-  coastal pass 50 feet wide between sheer cliffs and the sea. For
-  three days a handful of heavily-armored infantry holds the
-  narrowest chokepoint on the road. The textbook hold-the-line.
+  king of Sparta, with 300 of his royal guard and a force of allied
+  Greeks, bottles him up at the Hot Gates — a coastal pass between
+  sheer cliffs and the sea. But a goat path through the mountains
+  threatens to undo the defense. Blue must survive 10 turns for the
+  Greek fleet to win at Salamis. Red must kill Leonidas or flank
+  through the mountain path.
   Inspired by the Battle of Thermopylae (480 BC), ancient Greece.
 
 board:
-  width: 14
-  height: 6
+  width: 10
+  height: 8
   terrain:
-    # Cliffs along the top and bottom rows — impassable, channel
-    # the battle into the narrow middle strip.
+    # Northern cliffs — impassable wall
     - {x: 0, y: 0, type: cliff}
     - {x: 1, y: 0, type: cliff}
     - {x: 2, y: 0, type: cliff}
@@ -28,74 +28,134 @@ board:
     - {x: 7, y: 0, type: cliff}
     - {x: 8, y: 0, type: cliff}
     - {x: 9, y: 0, type: cliff}
-    - {x: 10, y: 0, type: cliff}
-    - {x: 11, y: 0, type: cliff}
-    - {x: 12, y: 0, type: cliff}
-    - {x: 13, y: 0, type: cliff}
-    - {x: 0, y: 5, type: cliff}
-    - {x: 1, y: 5, type: cliff}
-    - {x: 2, y: 5, type: cliff}
+    # Southern cliffs — narrowing the pass, with a gap for the goat path
+    - {x: 0, y: 7, type: cliff}
+    - {x: 1, y: 7, type: cliff}
+    - {x: 2, y: 7, type: cliff}
+    - {x: 3, y: 7, type: cliff}
+    - {x: 4, y: 7, type: cliff}
+    - {x: 5, y: 7, type: cliff}
+    - {x: 6, y: 7, type: cliff}
+    - {x: 7, y: 7, type: cliff}
+    - {x: 8, y: 7, type: cliff}
+    - {x: 9, y: 7, type: cliff}
+    # Inner cliff walls — create the narrow Hot Gates pass (rows 2-4)
+    # Upper inner cliff
+    - {x: 3, y: 1, type: cliff}
+    - {x: 4, y: 1, type: cliff}
+    - {x: 5, y: 1, type: cliff}
+    - {x: 6, y: 1, type: cliff}
+    - {x: 7, y: 1, type: cliff}
+    # Lower inner cliff — with gap at (8,5) for the goat path
     - {x: 3, y: 5, type: cliff}
     - {x: 4, y: 5, type: cliff}
     - {x: 5, y: 5, type: cliff}
     - {x: 6, y: 5, type: cliff}
     - {x: 7, y: 5, type: cliff}
-    - {x: 8, y: 5, type: cliff}
-    - {x: 9, y: 5, type: cliff}
-    - {x: 10, y: 5, type: cliff}
-    - {x: 11, y: 5, type: cliff}
-    - {x: 12, y: 5, type: cliff}
-    - {x: 13, y: 5, type: cliff}
-    # The Hot Gate stones — fort tiles marking Leonidas's line.
-    - {x: 4, y: 1, type: stone_wall}
-    - {x: 4, y: 2, type: stone_wall}
-    - {x: 4, y: 3, type: stone_wall}
-    - {x: 4, y: 4, type: stone_wall}
+    # The Hot Gates pass is rows 2-4 between the inner cliffs
+    # Phocian Wall — defensive fortification in the pass
+    - {x: 4, y: 2, type: phocian_wall}
+    - {x: 4, y: 3, type: phocian_wall}
+    - {x: 4, y: 4, type: phocian_wall}
+    # Goat path — the mountain flanking route (row 6, between southern cliffs)
+    - {x: 7, y: 6, type: goat_path}
+    - {x: 8, y: 6, type: goat_path}
+    - {x: 9, y: 6, type: goat_path}
   forts: []
 
 terrain_types:
   cliff:
     display_name: Cliff
-    description: Impassable cliff face. Blocks line of sight.
+    description: Impassable cliff face. The mountains hem in the pass.
     move_cost: 99
     passable: false
     blocks_sight: true
     glyph: "^"
     color: bright_black
-  stone_wall:
-    display_name: Stone Wall
-    description: Fortified stone barrier. Costs 2 movement. +3 DEF.
+  phocian_wall:
+    display_name: Phocian Wall
+    description: |
+      An ancient stone wall across the pass, rebuilt by the Greeks.
+      Costs 2 movement. +3 DEF. The anchor of the Greek defense.
     move_cost: 2
     defense_bonus: 3
     glyph: "="
     color: yellow
+  goat_path:
+    display_name: Goat Path
+    description: |
+      The Anopaea path — a narrow trail through the mountains that
+      bypasses the Hot Gates. Costs 3 movement. If the Persians find
+      it, the Greeks are flanked.
+    move_cost: 3
+    defense_bonus: 0
+    glyph: "."
+    color: bright_black
 
 unit_classes:
   leonidas:
     display_name: Leonidas
     description: |
-      King of Sparta. Trained from age seven for nothing but this
-      battle. His death breaks the Greek line — protect him at all
-      costs.
-    hp_max: 40
+      King of Sparta. Trained from age seven for nothing but war.
+      A living wall of bronze and iron at the Hot Gates. His death
+      breaks the Greek line — protect him at all costs.
+    hp_max: 42
+    atk: 12
+    defense: 9
+    res: 4
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [vip, hoplite, king, tank]
+    sight: 4
+    glyph: "L"
+    color: bright_cyan
+
+  dienekes:
+    display_name: Dienekes
+    description: |
+      The bravest of the Spartans. When told Persian arrows would
+      blot out the sun, he replied: "Then we shall fight in the
+      shade." Elite fighter, nearly as deadly as Leonidas himself.
+    hp_max: 32
     atk: 11
     defense: 8
-    res: 4
+    res: 3
     spd: 6
     rng_min: 1
     rng_max: 1
-    move: 4
-    tags: [vip, hoplite, king]
-    sight: 4
-    glyph: L
-    color: bright_cyan
+    move: 3
+    tags: [hoplite, spartan, elite]
+    sight: 3
+    glyph: "D"
+    color: cyan
 
-  spartan:
-    display_name: Spartan Hoplite
+  demophilus:
+    display_name: Demophilus of Thespiae
     description: |
-      One of the 300. Elite in every stat, fights shoulder-to-shoulder
-      with aspis shield and dory spear. Worth three Persians in a
-      straight fight.
+      Commander of the seven hundred Thespians who refused to
+      retreat. An allied Greek, not a Spartan, but no less brave.
+      Stayed to die at the Hot Gates beside Leonidas.
+    hp_max: 24
+    atk: 8
+    defense: 6
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [hoplite, thespian, ally]
+    sight: 3
+    glyph: "T"
+    color: cyan
+
+  spartan_captain:
+    display_name: Spartan Captain
+    description: |
+      An officer of the 300. Shield-to-shield in the phalanx,
+      holding the line with iron discipline. A wall of bronze
+      that does not break.
     hp_max: 28
     atk: 9
     defense: 7
@@ -106,64 +166,83 @@ unit_classes:
     move: 3
     tags: [hoplite, spartan]
     sight: 3
-    glyph: S
+    glyph: "S"
     color: cyan
 
-  greek_hoplite:
-    display_name: Greek Hoplite
+  greek_archer:
+    display_name: Greek Archer
     description: |
-      Allied troops from Thespiae, Thebes, and Phocis who stayed to
-      fight alongside the Spartans. Not as fearsome one-on-one, but
-      a solid wall of bronze.
-    hp_max: 22
+      Cretan bowman serving with the Greek allies. Provides ranged
+      fire from behind the phalanx. Light armor — keep him out of
+      melee.
+    hp_max: 14
     atk: 7
-    defense: 6
-    res: 3
-    spd: 4
+    defense: 2
+    res: 2
+    spd: 5
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [ranged, archer]
+    sight: 4
+    glyph: "A"
+    color: cyan
+
+  xerxes:
+    display_name: Xerxes I
+    description: |
+      The King of Kings. God-emperor of Persia. Watches from his
+      golden throne behind the lines. If he falls, the empire's
+      morale shatters. VIP — stays back, commands, does not fight.
+    hp_max: 12
+    atk: 3
+    defense: 3
+    res: 6
+    spd: 3
     rng_min: 1
     rng_max: 1
-    move: 3
-    tags: [hoplite]
-    sight: 3
-    glyph: H
-    color: cyan
+    move: 2
+    tags: [vip, king, commander]
+    sight: 4
+    glyph: "X"
+    color: bright_red
 
-  immortal:
-    display_name: Persian Immortal
+  hydarnes:
+    display_name: Hydarnes
     description: |
-      The Ten Thousand — Xerxes's household guard, every fallen
-      Immortal immediately replaced to keep the number constant.
-      The best troops the Persian Empire can field.
-    hp_max: 26
+      Commander of the Ten Thousand Immortals — Xerxes's household
+      guard. The man who leads the flanking march through the goat
+      path. Elite, fast, and deadly.
+    hp_max: 28
     atk: 10
-    defense: 5
+    defense: 6
     res: 3
     spd: 6
     rng_min: 1
     rng_max: 1
     move: 4
-    tags: [elite, immortal]
+    tags: [elite, immortal, hero]
     sight: 3
-    glyph: I
+    glyph: "H"
     color: bright_red
 
-  persian_infantry:
-    display_name: Persian Infantry
+  mardonius:
+    display_name: Mardonius
     description: |
-      Levies from every corner of the empire — Medes, Cissians,
-      Saka. Lightly armored; their strength is their number.
-    hp_max: 14
-    atk: 5
-    defense: 3
-    res: 2
-    spd: 4
+      Xerxes's cousin and cavalry general. Fast-moving, aggressive,
+      presses the frontal assault to pin the Greeks in the pass.
+    hp_max: 26
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 7
     rng_min: 1
     rng_max: 1
-    move: 3
-    tags: [infantry]
+    move: 5
+    tags: [hero, cavalry]
     sight: 3
-    glyph: P
-    color: red
+    glyph: "M"
+    color: bright_red
 
   persian_archer:
     display_name: Persian Archer
@@ -180,74 +259,160 @@ unit_classes:
     move: 4
     tags: [ranged]
     sight: 4
-    glyph: A
+    glyph: "B"
+    color: red
+
+  immortal_champion:
+    display_name: Immortal Champion
+    description: |
+      The finest warrior among the Ten Thousand. Wields a gold-
+      inlaid spear and wicker shield. Individually dangerous —
+      one of the few Persians who can match a Spartan in single
+      combat.
+    hp_max: 30
+    atk: 11
+    defense: 6
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [elite, immortal]
+    sight: 3
+    glyph: "I"
+    color: bright_red
+
+  artaphrenes:
+    display_name: Artaphrenes
+    description: |
+      Persian satrap and field commander. Leads massed infantry
+      waves into the pass to wear down the Greek shields.
+    hp_max: 22
+    atk: 8
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [commander]
+    sight: 3
+    glyph: "P"
+    color: red
+
+  datis:
+    display_name: Datis
+    description: |
+      A Median general serving Xerxes. Veteran of Marathon.
+      Steady and experienced, holds the second wave.
+    hp_max: 22
+    atk: 8
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [commander]
+    sight: 3
+    glyph: "G"
+    color: red
+
+  megabyzus:
+    display_name: Megabyzus
+    description: |
+      Persian nobleman commanding levies from the eastern satrapies.
+      Pushes fodder into the pass to exhaust the Greek spears.
+    hp_max: 20
+    atk: 7
+    defense: 4
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [commander]
+    sight: 3
+    glyph: "Z"
     color: red
 
 armies:
   blue:
-    # Leonidas and the Spartans form the first rank just behind the
-    # stone wall at x=4. Greek allies fill out the corridor.
-    - {class: leonidas, pos: {x: 3, y: 2}}
-    - {class: spartan, pos: {x: 3, y: 1}}
-    - {class: spartan, pos: {x: 3, y: 3}}
-    - {class: spartan, pos: {x: 3, y: 4}}
-    - {class: greek_hoplite, pos: {x: 2, y: 1}}
-    - {class: greek_hoplite, pos: {x: 2, y: 2}}
-    - {class: greek_hoplite, pos: {x: 2, y: 3}}
-    - {class: greek_hoplite, pos: {x: 2, y: 4}}
-    - {class: greek_hoplite, pos: {x: 1, y: 2}}
-    - {class: greek_hoplite, pos: {x: 1, y: 3}}
+    # Greeks hold the pass behind the Phocian Wall
+    - {class: leonidas, pos: {x: 3, y: 3}}
+    - {class: dienekes, pos: {x: 3, y: 2}}
+    - {class: demophilus, pos: {x: 3, y: 4}}
+    - {class: spartan_captain, pos: {x: 2, y: 3}}
+    - {class: greek_archer, pos: {x: 2, y: 2}}
+
   red:
-    # Xerxes pushes from the east — two Immortals lead, massed
-    # levies behind, archers at the rear for volleys over the line.
-    - {class: immortal, pos: {x: 10, y: 2}}
-    - {class: immortal, pos: {x: 10, y: 3}}
-    - {class: persian_infantry, pos: {x: 11, y: 1}}
-    - {class: persian_infantry, pos: {x: 11, y: 2}}
-    - {class: persian_infantry, pos: {x: 11, y: 3}}
-    - {class: persian_infantry, pos: {x: 11, y: 4}}
-    - {class: persian_infantry, pos: {x: 12, y: 1}}
-    - {class: persian_infantry, pos: {x: 12, y: 2}}
-    - {class: persian_infantry, pos: {x: 12, y: 3}}
-    - {class: persian_infantry, pos: {x: 12, y: 4}}
-    - {class: persian_archer, pos: {x: 13, y: 1}}
-    - {class: persian_archer, pos: {x: 13, y: 2}}
-    - {class: persian_archer, pos: {x: 13, y: 3}}
-    - {class: persian_archer, pos: {x: 13, y: 4}}
+    # Persians massed in the eastern end of the pass
+    # Xerxes stays far back
+    - {class: xerxes, pos: {x: 9, y: 3}}
+    # Hydarnes near the goat path for flanking
+    - {class: hydarnes, pos: {x: 9, y: 4}}
+    # Mardonius leading the frontal press
+    - {class: mardonius, pos: {x: 8, y: 3}}
+    # Persian archer for ranged volleys
+    - {class: persian_archer, pos: {x: 9, y: 2}}
+    # Immortal Champion — elite assault
+    - {class: immortal_champion, pos: {x: 8, y: 2}}
+    # Three named commanders
+    - {class: artaphrenes, pos: {x: 8, y: 4}}
+    - {class: datis, pos: {x: 7, y: 3}}
+    - {class: megabyzus, pos: {x: 7, y: 2}}
 
 rules:
-  max_turns: 25
+  max_turns: 10
   fog_of_war: false
   first_player: red
 
 win_conditions:
-  # Blue (Spartans) lose if Leonidas dies.
+  # Blue loses if Leonidas dies
   - {type: protect_unit, unit_id: u_b_leonidas_1, owning_team: blue}
-  # Red wins by pushing a unit past the Hot Gate — any red crossing
-  # the goal line at x=1 wins the pass and the road to Athens.
+  # Red loses if Xerxes dies (he should stay back!)
+  - {type: protect_unit, unit_id: u_r_xerxes_1, owning_team: red}
+  # Red wins by flanking — any red unit reaching the Greek rear via goat path
   - {type: reach_goal_line, team: red, axis: x, value: 1}
-  # Either side wins by wiping the other out.
-  - {type: eliminate_all_enemy_units}
-  # Leonidas survives the turn cap → Greeks bought enough time for
-  # the rest of Greece to prepare. Blue wins.
+  # Blue wins by surviving 10 turns — the fleet wins at Salamis
   - {type: protect_unit_survives, unit_id: u_b_leonidas_1, owning_team: blue}
+  # Either side wins by total elimination
+  - {type: eliminate_all_enemy_units}
+  # Backstop
   - {type: max_turns_draw}
 
 narrative:
   title: Thermopylae
   description: |
-    Three hundred Spartans, seven thousand Greek allies, one narrow
-    pass. Hold the Hot Gates.
+    Three hundred Spartans, a thousand Thespians, one narrow pass.
+    Hold the Hot Gates for the fleet.
   intro: |
     Day One. The Persian host stretches to the horizon. Xerxes sits
-    on his throne above the pass to watch. Leonidas forms the line.
+    on his golden throne above the pass to watch. Leonidas forms the
+    phalanx at the Phocian Wall. "Come and take them."
   events:
     - trigger: on_turn_start
-      turn: 5
-      text: "Persian arrows darken the sky. The Greeks shelter under their shields."
+      turn: 3
+      text: |
+        Persian arrows darken the sky. Dienekes grins: "Good. Then
+        we shall fight in the shade."
     - trigger: on_turn_start
-      turn: 10
-      text: "Xerxes sends the Immortals forward. The pass narrows."
+      turn: 5
+      text: |
+        Xerxes sends the Immortals forward. The pass fills with the
+        sound of bronze on bronze.
+    - trigger: on_turn_start
+      turn: 7
+      text: |
+        A traitor has shown Hydarnes the goat path. The Immortals
+        begin their march through the mountains to flank the Greeks.
     - trigger: on_unit_killed
       unit_id: u_b_leonidas_1
-      text: "Leonidas falls. The line breaks."
+      text: |
+        Leonidas falls beneath a storm of Persian spears. The Hot
+        Gates are broken. Greece lies open.
+    - trigger: on_unit_killed
+      unit_id: u_r_xerxes_1
+      text: |
+        Xerxes is struck down. The King of Kings falls and the
+        Persian host dissolves into chaos.

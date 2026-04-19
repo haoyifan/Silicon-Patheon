@@ -6,84 +6,66 @@ difficulty: 4
 description: |
   King's Landing, 299 AC. Stannis Baratheon's fleet sails into
   Blackwater Bay to seize the Iron Throne. Tyrion Lannister, acting
-  Hand of the King, has prepared a surprise — a ship full of wildfire
-  that turns the bay into green hell. But Stannis presses the beach
-  assault. Tyrion must hold the walls until Tywin's army arrives.
+  Hand of the King, has laid a wildfire trap in the bay and must hold
+  the Mud Gate until Tywin's host arrives from the Kingsroad. Stannis
+  leads from the front. The bay burns green but the assault presses on.
   Inspired by the Battle of the Blackwater from Game of Thrones by George R.R. Martin.
 
 board:
-  width: 16
+  width: 12
   height: 10
   terrain:
-    # Water — impassable, left side of the bay
+    # Blackwater Bay — water along the left edge
     - {x: 0, y: 0, type: water}
     - {x: 1, y: 0, type: water}
-    - {x: 2, y: 0, type: water}
-    - {x: 3, y: 0, type: water}
     - {x: 0, y: 1, type: water}
     - {x: 1, y: 1, type: water}
-    - {x: 2, y: 1, type: water}
-    - {x: 3, y: 1, type: water}
     - {x: 0, y: 2, type: water}
     - {x: 1, y: 2, type: water}
-    - {x: 2, y: 2, type: water}
-    - {x: 3, y: 2, type: water}
     - {x: 0, y: 3, type: water}
     - {x: 1, y: 3, type: water}
-    - {x: 2, y: 3, type: water}
     - {x: 0, y: 4, type: water}
     - {x: 1, y: 4, type: water}
-    - {x: 2, y: 4, type: water}
     - {x: 0, y: 5, type: water}
     - {x: 1, y: 5, type: water}
-    - {x: 2, y: 5, type: water}
     - {x: 0, y: 6, type: water}
     - {x: 1, y: 6, type: water}
-    - {x: 2, y: 6, type: water}
-    - {x: 3, y: 6, type: water}
     - {x: 0, y: 7, type: water}
     - {x: 1, y: 7, type: water}
-    - {x: 2, y: 7, type: water}
-    - {x: 3, y: 7, type: water}
     - {x: 0, y: 8, type: water}
     - {x: 1, y: 8, type: water}
-    - {x: 2, y: 8, type: water}
-    - {x: 3, y: 8, type: water}
     - {x: 0, y: 9, type: water}
     - {x: 1, y: 9, type: water}
-    - {x: 2, y: 9, type: water}
-    - {x: 3, y: 9, type: water}
-    # Wildfire tiles — the bay burns green
+    # Wildfire zone — the burning bay between beach and shore
+    - {x: 3, y: 3, type: wildfire}
     - {x: 4, y: 3, type: wildfire}
-    - {x: 5, y: 3, type: wildfire}
-    - {x: 6, y: 3, type: wildfire}
+    - {x: 3, y: 4, type: wildfire}
     - {x: 4, y: 4, type: wildfire}
-    - {x: 5, y: 4, type: wildfire}
-    - {x: 6, y: 4, type: wildfire}
+    - {x: 3, y: 5, type: wildfire}
     - {x: 4, y: 5, type: wildfire}
-    - {x: 5, y: 5, type: wildfire}
-    - {x: 6, y: 5, type: wildfire}
-    # City walls — impassable except the gate
-    - {x: 14, y: 0, type: city_wall}
-    - {x: 15, y: 0, type: city_wall}
-    - {x: 14, y: 1, type: city_wall}
-    - {x: 15, y: 1, type: city_wall}
-    - {x: 14, y: 2, type: city_wall}
-    - {x: 15, y: 2, type: city_wall}
-    - {x: 14, y: 3, type: city_wall}
-    - {x: 15, y: 3, type: city_wall}
-    - {x: 14, y: 4, type: city_wall}
-    - {x: 15, y: 4, type: city_wall}
-    # (14, 5) is the gate — plain tile
-    - {x: 15, y: 5, type: city_wall}
-    - {x: 14, y: 6, type: city_wall}
-    - {x: 15, y: 6, type: city_wall}
-    - {x: 14, y: 7, type: city_wall}
-    - {x: 15, y: 7, type: city_wall}
-    - {x: 14, y: 8, type: city_wall}
-    - {x: 15, y: 8, type: city_wall}
-    - {x: 14, y: 9, type: city_wall}
-    - {x: 15, y: 9, type: city_wall}
+    - {x: 3, y: 6, type: wildfire}
+    - {x: 4, y: 6, type: wildfire}
+    # City walls — eastern edge with Mud Gate gap at (10, 5)
+    - {x: 10, y: 0, type: city_wall}
+    - {x: 11, y: 0, type: city_wall}
+    - {x: 10, y: 1, type: city_wall}
+    - {x: 11, y: 1, type: city_wall}
+    - {x: 10, y: 2, type: city_wall}
+    - {x: 11, y: 2, type: city_wall}
+    - {x: 10, y: 3, type: city_wall}
+    - {x: 11, y: 3, type: city_wall}
+    - {x: 10, y: 4, type: city_wall}
+    - {x: 11, y: 4, type: city_wall}
+    # (10, 5) is the Mud Gate — passable
+    - {x: 11, y: 5, type: city_wall}
+    - {x: 10, y: 6, type: city_wall}
+    - {x: 11, y: 6, type: city_wall}
+    - {x: 10, y: 7, type: city_wall}
+    - {x: 11, y: 7, type: city_wall}
+    - {x: 10, y: 8, type: city_wall}
+    - {x: 11, y: 8, type: city_wall}
+    - {x: 10, y: 9, type: city_wall}
+    - {x: 11, y: 9, type: city_wall}
   forts: []
 
 terrain_types:
@@ -123,8 +105,8 @@ unit_classes:
     description: |
       The rightful king — by law if not by love. Rigid, relentless,
       first man on the beach with a sword in his hand. Commands from
-      the front.
-    hp_max: 28
+      the front. If he falls, the assault collapses.
+    hp_max: 30
     atk: 10
     defense: 7
     res: 5
@@ -132,115 +114,129 @@ unit_classes:
     move: 3
     rng_min: 1
     rng_max: 1
+    tags: [vip, hero, king]
+    sight: 4
     glyph: "S"
-    color: cyan
+    color: bright_cyan
 
   davos:
     display_name: Davos Seaworth
     description: |
       The Onion Knight. Smuggler turned Hand. Loyal to Stannis
-      beyond reason. Leads the fleet into the bay.
+      beyond reason. Leads the fleet into the bay. Fast and
+      maneuverable — a sailor, not a soldier.
     hp_max: 22
     atk: 8
     defense: 5
     res: 4
-    spd: 5
-    move: 3
+    spd: 6
+    move: 4
     rng_min: 1
     rng_max: 1
+    tags: [hero, naval]
+    sight: 3
     glyph: "D"
     color: cyan
 
-  baratheon_infantry:
-    display_name: Baratheon Infantry
+  salladhor_saan:
+    display_name: Salladhor Saan
     description: |
-      Stannis's foot soldiers. Drilled, determined, storming the
-      beach under a rain of arrows and wildfire.
-    hp_max: 22
-    atk: 8
-    defense: 6
-    res: 3
-    spd: 4
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    glyph: "b"
-    color: cyan
-
-  baratheon_archer:
-    display_name: Baratheon Archer
-    description: |
-      Bowmen providing covering fire from the boats and the beach.
-    hp_max: 16
+      Prince of the Narrow Sea — pirate, sellsail, and Davos's
+      old friend. His galleys provide ranged fire from the bay.
+      Will flee if the battle turns hopeless.
+    hp_max: 18
     atk: 8
     defense: 3
-    res: 2
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 2
+    rng_max: 3
+    tags: [hero, pirate, ranged]
+    sight: 4
+    glyph: "Z"
+    color: cyan
+
+  melisandre:
+    display_name: Melisandre
+    description: |
+      The Red Woman. Priestess of R'hllor. Her fires see the
+      future but cannot hold a wall. Fragile yet dangerous —
+      magical attacks ignore armor.
+    hp_max: 14
+    atk: 9
+    defense: 2
+    res: 8
     spd: 4
     move: 3
     rng_min: 2
     rng_max: 3
-    glyph: "a"
-    color: cyan
-
-  siege_tower:
-    display_name: Siege Tower
-    description: |
-      A massive wheeled tower for scaling the city walls. Slow as
-      death but armored like a fortress.
-    hp_max: 35
-    atk: 4
-    defense: 8
-    res: 2
-    spd: 1
-    move: 1
-    rng_min: 1
-    rng_max: 2
-    glyph: "T"
+    tags: [hero, magic]
+    sight: 4
+    glyph: "M"
     color: bright_cyan
 
-  baratheon_maester:
-    display_name: Baratheon Maester
+  ser_guyard:
+    display_name: Ser Guyard Morrigen
     description: |
-      A maester attached to Stannis's army. Tends to the wounded
-      on the beach between volleys of arrows and wildfire.
-    hp_max: 14
-    atk: 4
-    defense: 3
-    res: 5
-    spd: 3
+      Knight of Stannis's Rainbow Guard. Leads the beach assault
+      with blade drawn and stag banner flying.
+    hp_max: 24
+    atk: 9
+    defense: 6
+    res: 3
+    spd: 5
     move: 3
     rng_min: 1
     rng_max: 1
-    can_heal: true
-    heal_amount: 5
-    glyph: "h"
+    tags: [knight]
+    sight: 3
+    glyph: "G"
     color: cyan
 
-  lannister_maester:
-    display_name: Lannister Maester
+  ser_rolland:
+    display_name: Ser Rolland Storm
     description: |
-      A maester of the Citadel serving King's Landing. Patches
-      wounds behind the city walls as the battle rages.
-    hp_max: 14
-    atk: 4
-    defense: 3
-    res: 5
-    spd: 3
+      The Bastard of Nightsong. One of Stannis's fiercest
+      knights — fights with reckless fury on the beach.
+    hp_max: 24
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 6
     move: 3
     rng_min: 1
     rng_max: 1
-    can_heal: true
-    heal_amount: 5
-    glyph: "h"
-    color: red
+    tags: [knight]
+    sight: 3
+    glyph: "R"
+    color: cyan
+
+  ser_parmen:
+    display_name: Ser Parmen Crane
+    description: |
+      Another of Stannis's Rainbow Guard. Steady, disciplined,
+      holds his section of the line.
+    hp_max: 22
+    atk: 8
+    defense: 6
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    tags: [knight]
+    sight: 3
+    glyph: "P"
+    color: cyan
 
   tyrion:
     display_name: Tyrion Lannister
     description: |
       The Imp. Half a man, twice the mind. Acting Hand of the King,
-      architect of the wildfire trap. Leads the sortie through the
-      tunnels when the Hound breaks.
-    hp_max: 18
+      architect of the wildfire trap. If Tyrion falls, the defense
+      crumbles and Red loses.
+    hp_max: 16
     atk: 6
     defense: 4
     res: 7
@@ -248,156 +244,177 @@ unit_classes:
     move: 3
     rng_min: 1
     rng_max: 1
+    tags: [vip, hero, commander]
+    sight: 4
     glyph: "Y"
-    color: bright_red
-
-  clegane:
-    display_name: Sandor Clegane
-    description: |
-      The Hound. Terrified of fire, deadly with a sword. The most
-      dangerous man on the walls — until the wildfire breaks him.
-    hp_max: 34
-    atk: 13
-    defense: 8
-    res: 2
-    spd: 3
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    glyph: "X"
     color: bright_red
 
   bronn:
     display_name: Bronn
     description: |
       Sellsword turned knight. The man who fires the arrow that
-      ignites the wildfire ship. Deadly at range and in close.
-    hp_max: 22
+      ignites the wildfire ship. Deadly at range, fast on his feet,
+      slippery as a snake.
+    hp_max: 20
     atk: 9
-    defense: 5
+    defense: 4
     res: 3
-    spd: 6
+    spd: 7
     move: 4
     rng_min: 2
     rng_max: 3
+    tags: [hero, assassin, ranged]
+    sight: 4
     glyph: "B"
     color: red
 
-  lannister_guard:
-    display_name: Lannister Guard
+  the_hound:
+    display_name: Sandor Clegane
     description: |
-      Men-at-arms of the Westerlands. Well-armored, well-paid,
-      holding the walls of the capital.
-    hp_max: 22
-    atk: 7
-    defense: 7
-    res: 3
-    spd: 4
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    glyph: "g"
-    color: red
-
-  city_watch:
-    display_name: City Watch
-    description: |
-      Gold cloaks of King's Landing. Poorly trained, unreliable,
-      but they fill the gaps on the walls.
-    hp_max: 16
-    atk: 6
-    defense: 4
+      The Hound. Terrified of fire, deadly with a sword. The most
+      dangerous man on the walls. Massive HP, massive attack — a
+      one-man wrecking crew at the Mud Gate.
+    hp_max: 36
+    atk: 13
+    defense: 8
     res: 2
     spd: 4
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "c"
-    color: dim
+    tags: [hero, tank]
+    sight: 3
+    glyph: "X"
+    color: bright_red
 
-  tyrell_knight:
-    display_name: Tyrell Knight
+  podrick:
+    display_name: Podrick Payne
     description: |
-      Heavy cavalry of Highgarden, arriving with Tywin Lannister.
-      Fresh, armored, and devastating. The battle turns.
-    hp_max: 26
+      Tyrion's squire. Young, loyal, underestimated. Provides
+      support — heals nearby allies between the waves of assault.
+    hp_max: 14
+    atk: 4
+    defense: 3
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    can_heal: true
+    heal_amount: 5
+    tags: [support]
+    sight: 3
+    glyph: "p"
+    color: red
+
+  cersei:
+    display_name: Cersei Lannister
+    description: |
+      The Queen Regent. No warrior, but her presence steels the
+      defenders. Fragile — keep her behind the walls.
+    hp_max: 10
+    atk: 3
+    defense: 2
+    res: 6
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 1
+    tags: [morale]
+    sight: 3
+    glyph: "C"
+    color: red
+
+  joffrey:
+    display_name: Joffrey Baratheon
+    description: |
+      The boy king. Cruel, cowardly, useless in a fight. But he
+      wears the crown — if he dies, the political fallout is
+      catastrophic. VIP by title, liability by nature.
+    hp_max: 10
+    atk: 3
+    defense: 2
+    res: 2
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 1
+    tags: [vip, king]
+    sight: 3
+    glyph: "J"
+    color: red
+
+  tywin:
+    display_name: Tywin Lannister
+    description: |
+      The Old Lion. Lord of Casterly Rock. Arrives at turn 8 with
+      fresh cavalry from the Kingsroad. The battle turns when his
+      banner appears.
+    hp_max: 28
     atk: 10
     defense: 7
-    res: 3
+    res: 5
     spd: 6
     move: 5
     rng_min: 1
     rng_max: 1
-    glyph: "R"
+    tags: [hero, cavalry, reinforcement]
+    sight: 4
+    glyph: "T"
     color: bright_red
 
 armies:
   blue:
     # Stannis — leading from the front on the beach
-    - {class: stannis, pos: {x: 6, y: 4}}
+    - {class: stannis, pos: {x: 5, y: 4}}
     # Davos — beside Stannis
     - {class: davos, pos: {x: 5, y: 5}}
-    # Baratheon infantry — beach assault wave
-    - {class: baratheon_infantry, pos: {x: 7, y: 3}}
-    - {class: baratheon_infantry, pos: {x: 7, y: 4}}
-    - {class: baratheon_infantry, pos: {x: 7, y: 5}}
-    - {class: baratheon_infantry, pos: {x: 7, y: 6}}
-    - {class: baratheon_infantry, pos: {x: 8, y: 3}}
-    - {class: baratheon_infantry, pos: {x: 8, y: 5}}
-    - {class: baratheon_infantry, pos: {x: 8, y: 6}}
-    - {class: baratheon_maester, pos: {x: 8, y: 7}}
-    # Baratheon archers — covering fire
-    - {class: baratheon_archer, pos: {x: 6, y: 6}}
-    - {class: baratheon_archer, pos: {x: 6, y: 7}}
-    - {class: baratheon_archer, pos: {x: 7, y: 7}}
-    - {class: baratheon_archer, pos: {x: 8, y: 4}}
-    # Siege towers — slow advance
-    - {class: siege_tower, pos: {x: 6, y: 3}}
-    - {class: siege_tower, pos: {x: 6, y: 5}}
+    # Salladhor Saan — ranged support from the flank
+    - {class: salladhor_saan, pos: {x: 2, y: 8}}
+    # Melisandre — magical fire from the rear
+    - {class: melisandre, pos: {x: 2, y: 2}}
+    # Three named knights — beach assault wave
+    - {class: ser_guyard, pos: {x: 5, y: 3}}
+    - {class: ser_rolland, pos: {x: 6, y: 5}}
+    - {class: ser_parmen, pos: {x: 6, y: 6}}
 
   red:
-    # Tyrion — behind the walls, commanding
-    - {class: tyrion, pos: {x: 13, y: 5}}
-    # Clegane — at the gate
-    - {class: clegane, pos: {x: 13, y: 4}}
+    # Tyrion — behind the walls, commanding the defense
+    - {class: tyrion, pos: {x: 9, y: 5}}
     # Bronn — on the walls, ready to shoot
-    - {class: bronn, pos: {x: 13, y: 6}}
-    # Lannister guards — defending the walls
-    - {class: lannister_guard, pos: {x: 12, y: 3}}
-    - {class: lannister_guard, pos: {x: 12, y: 4}}
-    - {class: lannister_guard, pos: {x: 12, y: 5}}
-    - {class: lannister_guard, pos: {x: 12, y: 6}}
-    - {class: lannister_guard, pos: {x: 12, y: 7}}
-    - {class: lannister_guard, pos: {x: 13, y: 3}}
-    # City watch — filling the gaps
-    - {class: city_watch, pos: {x: 11, y: 4}}
-    - {class: city_watch, pos: {x: 11, y: 5}}
-    - {class: city_watch, pos: {x: 11, y: 6}}
-    - {class: city_watch, pos: {x: 13, y: 7}}
-    - {class: lannister_maester, pos: {x: 11, y: 7}}
+    - {class: bronn, pos: {x: 9, y: 3}}
+    # The Hound — at the Mud Gate
+    - {class: the_hound, pos: {x: 9, y: 4}}
+    # Podrick — support behind the line
+    - {class: podrick, pos: {x: 9, y: 6}}
+    # Cersei — deep behind walls
+    - {class: cersei, pos: {x: 9, y: 7}}
+    # Joffrey — cowering behind everyone
+    - {class: joffrey, pos: {x: 9, y: 8}}
+    # Tywin — arrives as reinforcement at turn 8 (spawns via plugin)
 
 rules:
-  max_turns: 16
+  max_turns: 14
   fog_of_war: false
   first_player: blue
 
 win_conditions:
-  # Stannis dies → blue loses.
+  # Stannis dies -> blue loses
   - {type: protect_unit, unit_id: u_b_stannis_1, owning_team: blue}
-  # Tyrion dies → red loses.
+  # Tyrion dies -> red loses
   - {type: protect_unit, unit_id: u_r_tyrion_1, owning_team: red}
-  # Blue reaches the gate → blue wins (city falls).
-  - {type: reach_tile, team: blue, pos: {x: 14, y: 5}}
-  # Tyrion survives the turn cap → Tywin arrives, red wins.
+  # Blue reaches the Mud Gate -> blue wins (city falls)
+  - {type: reach_tile, team: blue, pos: {x: 10, y: 5}}
+  # Tyrion survives the turn cap -> Tywin arrives in force, red wins
   - {type: protect_unit_survives, unit_id: u_r_tyrion_1, owning_team: red}
-  # Either side wins by total elimination.
+  # Either side wins by total elimination
   - {type: eliminate_all_enemy_units}
-  # Backstop.
+  # Backstop
   - {type: max_turns_draw}
 
 plugin_hooks:
   on_turn_start:
-    - tyrell_reinforcements
+    - tywin_reinforcements
 
 narrative:
   title: Battle of the Blackwater
@@ -415,19 +432,23 @@ narrative:
         Wildfire. The bay erupts in green flame. Ships shatter.
         Men burn. But Stannis presses on — the beach assault begins.
     - trigger: on_turn_start
-      turn: 8
+      turn: 5
       text: |
         The Hound throws down his sword. "F*** the Kingsguard.
         F*** the city. F*** the king." Tyrion must lead the sortie
         himself.
     - trigger: on_turn_start
-      turn: 12
+      turn: 8
       text: |
         A horn sounds from the Kingsroad. Tywin Lannister rides at
-        the head of the Tyrell vanguard. Four fresh knights crash
-        into Stannis's flank.
+        the head of a fresh column. The Old Lion has arrived.
     - trigger: on_unit_killed
       unit_id: u_r_tyrion_1
       text: |
         Tyrion falls, slashed across the face. The walls of King's
         Landing will not hold without him.
+    - trigger: on_unit_killed
+      unit_id: u_b_stannis_1
+      text: |
+        Stannis is cut down on the beach. The assault falters and
+        the Baratheon host begins to break.
