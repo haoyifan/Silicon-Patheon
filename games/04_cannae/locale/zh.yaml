@@ -125,7 +125,7 @@ narrative:
       text: |
         罗马后方扬起尘土——努米底亚骑兵封闭了口袋。
     - trigger: on_unit_killed
-      unit_id: u_b_consul_varro_1
+      unit_id: u_r_consul_varro_1
       text: |
         瓦罗倒下了。罗马防线四分五裂。
     - trigger: on_unit_killed

@@ -369,7 +369,7 @@ unit_classes:
     spd: 6
     rng_min: 1
     rng_max: 2
-    move: 4
+    move: 3
     tags: [infantry, skirmisher, ranged]
     sight: 4
     glyph: E
@@ -400,7 +400,7 @@ armies:
     - {class: hannibal,         pos: {x: 8,  y: 1}}
     # Celtic chieftain: the bait. Center-north, bulging toward Romans.
     # He stands in open ground to lure the legions forward.
-    - {class: celtic_chieftain, pos: {x: 7,  y: 3}}
+    - {class: celtic_chieftain, pos: {x: 7,  y: 1}}
     # Hanno holds the center line behind the Celts.
     - {class: hanno,            pos: {x: 8,  y: 2}}
     # Balearic slinger screens from behind the crescent.
@@ -426,7 +426,7 @@ armies:
     - {class: tribune_marcus,          pos: {x: 7,  y: 7}}
     - {class: centurion_primus,        pos: {x: 8,  y: 7}}
     # Velites screen ahead of the main line.
-    - {class: velites_captain,         pos: {x: 7,  y: 6}}
+    - {class: velites_captain,         pos: {x: 7,  y: 9}}
     # Triarii reserve — kneeling behind the block until the crisis.
     - {class: triarii_veteran,         pos: {x: 8,  y: 9}}
     # Roman cavalry on the west flank — outnumbered, doomed.
