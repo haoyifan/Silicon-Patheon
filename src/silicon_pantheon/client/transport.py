@@ -24,6 +24,13 @@ log = logging.getLogger("silicon.transport")
 
 CLIENT_HEARTBEAT_INTERVAL_S = 10.0
 
+# Hard timeout for call_tool inside the lock. If the MCP SDK's SSE
+# stream silently dies, call_tool hangs forever. With the lock, one
+# hung call blocks ALL subsequent calls (heartbeat, state polls,
+# agent tools). This timeout surfaces the failure so the caller can
+# reconnect instead of hanging indefinitely.
+CALL_TOOL_TIMEOUT_S = 60.0
+
 # Tools that are purely noisy (heartbeat / state polls) are logged at
 # DEBUG so the file stays readable; everything else at INFO.
 # IMPORTANT: keep get_state at INFO — it's how we see agents / screens
@@ -85,27 +92,40 @@ class ServerClient:
         # whether the MCP SDK rotated the session under us, or whether
         # something on the wire / server killed the stream we still
         # hold a reference to.
-        sess_id = id(self._session)
-        ws = getattr(self._session, "_write_stream", None)
-        rs = getattr(self._session, "_read_stream", None)
-        ws_id = id(ws) if ws is not None else None
-        rs_id = id(rs) if rs is not None else None
-        ws_closed = getattr(ws, "_closed", "?") if ws is not None else "?"
-        log.log(
-            level,
-            "call -> %s cid=%s sess=%s ws=%s ws_closed=%s rs=%s args=%s",
-            tool_name, self.connection_id, sess_id, ws_id, ws_closed, rs_id,
-            {k: v for k, v in kwargs.items()},
-        )
         import time as _time
-        _t0 = _time.monotonic()
 
         # Acquire the call lock to ensure only one call_tool is in
         # flight at a time. The MCP SDK's SSE response demuxer loses
         # responses under concurrent requests, causing permanent hangs.
         async with self._call_lock:
+            sess_id = id(self._session)
+            ws = getattr(self._session, "_write_stream", None)
+            rs = getattr(self._session, "_read_stream", None)
+            ws_id = id(ws) if ws is not None else None
+            rs_id = id(rs) if rs is not None else None
+            ws_closed = getattr(ws, "_closed", "?") if ws is not None else "?"
+            log.log(
+                level,
+                "call -> %s cid=%s sess=%s ws=%s ws_closed=%s rs=%s args=%s",
+                tool_name, self.connection_id, sess_id, ws_id, ws_closed, rs_id,
+                {k: v for k, v in kwargs.items()},
+            )
+            _t0 = _time.monotonic()
             try:
-                result = await self._session.call_tool(tool_name, args)
+                result = await asyncio.wait_for(
+                    self._session.call_tool(tool_name, args),
+                    timeout=CALL_TOOL_TIMEOUT_S,
+                )
+            except asyncio.TimeoutError:
+                elapsed = _time.monotonic() - _t0
+                log.error(
+                    "call TIMEOUT %s cid=%s dt=%.1fs — "
+                    "session.call_tool did not return within %.0fs. "
+                    "SSE stream likely dead.",
+                    tool_name, self.connection_id, elapsed,
+                    CALL_TOOL_TIMEOUT_S,
+                )
+                raise
             except Exception as e:
                 ws2 = getattr(self._session, "_write_stream", None)
                 rs2 = getattr(self._session, "_read_stream", None)
