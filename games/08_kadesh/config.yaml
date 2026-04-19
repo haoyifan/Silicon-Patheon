@@ -16,36 +16,37 @@ description: |
   Inspired by the Battle of Kadesh (1274 BC), ancient Egypt vs Hittite Empire.
 
 board:
-  width: 14
-  height: 10
+  width: 10
+  height: 8
   terrain:
-    # The Orontes — impassable along the north edge with a single
-    # ford at (3, 1).
-    - {x: 0, y: 0, type: river}
-    - {x: 1, y: 0, type: river}
-    - {x: 2, y: 0, type: river}
-    - {x: 3, y: 0, type: river}
-    - {x: 4, y: 0, type: river}
-    - {x: 5, y: 0, type: river}
-    - {x: 6, y: 0, type: river}
-    - {x: 7, y: 0, type: river}
-    - {x: 8, y: 0, type: river}
-    - {x: 9, y: 0, type: river}
-    - {x: 10, y: 0, type: river}
-    - {x: 11, y: 0, type: river}
-    - {x: 12, y: 0, type: river}
-    - {x: 13, y: 0, type: river}
-    - {x: 3, y: 1, type: ford}
+    # Orontes River — runs east-west across the center (row 3).
+    # Mostly impassable with two ford crossings.
+    - {x: 0, y: 3, type: river}
+    - {x: 1, y: 3, type: river}
+    - {x: 2, y: 3, type: river}
+    - {x: 3, y: 3, type: ford}      # western ford
+    - {x: 4, y: 3, type: river}
+    - {x: 5, y: 3, type: river}
+    - {x: 6, y: 3, type: ford}      # eastern ford
+    - {x: 7, y: 3, type: river}
+    - {x: 8, y: 3, type: river}
+    - {x: 9, y: 3, type: river}
+    # Hills on the western bank — rough terrain, good defensive ground
+    - {x: 0, y: 2, type: hill}
+    - {x: 1, y: 2, type: hill}
+    - {x: 0, y: 5, type: hill}
+    # Hills on the eastern side
+    - {x: 8, y: 5, type: hill}
+    - {x: 9, y: 5, type: hill}
+    # Open plains fill the rest of the map (default terrain)
   forts:
-    # Kadesh fortress — moved to the open plain between the armies
-    # so it's a contested healing resource. Neutral (no owner) so
-    # neither side gets a free fort-heal on turn 1.
-    - {x: 7, y: 4, owner: null}
+    # Kadesh fortress — Red-owned, north side of the river
+    - {x: 5, y: 1, owner: red}
 
 terrain_types:
   river:
     display_name: River
-    description: Impassable river.
+    description: The Orontes — impassable deep water.
     move_cost: 99
     passable: false
     glyph: "~"
@@ -57,14 +58,22 @@ terrain_types:
     defense_bonus: 0
     glyph: "="
     color: yellow
+  hill:
+    display_name: Hill
+    description: Elevated rocky ground. +2 DEF. Blocks cavalry charges.
+    move_cost: 2
+    defense_bonus: 2
+    blocks_cavalry: true
+    glyph: "^"
+    color: yellow
+
 unit_classes:
   ramses:
     display_name: Ramses II
     description: |
-      Pharaoh of Egypt, third of the 19th dynasty. Twenty-five years
-      old at Kadesh and personally rallies his troops when the line
-      breaks. Will live for 66 more years and become 'Ramses the
-      Great'.
+      Pharaoh of Egypt, chariot commander and VIP. Twenty-five years
+      old at Kadesh, he personally rallies his troops when the line
+      breaks. Fast, hard-hitting, and inspires those around him.
     hp_max: 36
     atk: 11
     defense: 6
@@ -73,74 +82,112 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     move: 5
-    tags: [vip, pharaoh]
+    tags: [vip, pharaoh, chariot]
     sight: 5
     glyph: R
     color: bright_cyan
 
-  egyptian_chariot:
-    display_name: Egyptian Chariot
+  amenmesse:
+    display_name: General Amenmesse
     description: |
-      Two-man light chariot — driver and a single archer with a
-      composite bow. Faster and more maneuverable than the Hittite
-      design, but lighter armor. Cannot enter forest or mountain.
-    hp_max: 24
+      Veteran Egyptian infantry general. Steady, disciplined,
+      commands the foot soldiers of the Amun division. Tough and
+      hard to dislodge from a position.
+    hp_max: 22
+    atk: 8
+    defense: 6
+    res: 4
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, general]
+    sight: 3
+    glyph: G
+    color: cyan
+
+  khaemwaset:
+    display_name: Prince Khaemwaset
+    description: |
+      Royal prince and archer captain. Commands the composite-bow
+      detachment. Good range and accuracy but fragile in melee.
+    hp_max: 16
+    atk: 9
+    defense: 3
+    res: 3
+    spd: 5
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [archer, captain]
+    sight: 4
+    glyph: K
+    color: cyan
+
+  nubian_scout:
+    display_name: Nubian Scout
+    description: |
+      Fast Nubian skirmisher armed with a short bow. Excellent
+      mobility and sight range; strikes from a distance but cannot
+      take a punch.
+    hp_max: 14
+    atk: 7
+    defense: 2
+    res: 2
+    spd: 7
+    rng_min: 2
+    rng_max: 3
+    move: 5
+    tags: [archer, scout]
+    sight: 5
+    glyph: N
+    color: cyan
+
+  sherden_guard:
+    display_name: Sherden Guard
+    description: |
+      Elite Sea Peoples bodyguard in Pharaoh's personal service.
+      Heavy bronze armor, horned helm, round shield. The toughest
+      melee fighter on the Egyptian side.
+    hp_max: 26
+    atk: 9
+    defense: 7
+    res: 5
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, elite, bodyguard]
+    sight: 3
+    glyph: S
+    color: bright_cyan
+
+  royal_charioteer:
+    display_name: Royal Charioteer
+    description: |
+      Fast Egyptian light chariot — driver and bowman. Rapid flanking
+      and pursuit. Cannot enter hills.
+    hp_max: 20
     atk: 8
     defense: 4
     res: 3
     spd: 8
     rng_min: 1
     rng_max: 1
-    move: 7
+    move: 6
     can_enter_forest: false
     can_enter_mountain: false
-    tags: [chariot, light]
+    tags: [chariot, cavalry, light]
     sight: 4
-    glyph: H
-    color: cyan
-
-  egyptian_infantry:
-    display_name: Egyptian Infantry
-    description: |
-      Sherden mercenaries and Egyptian conscripts. Bronze axes,
-      hide shields. Solid line troops.
-    hp_max: 18
-    atk: 7
-    defense: 5
-    res: 3
-    spd: 5
-    rng_min: 1
-    rng_max: 1
-    move: 3
-    tags: [infantry]
-    sight: 3
-    glyph: E
-    color: cyan
-
-  egyptian_archer:
-    display_name: Egyptian Archer
-    description: |
-      Composite-bow archer behind the chariot screen. Outranges
-      Hittite spearmen but folds in melee.
-    hp_max: 14
-    atk: 8
-    defense: 2
-    res: 3
-    spd: 5
-    rng_min: 2
-    rng_max: 3
-    move: 4
-    tags: [archer]
-    sight: 4
-    glyph: A
+    glyph: C
     color: cyan
 
   muwatalli:
     display_name: Muwatalli II
     description: |
-      King of Hatti, brother of the future Hattusili III. Holds his
-      reserves on the east bank and lets his vassal chariots spring
-      the trap. Patient, calculating.
+      King of Hatti and VIP. Patient and calculating, he holds his
+      reserves near Kadesh and lets his vassal chariots spring the
+      trap. Well-armored but not reckless.
     hp_max: 32
     atk: 10
     defense: 6
@@ -154,14 +201,30 @@ unit_classes:
     glyph: M
     color: bright_red
 
-  hittite_chariot:
-    display_name: Hittite Chariot
+  hattusili:
+    display_name: Hattusili
     description: |
-      Three-man heavy chariot — driver, shield-bearer, spearman.
-      Slower and more vulnerable to potholes than the Egyptian
-      version, but devastating in a melee charge. Can't enter
-      forest.
-    hp_max: 28
+      Muwatalli's brother and field general. A shrewd commander who
+      will one day seize the throne. Strong all-rounder on foot.
+    hp_max: 24
+    atk: 9
+    defense: 6
+    res: 4
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, general]
+    sight: 4
+    glyph: H
+    color: red
+
+  urhi_teshub:
+    display_name: Urhi-Teshub
+    description: |
+      Muwatalli's son, a prince mounted on a heavy chariot. Fast
+      and aggressive cavalry striker.
+    hp_max: 22
     atk: 9
     defense: 5
     res: 3
@@ -171,69 +234,103 @@ unit_classes:
     move: 6
     can_enter_forest: false
     can_enter_mountain: false
-    tags: [chariot, heavy]
+    tags: [chariot, cavalry, prince]
     sight: 4
-    glyph: K
+    glyph: U
     color: red
 
-  hittite_spearman:
-    display_name: Hittite Spearman
+  hittite_champion:
+    display_name: Hittite Champion
     description: |
-      Anatolian foot. Bronze spears, leather cuirasses. Holds the
-      ground the chariots take.
-    hp_max: 20
-    atk: 8
-    defense: 5
+      Elite heavy infantryman in full bronze scale. Slow but
+      extremely durable and hits hard in melee.
+    hp_max: 28
+    atk: 10
+    defense: 7
+    res: 5
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, heavy, elite]
+    sight: 3
+    glyph: W
+    color: bright_red
+
+  hittite_archer:
+    display_name: Hittite Archer
+    description: |
+      Anatolian bowman. Adequate range, weaker than the Egyptian
+      composite-bow corps but useful for softening targets.
+    hp_max: 14
+    atk: 7
+    defense: 3
     res: 3
     spd: 5
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [archer]
+    sight: 4
+    glyph: A
+    color: red
+
+  hittite_chariot_captain:
+    display_name: Hittite Chariot Captain
+    description: |
+      Three-man heavy chariot — driver, shield-bearer, spearman.
+      Slower than Egyptian chariots but devastating in a charge.
+    hp_max: 26
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 7
     rng_min: 1
-    rng_max: 2
-    move: 3
-    tags: [spearman]
-    sight: 3
-    glyph: S
+    rng_max: 1
+    move: 6
+    can_enter_forest: false
+    can_enter_mountain: false
+    tags: [chariot, heavy, captain]
+    sight: 4
+    glyph: T
+    color: red
+
+  syrian_ally:
+    display_name: Syrian Ally
+    description: |
+      Fast Syrian vassal warrior on foot. Lightly armed flanker
+      who excels at speed and harassment.
+    hp_max: 16
+    atk: 7
+    defense: 3
+    res: 2
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [infantry, light, flanker]
+    sight: 4
+    glyph: Y
     color: red
 
 armies:
   blue:
-    # Egyptian column — Ramses leading the chariots, infantry trail,
-    # archers behind. Strung out along the south.
+    # Egyptian column — south side of the Orontes
     - {class: ramses, pos: {x: 4, y: 6}}
-    - {class: egyptian_chariot, pos: {x: 3, y: 6}}
-    - {class: egyptian_chariot, pos: {x: 5, y: 6}}
-    - {class: egyptian_chariot, pos: {x: 4, y: 7}}
-    - {class: egyptian_chariot, pos: {x: 5, y: 7}}
-    - {class: egyptian_chariot, pos: {x: 3, y: 7}}
-    - {class: egyptian_chariot, pos: {x: 6, y: 7}}
-    - {class: egyptian_infantry, pos: {x: 2, y: 8}}
-    - {class: egyptian_infantry, pos: {x: 3, y: 8}}
-    - {class: egyptian_infantry, pos: {x: 4, y: 8}}
-    - {class: egyptian_infantry, pos: {x: 5, y: 8}}
-    - {class: egyptian_infantry, pos: {x: 6, y: 8}}
-    - {class: egyptian_infantry, pos: {x: 7, y: 8}}
-    - {class: egyptian_archer, pos: {x: 3, y: 9}}
-    - {class: egyptian_archer, pos: {x: 4, y: 9}}
-    - {class: egyptian_archer, pos: {x: 5, y: 9}}
-    - {class: egyptian_archer, pos: {x: 6, y: 9}}
+    - {class: amenmesse, pos: {x: 3, y: 7}}
+    - {class: khaemwaset, pos: {x: 5, y: 7}}
+    - {class: nubian_scout, pos: {x: 7, y: 6}}
+    - {class: sherden_guard, pos: {x: 3, y: 6}}
+    - {class: royal_charioteer, pos: {x: 5, y: 6}}
   red:
-    # Hittite chariots burst from the east — flanking ambush.
-    # Spearmen at Kadesh; Muwatalli holds back near the city.
-    - {class: muwatalli, pos: {x: 11, y: 8}}
-    - {class: hittite_chariot, pos: {x: 9, y: 5}}
-    - {class: hittite_chariot, pos: {x: 10, y: 5}}
-    - {class: hittite_chariot, pos: {x: 11, y: 5}}
-    - {class: hittite_chariot, pos: {x: 12, y: 5}}
-    - {class: hittite_chariot, pos: {x: 9, y: 6}}
-    - {class: hittite_chariot, pos: {x: 10, y: 6}}
-    - {class: hittite_chariot, pos: {x: 11, y: 6}}
-    - {class: hittite_chariot, pos: {x: 12, y: 6}}
-    - {class: hittite_spearman, pos: {x: 10, y: 8}}
-    - {class: hittite_spearman, pos: {x: 11, y: 9}}
-    - {class: hittite_spearman, pos: {x: 9, y: 8}}
-    - {class: hittite_spearman, pos: {x: 9, y: 9}}
-    - {class: hittite_spearman, pos: {x: 10, y: 9}}
-    - {class: hittite_spearman, pos: {x: 8, y: 8}}
-    - {class: hittite_spearman, pos: {x: 8, y: 9}}
+    # Hittite force — north side, near Kadesh fortress
+    - {class: muwatalli, pos: {x: 5, y: 0}}
+    - {class: hattusili, pos: {x: 4, y: 1}}
+    - {class: urhi_teshub, pos: {x: 7, y: 1}}
+    - {class: hittite_champion, pos: {x: 6, y: 1}}
+    - {class: hittite_archer, pos: {x: 3, y: 2}}
+    - {class: hittite_chariot_captain, pos: {x: 8, y: 2}}
+    - {class: syrian_ally, pos: {x: 9, y: 2}}
 
 rules:
   max_turns: 30
@@ -241,13 +338,12 @@ rules:
   first_player: red
 
 win_conditions:
-  # Mutual VIP rules.
+  # Protect your VIP — lose if your king falls
   - {type: protect_unit, unit_id: u_b_ramses_1, owning_team: blue}
   - {type: protect_unit, unit_id: u_r_muwatalli_1, owning_team: red}
-  # No seize_enemy_fort — the neutral fort on the plain is a
-  # healing resource, not a win objective. The historical battle
-  # was about killing the opposing commander and controlling the
-  # field, not storming a fortress.
+  # Seize the enemy fort (Kadesh) to win
+  - {type: seize_enemy_fort}
+  # Wipe out all enemy units
   - {type: eliminate_all_enemy_units}
   - {type: max_turns_draw}
 
@@ -258,13 +354,14 @@ narrative:
     from both sides. Chariots in the open at the dawn of the
     Bronze Age.
   intro: |
-    Noon on the plain south of Kadesh. The Orontes glints to the
-    north. Ramses, with only his Amun division, rides ahead of
-    his army. Hittite chariots wait in the dust east of the river.
+    Noon on the plain south of Kadesh. The Orontes glints ahead,
+    splitting the battlefield in two. Ramses, with only his Amun
+    division, faces the river. On the far bank, Hittite chariots
+    wait in the dust near the fortress walls.
   events:
     - trigger: on_turn_start
       turn: 2
-      text: "Hittite chariots burst from cover. The Egyptian flank breaks."
+      text: "Hittite chariots burst from cover east of the river. The trap is sprung."
     - trigger: on_turn_start
       turn: 6
       text: "Ramses rallies his guard. 'Set is at my side!'"

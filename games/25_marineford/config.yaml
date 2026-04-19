@@ -12,103 +12,92 @@ description: |
   Inspired by the Battle of Marineford from One Piece by Eiichiro Oda.
 
 board:
-  width: 18
-  height: 14
+  width: 12
+  height: 10
   terrain:
-    # Execution platform marker at (9, 1)
-    - {x: 9, y: 1, type: platform}
-    # Scattered buildings in the plaza (y=2-9)
-    - {x: 3, y: 3, type: building}
-    - {x: 4, y: 3, type: building}
-    - {x: 8, y: 3, type: building}
-    - {x: 10, y: 3, type: building}
-    - {x: 14, y: 3, type: building}
-    - {x: 15, y: 3, type: building}
-    - {x: 2, y: 5, type: building}
-    - {x: 6, y: 5, type: building}
-    - {x: 12, y: 5, type: building}
-    - {x: 16, y: 5, type: building}
-    - {x: 4, y: 7, type: building}
-    - {x: 5, y: 7, type: building}
-    - {x: 9, y: 7, type: building}
-    - {x: 13, y: 7, type: building}
-    - {x: 14, y: 7, type: building}
-    # Ice terrain — frozen bay (y=10-13)
-    - {x: 0, y: 10, type: ice}
-    - {x: 1, y: 10, type: ice}
-    - {x: 2, y: 10, type: ice}
-    - {x: 3, y: 10, type: ice}
-    - {x: 4, y: 10, type: ice}
-    - {x: 5, y: 10, type: ice}
-    - {x: 6, y: 10, type: ice}
-    - {x: 7, y: 10, type: ice}
-    - {x: 8, y: 10, type: ice}
-    - {x: 9, y: 10, type: ice}
-    - {x: 10, y: 10, type: ice}
-    - {x: 11, y: 10, type: ice}
-    - {x: 12, y: 10, type: ice}
-    - {x: 13, y: 10, type: ice}
-    - {x: 14, y: 10, type: ice}
-    - {x: 15, y: 10, type: ice}
-    - {x: 16, y: 10, type: ice}
-    - {x: 17, y: 10, type: ice}
-    - {x: 0, y: 11, type: ice}
-    - {x: 1, y: 11, type: ice}
-    - {x: 2, y: 11, type: ice}
-    - {x: 3, y: 11, type: ice}
-    - {x: 4, y: 11, type: ice}
-    - {x: 5, y: 11, type: ice}
-    - {x: 6, y: 11, type: ice}
-    - {x: 7, y: 11, type: ice}
-    - {x: 8, y: 11, type: ice}
-    - {x: 9, y: 11, type: ice}
-    - {x: 10, y: 11, type: ice}
-    - {x: 11, y: 11, type: ice}
-    - {x: 12, y: 11, type: ice}
-    - {x: 13, y: 11, type: ice}
-    - {x: 14, y: 11, type: ice}
-    - {x: 15, y: 11, type: ice}
-    - {x: 16, y: 11, type: ice}
-    - {x: 17, y: 11, type: ice}
-    - {x: 0, y: 12, type: ice}
-    - {x: 1, y: 12, type: ice}
-    - {x: 2, y: 12, type: ice}
-    - {x: 3, y: 12, type: ice}
-    - {x: 4, y: 12, type: ice}
-    - {x: 5, y: 12, type: ice}
-    - {x: 6, y: 12, type: ice}
-    - {x: 7, y: 12, type: ice}
-    - {x: 8, y: 12, type: ice}
-    - {x: 9, y: 12, type: ice}
-    - {x: 10, y: 12, type: ice}
-    - {x: 11, y: 12, type: ice}
-    - {x: 12, y: 12, type: ice}
-    - {x: 13, y: 12, type: ice}
-    - {x: 14, y: 12, type: ice}
-    - {x: 15, y: 12, type: ice}
-    - {x: 16, y: 12, type: ice}
-    - {x: 17, y: 12, type: ice}
-    - {x: 0, y: 13, type: ice}
-    - {x: 1, y: 13, type: ice}
-    - {x: 2, y: 13, type: ice}
-    - {x: 3, y: 13, type: ice}
-    - {x: 4, y: 13, type: ice}
-    - {x: 5, y: 13, type: ice}
-    - {x: 6, y: 13, type: ice}
-    - {x: 7, y: 13, type: ice}
-    - {x: 8, y: 13, type: ice}
-    - {x: 9, y: 13, type: ice}
-    - {x: 10, y: 13, type: ice}
-    - {x: 11, y: 13, type: ice}
-    - {x: 12, y: 13, type: ice}
-    - {x: 13, y: 13, type: ice}
-    - {x: 14, y: 13, type: ice}
-    - {x: 15, y: 13, type: ice}
-    - {x: 16, y: 13, type: ice}
-    - {x: 17, y: 13, type: ice}
-  forts: []
+    # --- Execution platform (fort) at top center ---
+    - {x: 5, y: 0, type: platform}
+    - {x: 6, y: 0, type: platform}
+    # --- Plaza walls flanking the platform ---
+    - {x: 3, y: 1, type: wall}
+    - {x: 8, y: 1, type: wall}
+    - {x: 0, y: 2, type: wall}
+    - {x: 1, y: 2, type: wall}
+    - {x: 10, y: 2, type: wall}
+    - {x: 11, y: 2, type: wall}
+    # --- Plaza buildings ---
+    - {x: 2, y: 2, type: building}
+    - {x: 5, y: 2, type: building}
+    - {x: 6, y: 2, type: building}
+    - {x: 9, y: 2, type: building}
+    - {x: 3, y: 4, type: building}
+    - {x: 8, y: 4, type: building}
+    # --- Seawall separating plaza from bay ---
+    - {x: 0, y: 5, type: wall}
+    - {x: 1, y: 5, type: wall}
+    - {x: 2, y: 5, type: wall}
+    - {x: 4, y: 5, type: wall}
+    - {x: 5, y: 5, type: wall}
+    - {x: 7, y: 5, type: wall}
+    - {x: 9, y: 5, type: wall}
+    - {x: 10, y: 5, type: wall}
+    - {x: 11, y: 5, type: wall}
+    # --- Ice / frozen bay (rows 6-7) ---
+    - {x: 0, y: 6, type: ice}
+    - {x: 1, y: 6, type: ice}
+    - {x: 2, y: 6, type: ice}
+    - {x: 3, y: 6, type: ice}
+    - {x: 4, y: 6, type: ice}
+    - {x: 5, y: 6, type: ice}
+    - {x: 6, y: 6, type: ice}
+    - {x: 7, y: 6, type: ice}
+    - {x: 8, y: 6, type: ice}
+    - {x: 9, y: 6, type: ice}
+    - {x: 10, y: 6, type: ice}
+    - {x: 11, y: 6, type: ice}
+    - {x: 0, y: 7, type: ice}
+    - {x: 1, y: 7, type: ice}
+    - {x: 2, y: 7, type: ice}
+    - {x: 3, y: 7, type: ice}
+    - {x: 4, y: 7, type: ice}
+    - {x: 5, y: 7, type: ice}
+    - {x: 6, y: 7, type: ice}
+    - {x: 7, y: 7, type: ice}
+    - {x: 8, y: 7, type: ice}
+    - {x: 9, y: 7, type: ice}
+    - {x: 10, y: 7, type: ice}
+    - {x: 11, y: 7, type: ice}
+    # --- Open water (rows 8-9, south edge) ---
+    - {x: 0, y: 8, type: water}
+    - {x: 1, y: 8, type: water}
+    - {x: 2, y: 8, type: water}
+    - {x: 3, y: 8, type: water}
+    - {x: 8, y: 8, type: water}
+    - {x: 9, y: 8, type: water}
+    - {x: 10, y: 8, type: water}
+    - {x: 11, y: 8, type: water}
+    - {x: 0, y: 9, type: water}
+    - {x: 1, y: 9, type: water}
+    - {x: 2, y: 9, type: water}
+    - {x: 3, y: 9, type: water}
+    - {x: 8, y: 9, type: water}
+    - {x: 9, y: 9, type: water}
+    - {x: 10, y: 9, type: water}
+    - {x: 11, y: 9, type: water}
+  forts:
+    - {x: 5, y: 0}
+    - {x: 6, y: 0}
 
 terrain_types:
+  platform:
+    display_name: Execution Platform
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "^"
+    color: bright_yellow
+    description: |
+      The execution platform where Portgas D. Ace awaits death.
+      Reaching this tile means freedom.
   building:
     display_name: Building
     move_cost: 2
@@ -118,6 +107,15 @@ terrain_types:
     description: |
       Marineford plaza structures. Provide solid cover during
       the chaotic battle.
+  wall:
+    display_name: Wall
+    move_cost: 3
+    defense_bonus: 4
+    glyph: "H"
+    color: bright_black
+    description: |
+      Fortified walls of Marineford. Difficult to cross but
+      offer excellent defensive positions.
   ice:
     display_name: Ice
     move_cost: 1
@@ -127,17 +125,18 @@ terrain_types:
     description: |
       Frozen bay created by Admiral Aokiji. Slippery surface
       offers no cover — but the pirates can cross it.
-  platform:
-    display_name: Platform
-    move_cost: 1
-    defense_bonus: 2
-    glyph: "^"
-    color: bright_yellow
+  water:
+    display_name: Water
+    move_cost: 4
+    defense_bonus: -2
+    glyph: "~"
+    color: blue
     description: |
-      The execution platform where Portgas D. Ace awaits death.
-      Reaching this tile means freedom.
+      Open sea around Marineford bay. Most units struggle to
+      move through it; Jinbe thrives here.
 
 unit_classes:
+  # ---- Blue: Whitebeard Pirates (6 units) ----
   whitebeard:
     display_name: Edward Newgate (Whitebeard)
     description: |
@@ -145,8 +144,8 @@ unit_classes:
       shatter the air itself and create tsunamis. Old and sick,
       but still terrifying. One punch can crack the world.
     hp_max: 55
-    atk: 15
-    defense: 7
+    atk: 14
+    defense: 8
     res: 5
     spd: 3
     move: 2
@@ -160,9 +159,9 @@ unit_classes:
     description: |
       First Division Commander. His phoenix flames heal his wounds
       and allies alike. Nearly impossible to kill — blue fire
-      regenerates any damage.
+      regenerates any damage. Can fly over any terrain.
     hp_max: 26
-    atk: 10
+    atk: 9
     defense: 4
     res: 7
     spd: 7
@@ -171,19 +170,37 @@ unit_classes:
     rng_max: 2
     is_magic: true
     can_heal: true
-    heal_amount: 5
+    heal_amount: 6
     glyph: "M"
     color: bright_cyan
+
+  ace:
+    display_name: Portgas D. Ace
+    description: |
+      Second Division Commander. Wields the Mera Mera no Mi —
+      his body is living fire. Powerful ranged attacker who
+      rains flame from a distance.
+    hp_max: 28
+    atk: 12
+    defense: 4
+    res: 6
+    spd: 6
+    move: 4
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "A"
+    color: bright_red
 
   jozu:
     display_name: Diamond Jozu
     description: |
       Third Division Commander. His body turns to diamond,
       making him nearly indestructible. The ultimate tank.
-    hp_max: 35
+    hp_max: 36
     atk: 10
     defense: 12
-    res: 2
+    res: 3
     spd: 3
     move: 3
     rng_min: 1
@@ -192,7 +209,7 @@ unit_classes:
     color: cyan
 
   vista:
-    display_name: Vista
+    display_name: Flower Sword Vista
     description: |
       Fifth Division Commander. The Flower Swordsman who can
       match even Mihawk blade for blade. Fast and elegant.
@@ -207,99 +224,34 @@ unit_classes:
     glyph: "V"
     color: cyan
 
-  whitebeard_commander:
-    display_name: WB Commander
+  jinbe:
+    display_name: Jinbe
     description: |
-      Division commanders of the Whitebeard Pirates. Each one
-      is a formidable pirate captain in their own right.
-    hp_max: 22
-    atk: 9
-    defense: 5
-    res: 3
-    spd: 5
-    move: 4
-    rng_min: 1
-    rng_max: 1
-    glyph: "p"
-    color: cyan
-
-  whitebeard_pirate:
-    display_name: WB Pirate
-    description: |
-      Rank-and-file members of the Whitebeard fleet. Loyal to
-      the old man unto death.
-    hp_max: 18
-    atk: 7
-    defense: 4
-    res: 2
-    spd: 5
-    move: 4
-    rng_min: 1
-    rng_max: 1
-    glyph: "q"
-    color: cyan
-
-  akainu:
-    display_name: Admiral Akainu
-    description: |
-      Sakazuki, the Magma Admiral. Absolute justice incarnate.
-      His lava fists can burn through anything — even fire itself.
-      The deadliest offensive force the Marines possess.
-    hp_max: 38
-    atk: 15
-    defense: 6
+      Knight of the Sea. A fish-man karate master who commands
+      water itself. Vastly stronger on water and ice terrain.
+      Moves through water as easily as land.
+    hp_max: 30
+    atk: 11
+    defense: 7
     res: 5
     spd: 5
-    move: 3
+    move: 4
     rng_min: 1
     rng_max: 2
-    is_magic: true
-    glyph: "A"
-    color: bright_red
-
-  aokiji:
-    display_name: Admiral Aokiji
-    description: |
-      Kuzan, the Ice Admiral. Froze the entire bay so the pirates
-      could cross — and the Marines could fight them on it. Lazy
-      but lethally powerful at range.
-    hp_max: 34
-    atk: 12
-    defense: 5
-    res: 8
-    spd: 5
-    move: 3
-    rng_min: 2
-    rng_max: 3
-    is_magic: true
-    glyph: "O"
+    terrain_bonus:
+      water: {atk: 4, defense: 3, move: 2}
+      ice: {atk: 2, defense: 1}
+    glyph: "B"
     color: bright_blue
 
-  kizaru:
-    display_name: Admiral Kizaru
-    description: |
-      Borsalino, the Light Admiral. Moves at the speed of light.
-      The fastest man alive, firing laser beams from his fingertips
-      with a bored expression.
-    hp_max: 32
-    atk: 11
-    defense: 4
-    res: 6
-    spd: 9
-    move: 5
-    rng_min: 2
-    rng_max: 3
-    is_magic: true
-    glyph: "K"
-    color: bright_yellow
-
+  # ---- Red: Marines (7 units) ----
   sengoku:
     display_name: Fleet Admiral Sengoku
     description: |
       Sengoku the Buddha. The man who orchestrated Ace's execution
       to draw out Whitebeard. A strategic genius with the power
       of the Human-Human Fruit, Model: Buddha.
-    hp_max: 30
+    hp_max: 32
     atk: 10
     defense: 7
     res: 7
@@ -310,6 +262,62 @@ unit_classes:
     is_magic: true
     glyph: "S"
     color: red
+
+  akainu:
+    display_name: Admiral Akainu
+    description: |
+      Sakazuki, the Magma Admiral. Absolute justice incarnate.
+      His lava fists can burn through anything — even fire itself.
+      The deadliest offensive force the Marines possess.
+    hp_max: 36
+    atk: 15
+    defense: 5
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "K"
+    color: bright_red
+
+  kizaru:
+    display_name: Admiral Kizaru
+    description: |
+      Borsalino, the Light Admiral. Moves at the speed of light.
+      The fastest man alive, firing laser beams from his fingertips
+      with a bored expression.
+    hp_max: 30
+    atk: 11
+    defense: 4
+    res: 6
+    spd: 9
+    move: 5
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "Z"
+    color: bright_yellow
+
+  aokiji:
+    display_name: Admiral Aokiji
+    description: |
+      Kuzan, the Ice Admiral. Froze the entire bay so the pirates
+      could cross — and the Marines could fight them on it.
+      Controls terrain with ice; strong at range.
+    hp_max: 32
+    atk: 12
+    defense: 5
+    res: 8
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    terrain_bonus:
+      ice: {atk: 3, defense: 2}
+    glyph: "O"
+    color: bright_blue
 
   mihawk:
     display_name: Dracule Mihawk
@@ -328,107 +336,70 @@ unit_classes:
     glyph: "X"
     color: bright_black
 
-  marine_captain:
-    display_name: Marine Captain
+  garp:
+    display_name: Vice Admiral Garp
     description: |
-      Marine officers defending Marineford. Well-trained and
-      disciplined, but outclassed by the New World pirates.
-    hp_max: 20
-    atk: 7
-    defense: 6
-    res: 3
-    spd: 4
+      Garp the Fist, the Hero of the Marines. Ace's grandfather.
+      No Devil Fruit — just raw Haki and iron fists. The toughest
+      defensive wall the Marines have.
+    hp_max: 40
+    atk: 12
+    defense: 10
+    res: 6
+    spd: 3
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "m"
+    glyph: "G"
     color: red
 
-  marine_soldier:
-    display_name: Marine Soldier
+  smoker:
+    display_name: Captain Smoker
     description: |
-      Rank-and-file Marines. Brave but ordinary men facing
-      monsters with Devil Fruit powers.
-    hp_max: 16
-    atk: 6
+      Smoker the White Hunter. His Moku Moku no Mi turns his body
+      to smoke. Fights at range with his jitte and smoke clouds.
+    hp_max: 24
+    atk: 9
     defense: 5
-    res: 2
-    spd: 4
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    glyph: "n"
-    color: red
-
-  marine_medic:
-    display_name: Marine Medic
-    description: |
-      A field medic attached to the Marine forces at Marineford.
-      Keeps wounded Marines fighting through the chaos of battle.
-    hp_max: 16
-    atk: 5
-    defense: 4
-    res: 4
-    spd: 4
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    can_heal: true
-    heal_amount: 5
-    glyph: "h"
-    color: red
+    res: 5
+    spd: 5
+    move: 4
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "E"
+    color: bright_black
 
 armies:
   blue:
-    # Whitebeard — center of the pirate charge
-    - {class: whitebeard, pos: {x: 9, y: 10}}
-    # Marco — flying ahead
-    - {class: marco, pos: {x: 8, y: 9}}
-    # Jozu — front line tank
-    - {class: jozu, pos: {x: 6, y: 10}}
-    # Vista — flanking
-    - {class: vista, pos: {x: 12, y: 9}}
-    # WB Commanders — spread across the charge
-    - {class: whitebeard_commander, pos: {x: 3, y: 11}}
-    - {class: whitebeard_commander, pos: {x: 5, y: 11}}
-    - {class: whitebeard_commander, pos: {x: 7, y: 11}}
-    - {class: whitebeard_commander, pos: {x: 10, y: 11}}
-    - {class: whitebeard_commander, pos: {x: 11, y: 10}}
-    - {class: whitebeard_commander, pos: {x: 13, y: 11}}
-    - {class: whitebeard_commander, pos: {x: 15, y: 11}}
-    - {class: whitebeard_commander, pos: {x: 4, y: 10}}
-    # WB Pirates — rear guard
-    - {class: whitebeard_pirate, pos: {x: 2, y: 12}}
-    - {class: whitebeard_pirate, pos: {x: 6, y: 12}}
-    - {class: whitebeard_pirate, pos: {x: 11, y: 12}}
-    - {class: whitebeard_pirate, pos: {x: 16, y: 12}}
+    # Whitebeard — center of the pirate charge on the ice
+    - {class: whitebeard, pos: {x: 5, y: 7}}
+    # Marco — flying ahead from the flank
+    - {class: marco, pos: {x: 8, y: 7}}
+    # Ace — ranged fire support from the rear
+    - {class: ace, pos: {x: 6, y: 9}}
+    # Jozu — front-line tank
+    - {class: jozu, pos: {x: 4, y: 7}}
+    # Vista — flanking left
+    - {class: vista, pos: {x: 3, y: 8}}
+    # Jinbe — coming through the water on the right
+    - {class: jinbe, pos: {x: 9, y: 9}}
 
   red:
-    # Akainu — guarding the plaza
-    - {class: akainu, pos: {x: 9, y: 4}}
-    # Aokiji — ranged support
-    - {class: aokiji, pos: {x: 5, y: 2}}
-    # Kizaru — fast flanker
-    - {class: kizaru, pos: {x: 14, y: 2}}
-    # Sengoku — near the execution platform
-    - {class: sengoku, pos: {x: 9, y: 2}}
-    # Mihawk — forward attacker
-    - {class: mihawk, pos: {x: 9, y: 6}}
-    # Marine captains — defensive line
-    - {class: marine_captain, pos: {x: 2, y: 4}}
-    - {class: marine_captain, pos: {x: 4, y: 4}}
-    - {class: marine_captain, pos: {x: 7, y: 4}}
-    - {class: marine_captain, pos: {x: 11, y: 4}}
-    - {class: marine_captain, pos: {x: 13, y: 4}}
-    - {class: marine_captain, pos: {x: 15, y: 4}}
-    - {class: marine_captain, pos: {x: 3, y: 6}}
-    - {class: marine_captain, pos: {x: 15, y: 6}}
-    # Marine soldiers — front line
-    - {class: marine_soldier, pos: {x: 5, y: 8}}
-    - {class: marine_soldier, pos: {x: 8, y: 8}}
-    - {class: marine_soldier, pos: {x: 11, y: 8}}
-    - {class: marine_medic, pos: {x: 14, y: 8}}
-    - {class: marine_soldier, pos: {x: 7, y: 6}}
+    # Sengoku — on the execution platform
+    - {class: sengoku, pos: {x: 5, y: 0}}
+    # Akainu — guarding the plaza center
+    - {class: akainu, pos: {x: 6, y: 3}}
+    # Kizaru — fast flanker on the right
+    - {class: kizaru, pos: {x: 10, y: 3}}
+    # Aokiji — ranged support on the left
+    - {class: aokiji, pos: {x: 2, y: 3}}
+    # Mihawk — forward attacker in the plaza
+    - {class: mihawk, pos: {x: 5, y: 4}}
+    # Garp — defensive wall near the platform
+    - {class: garp, pos: {x: 6, y: 1}}
+    # Smoker — ranged harasser at the seawall
+    - {class: smoker, pos: {x: 6, y: 5}}
 
 rules:
   max_turns: 20
@@ -436,14 +407,13 @@ rules:
 
 win_conditions:
   # A blue unit reaches the execution platform -> Ace is freed!
-  - {type: reach_tile, team: blue, pos: {x: 9, y: 1}}
-  # Whitebeard dies -> blue loses.
+  - {type: reach_tile, team: blue, pos: {x: 5, y: 0}}
+  - {type: reach_tile, team: blue, pos: {x: 6, y: 0}}
+  # Whitebeard dies -> blue loses morale. Red wins.
   - {type: protect_unit, unit_id: u_b_whitebeard_1, owning_team: blue}
-  # Sengoku survives the turn cap -> Marines hold. Red wins.
-  - {type: protect_unit_survives, unit_id: u_r_sengoku_1, owning_team: red}
   # Either side wins by total elimination.
   - {type: eliminate_all_enemy_units}
-  # Backstop.
+  # Turn cap -> Marines successfully defended.
   - {type: max_turns_draw}
 
 narrative:

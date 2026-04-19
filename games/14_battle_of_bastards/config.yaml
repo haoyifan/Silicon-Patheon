@@ -15,38 +15,88 @@ description: |
   Inspired by the Battle of the Bastards from Game of Thrones by George R.R. Martin.
 
 board:
-  width: 14
+  width: 12
   height: 10
   terrain:
-    # Corpse piles from the initial cavalry clash — rough terrain
-    # that slows movement but offers cover. Scattered across the
-    # center of the battlefield where the first charge collided.
-    - {x: 4, y: 3, type: corpse_pile}
-    - {x: 5, y: 3, type: corpse_pile}
-    - {x: 8, y: 3, type: corpse_pile}
-    - {x: 9, y: 3, type: corpse_pile}
-    - {x: 3, y: 4, type: corpse_pile}
-    - {x: 6, y: 4, type: corpse_pile}
-    - {x: 7, y: 4, type: corpse_pile}
-    - {x: 10, y: 4, type: corpse_pile}
-    - {x: 4, y: 5, type: corpse_pile}
-    - {x: 5, y: 5, type: corpse_pile}
-    - {x: 8, y: 5, type: corpse_pile}
-    - {x: 9, y: 5, type: corpse_pile}
+    # ── Corpse piles (impassable walls forming the trap) ──
+    # Western corpse wall — blocks retreat to the left
+    - {x: 2, y: 3, type: corpse_wall}
+    - {x: 2, y: 4, type: corpse_wall}
+    - {x: 2, y: 5, type: corpse_wall}
+    - {x: 2, y: 6, type: corpse_wall}
+    # Eastern corpse wall — blocks retreat to the right
+    - {x: 9, y: 3, type: corpse_wall}
+    - {x: 9, y: 4, type: corpse_wall}
+    - {x: 9, y: 5, type: corpse_wall}
+    - {x: 9, y: 6, type: corpse_wall}
+    # Northern corpse ridge — funnels the Stark force south
+    - {x: 3, y: 3, type: corpse_wall}
+    - {x: 8, y: 3, type: corpse_wall}
+    # ── Forest flanks ──
+    # West forest
+    - {x: 0, y: 3, type: forest}
+    - {x: 0, y: 4, type: forest}
+    - {x: 0, y: 5, type: forest}
+    - {x: 0, y: 6, type: forest}
+    - {x: 0, y: 7, type: forest}
+    - {x: 1, y: 4, type: forest}
+    - {x: 1, y: 5, type: forest}
+    - {x: 1, y: 6, type: forest}
+    # East forest
+    - {x: 11, y: 3, type: forest}
+    - {x: 11, y: 4, type: forest}
+    - {x: 11, y: 5, type: forest}
+    - {x: 11, y: 6, type: forest}
+    - {x: 11, y: 7, type: forest}
+    - {x: 10, y: 4, type: forest}
+    - {x: 10, y: 5, type: forest}
+    - {x: 10, y: 6, type: forest}
+    # ── Bolton shield wall terrain (+DEF line across row 2) ──
+    - {x: 3, y: 2, type: shield_wall}
+    - {x: 4, y: 2, type: shield_wall}
+    - {x: 5, y: 2, type: shield_wall}
+    - {x: 6, y: 2, type: shield_wall}
+    - {x: 7, y: 2, type: shield_wall}
+    - {x: 8, y: 2, type: shield_wall}
   forts: []
 
 terrain_types:
-  corpse_pile:
+  corpse_wall:
     display_name: Corpse Pile
-    move_cost: 2
-    defense_bonus: 2
+    description: |
+      Mountains of the dead from the opening cavalry charge. Bodies
+      stacked higher than a man — impassable. They form the walls
+      of Ramsay's trap, penning in Jon's force.
+    move_cost: 99
+    passable: false
+    defense_bonus: 0
     glyph: "+"
     color: bright_black
+
+  forest:
+    display_name: Forest
     description: |
-      Heaps of the fallen from the first cavalry charge. Hard to
-      cross but offer cover from arrows.
+      Dense northern woodland on the flanks of the battlefield.
+      Costs 2 movement. +1 DEF from cover.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "T"
+    color: green
+
+  shield_wall:
+    display_name: Shield Wall Line
+    description: |
+      Defensive fortification where Bolton pikemen have dug in
+      with interlocking shields. +3 DEF for any unit on this tile.
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "="
+    color: red
 
 unit_classes:
+  # ═══════════════════════════════════════════════
+  #  BLUE — Stark (7 units)
+  # ═══════════════════════════════════════════════
   jon_snow:
     display_name: Jon Snow
     description: |
@@ -78,7 +128,7 @@ unit_classes:
     move: 4
     rng_min: 1
     rng_max: 1
-    glyph: "T"
+    glyph: "G"
     color: bright_red
 
   wun_wun:
@@ -98,104 +148,60 @@ unit_classes:
     glyph: "W"
     color: bright_yellow
 
-  free_folk:
-    display_name: Free Folk Warrior
+  sansa:
+    display_name: Sansa Stark
     description: |
-      Wildling fighters — fierce, fast, lightly armored. What they
-      lack in discipline they make up in ferocity.
-    hp_max: 18
-    atk: 7
-    defense: 3
-    res: 2
-    spd: 5
-    move: 4
-    rng_min: 1
-    rng_max: 1
-    glyph: "f"
-    color: yellow
-
-  stark_infantry:
-    display_name: Stark Infantry
-    description: |
-      Northern bannermen loyal to the Stark name. Better armored
-      than the Free Folk, trained in shield-wall discipline.
-    hp_max: 22
-    atk: 8
-    defense: 6
-    res: 3
+      Lady of Winterfell. No warrior herself, but her presence
+      rallies the northern cause. Adjacent allies fight harder
+      knowing what they fight for. Heals adjacent units through
+      morale and sheer force of will.
+    hp_max: 14
+    atk: 3
+    defense: 2
+    res: 6
     spd: 4
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "s"
-    color: cyan
+    can_heal: true
+    heal_amount: 5
+    glyph: "S"
+    color: bright_cyan
 
-  bolton_cavalry:
-    display_name: Bolton Cavalry
+  davos:
+    display_name: Davos Seaworth
     description: |
-      Mounted lancers bearing the flayed man banner. Fast flankers
-      who encircle the Stark force and close the trap.
-    hp_max: 20
+      The Onion Knight. Former smuggler, now Jon's most trusted
+      commander. Directs troops from behind the line with a
+      crossbow and a sailor's pragmatism. Ranged attacker who
+      sees the whole field.
+    hp_max: 22
     atk: 9
     defense: 5
-    res: 3
-    spd: 7
-    move: 5
-    rng_min: 1
-    rng_max: 1
-    glyph: "c"
-    color: red
-
-  bolton_pikeman:
-    display_name: Bolton Pikeman
-    description: |
-      Heavy infantry with long pikes and interlocking shields.
-      They form the crushing wall that closes around Jon's men.
-      Slow but extremely hard to break through.
-    hp_max: 24
-    atk: 7
-    defense: 9
-    res: 3
-    spd: 3
-    move: 2
-    rng_min: 1
-    rng_max: 1
-    glyph: "p"
-    color: red
-
-  bolton_archer:
-    display_name: Bolton Archer
-    description: |
-      Ramsay's archers who rain arrows indiscriminately — even
-      into the melee where their own men are fighting, because
-      Ramsay doesn't care about friendly casualties.
-    hp_max: 16
-    atk: 8
-    defense: 3
-    res: 2
-    spd: 4
+    res: 4
+    spd: 5
     move: 3
     rng_min: 2
     rng_max: 3
-    glyph: "a"
-    color: red
+    glyph: "D"
+    color: cyan
 
-  ramsay:
-    display_name: Ramsay Bolton
+  lyanna_mormont:
+    display_name: Lyanna Mormont
     description: |
-      The Bastard of Bolton. Cruel, calculating, and cowardly —
-      stays behind his lines and lets his men do the dying. A
-      decent archer with a sadistic streak.
-    hp_max: 20
-    atk: 10
+      The ten-year-old She-Bear of Bear Island. Sixty-two fighting
+      men, and every one worth ten mainlanders. Fierce but fragile —
+      charges without hesitation, even at giants.
+    hp_max: 14
+    atk: 11
     defense: 3
-    res: 3
-    spd: 4
-    move: 3
-    rng_min: 2
-    rng_max: 4
-    glyph: "R"
-    color: bright_red
+    res: 4
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "L"
+    color: bright_green
 
   melisandre:
     display_name: Melisandre
@@ -214,6 +220,145 @@ unit_classes:
     can_heal: true
     heal_amount: 6
     glyph: "M"
+    color: red
+
+  # ═══════════════════════════════════════════════
+  #  RED — Bolton (8 units)
+  # ═══════════════════════════════════════════════
+  ramsay:
+    display_name: Ramsay Bolton
+    description: |
+      The Bastard of Bolton. Cruel, calculating, and cowardly —
+      stays behind his lines and lets his men do the dying. A
+      decent archer with a sadistic streak.
+    hp_max: 20
+    atk: 10
+    defense: 3
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 4
+    glyph: "R"
+    color: bright_red
+
+  smalljon_umber:
+    display_name: Smalljon Umber
+    description: |
+      Lord of Last Hearth. Massive, brutal, and fearless. Betrayed
+      the Starks for Ramsay and fights like a man with nothing to
+      lose. Berserker — high ATK, reckless DEF.
+    hp_max: 28
+    atk: 14
+    defense: 4
+    res: 2
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "U"
+    color: red
+
+  harald_karstark:
+    display_name: Harald Karstark
+    description: |
+      Lord of Karhold. Rides with Bolton cavalry on the flanks.
+      Fast-moving horseman who closes the encirclement from the
+      wings. Solid lance charge, poor on foot.
+    hp_max: 22
+    atk: 10
+    defense: 5
+    res: 3
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "K"
+    color: red
+
+  shield_wall_captain:
+    display_name: Bolton Shield Wall Captain
+    description: |
+      Commander of the Bolton pike formation. Armored head to toe,
+      drilled in interlocking shield discipline. Extremely hard to
+      kill, but slow and hits modestly.
+    hp_max: 28
+    atk: 7
+    defense: 10
+    res: 4
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 1
+    glyph: "P"
+    color: red
+
+  pikeman_captain:
+    display_name: Bolton Pikeman Captain
+    description: |
+      Veteran sergeant of the pike line. Keeps the wall moving
+      forward in lockstep. Longer reach than the shield captain,
+      but less armored.
+    hp_max: 24
+    atk: 8
+    defense: 8
+    res: 3
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 2
+    glyph: "Q"
+    color: red
+
+  archer_captain:
+    display_name: Bolton Archer Captain
+    description: |
+      Commands Ramsay's archers who rain arrows indiscriminately —
+      even into the melee where their own men are fighting, because
+      Ramsay doesn't care about friendly casualties.
+    hp_max: 18
+    atk: 9
+    defense: 3
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 4
+    glyph: "A"
+    color: red
+
+  steelshanks:
+    display_name: Steelshanks Walton
+    description: |
+      Veteran Bolton man-at-arms named for the steel greaves he
+      never removes. Reliable, disciplined, and ruthlessly efficient.
+      One of Roose Bolton's old guard.
+    hp_max: 24
+    atk: 9
+    defense: 7
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "E"
+    color: red
+
+  ben_bones:
+    display_name: Ben Bones
+    description: |
+      Ramsay's kennel master. Lean, scarred, and vicious — fights
+      with a long hunting knife and the desperate savagery of a man
+      who knows what Ramsay does to failures.
+    hp_max: 20
+    atk: 10
+    defense: 4
+    res: 2
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "B"
     color: red
 
   vale_knight:
@@ -235,64 +380,51 @@ unit_classes:
 
 armies:
   blue:
-    # Jon Snow — center of the field, slightly forward.
-    - {class: jon_snow, pos: {x: 7, y: 5}}
-    # Tormund — beside Jon.
-    - {class: tormund, pos: {x: 6, y: 5}}
-    # Wun Wun — behind, lumbering forward.
-    - {class: wun_wun, pos: {x: 7, y: 6}}
-    # Free Folk — spread around Jon in a rough semicircle.
-    - {class: free_folk, pos: {x: 4, y: 6}}
-    - {class: free_folk, pos: {x: 5, y: 6}}
-    - {class: free_folk, pos: {x: 6, y: 6}}
-    - {class: free_folk, pos: {x: 8, y: 6}}
-    - {class: free_folk, pos: {x: 9, y: 6}}
-    - {class: melisandre, pos: {x: 5, y: 7}}
-    - {class: free_folk, pos: {x: 6, y: 7}}
-    - {class: free_folk, pos: {x: 8, y: 7}}
-    # Stark infantry — rear guard.
-    - {class: stark_infantry, pos: {x: 4, y: 7}}
-    - {class: stark_infantry, pos: {x: 7, y: 7}}
-    - {class: stark_infantry, pos: {x: 9, y: 7}}
-    - {class: stark_infantry, pos: {x: 10, y: 7}}
+    # ── Blue starts south, spread across rows 7-9 ──
+    # Jon Snow — front center, charging ahead as always.
+    - {class: jon_snow, pos: {x: 5, y: 7}}
+    # Tormund — beside Jon, right flank.
+    - {class: tormund, pos: {x: 7, y: 7}}
+    # Wun Wun — center, lumbering forward.
+    - {class: wun_wun, pos: {x: 6, y: 8}}
+    # Sansa — rear, safe behind the line.
+    - {class: sansa, pos: {x: 5, y: 9}}
+    # Davos — rear ranged position, directing troops.
+    - {class: davos, pos: {x: 8, y: 9}}
+    # Lyanna Mormont — forward, fearless.
+    - {class: lyanna_mormont, pos: {x: 4, y: 8}}
+    # Melisandre — rear support.
+    - {class: melisandre, pos: {x: 3, y: 9}}
 
   red:
+    # ── Red starts north with encirclement capability ──
     # Ramsay — far back, safe behind his lines.
-    - {class: ramsay, pos: {x: 7, y: 0}}
-    # Bolton archers — second row, raining arrows.
-    - {class: bolton_archer, pos: {x: 4, y: 1}}
-    - {class: bolton_archer, pos: {x: 6, y: 1}}
-    - {class: bolton_archer, pos: {x: 8, y: 1}}
-    - {class: bolton_archer, pos: {x: 10, y: 1}}
-    # Bolton pikemen — forming the crushing U-shape.
-    # Left wall:
-    - {class: bolton_pikeman, pos: {x: 1, y: 2}}
-    - {class: bolton_pikeman, pos: {x: 1, y: 3}}
-    - {class: bolton_pikeman, pos: {x: 1, y: 4}}
-    - {class: bolton_pikeman, pos: {x: 2, y: 5}}
-    # Right wall:
-    - {class: bolton_pikeman, pos: {x: 12, y: 2}}
-    - {class: bolton_pikeman, pos: {x: 12, y: 3}}
-    - {class: bolton_pikeman, pos: {x: 12, y: 4}}
-    - {class: bolton_pikeman, pos: {x: 11, y: 5}}
-    # Bolton cavalry — on the flanks, ready to encircle.
-    - {class: bolton_cavalry, pos: {x: 0, y: 2}}
-    - {class: bolton_cavalry, pos: {x: 0, y: 3}}
-    - {class: bolton_cavalry, pos: {x: 0, y: 4}}
-    - {class: bolton_cavalry, pos: {x: 13, y: 2}}
-    - {class: bolton_cavalry, pos: {x: 13, y: 3}}
-    - {class: bolton_cavalry, pos: {x: 13, y: 4}}
+    - {class: ramsay, pos: {x: 6, y: 0}}
+    # Archer Captain — second row, raining arrows.
+    - {class: archer_captain, pos: {x: 4, y: 1}}
+    # Shield Wall Captain — on the shield wall defensive line.
+    - {class: shield_wall_captain, pos: {x: 5, y: 2}}
+    # Pikeman Captain — holding the wall center.
+    - {class: pikeman_captain, pos: {x: 7, y: 2}}
+    # Smalljon Umber — forward berserker, ready to charge.
+    - {class: smalljon_umber, pos: {x: 6, y: 2}}
+    # Harald Karstark — far right flank, cavalry encirclement.
+    - {class: harald_karstark, pos: {x: 10, y: 1}}
+    # Steelshanks — left flank, closing the vice.
+    - {class: steelshanks, pos: {x: 1, y: 1}}
+    # Ben Bones — right side, supporting the trap.
+    - {class: ben_bones, pos: {x: 8, y: 1}}
 
 rules:
   max_turns: 18
   first_player: blue
 
 win_conditions:
-  # Jon dies → blue loses immediately.
+  # Jon dies -> blue loses immediately.
   - {type: protect_unit, unit_id: u_b_jon_snow_1, owning_team: blue}
-  # Ramsay dies → red loses immediately (blue's primary objective).
+  # Ramsay dies -> red loses immediately (blue's primary objective).
   - {type: protect_unit, unit_id: u_r_ramsay_1, owning_team: red}
-  # Jon survives the turn cap → the Vale saved them. Blue wins.
+  # Jon survives the turn cap -> the Vale saved them. Blue wins.
   - {type: protect_unit_survives, unit_id: u_b_jon_snow_1, owning_team: blue}
   # Either side wins by total elimination.
   - {type: eliminate_all_enemy_units}
@@ -314,7 +446,8 @@ narrative:
     Dawn. The two armies face each other across a field already
     littered with the dead from the opening cavalry charge. Jon
     stands alone between the lines, Longclaw in hand, as Ramsay's
-    archers nock their arrows.
+    archers nock their arrows. Mountains of corpses line the flanks
+    — there is no retreat, only forward into the teeth of the trap.
   events:
     - trigger: on_turn_start
       turn: 3
