@@ -280,6 +280,7 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
         session.state.turn,
         json.dumps(args, default=str)[:200] if args else "{}",
     )
+    _t0_dispatch = _time.time()
     try:
         result = call_tool(session, viewer, tool_name, args)
     except ToolError as e:
@@ -316,6 +317,12 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
     info = app.conn_to_room.get(connection_id)
     if info is not None:
         _note_game_over_if_needed(app, info[0])
+    _dt_dispatch = _time.time() - _t0_dispatch
+    if _dt_dispatch > 1.0:
+        log.warning(
+            "tool dispatch SLOW: cid=%s tool=%s dt=%.2fs",
+            connection_id[:8], tool_name, _dt_dispatch,
+        )
     return _ok({"result": filtered})
 
 

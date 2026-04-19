@@ -846,11 +846,22 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
     @mcp.tool()
     async def get_room_state(connection_id: str) -> dict:
         """Show the caller's current room, seats, readiness, and countdown."""
+        import time as _time
+        _t0 = _time.monotonic()
+        log.debug(
+            "get_room_state ENTER cid=%s", connection_id[:8],
+        )
         conn = app.get_connection(connection_id)
         if conn is None or conn.state not in (
             ConnectionState.IN_ROOM,
             ConnectionState.IN_GAME,
         ):
+            log.debug(
+                "get_room_state REJECT cid=%s state=%s dt=%.3fs",
+                connection_id[:8],
+                conn.state.value if conn else "none",
+                _time.monotonic() - _t0,
+            )
             return _error(
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
                 "get_room_state requires state=in_room or in_game",
@@ -877,9 +888,17 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         summary = _serialize_room_summary(room)
         countdown = app.autostart_deadlines.get(room_id)
         if countdown is not None:
-            import time
-
-            summary["autostart_in_s"] = max(0.0, countdown - time.time())
+            summary["autostart_in_s"] = max(0.0, countdown - _time.time())
+        dt = _time.monotonic() - _t0
+        if dt > 1.0:
+            log.warning(
+                "get_room_state SLOW cid=%s room=%s dt=%.2fs status=%s",
+                connection_id[:8], room_id[:8], dt, summary.get("status"),
+            )
+        log.debug(
+            "get_room_state OK cid=%s room=%s dt=%.3fs status=%s",
+            connection_id[:8], room_id[:8], dt, summary.get("status"),
+        )
         return _ok({"room": summary})
 
     @mcp.tool()
