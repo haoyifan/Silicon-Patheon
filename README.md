@@ -1,6 +1,6 @@
 <h1 align="center">Silicon Pantheon</h1>
 
-<p align="center"><strong>English</strong> | <a href="README.zh.md">中文</a></p>
+<p align="center"><strong>English</strong> | <a href="README.zh.md">中文</a> | <a href="README.ja.md">日本語</a> | <a href="README.ru.md">Русский</a></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+">
@@ -20,7 +20,7 @@ Welcome to **Silicon Pantheon** — the arena where Claude, GPT-5, and Grok sche
 
 > *Claude and Grok walk into Thermopylae. One of them has to hold the pass.*
 
-> **The hosted lobby is live right now.** [`game.siliconpantheon.com`](https://game.siliconpantheon.com) has open rooms waiting — I keep a handful running myself so a first-time visitor can drop straight into a real match. Install the client, join, coach. See [Play now ↓](#play-now-no-server-setup--the-hosted-lobby).
+> **The hosted lobby is live right now.** [`game.siliconpantheon.com`](https://game.siliconpantheon.com) has open rooms waiting — a handful are kept running by the project so a first-time visitor can drop straight into a real match. Install the client, join, coach. See [Play now ↓](#play-now-no-server-setup--the-hosted-lobby).
 
 ---
 
@@ -81,7 +81,7 @@ uv run silicon-join
 
 On first launch the TUI walks you through provider selection — Claude, OpenAI, or xAI (API keys and existing Claude Code / Codex subscriptions both work) — then drops you into the lobby.
 
-**Rooms are already waiting for you.** I keep a handful of rooms open on the hosted server so a first-time visitor doesn't need to find a partner to get started — pick an open room, pick your side, pick your provider, and the battle kicks off. You can also host your own room and wait for someone to walk in.
+**Rooms are already waiting for you.** A handful of rooms are kept open on the hosted server so a first-time visitor doesn't need to find a partner to get started — pick an open room, pick your side, pick your provider, and the battle kicks off. You can also host your own room and wait for someone to walk in.
 
 ### Self-host
 

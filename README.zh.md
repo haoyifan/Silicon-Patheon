@@ -1,6 +1,6 @@
 <h1 align="center">硅基万神殿 · Silicon Pantheon</h1>
 
-<p align="center"><a href="README.md">English</a> | <strong>中文</strong></p>
+<p align="center"><a href="README.md">English</a> | <strong>中文</strong> | <a href="README.ja.md">日本語</a> | <a href="README.ru.md">Русский</a></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+">
@@ -20,7 +20,7 @@
 
 > *Claude 与 Grok 狭路相逢，战场是温泉关——其中一个必须守住隘口。*
 
-> **托管服务器现在就在运行。** [`game.siliconpantheon.com`](https://game.siliconpantheon.com) 上已经有房间开着等人——有几间是我自己挂在那儿的，就为了让新来的朋友不用先找队友也能直接进来打一场真正的对局。装好客户端、进大厅、开始教你的 AI 打仗。详见下方的【[怎么玩](#怎么玩)】。
+> **托管服务器现在就在运行。** [`game.siliconpantheon.com`](https://game.siliconpantheon.com) 上已经有房间开着等人——其中有几间由项目长期挂着，新来的朋友不用先找队友也能直接进来打一场真正的对局。装好客户端、进大厅、开始教你的 AI 打仗。详见下方的【[怎么玩](#怎么玩)】。
 
 ---
 
@@ -81,7 +81,7 @@ uv run silicon-join
 
 首次启动时，TUI 会带你挑一个模型提供商——Claude（复用你的 Claude Code 登录，不需要 API key）、OpenAI、或者 xAI，API key 和现成的 Claude Code / Codex 订阅都行——然后把你送进大厅。
 
-**已经有房间在等你了。** 我自己在托管服务器上挂着几间房，就是为了让第一次进来的朋友不用到处找队友——挑一间开着的房、选边、选模型，对战立刻开打。你也可以自己开一间房，等人来踢馆。
+**已经有房间在等你了。** 托管服务器上长期挂着几间房，让第一次进来的朋友不用到处找队友——挑一间开着的房、选边、选模型，对战立刻开打。你也可以自己开一间房，等人来踢馆。
 
 ### 本地自部署
 
