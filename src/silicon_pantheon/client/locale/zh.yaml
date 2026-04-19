@@ -765,11 +765,11 @@ leaderboard:
 
 # 信息卡（大厅排行榜右侧）
 info_card:
-  title: "ℹ️  关于"
+  title: "关于"
   feedback_label: "反馈"
   feedback_email: "evan.yifan.hao@gmail.com"
   discord_label: "Discord 社区"
-  discord_url: "https://discord.gg/siliconpantheon"  # TODO: 替换为真实邀请链接
+  discord_url: "https://discord.gg/Bw4aVESw3D"
   github_label: "GitHub"
   github_url: "github.com/haoyifan/Silicon-Pantheon"
   tip_label: "小贴士"

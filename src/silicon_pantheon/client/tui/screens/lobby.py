@@ -482,12 +482,16 @@ class LobbyScreen(Screen):
                 )
 
         total = sum(e.get("games", 0) for e in lb) // 2 if lb else 0
-        lb_more = ""
-        if lb and len(lb) > LEADERBOARD_VISIBLE_ROWS:
-            shown = min(LEADERBOARD_VISIBLE_ROWS, len(lb) - self._ranking_scroll)
-            lb_more = f"  [{self._ranking_scroll + 1}–{self._ranking_scroll + shown}/{len(lb)}]"
+        # Show the current selection's 1-indexed position inside the
+        # full list. Range indicators (`[2–6/8]`) confused users into
+        # thinking the cursor might be outside the listed range —
+        # a single position is unambiguous: the highlighted row is
+        # always at this position.
+        position_hint = ""
+        if lb:
+            position_hint = f"  · #{self._ranking_selected + 1}/{len(lb)}"
         subtitle = Text(
-            f"{total} {t('leaderboard.total_games', lc)}{lb_more}",
+            f"{total} {t('leaderboard.total_games', lc)}{position_hint}",
             style="dim",
             justify="center",
         )
@@ -501,7 +505,7 @@ class LobbyScreen(Screen):
         return Panel(
             body,
             border_style=border_style,
-            title=f"🏆 {t('leaderboard.title', lc)}",
+            title=t("leaderboard.title", lc),
             box=box.DOUBLE,
             padding=(0, 1),
         )
@@ -537,7 +541,7 @@ class LobbyScreen(Screen):
             Group(*lines),
             border_style="magenta",
             title=t("info_card.title", lc),
-            box=box.ROUNDED,
+            box=box.DOUBLE,
             padding=(0, 1),
         )
 

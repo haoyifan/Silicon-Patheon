@@ -791,11 +791,11 @@ leaderboard:
 
 # Info card (right of the scoreboard in the lobby)
 info_card:
-  title: "ℹ️  About"
+  title: "About"
   feedback_label: "Feedback"
   feedback_email: "evan.yifan.hao@gmail.com"
   discord_label: "Discord"
-  discord_url: "https://discord.gg/siliconpantheon"  # TODO: replace with real invite URL
+  discord_url: "https://discord.gg/Bw4aVESw3D"
   github_label: "GitHub"
   github_url: "github.com/haoyifan/Silicon-Pantheon"
   tip_label: "Tip"
