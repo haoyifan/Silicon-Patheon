@@ -392,6 +392,7 @@ game_player:
   unit_header: "单位"
   hp_header: "HP"
   status_header: "状态"
+  units_hidden: "（战争迷雾中，对手单位尚未显现）"
   key_hints: "j/k ↕ 选择单位   Enter 详情   ^d/^u 半页"
 
 # 游戏界面 — 地图面板

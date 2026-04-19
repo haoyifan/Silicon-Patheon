@@ -262,7 +262,15 @@ class PlayerPanel(Panel):
         roster_idx = 0
         for team in ("blue", "red"):
             team_units = [u for u in self._roster if u.get("owner") == team]
-            if not team_units:
+            # Under fog-of-war the server strips hidden opponent
+            # units from the state entirely, so team_units is empty
+            # even though the opponent is very much present. We still
+            # want to show the opponent header + a placeholder so the
+            # player doesn't wonder if the game is missing a player.
+            # Only skip if it's our own team with nothing — that case
+            # would be genuinely unusual (concede mid-game after
+            # everyone died).
+            if not team_units and team == my_team:
                 continue
             rows.append(Text(""))
             header_style = "bold cyan" if team == "blue" else "bold red"
@@ -276,6 +284,14 @@ class PlayerPanel(Panel):
             if model_label:
                 header.append(f" {model_label}", style="dim")
             rows.append(header)
+            if not team_units:
+                rows.append(
+                    Text(
+                        f"  {t('game_player.units_hidden', lc)}",
+                        style="dim italic",
+                    )
+                )
+                continue
             rows.append(
                 Text(
                     f"  {_pad_right(t('game_player.unit_header', lc), 14)}  {t('game_player.hp_header', lc):>7}  {t('game_player.status_header', lc)}",

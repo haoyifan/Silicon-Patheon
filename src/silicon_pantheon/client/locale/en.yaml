@@ -405,6 +405,7 @@ game_player:
   unit_header: "Unit"
   hp_header: "HP"
   status_header: "Status"
+  units_hidden: "(units hidden in the fog)"
   key_hints: "j/k ↕ unit   Enter details   ^d/^u ½page"
 
 # Game screen — map panel
