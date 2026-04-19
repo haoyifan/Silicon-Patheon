@@ -189,7 +189,22 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         usual deploy order and the client is responsible for skipping
         features the server doesn't advertise) — only clients BELOW
         MINIMUM_CLIENT_PROTOCOL_VERSION get rejected with a clear
-        upgrade prompt. See docs/versioning.md.
+        upgrade prompt. See docs/VERSIONING.md.
+
+        ── Concurrency note / tripwire ──
+        This handler is `def`, not `async def`, so the asyncio
+        event loop dispatches it serially. Two back-to-back calls
+        on the same cid run to completion one after the other — no
+        interleaving, no races on `conn.player` / `.state` /
+        `.client_protocol_version`. If anyone ever converts this to
+        `async def` and `await`s something inside (e.g. a remote
+        token validation), add an explicit `asyncio.Lock` around
+        the mutations below OR stage them in a dict and swap
+        atomically. Otherwise two concurrent re-auth calls can
+        interleave and end up with T1's player name paired with
+        T2's version, silently bypassing both the MIN check and
+        the no-regress guard we added in the
+        `client_protocol_version is not None` gate.
         """
         # Treat a missing client_protocol_version as v1 — that's what
         # the pre-handshake-aware clients effectively spoke. Once
