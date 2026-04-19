@@ -118,12 +118,26 @@ class ServerClient:
                 )
             except asyncio.TimeoutError:
                 elapsed = _time.monotonic() - _t0
+                # Capture diagnostic state to understand WHY the call hung.
+                ws2 = getattr(self._session, "_write_stream", None)
+                rs2 = getattr(self._session, "_read_stream", None)
+                ws2_closed = getattr(ws2, "_closed", "?") if ws2 is not None else "?"
+                # Check if the SSE read stream has pending data or is dead.
+                rs2_stats = ""
+                try:
+                    rs2_stats = f" rs_closed={getattr(rs2, '_closed', '?')}"
+                except Exception:
+                    pass
                 log.error(
                     "call TIMEOUT %s cid=%s dt=%.1fs — "
                     "session.call_tool did not return within %.0fs. "
-                    "SSE stream likely dead.",
+                    "Diagnostics: ws_closed=%s%s sess=%s. "
+                    "Possible causes: SSE stream dead, server never "
+                    "sent response, proxy (Caddy) closed connection, "
+                    "MCP SDK response matching bug.",
                     tool_name, self.connection_id, elapsed,
                     CALL_TOOL_TIMEOUT_S,
+                    ws2_closed, rs2_stats, id(self._session),
                 )
                 raise
             except Exception as e:

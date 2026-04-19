@@ -69,6 +69,13 @@ class BotWorker:
     async def _disconnect(self) -> None:
         """Clean up transport context and client."""
         if self._client is not None:
+            # Leave room so the server cleans up immediately.
+            try:
+                await asyncio.wait_for(
+                    self._client.call("leave_room"), timeout=3.0,
+                )
+            except Exception:
+                pass
             try:
                 await self._client.stop_heartbeat()
             except Exception:
