@@ -74,47 +74,146 @@ on the client side.
 
 ## How breaking changes are rolled out
 
-Call the new protocol version **N+1**.
+Four phases. Running through them with a concrete example below —
+*"add a required `fog_mode` field to the `create_room` response
+that older clients can't parse"* — but the procedure is identical
+for any breaking change.
 
-### 1. Land the code change that bumps `PROTOCOL_VERSION`
+### Phase 1 — land the code change (one PR, PROTOCOL_VERSION++ only)
+
+Edit `src/silicon_pantheon/shared/protocol.py`:
+
+```python
+PROTOCOL_VERSION = 2                     # was 1
+MINIMUM_CLIENT_PROTOCOL_VERSION = 1      # leave at 1 — don't lock out yet
+MINIMUM_SERVER_PROTOCOL_VERSION = 1      # leave at 1
+```
 
 In the same PR:
-- Raise `PROTOCOL_VERSION = N + 1` in `shared/protocol.py`.
-- Implement the new wire shape (server + client).
-- Add tests covering the new shape.
-- **Do NOT raise `MINIMUM_CLIENT_PROTOCOL_VERSION` yet.** The server
-  should still accept old clients while the rollout is in progress —
-  they'll just use the old code path (which you need to keep working
-  for now via a compatibility shim, if the change touches a path
-  old clients still use).
 
-### 2. Deploy the server
+- Implement the new wire shape (server emits the new field, newest
+  client reads it).
+- **Keep a compatibility shim** on the server so v1 clients still
+  work. Each incoming tool call carries its connection; the server
+  stashes the client's version on `Connection.client_protocol_version`
+  at `set_player_metadata` time, so any handler can branch:
 
-- `git pull && sudo systemctl restart silicon-serve.service` on
-  the production box.
-- At this point: new server is up. Old clients still work. New
-  clients also work. Nobody is locked out.
+  ```python
+  if conn.client_protocol_version >= 2:
+      response["fog_mode"] = ...       # new shape
+  # else: v1 shape (no fog_mode field)
+  ```
 
-### 3. Let clients catch up
+  This is the "both work" window that makes phase 2 safe.
 
-- Announce the new version in the Discord community channel.
-- Wait enough time for active players to update — usually a
-  week, but judge by actual connection telemetry.
-- While waiting, don't ship another breaking change. One at a time.
+- Update `CHANGELOG` / PR description to spell out:
+  *"bumps PROTOCOL_VERSION 1 → 2, reason: …, v1 compat kept behind
+  shim until MIN is raised"*.
 
-### 4. Raise `MINIMUM_CLIENT_PROTOCOL_VERSION = N + 1` and redeploy the server
+- Add/update tests in `tests/test_protocol_version.py` asserting
+  both old and new clients still succeed against this server.
 
-- Now old (version-N) clients get `CLIENT_TOO_OLD` on login with a
-  friendly upgrade prompt. They can't play until they upgrade, but
-  they know exactly what to do.
-- This is the point at which you can remove the compatibility shim
-  from step 1 — no clients below `MIN_CLIENT` are reaching that code
-  path anymore.
+- Cross-reference this doc in the PR description.
 
-Doing 1–4 in one big bang (bumping `PROTOCOL_VERSION` AND
-`MINIMUM_CLIENT_PROTOCOL_VERSION` in the same deploy) is allowed only
-for true emergencies — it hard-gates every unupdated client the
-moment the server restarts, which is user-hostile.
+Land. **No production impact yet** — code is in main, but nothing
+has been redeployed.
+
+### Phase 2 — deploy the server
+
+```bash
+ssh silicon@5.78.204.141
+cd ~/Silicon-Patheon && git pull
+sudo systemctl restart silicon-serve.service
+sudo -n journalctl -u silicon-serve.service --since '-1m' \
+  | grep -vE 'POST /mcp|Processing request' | tail -20
+```
+
+Walk through the **server-deploy checklist** below before
+restarting. After restart: v1 and v2 clients both work. Nobody is
+gated.
+
+### Phase 3 — let clients catch up
+
+- Post in `#announcements` in Discord:
+  *"Silicon Pantheon client v2 is out — `git pull && uv sync`.
+  Old clients will be locked out in 7 days."*
+- Wait enough time for active players to update. Judge by
+  connection telemetry + who's active in Discord.
+- **Don't ship another breaking change during this window.** One
+  at a time.
+
+### Phase 4 — raise the minimum and redeploy
+
+After the wait, edit `shared/protocol.py` again:
+
+```python
+PROTOCOL_VERSION = 2
+MINIMUM_CLIENT_PROTOCOL_VERSION = 2      # was 1 — now v1 clients get CLIENT_TOO_OLD
+```
+
+In the same PR:
+
+- **Remove the compatibility shim** from phase 1. Nothing below
+  v2 will hit that code path anymore.
+- Update `tests/test_protocol_version.py`:
+  `test_client_omitting_version_rejected_once_minimum_exceeds_v1`
+  already asserts the locked-out behavior; make sure the analog
+  test for a v1-tagged client also flips from "accepted" to
+  "CLIENT_TOO_OLD".
+
+Land, then redeploy the server. After restart, v1 clients hit the
+upgrade-required screen; v2+ clients keep playing.
+
+### Red flags that should stop you
+
+- **You can't cleanly shim old behavior in phase 1.** If the old
+  and new shapes genuinely can't coexist (e.g. renaming a required
+  field that both reads and writes on the same turn), you actually
+  have two stacked breaking changes — split them, or bite the
+  bullet and skip phase 3 (user-hostile, only for emergencies or
+  data-corruption bug fixes).
+
+- **You want to bump both constants in one deploy.** Allowed only
+  for security fixes or data-corruption bugs. Otherwise always
+  split — the "old client + new server = works" invariant is the
+  whole reason the scaffolding exists.
+
+- **You're changing `scenario_description` shape.** That's served
+  by `get_scenario_bundle` and cached client-side by content-hash.
+  A new shape produces a new hash → clients refetch → usually fine
+  without a protocol bump. But if the new shape has a field older
+  clients *fail to render on* (not just ignore), it IS a bump.
+
+### Verifying each phase
+
+**After phase 2** — v1 clients should still work:
+
+```bash
+.venv/bin/python3 -m pytest tests/test_protocol_version.py -v
+
+# Simulate an old client locally against a fresh App():
+.venv/bin/python3 - <<'PY'
+from silicon_pantheon.server.app import App, build_mcp_server
+import asyncio, json
+mcp = build_mcp_server(App())
+blocks = asyncio.run(mcp.call_tool('set_player_metadata',
+    {'connection_id': 'c1', 'display_name': 'x', 'kind': 'ai',
+     'client_protocol_version': 1}))
+print(json.loads(blocks[0].text))
+# Expect ok=true, with server_protocol_version=2 and
+# minimum_client_protocol_version=1 in the response.
+PY
+```
+
+**After phase 4** — v1 clients should be rejected with the
+structured `CLIENT_TOO_OLD` error including the upgrade command:
+
+```bash
+.venv/bin/python3 - <<'PY'
+# same call as above, but expect:
+# ok=false, error.code=client_too_old, error.data.upgrade_command set
+PY
+```
 
 ---
 
@@ -217,3 +316,26 @@ design handles both directions.
 Treat it as protocol version 0 (the ancient past). Client refuses
 to play if `MINIMUM_SERVER_PROTOCOL_VERSION > 0`. Today that
 condition is false, so missing version is tolerated.
+
+**What if the client omits `client_protocol_version` entirely?**
+Server treats it as v1 (the pre-handshake-aware baseline). At
+`MIN_CLIENT = 1` that's accepted; once `MIN_CLIENT` is raised above
+1, omission falls below the minimum and the client gets
+`CLIENT_TOO_OLD`. There's a regression test for this
+(`test_client_omitting_version_rejected_once_minimum_exceeds_v1`).
+
+**Does the server remember the client's version for later calls?**
+Yes — `Connection.client_protocol_version` is set at
+`set_player_metadata` and readable by any tool handler that needs
+to shim its response shape during a rollout window. Non-handshake
+tools (`heartbeat`, `whoami`) don't need this; most tool handlers
+won't either unless they're participating in a live breaking
+change.
+
+**Does the client clean up the transport if the handshake fails?**
+When the version-mismatch path triggers, the transport is left
+open but the user is routed to `UpgradeRequiredScreen`. Pressing
+Enter there cleans up the transport (`app._transport_cleanup()`)
+before returning to the login screen, so the retry doesn't stack a
+second transport on top. Pressing q/Esc exits the process (cleanup
+happens implicitly).

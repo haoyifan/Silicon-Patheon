@@ -743,6 +743,7 @@ class ProviderAuthScreen(Screen):
         # Update server-side metadata so other players can see our
         # provider/model in the room player list.
         if self.app.client is not None:
+            from silicon_pantheon.shared.protocol import PROTOCOL_VERSION
             try:
                 await self.app.client.call(
                     "set_player_metadata",
@@ -750,7 +751,7 @@ class ProviderAuthScreen(Screen):
                     kind=self.app.state.kind,
                     provider=provider_id,
                     model=model_id,
-                    client_protocol_version="1",
+                    client_protocol_version=PROTOCOL_VERSION,
                 )
             except Exception:
                 pass  # non-fatal; lobby still works

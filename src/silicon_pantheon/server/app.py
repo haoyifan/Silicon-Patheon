@@ -55,6 +55,13 @@ class Connection:
     state: ConnectionState = ConnectionState.ANONYMOUS
     player: PlayerMetadata | None = None
     token: str | None = None  # per-room token once joined
+    # Protocol version this client declared at set_player_metadata.
+    # Unset (None) means the client is pre-handshake-aware and should
+    # be treated as v1 for compatibility. Used by tool handlers that
+    # need a shim window to serve both old-shape and new-shape
+    # responses while rolling out a breaking change — see
+    # docs/VERSIONING.md, Phase 1 of the breaking-change checklist.
+    client_protocol_version: int | None = None
     last_heartbeat_at: float = field(default_factory=time.time)
     # Distinct from last_heartbeat_at: tracks when the connection
     # last issued a "meaningful" game tool (anything other than the
@@ -184,19 +191,31 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         MINIMUM_CLIENT_PROTOCOL_VERSION get rejected with a clear
         upgrade prompt. See docs/versioning.md.
         """
-        if (
-            client_protocol_version is not None
-            and client_protocol_version < MINIMUM_CLIENT_PROTOCOL_VERSION
-        ):
+        # Treat a missing client_protocol_version as v1 — that's what
+        # the pre-handshake-aware clients effectively spoke. Once
+        # MINIMUM_CLIENT_PROTOCOL_VERSION goes above 1, those clients
+        # will fail the check below and get CLIENT_TOO_OLD with an
+        # upgrade prompt, which is exactly what we want. Also tolerate
+        # a string form ("1") — some older callers send it as a
+        # stringified version; best effort parse, fall back to v1.
+        effective_version: int
+        if isinstance(client_protocol_version, int):
+            effective_version = client_protocol_version
+        else:
+            try:
+                effective_version = int(client_protocol_version)  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                effective_version = 1
+        if effective_version < MINIMUM_CLIENT_PROTOCOL_VERSION:
             return _error(
                 ErrorCode.CLIENT_TOO_OLD,
                 (
-                    f"client protocol v{client_protocol_version} is below "
+                    f"client protocol v{effective_version} is below "
                     f"this server's minimum supported v{MINIMUM_CLIENT_PROTOCOL_VERSION}. "
                     f"Please upgrade the client. {UPGRADE_COMMAND_HINT}"
                 ),
                 {
-                    "client_protocol_version": client_protocol_version,
+                    "client_protocol_version": effective_version,
                     "server_protocol_version": PROTOCOL_VERSION,
                     "minimum_client_protocol_version": MINIMUM_CLIENT_PROTOCOL_VERSION,
                     "upgrade_command": UPGRADE_COMMAND_HINT,
@@ -219,6 +238,7 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         except ValueError as e:
             return _error(ErrorCode.BAD_INPUT, str(e))
         conn.player = meta
+        conn.client_protocol_version = effective_version
         if conn.state == ConnectionState.ANONYMOUS:
             conn.state = ConnectionState.IN_LOBBY
         conn.last_heartbeat_at = time.time()

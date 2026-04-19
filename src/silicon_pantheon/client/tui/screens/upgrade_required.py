@@ -45,6 +45,17 @@ class UpgradeRequiredScreen(Screen):
             self.app.exit()
             return None
         if key == "enter":
+            # Close the transport we opened during the failed connect
+            # before bouncing back to login — otherwise the next
+            # connect attempt stacks a second transport on top.
+            cleanup = getattr(self.app, "_transport_cleanup", None)
+            if cleanup is not None:
+                try:
+                    await cleanup()
+                except Exception:
+                    pass
+                self.app._transport_cleanup = None
+                self.app.client = None
             from silicon_pantheon.client.tui.screens.login import LoginScreen
             return LoginScreen(self.app)
         return None
