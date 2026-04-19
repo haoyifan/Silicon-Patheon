@@ -202,13 +202,18 @@ class LobbyScreen(Screen):
         if self._confirm is not None:
             return self._confirm.render()
         if self._tutorial is not None and not self._tutorial.is_done:
+            # With rooms + leaderboard stacked vertically, a 14-row
+            # tutorial stripe at the bottom would squeeze both panels.
+            # Switch to the inline (non-centered) tutorial render and
+            # shrink the stripe — render_inline fills its allotted
+            # box efficiently instead of Align.center-ing inside it.
             root = Layout()
             root.split_column(
                 Layout(name="bg", ratio=1),
-                Layout(name="tutorial", size=14),
+                Layout(name="tutorial", size=10),
             )
             root["bg"].update(main)
-            root["tutorial"].update(self._tutorial.render())
+            root["tutorial"].update(self._tutorial.render_inline())
             return root
         return main
 
