@@ -385,7 +385,7 @@ help:
 # Login fields
 login_fields:
   server_url: "server URL"
-  display_name: "display name"
+  display_name: "display name (max 64 chars)"
   kind: "kind"
   provider: "provider"
   model: "model"

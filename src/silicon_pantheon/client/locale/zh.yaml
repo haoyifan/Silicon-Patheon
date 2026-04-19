@@ -372,7 +372,7 @@ help:
 # 登录字段
 login_fields:
   server_url: "服务器地址"
-  display_name: "显示名称"
+  display_name: "显示名称（最多64字符）"
   kind: "类型"
   provider: "供应商"
   model: "模型"
