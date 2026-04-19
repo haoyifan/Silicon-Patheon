@@ -40,6 +40,61 @@ unit_classes:
     description: |
       三人重型战车——车夫、持盾者、枪兵。比埃及战车
       更慢更容易陷坑，但近战冲锋毁灭性极强。不能进入森林。
+  amenmesse:
+    display_name: 阿蒙摩斯将军
+    description: |
+      经验丰富的埃及步兵将军。沉稳，纪律严明，
+      指挥阿蒙军团的步兵。坚韧，阵地防御力极强。
+  khaemwaset:
+    display_name: 卡蒙瓦塞特王子
+    description: |
+      皇子，弓箭队长。指挥复合弓部队。射程远、
+      精度高，但近战脆弱。
+  nubian_scout:
+    display_name: 努比亚斥候
+    description: |
+      手持短弓的努比亚快速散兵。机动性和视野出色；
+      远程打击但经不起近战。
+  sherden_guard:
+    display_name: 舍尔登卫兵
+    description: |
+      法老近卫的精锐海上民族侍卫。厚重青铜铠甲，
+      牛角盔，圆盾。埃及方最强近战战士。
+  royal_charioteer:
+    display_name: 皇家战车手
+    description: |
+      快速的埃及轻型战车——车夫和弓手各一。擅长
+      快速侧翼包抄与追击。不能进入丘陵。
+  hattusili:
+    display_name: 哈图西利
+    description: |
+      穆瓦塔利之弟，野战将军。精明的指挥官，
+      日后将夺取王位。步战型全能选手。
+  urhi_teshub:
+    display_name: 乌尔希-特舒布
+    description: |
+      穆瓦塔利之子，驾驶重型战车的王子。快速而
+      好战的骑兵突击手。
+  hittite_champion:
+    display_name: 赫梯勇士
+    description: |
+      穿全身青铜鳞甲的精锐重步兵。缓慢但极其坚韧，
+      近战打击力强悍。
+  hittite_archer:
+    display_name: 赫梯弓箭手
+    description: |
+      安纳托利亚弓手。射程尚可，但不及埃及复合弓部队，
+      适合削弱目标。
+  hittite_chariot_captain:
+    display_name: 赫梯战车队长
+    description: |
+      三人重型战车——车夫、持盾者、枪兵。比埃及战车
+      更慢但冲锋威力毁灭性极强。
+  syrian_ally:
+    display_name: 叙利亚附庸战士
+    description: |
+      快速的叙利亚附庸步兵。轻装侧翼骚扰手，
+      擅长高速游击。
   hittite_spearman:
     display_name: 赫梯枪兵
     description: |
@@ -47,11 +102,17 @@ unit_classes:
 
 terrain_types:
   river:
+    display_name: 河流
     description: |
       奥伦特斯河——不可通行。
   ford:
+    display_name: 浅滩
     description: |
       浅滩渡口——唯一可以涉水过河的地点。
+  hill:
+    display_name: 丘陵
+    description: |
+      高地岩石地形。防御+2。阻止骑兵冲锋。
 
 narrative:
   title: 卡迭石之战

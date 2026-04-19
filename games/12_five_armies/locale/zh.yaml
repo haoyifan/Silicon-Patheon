@@ -66,6 +66,61 @@ unit_classes:
     description: |
       鹰王应关赫之召而来。第15回合从南方天空出现
       （如果哥布林还没赢的话）。可以飞越山脉。
+  gandalf:
+    display_name: 甘道夫（灰袍）
+    description: |
+      巫师及时赶到，警告了哥布林大军的来袭。远程魔法攻击，
+      光环每回合恢复相邻友军4点生命。以其法力而言偏脆弱——
+      保持在坦克身后。
+  beorn:
+    display_name: 比翁
+    description: |
+      卡洛克的换皮人，以可怖的巨熊形态出现。行走的攻城
+      武器——全场最高的生命值和攻击力，但速度一般。两击
+      可粉碎任何单位，但必须谨慎走位以免被风筝。免疫恐惧。
+  azog:
+    display_name: 阿佐格（苍白半兽人）
+    description: |
+      苍白半兽人，莫里亚之灾。体型巨大，残暴而狡猾。
+      挥舞狼牙锤和义肢刀臂。最高指挥官——他一死
+      哥布林军心即溃。比索林更硬但更慢。
+  fimbul:
+    display_name: 芬布尔（猎手）
+    description: |
+      阿佐格的首席追踪者和座狼管理者。远程专精，
+      使用带倒刺的残忍弩。从半兽人战线后方狙杀
+      伤残单位。
+  yazneg:
+    display_name: 亚兹涅格
+    description: |
+      半兽人队长，座狼骑手。极高速度，侧翼专精。
+      穿越森林小道绕过防线打击弓手和治疗者。
+      玻璃大炮——打击力强但集火即碎。
+  narzug:
+    display_name: 纳兹格
+    description: |
+      骑座狼的半兽人号角手。快速骑兵，协调哥布林进攻。
+      战号光环给相邻友军攻击+2。属性平庸但增益光环
+      使周围单位极具威胁。
+  grinnah:
+    display_name: 格林纳
+    description: |
+      哥布林镇的拷问官，现为阿佐格的战地外科。
+      鬼鬼祟祟的治疗者，用粗糙但有效的手段修补
+      伤兵。每回合恢复一个相邻友军5点生命。
+      战斗力为零——保护好否则失去持续力。
+  bat_swarm:
+    display_name: 蝙蝠群
+    description: |
+      来自山脉的尖叫巨蝠群。阻挡穿过其格子的远程攻击
+      视线。直接战斗力弱但干扰能力可抵消蓝方远程优势。
+      可正常进入森林。
+  gundabad_berserker:
+    display_name: 冈达巴德狂战士
+    description: |
+      来自冈达巴德山的巨型伤疤累累半兽人，陷入狂暴。
+      无护甲，无自保意识，纯粹的输出。红方步兵中
+      最高攻击力。直冲最高价值目标以命换命。
   beorn_bear:
     display_name: 比翁（熊形态）
     description: |
@@ -74,12 +129,19 @@ unit_classes:
 
 terrain_types:
   mountain:
+    display_name: 山脉
     description: |
       孤山——不可通行（巨鹰除外，可以飞越）。
   ruins:
+    display_name: 河谷城废墟
     description: |
       河谷城废墟——类似森林的掩体，提供防御加成。
+  forest:
+    display_name: 森林
+    description: |
+      茂密林地。移动力消耗2。防御+1。阻挡超过2格的远程攻击。
   river:
+    display_name: 奔流河
     description: |
       奔流河——不可通行。
 
@@ -93,6 +155,10 @@ narrative:
     一声来自北方的号角让所有人都停了下来：哥布林，
     成千上万。
   events:
+    - trigger: on_turn_start
+      turn: 1
+      text: |
+        阿佐格举起狼牙锤。哥布林战鼓响起。
     - trigger: on_turn_start
       turn: 5
       text: |
@@ -110,6 +176,14 @@ narrative:
       text: |
         索林倒下了。龙病随他而终。
     - trigger: on_unit_killed
+      unit_id: u_r_azog_1
+      text: |
+        苍白半兽人阿佐格被斩杀！哥布林大军溃散奔逃。
+    - trigger: on_unit_killed
       unit_id: u_r_bolg_1
       text: |
         北方的波格战死。哥布林大军动摇了。
+    - trigger: on_unit_killed
+      unit_id: u_b_gandalf_1
+      text: |
+        甘道夫倒下了！治愈之光熄灭了。

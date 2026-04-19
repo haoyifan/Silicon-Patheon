@@ -87,3 +87,24 @@ narrative:
     脚下的地面突然崩塌。无限城的全貌展现在眼前——
     无数的房间、走廊和阶梯在虚空中悬浮，
     鬼的世界向鬼杀队敞开了大门。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        房间开始移动。阶梯折叠又重组。鸣女的琵琶声
+        在城中回荡，将鬼杀队员们分隔开来。
+    - trigger: on_turn_start
+      turn: 7
+      text: |
+        黑死牟拔刀。六只眼睛在黑暗中闪烁。
+        月之呼吸——新月形刀刃充满走廊。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        无惨从王座上站起。他的身体扭曲变形，触手
+        向四面八方猛烈鞭打。最终之战开始了。
+    - trigger: on_unit_killed
+      unit_id: u_r_muzan_1
+      text: |
+        无惨在日出中灰飞烟灭。千年的恐怖终结。
+        鬼杀队完成了它的使命。

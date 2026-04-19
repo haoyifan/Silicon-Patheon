@@ -24,6 +24,21 @@ unit_classes:
     description: |
       逻各斯号舰长。舰队中最快的气垫船驾驶员，现在在码头中
       徒步奔跑。她必须到达电力终端以恢复EMP防御网。
+  zee:
+    display_name: 齐
+    description: |
+      弹药装填员转战地工程师。她在炮火中为机甲装填弹药、
+      修补伤员。双手颤抖但从未停下工作。
+  kid:
+    display_name: 小子
+    description: |
+      从母体中自行觉醒的少年。无畏且拼命想要证明自己。
+      他靠的是勇气而非技术——但在世界末日时，勇气就足够了。
+  link:
+    display_name: 林克
+    description: |
+      尼布甲尼撒号的操作员。从终端监控战场，呼报机器位置、
+      协调防御。他的情报拯救了无数生命。
   zion_infantry:
     display_name: 锡安步兵
     description: |
@@ -45,6 +60,47 @@ unit_classes:
     description: |
       密集的哨兵群体合而为一——数十只融合成一团扭动的金属
       触手球。远比任何单个哨兵坚韧。
+  sentinel_alpha:
+    display_name: 首领哨兵
+    description: |
+      首领哨兵——比普通蜂群单位更大、装甲更厚。以冰冷的
+      机器智能协调机械攻势。红色光学传感器扫描人类防线
+      的弱点。
+  sentinel_bomber:
+    display_name: 哨兵轰炸型
+    description: |
+      携带拖曳炸弹的哨兵变体——从高空向防线投下爆炸载荷。
+      远程威力惊人但近战脆弱。
+  sentinel_tunneler:
+    display_name: 哨兵掘进型
+    description: |
+      设计用于突破墙壁、通过维护管道迂回的钻掘型哨兵。
+      比飞行型慢但装甲厚重，强化触手专为掘进而生。
+  sentinel_swarm:
+    display_name: 哨兵集群
+    description: |
+      密集的数十只哨兵合而为一——一团扭动的金属触手球。
+      远比单个哨兵坚韧，近战中势不可挡。
+  digger_heavy:
+    display_name: 重型钻掘机
+    description: |
+      设计用于突破锡安外壳的巨型钻掘机械。缓慢笨重但
+      几乎坚不可摧。钻头能撕裂加固闸门如同撕纸。
+  digger_light:
+    display_name: 轻型钻掘机
+    description: |
+      为重型单位清理道路的小型钻掘机。比大型同类更快
+      但依然强悍。切割臂能撕碎近战范围内的一切。
+  flyer_interceptor:
+    display_name: 飞行拦截者
+    description: |
+      高速穿越码头缺口的快速攻击飞行机器。猛击后撤退——
+      以打了就跑的战术骚扰防线。
+  flyer_hunter:
+    display_name: 飞行猎手
+    description: |
+      装备持续射击光束武器的重型飞行机器。比拦截者慢
+      但打击更重、更能抗揍。专门瞄准机甲驾驶员。
   drill_machine:
     display_name: 钻掘机
     description: |
@@ -53,13 +109,41 @@ unit_classes:
       阻止这些机器。
 
 terrain_types:
+  dock_bay:
+    display_name: 码头大厅
+    description: |
+      锡安巨大的主码头。破碎天花板下的开阔地带——哨兵
+      从头顶的缺口涌入。开阔地带无掩护。
+  mech_bay:
+    display_name: 机甲舱
+    description: |
+      码头墙壁沿线的机甲存放舱。重型机械和弹药箱提供
+      极佳掩护。外骨骼在此固定以发挥最大火力。
+  tunnel:
+    display_name: 隧道
+    description: |
+      沿码头外围的维护隧道。狭窄阴暗——机器可以利用
+      它们迂回防线，但狭小空间限制了蜂群优势。
+  gate:
+    display_name: 闸门
+    description: |
+      将码头与城市本体隔开的加固闸门。若机器突破此处，
+      锡安的平民区将暴露无遗。最后一道防线。
+  defense_platform:
+    display_name: 防御平台
+    description: |
+      带有金属路障的高架射击平台。为机甲防线设计——
+      良好的射界和一定的蜂群防护。
   machine_wall:
+    display_name: 机械墙壁
     description: |
       码头内部的结构支柱和扭曲残骸。即使哨兵也无法通过。
   catwalk:
+    display_name: 高架通道
     description: |
       横跨码头的金属高架通道。高处提供一定的防御优势。
   power_conduit:
+    display_name: 电力管道
     description: |
       沿码头墙壁通向终端的裸露电力管道。奈奥比必须沿此
       路线前进以恢复电力。
@@ -88,3 +172,8 @@ narrative:
       text: |
         美富根的机甲轰然跪倒，被哨兵撕成碎片。船长用手枪
         射击直到蜂群将他吞没。"为了锡安……"
+    - trigger: on_unit_killed
+      unit_id: u_b_niobe_1
+      text: |
+        奈奥比在混乱中倒下。没有她，无人能为锤子号的EMP
+        打开闸门。码头防线崩溃了。

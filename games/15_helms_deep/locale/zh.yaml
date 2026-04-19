@@ -57,22 +57,26 @@ unit_classes:
     description: |
       携带爆炸物的自杀式突击兵。以排水沟为目标——
       一旦到达就会炸开城墙。
-  gorul:
+  siege_captain:
     display_name: 攻城长 戈鲁尔
     description: |
       操控攻城撞锤的巨型强兽人。缓慢但坚如磐石。
+      专为摧毁瓶颈而生。
   sapper:
     display_name: 强兽人工兵
     description: |
-      携带炸药的工兵。目标是排水沟——到达即引爆。
-  mauhur:
+      携带萨鲁曼爆炸火药的工兵。缓慢且脆弱，但一旦
+      到达排水沟，城墙就会崩塌。必须在他到达之前杀死他。
+  crossbow_captain:
     display_name: 毛胡尔
     description: |
-      弓箭手和近战兼具的精英强兽人。
-  ghashnak:
+      强兽人弩手连队长。在城墙射程之外提供火力掩护。
+      精准、耐心、对暴露的守军致命。
+  ladder_captain:
     display_name: 嘎什纳克
     description: |
-      携带攻城梯的步兵队长。率领梯队攀登深墙。
+      北翼攻城梯队指挥。他的任务是用纯粹的数量优势
+      淹没城垛上的精灵弓手。机动性高，中等护甲。
 
 terrain_types:
   cliff:
@@ -98,3 +102,33 @@ narrative:
   intro: |
     雨夜。城墙上的弓手可以看到数不清的火把从谷底延伸到
     地平线。然后第一波攻城梯撞上了墙壁。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        攻城梯砸上北墙。强兽人开始攀登。
+        哈尔迪尔的弓手向人群中齐射。
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        工兵到达排水沟！爆炸火药在城墙下方引燃——
+        如果缺口守不住，强兽人将蜂拥而入。
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        城门在撞锤下颤抖。阿拉贡和吉姆利在甬道上
+        争取时间。城墙在呻吟。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        东方山脊上出现一道白光。白袍甘道夫随黎明而来。
+        围攻被打破了。
+    - trigger: on_unit_killed
+      unit_id: u_b_theoden_1
+      text: |
+        王陨落了。号角堡失去了它的心——守军崩溃了。
+    - trigger: on_unit_killed
+      unit_id: u_b_haldir_1
+      text: |
+        哈尔迪尔倒在城垛上，被强兽人的刀刃刺穿。
+        精灵阵线动摇了。

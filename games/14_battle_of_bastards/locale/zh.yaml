@@ -68,9 +68,20 @@ unit_classes:
       他们来得晚——但他们来了。
 
 terrain_types:
-  corpse_pile:
+  corpse_wall:
+    display_name: 尸墙
     description: |
-      初次骑兵冲锋中倒下的尸堆。难以穿越但能提供箭矢掩护。
+      初次骑兵冲锋中堆积的死者之山。尸体堆得比人还高——
+      无法通行。它们构成拉姆塞陷阱的围墙，将琼恩的部队困在其中。
+  forest:
+    display_name: 森林
+    description: |
+      战场两翼的茂密北境林地。移动消耗2。+1防御，提供掩护。
+  shield_wall:
+    display_name: 盾墙阵线
+    description: |
+      波顿长矛兵以联锁盾牌挖壕固守的防御工事。
+      站在此格的单位+3防御。
 
 narrative:
   title: 私生子之战

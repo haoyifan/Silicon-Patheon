@@ -12,42 +12,91 @@ unit_classes:
   leonidas:
     display_name: 列奥尼达
     description: |
-      斯巴达之王。从七岁起除了这场战斗什么都没训练。
-      他的阵亡意味着希腊防线崩溃——不惜一切代价保护他。
-  spartan:
-    display_name: 斯巴达重装步兵
+      斯巴达之王。从七岁起除了战斗什么都没训练过。
+      温泉关的青铜铁壁。他的阵亡意味着希腊防线崩溃——
+      不惜一切代价保护他。
+  dienekes:
+    display_name: 迪厄涅凯斯
     description: |
-      三百勇士之一。各项属性均为精英，以圆盾和长矛
-      肩并肩作战。在正面交锋中以一敌三。
-  greek_hoplite:
-    display_name: 希腊重装步兵
+      斯巴达最勇敢的战士。当被告知波斯箭雨将遮天蔽日时，
+      他回答："那我们就在阴凉处战斗。"精锐战士，战力
+      仅次于列奥尼达。
+  demophilus:
+    display_name: 塞斯皮亚的德摩菲鲁斯
     description: |
-      来自底比斯、弗西亚和塞斯皮亚的联军士兵。
-      单兵战力不及斯巴达人，但组成了坚实的青铜盾墙。
-  immortal:
-    display_name: 波斯不死军
+      七百名拒绝撤退的塞斯皮亚人指挥官。他不是斯巴达人，
+      是盟军希腊人，但同样英勇无畏。留下来与列奥尼达
+      一同战死在温泉关。
+  spartan_captain:
+    display_name: 斯巴达队长
     description: |
-      万人不死军——薛西斯的宫廷卫队，每阵亡一人
-      立刻补充以保持万人之数。波斯帝国最强的战士。
-  persian_infantry:
-    display_name: 波斯步兵
+      三百勇士中的军官。在方阵中盾牌紧靠盾牌，
+      以钢铁纪律坚守阵线。一道不会破碎的青铜之墙。
+  greek_archer:
+    display_name: 希腊弓箭手
     description: |
-      帝国四方征召的士兵——米底人、基西亚人、塞迦人。
-      轻甲；他们的优势在于数量。
+      随希腊联军作战的克里特弓手。在方阵后方提供远程
+      火力。轻甲——让他远离近战。
+  xerxes:
+    display_name: 薛西斯一世
+    description: |
+      万王之王。波斯的神皇帝。坐在阵后的金色宝座上
+      观战。他若阵亡，帝国士气将土崩瓦解。VIP——
+      留在后方指挥，不参与战斗。
+  hydarnes:
+    display_name: 许达尔尼斯
+    description: |
+      万人不死军统帅——薛西斯的宫廷卫队指挥官。率领
+      不死军穿越山间小径迂回包抄希腊人的那个人。
+      精锐、迅捷、致命。
+  mardonius:
+    display_name: 马尔多尼奥斯
+    description: |
+      薛西斯的表兄兼骑兵将军。行动迅速，进攻凶猛，
+      负责正面突击以将希腊人钉死在隘口。
   persian_archer:
     display_name: 波斯弓箭手
     description: |
       希罗多德记载，温泉关的波斯箭雨遮天蔽日。
       近战脆弱，须保持在步兵线之后。
+  immortal_champion:
+    display_name: 不死军勇士
+    description: |
+      万人不死军中最强的战士。手持金饰长矛和柳条盾。
+      极其危险——少数能在单挑中匹敌斯巴达人的波斯战士
+      之一。
+  artaphrenes:
+    display_name: 阿塔弗涅斯
+    description: |
+      波斯总督兼战场指挥官。率领大批步兵波次冲入隘口，
+      消耗希腊人的盾墙。
+  datis:
+    display_name: 达提斯
+    description: |
+      为薛西斯效力的米底将军。马拉松战役的老兵。
+      沉稳老练，指挥第二波攻势。
+  megabyzus:
+    display_name: 美伽比佐斯
+    description: |
+      指挥东部行省征召兵的波斯贵族。驱赶炮灰冲入隘口，
+      耗尽希腊人的长矛之力。
 
 terrain_types:
   cliff:
+    display_name: 悬崖
     description: |
-      悬崖峭壁。不可通行，将战斗限制在狭窄的中间通道。
-  stone_wall:
+      悬崖峭壁。不可通行，群山将隘口封死。
+  phocian_wall:
+    display_name: 弗西亚墙
     description: |
-      温泉关的石墙——列奥尼达的防线标志。难以逾越，
-      提供强大的防御加成。
+      横亘隘口的古老石墙，由希腊人重新修筑。
+      移动消耗2点。防御+3。希腊防线的锚点。
+  goat_path:
+    display_name: 山间小径
+    description: |
+      安诺帕亚小径——一条穿越山脉的狭窄山路，
+      可绕过温泉关。移动消耗3点。若波斯人发现此路，
+      希腊人将被侧翼包抄。
 
 narrative:
   title: 温泉关之战
@@ -59,14 +108,25 @@ narrative:
     的宝座上观战。列奥尼达整军列阵。
   events:
     - trigger: on_turn_start
+      turn: 3
+      text: |
+        波斯箭雨遮天蔽日。迪厄涅凯斯咧嘴一笑：
+        "好极了。那我们就在阴凉处战斗。"
+    - trigger: on_turn_start
       turn: 5
       text: |
-        波斯箭雨遮天蔽日。希腊人躲在盾牌之下。
+        薛西斯派出不死军。隘口中响彻青铜撞击青铜之声。
     - trigger: on_turn_start
-      turn: 10
+      turn: 7
       text: |
-        薛西斯派出不死军。隘口愈发狭窄。
+        一个叛徒指给许达尔尼斯那条山间小径。不死军开始
+        穿越山脉，迂回包抄希腊人。
     - trigger: on_unit_killed
       unit_id: u_b_leonidas_1
       text: |
-        列奥尼达倒下了。防线崩溃。
+        列奥尼达在波斯矛林中倒下。温泉关被攻破。
+        希腊门户洞开。
+    - trigger: on_unit_killed
+      unit_id: u_r_xerxes_1
+      text: |
+        薛西斯被击杀。万王之王陨落，波斯大军陷入混乱。

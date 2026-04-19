@@ -11,8 +11,34 @@ unit_classes:
     display_name: 阿不思·邓布利多
     description: |
       当世最伟大的巫师——但被诅咒的戒指和洞穴中的
-      药水削弱了。他的魔杖手已发黑腐坏。即使虚弱，
-      他依然可畏。
+      药水削弱了。即使虚弱，他的咒语依然具有毁灭性。
+      核心人物——他倒下，蓝方就输了。
+  harry:
+    display_name: 哈利·波特
+    description: |
+      躲在隐形斗篷下，被邓布利多的咒语定住。
+      精通缴械咒和守护神咒的决斗高手。
+  ginny:
+    display_name: 金妮·韦斯莱
+    description: |
+      凶猛的DA成员，拥有强大的蝙蝠精咒。
+      行动敏捷，以控制的攻击性战斗。
+  neville:
+    display_name: 纳威·隆巴顿
+    description: |
+      他们中最勇敢的人。以固执的决心和惊人的韧性
+      战斗。将纯粹的勇气注入盾咒中。
+  luna:
+    display_name: 卢娜·洛夫古德
+    description: |
+      梦幻但致命。她的非正统咒语出其不意。
+      从意想不到的角度射出昏迷咒和恶咒。
+  snape:
+    display_name: 西弗勒斯·斯内普
+    description: |
+      双面间谍。大脑封闭术、摄神取念术和黑魔法的大师。
+      为蓝方而战，但他的真正效忠扑朔迷离。
+      一个令人恐惧的技艺高超的巫师。
   order_guard:
     display_name: 凤凰社卫兵
     description: |
@@ -27,12 +53,38 @@ unit_classes:
     display_name: 德拉科·马尔福
     description: |
       被黑魔标记折磨的矛盾少年。被交付杀死邓布利多
-      的任务却下不了手。他的心不在这场战斗中。
+      的任务却下不了手。咒语尚可，但内心动摇。
+  bellatrix:
+    display_name: 贝拉特里克斯·莱斯特兰奇
+    description: |
+      黑魔王最忠诚的仆人。她的钻心咒和杀戮咒
+      使她成为活着的最致命女巫。凶残、迅速、
+      彻底无情。
   fenrir:
     display_name: 芬里尔·格雷伯克
     description: |
       凶残的狼人。不是因为意识形态加入食死徒——
       只是享受暴力的怪物。近战猛兽，不是巫师。
+  amycus:
+    display_name: 阿米库斯·卡罗
+    description: |
+      擅长钻心咒的食死徒。一个拥有真正黑魔法技艺的
+      虐待狂恶霸。
+  alecto:
+    display_name: 阿莱克托·卡罗
+    description: |
+      阿米库斯的姐姐，同为食死徒。她的咒语专注于
+      束缚和固定。手段卑劣。
+  yaxley:
+    display_name: 亚克斯利
+    description: |
+      资深食死徒，夺魂咒专家。高大、残暴、经验丰富。
+      危险的近战格斗者，辅以黑魔法。
+  gibbon:
+    display_name: 吉本
+    description: |
+      在塔上空施放黑魔标记的食死徒。擅长火焰咒的
+      称职决斗者。
   death_eater:
     display_name: 食死徒
     description: |
@@ -40,8 +92,21 @@ unit_classes:
 
 terrain_types:
   stone_wall:
+    display_name: 石墙
     description: |
       霍格沃茨城堡石墙。古老而不可通行。
+  tower_parapet:
+    display_name: 塔楼城垛
+    description: |
+      天文塔顶部。暴露但可防御。
+  room_of_requirement:
+    display_name: 有求必应屋
+    description: |
+      有求必应屋。为占据者提供庇护和最需要的一切。
+  vanishing_cabinet:
+    display_name: 消失柜
+    description: |
+      有求必应屋中的消失柜——食死徒进入霍格沃茨的入口。
 
 narrative:
   title: 天文塔之战
@@ -57,7 +122,12 @@ narrative:
       turn: 4
       text: |
         芬里尔·格雷伯克在走廊中嗥叫。碎石声回荡着，
-        咒语在城堡墙上轰出窟窿。
+        咒语在城堡墙上轰出窟窿。贝拉特里克斯的狂笑回荡。
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        战斗愈发绝望。卢娜的守护神在浓烟中闪耀银光。
+        纳威浴血但拒绝倒下。塔楼阶梯被咒语的火光浸湿。
     - trigger: on_turn_start
       turn: 10
       text: |

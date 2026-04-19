@@ -14,50 +14,83 @@ unit_classes:
     description: |
       苏格兰骑士兼法外之徒。二十七岁。率领苏格兰人
       打一场本不该赢的仗。失去他，防线就会瓦解。
-  andrew_moray:
-    display_name: 安德鲁·莫瑞
+  andrew_de_moray:
+    display_name: 安德鲁·德·莫瑞
     description: |
-      华莱士的联合指挥官，实际上的军事头脑。
-      历史上莫瑞在斯特灵桥战役中负致命伤。
-  scots_spearman:
-    display_name: 苏格兰枪兵
+      华莱士的联合指挥官，这对搭档中真正的军事头脑。
+      来自北方的贵族，在与华莱士合兵之前已自行发动叛乱。
+  malcolm_wallace:
+    display_name: 马尔科姆·华莱士
     description: |
-      持十二英尺长矛的普通征召兵——枪阵的脊梁。
-      慢，但能竖起枪林。射程1-2可以隔一排刺击。
-  highland_swordsman:
-    display_name: 高地剑士
+      威廉的兄长。一名稳健的战士，守住交付给他的
+      每一寸阵地。毫不犹豫地与弟弟并肩作战。
+  hamish:
+    display_name: 哈米什·坎贝尔
     description: |
-      挥舞阔刃大剑的高地氏族战士。比低地枪兵攻击力
-      更强、更灵活，但防御较低。
-  english_knight:
-    display_name: 英格兰骑士
+      魁梧的高地氏族战士。先投石再近身肉搏。
+      华莱士最老的朋友和最忠诚的战士。
+  stephen_irish:
+    display_name: 爱尔兰人斯蒂芬
     description: |
-      重型骑枪加马铠。在开阔地毁天灭地——但在一格宽的
-      桥上完全施展不开。没有空间冲锋。苏格兰长矛
-      找到了铠甲的每一处缝隙。
-  english_longbowman:
-    display_name: 英格兰长弓手
+      与苏格兰人并肩作战的爱尔兰雇佣兵。快速、狡猾，
+      不择手段。自称是上帝指引他来到苏格兰。
+  pike_captain:
+    display_name: 苏格兰长矛队长
     description: |
-      威尔士和英格兰自耕农，持大战弓。远程毁灭性打击，
-      近战脆弱。苏格兰人会冲上去找他们。
-  english_man_at_arms:
-    display_name: 英格兰武装步兵
+      枪阵指挥官——用长矛组成的刺猬阵打破骑兵冲锋。
+      长矛射程1-2。
+  earl_surrey:
+    display_name: 萨里伯爵
     description: |
-      中等英军步兵——锁子甲、剑和盾。萨里军队的主力。
+      约翰·德·瓦伦纳，萨里伯爵。年迈、谨慎，从南岸
+      指挥。英格兰驻苏格兰总督，政客多过军人。
+  cressingham:
+    display_name: 休·德·克雷辛厄姆
+    description: |
+      英王驻苏格兰财政大臣。肥胖、傲慢、令人憎恶。
+      催促萨里不经侦察就过桥。苏格兰人若抓住他，
+      会将他剥皮。
+  english_knight_cmdr:
+    display_name: 马尔马杜克·特温格爵士
+    description: |
+      少数杀回桥对岸的英格兰骑士之一。重甲、有纪律，
+      近战极其危险。
+  english_archer_cpt:
+    display_name: 英格兰弓箭队长
+    description: |
+      指挥威尔士和英格兰长弓手。远程致命但近战脆弱——
+      苏格兰人会迅速逼近他们。
+  english_sergeant:
+    display_name: 英格兰军士
+    description: |
+      老练的武装步兵。锁子甲、剑和盾。
+      萨里步兵的中坚力量。
+  english_pikeman:
+    display_name: 罗伯特·德·索默维尔
+    description: |
+      率领征召兵过桥的英格兰小贵族。称职但面对枪阵
+      力不从心。
+  english_footman:
+    display_name: 威廉·德·奥尔德伯勒
+    description: |
+      在先锋部队中服役的英格兰骑士。过桥较早，
+      如今被困在福斯河的错误一侧。
 
 terrain_types:
   river:
+    display_name: 福斯河
     description: |
-      福斯河——不可通行，将地图一分为二。
+      福斯河。又深又宽，徒步不可通行。
   bridge:
+    display_name: 斯特灵桥
     description: |
-      仅此一座木桥——斯特灵桥，死亡陷阱般的咽喉。
+      一座狭窄的木桥——唯一的渡河点。两格宽，
+      决定战役胜负的咽喉要道。
   high_ground:
+    display_name: 修道院山
     description: |
-      修道院山——华莱士埋伏军队的制高点。
-  marsh:
-    description: |
-      南岸沼泽——减缓英军展开速度。
+      福斯河上方的制高点。移动消耗2点。防御+3。
+      华莱士在冲锋前将军队埋伏在此处。
 
 narrative:
   title: 斯特灵桥之战
@@ -68,14 +101,21 @@ narrative:
     修道院山上。桥下，英军先锋开始踏上桥面。
   events:
     - trigger: on_turn_start
-      turn: 4
+      turn: 3
       text: |
-        英军纵队越来越密。两千人已在桥上或北岸。
+        英军纵队在桥上越来越密。克雷辛厄姆挥手催促
+        更多人前进。桥在重压下吱呀作响。
     - trigger: on_turn_start
-      turn: 6
+      turn: 5
       text: |
-        华莱士发出信号。枪阵从山上冲下。
+        华莱士发出信号。枪阵从修道院山冲下。
+        陷阱已经触发。
     - trigger: on_unit_killed
       unit_id: u_b_wallace_1
       text: |
         华莱士倒下了。苏格兰人失去了他们的灵魂。
+    - trigger: on_unit_killed
+      unit_id: u_r_cressingham_1
+      text: |
+        克雷辛厄姆被拽下马来。苏格兰人将用他的皮
+        做一条剑带。

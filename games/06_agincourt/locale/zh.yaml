@@ -12,39 +12,97 @@ unit_classes:
   henry_v:
     display_name: 亨利五世
     description: |
-      英格兰国王。二十八岁，脸上留有多年前什鲁斯伯里
-      中箭的疤痕。与士兵并肩在前排作战。"我们这些少数人，
-      我们这些幸运的少数人"的演说正在此刻发生。
-  longbowman:
-    display_name: 英格兰长弓手
+      英格兰国王，二十八岁，脸上留有什鲁斯伯里中箭的
+      伤疤。戴着镶宝石头盔在前排下马步战。
+      他若阵亡，全军崩溃。
+  thomas_erpingham:
+    display_name: 托马斯·厄平厄姆爵士
     description: |
-      威尔士和英格兰自耕农，持大战弓。从会走路就开始射箭。
-      每分钟六箭连射，射程二百五十码。近战脆弱，但很少
-      让敌人靠近。
-  english_man_at_arms:
-    display_name: 英格兰武装步兵
+      老将骑士，五十八岁，指挥弓箭手。亲自持弓——
+      他的箭矢高高跃起，落在极远之处。将指挥杖抛向
+      空中以示第一轮齐射开始。
+  rapid_bowman:
+    display_name: 卡德万的威尔士弓手
     description: |
-      亨利的下马武装步兵——锁子甲、钩斧。英军战线的支柱。
-  french_knight:
-    display_name: 法国骑士
+      卡德万·阿普·达菲德麾下的威尔士长弓手连队——
+      战场上搭弦放箭最快的人。牺牲射程换取射速，
+      每分钟六箭射入密集的法军纵队。
+  stakebow:
+    display_name: 欧文的木桩手
     description: |
-      全身板甲、骑枪、带刺马鞍——法兰西骑士精华。
-      近战强大但移动缓慢，英格兰长弓手会在接近途中
-      将他们逐一射倒。
-  french_crossbow:
-    display_name: 法国弩手
+      欧文·阿普·马雷杜德的弓箭手——天亮前将木桩
+      钉入泥地的人。本身也是出色的弓手，他们竖起的
+      木桩挡住了骑兵冲锋。部署在木桩线正后方。
+  duke_of_york:
+    display_name: 约克公爵
     description: |
-      热那亚雇佣弩手——装填缓慢，但弩箭能穿透铠甲。
-  french_man_at_arms:
-    display_name: 法国武装步兵
+      爱德华，约克公爵。五十岁，身躯肥胖撑满铠甲，
+      指挥英军右翼。久经沙场的悍将，将面朝下死在
+      阿金库尔的泥地里——但会先带走几位法国领主。
+  constable_dalbret:
+    display_name: 法军统帅达尔布雷
     description: |
-      低等级法军步兵——锁子甲、剑、无马。比骑士更稳健
-      但更慢。
+      夏尔·达尔布雷，法兰西王室统帅——法军最高指挥官。
+      下马参加突击，被六十磅米兰板甲拖累。缓慢但在
+      近战中几乎不可能击杀。历史上在战斗中阵亡。
+  duke_of_alencon:
+    display_name: 阿朗松公爵
+    description: |
+      让一世，阿朗松公爵。法兰西最杰出的剑手，差点
+      杀到亨利五世面前并砍中其王冠。骑战马冲锋威力
+      惊人——如果他能穿过泥地到达英军阵线的话。
+  duke_of_orleans:
+    display_name: 奥尔良公爵
+    description: |
+      查理，奥尔良公爵，二十一岁。诗人、王室血亲，
+      名义上的先锋联合指挥官。穿华丽的锦标赛板甲。
+      在阿金库尔被生擒，在英格兰被囚禁了二十五年。
+  count_of_nevers:
+    display_name: 讷韦尔伯爵
+    description: |
+      菲利普，讷韦尔伯爵——勃艮第公爵之弟（勃艮第公爵
+      按兵不动未参战）。率领一支勃艮第骑兵武装步兵。
+      鲁莽的冲锋者。历史上在混战中阵亡。
+  duke_of_bar:
+    display_name: 巴尔公爵
+    description: |
+      爱德华三世，巴尔公爵。指挥第二线。又一位将直冲
+      箭雨的骑马领主。铠甲精良、技艺尚可——但泥地
+      不在乎血统贵贱。
+  lord_dampierre:
+    display_name: 丹皮埃尔领主
+    description: |
+      大卫·德·朗比尔，弩手统领——指挥法军远程部队。
+      麾下热那亚雇佣弩手的弩箭能穿透英军锁子甲，
+      但他们一箭之间长弓手可射出六箭。
+  french_men_at_arms_left:
+    display_name: 皮卡第武装步兵
+    description: |
+      法军左翼的普通步兵——来自皮卡第的武装步兵。
+      下马在领主身后踏着泥地前进。坚韧且人数众多。
+  french_men_at_arms_right:
+    display_name: 诺曼武装步兵
+    description: |
+      法军右翼的普通步兵——身穿锁子甲和头盔的诺曼
+      武装步兵。铠甲不如皮卡第人厚重，但在泥地中
+      移动更快。
 
 terrain_types:
-  stakes:
+  mud:
+    display_name: 泥地
     description: |
-      英军阵前削尖的木桩——不可通行的障碍。
+      刚翻耕过的、被雨水浸透的泥地。战马陷蹄，
+      重甲骑士没膝深陷。移动消耗3点，暴露在泥地中的
+      单位防御-2。
+  stakes:
+    display_name: 木桩
+    description: |
+      削尖的木桩以胸口高度斜插入地。骑兵不可通行；
+      步兵可高代价通过。
+  forest:
+    display_name: 森林
+    description: |
+      浓密的树林。不可通行，形成走廊的两壁。
 
 narrative:
   title: 阿金库尔之战
@@ -55,18 +113,37 @@ narrative:
     跪地祈祷；法军纵队列阵，骑枪闪亮，准备冲锋。
   events:
     - trigger: on_turn_start
-      turn: 2
+      turn: 1
       text: |
-        法军第一线穿过树林前进。箭矢开始落下。
+        托马斯·厄平厄姆爵士将指挥杖抛向空中，大喊
+        "放箭！"万箭从木桩后方腾空而起。
     - trigger: on_turn_start
-      turn: 4
+      turn: 3
       text: |
-        英军弓箭手齐射。遮天蔽日的箭雨开始了。
+        法军先锋陷入泥地。战马惊叫倒地。下马骑士
+        没膝深陷，箭雨从两翼倾泻而下。
     - trigger: on_turn_start
-      turn: 8
+      turn: 6
       text: |
-        倒下的骑士遍布战场。法军第二线踩着他们的身体向前推进。
+        战场已成屠宰场。法军尸体堆得如此之高，
+        后排士兵只能踩着自己人的尸体前进。
+        到达木桩前的人无法通过。
+    - trigger: on_turn_start
+      turn: 9
+      text: |
+        阿朗松公爵杀向亨利的旗帜。国王近身肉搏，
+        王冠被劈掉一角。
     - trigger: on_unit_killed
       unit_id: u_b_henry_v_1
       text: |
-        亨利倒下了。英军战线动摇。
+        亨利倒下了。英格兰王冠落入泥中。
+        英军战线崩溃。
+    - trigger: on_unit_killed
+      unit_id: u_r_duke_of_alencon_1
+      text: |
+        阿朗松公爵倒下了，法兰西最杰出的剑被永远沉默。
+    - trigger: on_unit_killed
+      unit_id: u_r_constable_dalbret_1
+      text: |
+        法兰西王室统帅阵亡。法军指挥体系瓦解，
+        沦为群龙无首的乌合之众。

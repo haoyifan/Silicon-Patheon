@@ -52,6 +52,36 @@ unit_classes:
       安喀塞斯和阿佛洛狄忒之子。特洛伊陷落后将航行到
       意大利建立罗马（据维吉尔所述）。英雄级战士，
       赫克托尔的副手。
+  patroclus:
+    display_name: 帕特罗克洛斯
+    description: |
+      阿喀琉斯最亲密的同伴。穿着借来的铠甲作战，
+      深受弥尔弥冬人爱戴。在这个版本中他还活着——暂时。
+  nestor:
+    display_name: 涅斯托尔
+    description: |
+      皮洛斯之王，希腊将领中年纪最长者。已不能在前排
+      作战，但他的智谋和在场使全军阵脚稳固。标枪远程支援。
+  sarpedon:
+    display_name: 萨尔珀冬
+    description: |
+      吕基亚之王，宙斯之子。率领为特洛伊而战的
+      吕基亚同盟军。半神级战士，特洛伊方最强者之一。
+  glaucus:
+    display_name: 格劳科斯
+    description: |
+      萨尔珀冬的表兄弟，吕基亚联军副指挥官。曾在神志
+      恍惚中以金甲换狄俄墨得斯的铜甲。可靠的战士。
+  deiphobus:
+    display_name: 得伊福玻斯
+    description: |
+      普里阿摩斯的又一位王子，特洛伊第三强战士，
+      仅次于赫克托尔和埃涅阿斯。持矛持盾作战。
+  trojan_archer:
+    display_name: 潘达洛斯
+    description: |
+      吕基亚弓手，射伤墨涅拉俄斯破坏了休战。
+      从特洛伊战线后方提供精准远程打击。
   trojan_guard:
     display_name: 特洛伊卫兵
     description: |
@@ -60,15 +90,23 @@ unit_classes:
 
 terrain_types:
   troy_wall:
+    display_name: 特洛伊城墙
     description: |
       特洛伊城墙——不可通行，防御加成极高。
+  scamander:
+    display_name: 斯卡曼德罗斯河
+    description: |
+      克珊托斯/斯卡曼德罗斯河——不可通行，除浅滩外无法渡过。
   xanthus:
+    display_name: 克珊托斯河
     description: |
       克珊托斯河——不可通行，将地图南北分隔。
   ford:
+    display_name: 浅滩
     description: |
       河流浅滩——唯一可以渡河的地点。
   greek_ship:
+    display_name: 希腊战船
     description: |
       搁浅的希腊战船——提供些许防御加成。
 
@@ -90,6 +128,14 @@ narrative:
       turn: 6
       text: |
         赫克托尔和阿喀琉斯隔河相望。
+    - trigger: on_turn_start
+      turn: 7
+      text: |
+        赫克托尔和阿喀琉斯隔河对视。决战的时刻到了。
+    - trigger: on_turn_start
+      turn: 15
+      text: |
+        平原上血肉模糊，尘土弥漫。斯卡曼德罗斯河被染成了红色。
     - trigger: on_unit_killed
       unit_id: u_r_hector_1
       text: |

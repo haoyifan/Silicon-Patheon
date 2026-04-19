@@ -54,30 +54,81 @@ unit_classes:
     description: |
       红袍女巫。拉赫洛的火焰女祭司，点燃多斯拉克弯刀
       和壕沟。她的火焰治愈活人、灼烧亡者。
+  the_hound:
+    display_name: 猎犬
+    description: |
+      桑铎·克里冈。一个残暴、高大的战士，憎恨火焰但依然
+      穿过它战斗。巨大的生命值和高攻击使他成为活人阵营
+      最强的前线肉盾。
+  theon:
+    display_name: 席恩·葛雷乔伊
+    description: |
+      最后的葛雷乔伊。铁群岛弓箭手，以生命守护神木林
+      和心树。远程物理攻击者——2-3射程让他在死者
+      到达城墙前削减敌军。
   night_king:
     display_name: 夜王
     description: |
       第一个异鬼，森林之子所造。一个手势就能指挥死者。
-      冰之魔法粉碎钢铁、复活阵亡者。杀死他，
-      所有尸鬼都会倒下。
-  white_walker:
-    display_name: 异鬼
+      冰之魔法粉碎钢铁、复活阵亡者。飞行——骑乘韦赛利昂
+      或飘浮在战场上空。杀死他，所有尸鬼都会倒下。关键目标。
+  viserion:
+    display_name: 韦赛利昂
     description: |
-      远古冰之生物，夜王的副将。手持冰之利刃，
-      粉碎普通钢铁。法术型。
-  wight:
-    display_name: 尸鬼
+      亡灵巨龙，被夜王之触复活。喷吐蓝焰融化城墙。
+      远程法术毁灭者，但面对卓耿的龙焰时脆弱。
+  frostfang:
+    display_name: 霜牙
     description: |
-      复活的尸体。单个很弱，成群令人恐惧。他们不疲倦、
-      不恐惧、不停止。
+      异鬼将领。手持活冰之矛，触碰之物瞬间冻结。
+      他的冰冻光环减速敌人——高魔抗和法术射程使他
+      成为控制型威胁。
+  bonelord:
+    display_name: 骨君
+    description: |
+      异鬼将领。亡灵术副官，在战斗中复活阵亡者。
+      高法术攻击和射程——留在前线后方引导黑暗力量。
+  coldhands:
+    display_name: 冷手
+    description: |
+      异鬼将领。身披远古冰甲的重装巨兽。缓慢但几乎
+      不可杀死——死者阵营的攻城锤。在瓶颈处吸收伤害。
+  grim:
+    display_name: 凛魂
+    description: |
+      精英尸鬼勇士——一个阵亡的瑟恩人战士，仍挥舞着
+      双铜斧。快速侧翼奇兵，利用壕沟缺口突袭。
+  hollow:
+    display_name: 虚骸
+    description: |
+      精英尸鬼勇士——一个复活的巨人，高大而缓慢。
+      巨大的生命值和攻击力。碾碎防线的攻城单位。
+  shade:
+    display_name: 幽影
+    description: |
+      精英尸鬼勇士——一个前史塔克士兵，诡异地快速而
+      无声。在前方侦察，以打了就跑的方式骚扰守军。
 
 terrain_types:
-  trench:
+  frozen_lake:
+    display_name: 冰封湖泊
     description: |
-      注满焦油和龙焰的壕沟。减缓亡者但无法永远阻挡。
-  stone_wall:
+      一片碎裂的冰面。脚下打滑——穿越消耗3移动力。
+      在开阔的冰面上没有防御加成。
+  fire_trench:
+    display_name: 火壕
     description: |
-      临冬城的古老城墙。不可通行——除了城门。
+      注满焦油并点燃的壕沟。不可通行——死者必须
+      找到缺口或被迫从突破口涌入。
+  godswood:
+    display_name: 神木林
+    description: |
+      古老的鱼梁木森林，旧神的圣地。茂密的树冠
+      提供掩护。+2防御，移动消耗2。
+  winterfell_wall:
+    display_name: 临冬城墙
+    description: |
+      临冬城的古老花岗岩城墙。站在城垛上的守军+3防御。
 
 narrative:
   title: 长夜之战
@@ -109,7 +160,17 @@ narrative:
         艾莉亚倒下了。猫爪匕首叮当落在冰冻的地面上。
         没有她，无人能及时到达夜王身边。
     - trigger: on_unit_killed
+      unit_id: u_b_theon_1
+      text: |
+        席恩·葛雷乔伊倒在心树前。他是一个好人。
+        神木林无人守护了。
+    - trigger: on_unit_killed
       unit_id: u_b_jon_snow_1
       text: |
         琼恩·雪诺最后一次倒下。没有红袍女巫能再次
         将他唤回。活人失去了他们的王。
+    - trigger: on_unit_killed
+      unit_id: u_r_viserion_1
+      text: |
+        韦赛利昂在蓝焰和碎骨的暴雨中坠落大地。
+        夜王失去了他的巨龙。

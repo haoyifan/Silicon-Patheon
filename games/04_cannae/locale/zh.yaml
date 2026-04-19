@@ -10,51 +10,93 @@ description: |
   仍在军事院校讲授。
 
 unit_classes:
-  varro:
-    display_name: 盖乌斯·瓦罗
-    description: |
-      罗马执政官，过于自信的指挥官。不顾同僚保卢斯的
-      拖延建议执意决战。瓦罗阵亡则罗马士气崩溃。
-  roman_legionary:
-    display_name: 罗马军团兵
-    description: |
-      共和国训练有素的重步兵。投枪加短剑，密集队形，
-      无情碾压推进。后排即将体会到被侧翼包抄时密集
-      方阵无法转向的痛苦。
-  roman_hastati:
-    display_name: 罗马前锋兵
-    description: |
-      年轻的前线军团兵。投掷重标枪后以剑盾近战。
-      廉价、众多、热血。
   hannibal:
     display_name: 汉尼拔·巴卡
     description: |
       迦太基统帅，在伊特鲁里亚沼泽中失去一只眼睛。
-      史上最伟大的军事天才之一；这场包围战的设计者。
-  libyan_spearman:
-    display_name: 利比亚枪兵
+      史上最伟大的军事天才之一，这场包围战的设计者。
+      汉尼拔阵亡则蓝方战败。
+  maharbal:
+    display_name: 马哈巴尔
     description: |
-      汉尼拔的非洲老兵——从西班牙起就跟随他的雇佣兵，
-      如今身穿缴获的罗马铠甲。坚韧的枪兵；包围的转轴。
-  gallic_warrior:
-    display_name: 高卢战士
+      汉尼拔的骑兵指挥官，最优秀的骑手。快速、凶猛，
+      天生的包围者。"汉尼拔，你知道如何赢得胜利，
+      却不知如何利用胜利。"
+  hanno:
+    display_name: 汉诺
     description: |
-      头戴金环、手持长剑、脾气火爆的凯尔特人。汉尼拔
-      故意将他们置于阵线中央——他们先溃退，将罗马人
-      引入陷阱。
-  numidian_cavalry:
-    display_name: 努米底亚骑兵
+      迦太基步兵队长。沉稳、有纪律的军官，在骑兵
+      大范围迂回时坚守阵线。指挥中央步兵方阵。
+  numidian_scout:
+    display_name: 努米底亚斥候
     description: |
-      北非轻骑兵。无马鞍，投标枪，速度骇人。他们将
-      绕到罗马军后方，在两翼合拢时猛击后背。
+      北非轻骑兵。无马鞍、投标枪、速度骇人。
+      绕到侧翼封闭罗马人后方的口袋。
+  libyan_veteran:
+    display_name: 利比亚老兵
+    description: |
+      汉尼拔精锐的非洲重步兵——身穿缴获的罗马铠甲的
+      雇佣兵。包围战的转轴；他们向内旋转，碾碎罗马侧翼。
+  balearic_slinger:
+    display_name: 巴利阿里投石手
+    description: |
+      来自马略卡岛的投石手，用铅弹远程精准投射。
+      在近战交锋前削弱敌方阵型。
+  celtic_chieftain:
+    display_name: 凯尔特酋长
+    description: |
+      高大的高卢人，戴金环、持长剑、脾气火爆。赤膊
+      狂战。高攻击力但脆弱——被置于中央诱使罗马人
+      向前推进。
+  consul_varro:
+    display_name: 执政官瓦罗
+    description: |
+      罗马执政官，过于自信的指挥官。不顾保卢斯的拖延
+      建议执意决战。瓦罗阵亡则红方士气崩溃。
+  consul_paullus:
+    display_name: 执政官保卢斯
+    description: |
+      谨慎的共同执政官。反对此战但服从职责。稳健的
+      防御型战士，稳定周围阵线。
+  tribune_marcus:
+    display_name: 军事保民官马尔库斯
+    description: |
+      年轻的军事保民官。称职的军官，维系着中军各列的
+      凝聚力。有能力但缺乏经验。
+  centurion_primus:
+    display_name: 首席百夫长
+    description: |
+      第一大队百夫长。满身伤疤的老兵，手持藤杖。
+      前线罗马纪律的脊梁。
+  roman_cavalry_commander:
+    display_name: 罗马骑兵指挥官
+    description: |
+      指挥罗马寡不敌众的骑兵。勇敢但速度不及
+      努米底亚人。将难以守住侧翼。
+  velites_captain:
+    display_name: 轻步兵队长
+    description: |
+      轻标枪散兵的指挥官。年轻、迅速，被派到主力
+      阵线前方骚扰和掩护。
+  triarii_veteran:
+    display_name: 后备枪兵老兵
+    description: |
+      久经沙场的后备线枪兵。后备枪兵单膝跪地直到
+      危机来临。重甲、长矛，最后的依靠。
 
 terrain_types:
   river:
+    display_name: 奥菲杜斯河
     description: |
-      奥菲杜斯河——不可通行，固定罗马右翼。
+      奥菲杜斯河。不可通行。
   hill:
+    display_name: 丘陵
     description: |
-      战场中央的缓坡——百人队长之丘。提供防御加成。
+      岩石高地。防御+2。阻挡骑兵冲锋。
+  scrubland:
+    display_name: 灌木丛
+    description: |
+      低矮灌木和干草。半掩体（防御+1）。
 
 narrative:
   title: 坎尼会战
@@ -79,6 +121,10 @@ narrative:
       text: |
         罗马后方扬起尘土——努米底亚骑兵封闭了口袋。
     - trigger: on_unit_killed
-      unit_id: u_b_varro_1
+      unit_id: u_b_consul_varro_1
       text: |
         瓦罗倒下了。罗马防线四分五裂。
+    - trigger: on_unit_killed
+      unit_id: u_a_hannibal_1
+      text: |
+        汉尼拔被击杀！迦太基军队动摇了。

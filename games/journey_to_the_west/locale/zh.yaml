@@ -72,16 +72,28 @@ unit_classes:
       的肉盾使用。
 
 terrain_types:
+  mountain:
+    display_name: 山岳
+    description: |
+      崇山峻岭。大多数单位无法通行，唯有孙悟空能翻山越岭。
+  forest:
+    display_name: 树林
+    description: |
+      密林。妖怪埋伏之所，提供掩护但减缓行军。
   river:
+    display_name: 河流
     description: |
       湍急河流，大多数单位无法通行。
   bridge:
+    display_name: 桥梁
     description: |
       独木桥，横跨河流的狭窄要道。
   swamp:
+    display_name: 毒沼
     description: |
       瘴气沼泽，行动迟缓，久留其中会中毒受伤。
   temple:
+    display_name: 雷音寺
     description: |
       雷音寺——取经的终点。佛光普照，踏入此地即可
       恢复生命。

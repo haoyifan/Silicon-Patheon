@@ -22,11 +22,21 @@ unit_classes:
     description: |
       第三队队长。身体变为钻石，几乎坚不可摧。
       终极肉盾。
+  ace:
+    display_name: 波特卡斯·D·艾斯
+    description: |
+      第二队队长。烧烧果实能力者——身体即是火焰本身。
+      强力远程攻击者，从远处降下火雨。
   vista:
     display_name: 比斯塔
     description: |
       第五队队长。花剑比斯塔，能与鹰眼比剑不落下风。
       快速而优雅。
+  jinbe:
+    display_name: 甚平
+    description: |
+      海侠甚平。鱼人空手道大师，能操纵水本身。
+      在水和冰地形上大幅增强。在水中如履平地。
   whitebeard_commander:
     display_name: 白胡子队长
     description: |
@@ -62,6 +72,16 @@ unit_classes:
     description: |
       世界最强剑豪。夜之黑刀，最强黑刀。以随意的
       优雅斩断一切。以七武海身份参战，非自愿。
+  garp:
+    display_name: 卡普中将
+    description: |
+      铁拳卡普，海军英雄。艾斯的祖父。没有恶魔果实——
+      只有纯粹的霸气和铁拳。海军最坚固的防御壁垒。
+  smoker:
+    display_name: 斯摩格上校
+    description: |
+      白猎人斯摩格。烟烟果实能力者，身体化为烟雾。
+      以十手和烟雾云进行远程战斗。
   marine_captain:
     display_name: 海军上校
     description: |
@@ -77,16 +97,28 @@ unit_classes:
       马林梵多战场上的军医。在混战中维持伤员战斗力。
 
 terrain_types:
-  building:
-    description: |
-      马林梵多广场建筑。在混战中提供坚实掩护。
-  ice:
-    description: |
-      青雉冻结的海湾。湿滑表面无掩护——但海贼可以走过去。
   platform:
+    display_name: 处刑台
     description: |
       波特卡斯·D·艾斯等待死刑的处刑台。
       到达此地块意味着自由。
+  building:
+    display_name: 建筑
+    description: |
+      马林梵多广场建筑。在混战中提供坚实掩护。
+  wall:
+    display_name: 城墙
+    description: |
+      马林梵多的坚固城墙。难以穿越但提供极佳的防御位置。
+  ice:
+    display_name: 冰面
+    description: |
+      青雉冻结的海湾。湿滑表面无掩护——但海贼可以走过去。
+  water:
+    display_name: 海水
+    description: |
+      马林梵多海湾的开阔水域。大多数单位难以在其中移动；
+      甚平在此如鱼得水。
 
 narrative:
   title: 马林梵多——顶上战争

@@ -36,6 +36,11 @@ unit_classes:
     description: |
       船医。一只吃了人人果实的驯鹿。能在战斗形态和
       治疗形态之间变换。不论敌友，他都会救治任何人。
+  robin:
+    display_name: 妮可·罗宾
+    description: |
+      他们前来拯救的考古学家。花花果实能力者，能从任何
+      表面生出肢体——远程擒拿和关节技，造成魔法伤害。
   franky:
     display_name: 弗兰奇
     description: |
@@ -63,6 +68,22 @@ unit_classes:
     description: |
       CP9特工，门门果实能力者。能在任何物体上创造门——
       墙壁、空气，甚至人体。防御型专家。
+  kalifa:
+    display_name: 卡莉法
+    description: |
+      泡泡果实能力者。她的肥皂泡吸取力量、消磨抵抗。
+      魔法伤害输出者，接触时削弱对手。
+  kumadori:
+    display_name: 熊猫人
+    description: |
+      歌舞伎风格的CP9特工。生命回归让他能控制身体的每一
+      个细胞——头发也能成为武器。戏剧化、耐久且出人意料
+      地坚韧。
+  fukurou:
+    display_name: 福克罗
+    description: |
+      猫头鹰般的CP9特工。剃的速度和指枪的穿透力打击力
+      十足。气压拳的远程攻击能绕过铠甲。
   spandam:
     display_name: 斯潘达姆
     description: |
@@ -75,14 +96,25 @@ unit_classes:
 
 terrain_types:
   bridge:
+    display_name: 桥梁
     description: |
       犹豫之桥。横跨无底瀑布通往正义之门的狭窄通道。
   water:
+    display_name: 水域
     description: |
       犹豫之桥下的无底瀑布。落入其中必死无疑。
   tower_wall:
+    display_name: 塔壁
     description: |
       司法之塔。世界政府堡垒不可逾越的石壁。
+  tower_floor:
+    display_name: 塔内
+    description: |
+      司法之塔内部。石柱提供一定掩护。
+  gates_of_justice:
+    display_name: 正义之门
+    description: |
+      正义之门。一旦罗宾通过此门，她将永远失去。
 
 narrative:
   title: 司法岛 — 营救罗宾

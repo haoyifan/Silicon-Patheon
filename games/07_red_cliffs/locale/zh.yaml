@@ -40,10 +40,55 @@ unit_classes:
       汉丞相。才略过人，雄才大略，魏国奠基人。下令将
       战船铁索连环以防北方士兵晕船。即将为这个工程决策
       付出代价。
+  lu_su:
+    display_name: 鲁肃
+    description: |
+      孙权麾下首席外交官，促成孙刘联盟。性格沉稳，
+      既是可靠的谋士也是合格的战士。联盟的粘合剂。
+  gan_ning:
+    display_name: 甘宁
+    description: |
+      海贼出身的吴国猛将。铠甲上系着铃铛，冲锋时
+      叮当作响。擅长夜袭和接舷战，作战勇猛无畏。
+  cheng_pu:
+    display_name: 程普
+    description: |
+      三朝元老——先后侍奉孙坚、孙策、孙权。
+      经验丰富的老将，铁矛在手沉稳如山。
   cao_guard:
     display_name: 虎豹骑
     description: |
       曹操的精锐亲卫。黄河以北最精锐的士兵。
+  xiahou_dun:
+    display_name: 夏侯惇
+    description: |
+      曹操最忠诚的将领，独眼将军。箭射入眼窝后
+      拔箭吞睛，悍勇无比，对主公誓死效忠。
+  zhang_liao:
+    display_name: 张辽
+    description: |
+      曾为吕布部将，后归曹操，成为其麾下最出色的将领。
+      日后以八百破十万威震合肥。战术天才，武艺超群。
+  cao_ren:
+    display_name: 曹仁
+    description: |
+      曹操族弟，擅长防御战。指挥北岸后卫部队。
+      盾阵森严，纪律严明。
+  xu_huang:
+    display_name: 徐晃
+    description: |
+      曹操帐下可靠的持斧将军。冷静、职业、致命。
+      守卫舰队北翼。
+  cai_mao:
+    display_name: 蔡瑁
+    description: |
+      荆州水军都督，训练曹操北方士兵水上作战。
+      后被曹操以通敌嫌疑处斩——但在本场景中仍统领舰队。
+  northern_archer:
+    display_name: 北方弓弩手
+    description: |
+      中原弩手。在铁索连环的稳固甲板上射击精准。
+      不会游泳。
   northern_infantry:
     display_name: 北方步兵
     description: |
@@ -51,11 +96,17 @@ unit_classes:
 
 terrain_types:
   river:
+    display_name: 长江
     description: |
       滔滔长江——不可通行。
   ship:
+    display_name: 铁索连环战船
     description: |
       曹操铁索连环的战船——北军可在其上行走。
+  wind:
+    display_name: 东风
+    description: |
+      借来的东风。站在此处的单位攻击力+2。
 
 narrative:
   title: 赤壁之战
@@ -75,10 +126,18 @@ narrative:
       text: |
         黄盖的先导火船撞上铁链。火焰跃向相邻的船只。
     - trigger: on_turn_start
+      turn: 8
+      text: |
+        黄盖的火船撞上铁链。火焰从甲板跃向甲板。长江燃烧了。
+    - trigger: on_turn_start
       turn: 12
       text: |
         江面亮如白昼。曹操大军在浓烟中哀嚎。
+    - trigger: on_turn_start
+      turn: 14
+      text: |
+        江面亮如白昼。曹操大军在浓烟中哀嚎惨叫。
     - trigger: on_unit_killed
       unit_id: u_r_cao_cao_1
       text: |
-        曹操阵亡。北方大军土崩瓦解。
+        曹操阵亡。北方大军土崩瓦解。三国鼎立由此开始。

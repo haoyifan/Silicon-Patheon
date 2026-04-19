@@ -76,6 +76,66 @@ unit_classes:
     description: |
       准军事民兵。属性普通，但便宜且众多——
       掩体周围的防线守军。
+  albuquerque:
+    display_name: 阿方索·德·阿尔布克尔克
+    description: |
+      葡萄牙"海上雄狮"。杰出的海军统帅和无情的征服者。
+      从旗舰上以剑和火炮指挥作战。VIP——阵亡则远征终止。
+  joao_de_nova:
+    display_name: 若昂·德·诺瓦
+    description: |
+      克拉克帆船"海之花"号的老练船长。经验丰富的
+      舰炮射手——舷侧齐射在远距离上毁灭性极强。
+  duarte_pacheco:
+    display_name: 杜阿尔特·帕切科
+    description: |
+      "印度的阿喀琉斯"。传奇军人船长，持长矛和
+      圆盾在先锋队中作战。
+  padre_miguel:
+    display_name: 米格尔神父
+    description: |
+      随舰队出征的耶稣会随军神父。祈祷可以治愈伤员。
+      施展神圣治疗魔法。
+  gaspar_almada:
+    display_name: 加斯帕尔·德·阿尔马达
+    description: |
+      葡萄牙炮兵。精通希腊火和燃烧武器——他的火罐
+      造成魔法伤害，无视护甲。
+  sultan_sayf:
+    display_name: 赛夫丁苏丹
+    description: |
+      霍尔木兹苏丹。从城堡内率亲卫作战。精明的外交家
+      被迫成为绝望的守城者。
+  ottoman_admiral:
+    display_name: 雷斯·阿米尔
+    description: |
+      被派来增援霍尔木兹的奥斯曼海军指挥官。指挥配备
+      精锐弓手和撞角的战斗桨帆船。
+  hormuz_sorcerer:
+    display_name: 拉希德大臣
+    description: |
+      宫廷术士兼大臣。使用炼金火焰和风系魔法击碎
+      船帆焚烧船体。完全无视护甲。
+  hormuz_corsair:
+    display_name: 海盗塔里克
+    description: |
+      快速的海盗船长。他的独桅帆船在大船间穿梭，
+      接舷纵火。海上近战刺客。
+  shore_gunner:
+    display_name: 炮手哈桑
+    description: |
+      岸防炮台指挥官。固定大炮以毁灭性的远程火力
+      轰击港湾航道中的船只。
+  palace_guard:
+    display_name: 法里德卫队长
+    description: |
+      精锐宫廷卫队长。重甲近战防御者，守卫城堡大门。
+      挥舞双手弯刀。
+  ottoman_janissary:
+    display_name: 禁卫军凯末尔
+    description: |
+      奥斯曼精锐步兵火枪手。火绳枪造成魔法伤害，
+      可在远距离穿透葡萄牙板甲。
   irgc_commando:
     display_name: 革命卫队突击兵
     description: |
@@ -83,22 +143,44 @@ unit_classes:
       的对手——属性类似蓝方特种部队。
 
 terrain_types:
+  reef:
+    display_name: 珊瑚礁
+    description: |
+      浅海珊瑚礁——不可通行。
+  fort_wall:
+    display_name: 要塞城墙
+    description: |
+      石砌防御工事墙壁——不可通行。
+  citadel:
+    display_name: 城堡
+    description: |
+      霍尔木兹城堡内部。防御+2。
+  harbor_chain:
+    display_name: 港口铁链
+    description: |
+      横跨港口入口的铁链。移动力消耗3。
   island:
+    display_name: 岛屿
     description: |
       岛屿——不可通行。
   beach:
+    display_name: 海滩
     description: |
       伊朗海岸沙滩——轻微防御加成。
   desert:
+    display_name: 沙漠
     description: |
       伊朗内陆沙漠。
   mountain:
+    display_name: 山脉
     description: |
       山脉——不可通行。
   uranium_bunker:
+    display_name: 铀浓缩掩体
     description: |
       强化浓缩铀掩体——极高防御加成。蓝方的目标地块。
   sea_mine:
+    display_name: 水雷
     description: |
       革命卫队布设的触发水雷——踩上去会受到伤害。
 
@@ -113,6 +195,16 @@ narrative:
     阿曼湾上空。革命卫队已在海峡布雷并部署岸防导弹。
     十回合到达掩体。
   events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        浓烟笼罩港湾。奥斯曼桨帆船在铁链后方机动，
+        葡萄牙舷炮轰击岸防阵地。城堡依然矗立。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        港口铁链被突破！葡萄牙克拉克帆船在猛烈炮火中
+        挤过狭窄航道。城堡大门近在眼前。
     - trigger: on_unit_killed
       unit_id: u_r_khamenei_1
       text: |

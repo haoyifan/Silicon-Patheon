@@ -8,6 +8,11 @@ description: |
   抵达南方缺口（7, 10）用巨石封堵。
 
 unit_classes:
+  eren:
+    display_name: 艾伦·耶格尔（进击的巨人）
+    description: |
+      艾伦的进击巨人形态。十五米的愤怒与硬化拳头。
+      VIP——他必须扛着巨石到达y=10的缺口，封堵罗塞之墙。
   mikasa:
     display_name: 三笠·阿克曼
     description: |
@@ -24,6 +29,16 @@ unit_classes:
     description: |
       人类最强战士。他的旋转斩击技能可以切穿任何巨人的
       后颈。速度10——远超战场上的所有人。
+  jean:
+    display_name: 让·基尔希坦
+    description: |
+      第104期的天生领袖。战术意识强，压力下冷静沉着。
+      全能型战士，直觉出色。
+  connie:
+    display_name: 柯尼·斯普林格
+    description: |
+      体型小巧速度快，擅长快速迂回。使用雷枪——对巨人
+      的爆炸武器，造成魔法伤害绕过硬化皮肤。
   survey_corps:
     display_name: 调查兵团士兵
     description: |
@@ -60,13 +75,54 @@ unit_classes:
     description: |
       行为不可预测的巨人，会奔跑、跳跃，无视普通猎物而
       瞄准战略目标。比普通巨人更快、更难预判。
+  titan_crusher:
+    display_name: 粉碎者（15米巨人）
+    description: |
+      巨大的十五米级巨人，抓住猎物后碾碎。缓慢但攻击力
+      极高。纯粹的蛮力。
+  titan_sprinter:
+    display_name: 冲刺者（奇行种）
+    description: |
+      四肢着地奔跑的奇行种。无视普通猎物，专攻战略
+      位置。速度快且不可预判。
+  titan_spitter:
+    display_name: 喷吐者（远程奇行种）
+    description: |
+      喷射灼热液体的畸形奇行种。远程魔法伤害——酸液
+      腐蚀立体机动装置和铠甲。
+  titan_ambusher:
+    display_name: 潜伏者（伏击巨人）
+    description: |
+      隐藏在建筑间伺机偷袭的狡猾奇行种。以其体型而言
+      速度和隐蔽性都出人意料。
+  titan_siege:
+    display_name: 破坏者（攻城巨人）
+    description: |
+      投掷瓦砾和碎石的十二米级巨人。远程物理攻击，
+      摧毁建筑、驱散防御者。缓慢但远程威胁大。
 
 terrain_types:
+  rooftop:
+    display_name: 屋顶
+    description: |
+      特罗斯特区屋顶。立体机动装置的锚点——调查兵团士兵
+      在屋顶间穿梭，斩击巨人后颈。
+  street:
+    display_name: 街道
+    description: |
+      特罗斯特区的开阔街道。无法抵挡巨人的攻击。
   building:
+    display_name: 建筑
     description: |
       特罗斯特区的建筑。调查兵团士兵将其作为立体机动装置
       的锚点，在屋顶之间穿梭以斩击巨人后颈。
+  rubble:
+    display_name: 废墟
+    description: |
+      巨人袭击后坍塌的建筑和碎石。困难地形，减缓移动
+      但提供掩护。
   titan_wall:
+    display_name: 巨人之墙
     description: |
       罗塞之墙——五十米高的硬化材质，百年来将巨人阻隔在外。
       除缺口外不可通行。

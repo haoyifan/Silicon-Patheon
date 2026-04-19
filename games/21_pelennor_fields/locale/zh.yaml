@@ -21,11 +21,26 @@ unit_classes:
     display_name: 莱戈拉斯
     description: |
       密林王子。箭无虚发。在世界燃烧时和金雳比赛杀敌数。
+  eowyn:
+    display_name: 伊欧玟
+    description: |
+      洛汗的盾女，化名德赫姆。"吾非男儿。"
+      迅速而致命，被无畏的勇气驱动。
+  eomer:
+    display_name: 伊欧默
+    description: |
+      洛汗骑兵统帅。重骑兵指挥官，冲锋时势不可挡。
+      他的长矛粉碎盾牌。
   gimli:
     display_name: 金雳
     description: |
-      格洛因之子，闪耀洞穴之主。他的战斧比他的吹嘘
-      声音更响。重甲，近战毁灭性。
+      格洛因之子。他的战斧比他的吹嘘声音更响。
+      重甲，近战毁灭性。
+  imrahil:
+    display_name: 印拉希尔亲王
+    description: |
+      多尔安罗斯亲王，刚铎最高贵的领主。统领天鹅骑士。
+      无与伦比的枪术和坚不可摧的盾墙。
   gondor_soldier:
     display_name: 刚铎士兵
     description: |
@@ -58,8 +73,43 @@ unit_classes:
   gothmog:
     display_name: 哥斯莫格
     description: |
-      帕兰诺平原上的兽人指挥官。丑陋、狡猾、残忍。
+      米那斯魔窟的兽人副官。丑陋、狡猾、残忍。
       以蛮力效率指挥围攻。
+  guritz:
+    display_name: 古里兹
+    description: |
+      黑门的奥洛格-海队长。比普通巨魔高出数倍，
+      身披魔多铁甲。指挥攻城武器。
+  suladan:
+    display_name: 苏拉丹
+    description: |
+      哈拉德人的蛇王。一位狡诈的将军，率领南方战士。
+      精通弯刀格斗。
+  mumakil:
+    display_name: 猛犸巨象
+    description: |
+      哈拉德人的战争猛犸象，由马胡德战首领德拉格骑乘。
+      行走的攻城塔——重装甲、极其缓慢、几乎不可能击倒。
+  zagduf:
+    display_name: 扎格杜夫
+    description: |
+      来自戈尔格罗斯的兽人攻城队长。操作攻城锤格隆德
+      和攻城塔。他到之处，城墙崩塌。
+  khamul:
+    display_name: 卡穆尔
+    description: |
+      第二戒灵，东方之影。不如巫王强大，
+      但迅速而无情。法术型——伤害由魔抗减免。
+  gorbag:
+    display_name: 戈尔巴格
+    description: |
+      米那斯魔窟的兽人队长。凶残的好斗者，率领兽人先锋。
+      在兽人中算快的，即使以兽人标准也算奸诈。
+  shagrat:
+    display_name: 沙格拉特
+    description: |
+      西力斯昂格尔的乌鲁克队长。皮厚甲重，
+      对索伦绝对忠诚。残暴的前线战士。
   orc:
     display_name: 兽人
     description: |
@@ -78,15 +128,28 @@ unit_classes:
 
 terrain_types:
   city_wall:
+    display_name: 城墙
     description: |
       米那斯提力斯的白色城墙。七层石墙，人类最伟大的
       堡垒。除城门外不可通行。
-  river:
-    description: |
-      安都因大河。深邃湍急，不可通行。
   ruins:
+    display_name: 废墟
     description: |
       帕兰诺上的废弃农舍和瞭望塔。残垣断壁提供些许掩护。
+  osgiliath_ruins:
+    display_name: 奥斯吉利亚斯废墟
+    description: |
+      安都因河畔破碎的奥斯吉利亚斯城。密集的废墟
+      提供强大的防御阵地。
+  marsh:
+    display_name: 沼泽
+    description: |
+      帕兰诺南部靠近哈隆德的泥沼地带。
+      泥泞和积水减缓一切行动。
+  river:
+    display_name: 河流
+    description: |
+      安都因大河。深邃湍急，不可通行。
 
 narrative:
   title: 帕兰诺平原之战
@@ -104,10 +167,10 @@ narrative:
         "格隆德！格隆德！格隆德！"攻城锤猛击米那斯提力斯
         城门。石头开裂。甘道夫骑着影疾奔来，法杖光芒闪耀。
     - trigger: on_turn_start
-      turn: 8
+      turn: 7
       text: |
-        南方传来号角声——深沉、浑厚，回荡在帕兰诺平原上。
-        "洛汗来了！"六名骑士翻过山丘，骑枪放平。
+        北方传来号角声——深沉、浑厚，回荡在帕兰诺平原上。
+        "洛汗来了！"伊欧默举起长矛。冲锋开始了。
     - trigger: on_unit_killed
       unit_id: u_r_witch_king_1
       text: |
@@ -118,3 +181,8 @@ narrative:
       text: |
         甘道夫的光芒熄灭。米那斯提力斯城门无人守卫。
         黑暗涌入城中。
+    - trigger: on_unit_killed
+      unit_id: u_r_mumakil_1
+      text: |
+        巨大的战象踉跄着，痛苦地嘶吼，然后轰然倒地。
+        大地在一英里内都在震颤。

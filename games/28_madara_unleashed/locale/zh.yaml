@@ -10,9 +10,24 @@ unit_classes:
   naruto:
     display_name: 漩涡鸣人
     description: |
-      仙人模式，与自然能量融合。他的螺旋丸变体和影分身
-      使他成为联军最强战力。只要他活着，封印术就能终结
-      这场战争。
+      九喇嘛查克拉模式，金色九尾查克拉包裹全身。大玉螺旋丸
+      变体和尾兽强化攻击。联军最强战力，封印术的关键。
+  sasuke:
+    display_name: 宇智波佐助
+    description: |
+      永恒万花筒写轮眼持有者。天照能烧穿一切——不可闪避的
+      黑色火焰造成魔法伤害。须佐能乎提供防御支援。
+  kakashi:
+    display_name: 旗木卡卡西
+    description: |
+      拷贝忍者。神威将目标传送至异空间。写轮眼赋予他无与
+      伦比的战术洞察力和上千种拷贝忍术。
+  guy:
+    display_name: 迈特·凯
+    description: |
+      碧色猛兽。体术大师，能开启八门遁甲。第八门模式下
+      他是最强的物理战斗者——但代价是生命。超高攻击力的
+      脆皮近战。
   gaara:
     display_name: 我爱罗
     description: |
@@ -24,10 +39,15 @@ unit_classes:
       第三代土影。他的尘遁能在分子层面瓦解一切——战场上
       射程最远的忍术。年迈而脆弱，但毁灭性极强。
   tsunade:
-    display_name: 纲手
+    display_name: 千手纲手
     description: |
-      第五代火影。她的创造再生术和医疗忍术让联军持续战斗。
-      同时还能一拳打穿山脉。
+      第五代火影。创造再生术和医疗忍术让联军持续战斗。
+      同时还能一拳打穿山脉。联军的治疗者。
+  minato:
+    display_name: 波风水门
+    description: |
+      第四代火影，通过秽土转生复活。黄色闪光——飞雷神之术
+      使他成为忍者史上最快的忍者。飞雷神斩击无视位置限制。
   raikage:
     display_name: 雷影
     description: |
@@ -46,8 +66,29 @@ unit_classes:
   madara:
     display_name: 宇智波斑
     description: |
-      传奇宇智波。轮回眼、须佐能乎、陨石召唤、无限月读——
-      史上最强忍者。刻意设计为压倒性强大。这是一场BOSS战。
+      传奇宇智波，轮回眼再临。须佐能乎、陨石召唤。VIP超级
+      坦克——极高血量和防御，但对魔法伤害（忍术）较为脆弱。
+      魔抗明显低于物理防御。
+  obito:
+    display_name: 宇智波带土
+    description: |
+      战争幕后的面具人。神威使他能虚化——通过高速度实现
+      高闪避。木遁和写轮眼幻术在远程造成魔法伤害。
+  tentails_head:
+    display_name: 十尾本体
+    description: |
+      十尾兽的主体。巨大且毁灭性——尾兽玉是远程魔法
+      攻击，摧毁一切。缓慢但致命。
+  tentails_arm:
+    display_name: 十尾分裂体·臂
+    description: |
+      十尾的分裂分身。巨大的抓取肢体，如拍苍蝇般拍飞
+      忍者。纯粹的物理毁灭力。
+  tentails_maw:
+    display_name: 十尾分裂体·口
+    description: |
+      形如巨口的十尾分裂分身。吞噬查克拉与血肉。其噬咬
+      造成魔法伤害，同时吸取生命力。
   white_zetsu:
     display_name: 白绝分身
     description: |
@@ -66,9 +107,22 @@ unit_classes:
 
 terrain_types:
   rock:
+    display_name: 岩石地形
     description: |
-      被先前忍术冲击掀起的嶙峋岩层。难以穿越但能提供
-      极好的掩护。
+      被土遁忍术掀起的巨大岩板。完全不可通行——
+      利用它们作为掩护和引导敌人的障碍。
+  crater:
+    display_name: 尾兽弹坑
+    description: |
+      尾兽玉轰炸留下的弹坑。凹陷提供少许掩护但减缓移动。
+  scorched:
+    display_name: 焦土
+    description: |
+      被天照或尾兽查克拉烧焦的地面。崎岖不平，无防御价值。
+  forest:
+    display_name: 树林
+    description: |
+      战场边缘幸存的树木。减缓移动但提供隐蔽和防御优势。
 
 narrative:
   title: 宇智波斑的暴走
@@ -93,5 +147,11 @@ narrative:
     - trigger: on_unit_killed
       unit_id: u_b_naruto_1
       text: |
-        鸣人倒下了。仙人模式的查克拉从他的眼中消散。没有了
-        九尾人柱力，封印术无法完成。战争输了。
+        鸣人倒下了。金色查克拉消散。没有了九尾人柱力，
+        封印术无法完成。战争输了。
+    - trigger: on_unit_killed
+      unit_id: u_r_madara_1
+      text: |
+        斑踉跄后退，轮回眼闪烁不定。传奇宇智波第一次
+        露出了惊讶的表情。"有意思……你们竟然真的
+        超越了我。"

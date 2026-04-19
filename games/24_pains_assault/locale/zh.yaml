@@ -25,7 +25,28 @@ unit_classes:
     display_name: 奈良鹿丸
     description: |
       智商超过200的影子战术师。影子技术能在远处
-      麻痹敌人。懒得拼命，聪明到不会输。
+      麻痹敌人。木叶防御的大脑。
+  hinata:
+    display_name: 日向雏田
+    description: |
+      白眼使用者，柔拳使用者。毫不犹豫地挡在佩恩和
+      鸣人之间。360度视野和封穴击使她在近战中极为危险。
+  sakura:
+    display_name: 春野樱
+    description: |
+      纲手的弟子。医疗忍者，拥有查克拉增强的拳头，
+      能砸裂地面。治疗者兼近战猛将。
+  konohamaru:
+    display_name: 猿飞木叶丸
+    description: |
+      三代目火影的孙子。虽然还是下忍，却凭借惊人的
+      螺旋丸击倒了佩恩的一具躯体。勇气超越忍级。
+  naruto:
+    display_name: 漩涡鸣人
+    description: |
+      九尾人柱力，仙人模式。自然能量将他的速度、力量
+      和感知提升到佩恩六道从未面对过的程度。螺旋手里剑
+      在远程毁灭一切。核心人物——他倒下，木叶就完了。
   konoha_chunin:
     display_name: 木叶中忍
     description: |
@@ -74,9 +95,20 @@ unit_classes:
 
 terrain_types:
   building:
+    display_name: 建筑
     description: |
       木叶村庄建筑。提供优秀掩护但在废墟中行动缓慢。
+  crater:
+    display_name: 弹坑
+    description: |
+      神罗天征的冲击弹坑。毫无掩护的开阔地带。
+      毁灭的中心。
+  monument:
+    display_name: 火影岩
+    description: |
+      雕刻着历代火影面孔的崖壁。不可通行地形。
   village_wall:
+    display_name: 村墙
     description: |
       围绕木叶隐村的巨大围墙。不可通行。
 
@@ -96,13 +128,23 @@ narrative:
         神罗天征！天道释放巨大的引力脉冲。建筑崩塌。
         村庄中心被夷为平地。
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
-        一只巨大的蛤蟆砸落在村庄大门口。站在它头上，
-        双眼闪耀自然能量的金色光芒——漩涡鸣人以仙人
-        模式到来！"我不会让你摧毁我的村庄！"
+        雏田挡在佩恩和倒下的鸣人之间。"我不怕为了保护你
+        而死，因为……我爱你。"
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        战斗进入高潮。鸣人的仙人模式影分身在废墟中
+        与残余的佩恩之道展开交战。
     - trigger: on_unit_killed
       unit_id: u_r_deva_1
       text: |
-        天道崩碎。但在村庄远处的树林中，长门咳出了血。
-        真正的佩恩仍然在那里。
+        天道崩碎。在村庄远处的树林中，长门咳出了血。
+        真正的佩恩仍然藏在那里，但他最强的傀儡已经被打碎。
+    - trigger: on_unit_killed
+      unit_id: u_b_naruto_1
+      text: |
+        鸣人倒下。九尾在封印中骚动。
+        没有人柱力，木叶再无力量阻止佩恩
+        将村庄夷为平地。

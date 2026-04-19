@@ -11,8 +11,9 @@ unit_classes:
   luke:
     display_name: 卢克·天行者
     description: |
-      游侠中队长。飞行员、绝地学徒、亚文之英雄。
-      驾驶雪地飞行器，用光剑和热能雷管击倒AT-AT。
+      游侠中队长。绝地学徒，亚文之英雄。驾驶雪地飞行器
+      冲入步行机群。当飞行器坠毁后，他独自用光剑和
+      热能雷管挑战AT-AT。
   han:
     display_name: 韩·索罗
     description: |
@@ -21,8 +22,24 @@ unit_classes:
   leia:
     display_name: 莱娅公主
     description: |
-      反叛基地指挥官。从指挥中心协调撤离行动。
-      她倒下，撤离就失败。
+      反叛基地指挥官。从指挥中心协调撤离行动，
+      拒绝在最后一艘运输船离开前撤退。她倒下，撤离就失败。
+  chewie:
+    display_name: 楚巴卡
+    description: |
+      两百岁的伍基人战士。身高过人，能承受致人死命的打击，
+      弩枪命中如同炮击。韩·索罗的副驾驶和终身搭档。
+  wedge:
+    display_name: 韦奇·安蒂列斯
+    description: |
+      游侠三号。仅次于卢克的反叛军最佳飞行员。
+      他的雪地飞行器用牵引缆拉倒了AT-AT——
+      霍斯第一台倒下的步行机。在绝境中冷静沉着。
+  dak:
+    display_name: 达克·拉尔特
+    description: |
+      卢克的炮手和后座。年轻而热血——"我觉得我可以
+      单挑整个帝国。"他的热情在冰冷的战壕中振奋士气。
   snowspeeder:
     display_name: 雪地飞行器
     description: |
@@ -47,11 +64,44 @@ unit_classes:
     description: |
       改装为战地分检用途的2-1B外科机器人。脆弱
       但不可或缺——让伤兵继续战斗。
+  vader:
+    display_name: 达斯·维德
+    description: |
+      西斯黑暗尊主。他亲自来到霍斯——不是为了反叛军，
+      而是为了卢克。原力从他身上如黑色太阳般辐射。
+      光剑和原力念动术使他在任何距离都具有毁灭性。
   veers:
     display_name: 维尔斯将军
     description: |
       帝国将军，从先导AT-AT中指挥地面进攻。有条不紊、
-      冷酷、高效。目标：护盾发生器。
+      冷酷无情。目标是护盾发生器，没有什么能阻止他的推进。
+      驾驶AT-AT——重装甲、缓慢、毁灭性。
+  piett:
+    display_name: 皮耶特上将
+    description: |
+      在维德对奥泽尔上将不满后新晋升的军官。从轨道上
+      指挥火力支援，以紧张的精确度引导涡轮激光打击。
+      远程专家。
+  blizzard_scout:
+    display_name: 列诺克斯上尉
+    description: |
+      AT-ST侦察步行机指挥官。以双足步行机绕过反叛军
+      战壕侧翼，速度足以利用防线缺口，但装甲远不如AT-AT。
+  blizzard_two:
+    display_name: 马宽德少校
+    description: |
+      第二台AT-AT驾驶员。他的步行机从右翼推进，
+      以压制火力将反叛军钉在战壕中。重装甲，毁灭性炮火。
+  snowtrooper_sgt:
+    display_name: 艾迪安中士
+    description: |
+      雪地冲锋队小队长。率领步兵在步行机后方推进，
+      清扫战壕并巩固AT-AT经过的阵地。
+  snowtrooper_heavy:
+    display_name: 德拉津下士
+    description: |
+      重武器雪地冲锋队。携带E-Web连射爆能枪，
+      能撕裂战壕工事。架设缓慢但就位后毁灭性惊人。
   at_at:
     display_name: AT-AT步行机
     description: |
@@ -70,10 +120,27 @@ unit_classes:
       专为极寒作战装备。
 
 terrain_types:
+  trench:
+    display_name: 战壕
+    description: |
+      反叛军工程兵挖掘的雪地战壕。良好的防御阵地，
+      可有效抵御爆能枪火和步行机炮火。反叛军坚守的最佳选择。
+  ice_plain:
+    display_name: 冰原
+    description: |
+      荒芜的冰冻荒原。毫无掩体——暴露在旷野中的任何人
+      都完全暴露在火力下。湿滑的地面降低防御能力。
+  echo_base:
+    display_name: 回声基地
+    description: |
+      凿入冰层的回声基地内部走廊。狭窄的通道提供
+      一定保护，但墙壁在轰炸下正在崩塌。
   snow:
+    display_name: 雪原
     description: |
       霍斯无尽的白色雪原。没有掩体，没有温暖。
   ice:
+    display_name: 冰面
     description: |
       湿滑的冰面。难以保持阵地——防御减值。
 
@@ -108,3 +175,9 @@ narrative:
       text: |
         指挥中心被直接命中。莱娅公主被埋在废墟中。
         撤离行动崩溃。
+    - trigger: on_unit_killed
+      unit_id: u_r_veers_1
+      text: |
+        先导AT-AT剧烈震动，向一侧倾斜。维尔斯将军的
+        驾驶舱在步行机坠冰时被压碎。
+        帝国推进在失去指挥官后陷入迟滞。

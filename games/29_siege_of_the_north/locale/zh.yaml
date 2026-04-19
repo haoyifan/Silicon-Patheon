@@ -28,6 +28,16 @@ unit_classes:
     description: |
       北方水族御水术宗师。满月之下，他的御术威力惊人——
       冰矛和水鞭能击碎火烈国的装甲。
+  hahn:
+    display_name: 韩
+    description: |
+      北方水族战士，月亮公主的未婚夫。自大但勇敢。率领
+      突击队袭击火烈国战舰。快速莽撞——冲锋猛烈但不耐久。
+  sangok:
+    display_name: 桑戈克
+    description: |
+      北方水族年轻战士。索卡最可靠的盟友。以骨盾和战棍
+      坚守冰墙。坚韧而迟缓——是一堵墙，不是一把刀。
   water_tribe_warrior:
     display_name: 水族战士
     description: |
@@ -48,6 +58,11 @@ unit_classes:
     description: |
       被放逐的王子，在荣誉与执念之间挣扎。精通御火术，
       擅长使用双刀。他的立场……很复杂。
+  iroh:
+    display_name: 艾洛将军
+    description: |
+      西方之龙。退役将军，祖科的叔叔。与火烈国并肩作战
+      但反对赵杀死月灵的计划。战场上最强的御火术师。
   fire_nation_soldier:
     display_name: 火烈国士兵
     description: |
@@ -71,12 +86,31 @@ unit_classes:
 
 terrain_types:
   ice_wall:
+    display_name: 冰墙
     description: |
       世代御水术师历经数百年加固的巨大冰墙。除城门外
       不可逾越。
   canal:
+    display_name: 水道
     description: |
       纵横交错于堡垒前方的冰冷极地水道。涉水通过十分缓慢。
+  spirit_oasis:
+    display_name: 灵泉绿洲
+    description: |
+      月灵和海洋之灵化为锦鲤游弋的圣池。若火烈国到达
+      此地，月灵将死。
+  ice_tower:
+    display_name: 冰塔
+    description: |
+      御水术师建造的城门两侧哨塔。+4防御。
+  snow_barricade:
+    display_name: 雪墙工事
+    description: |
+      进攻区域中压实的雪墙防御工事。+2防御，消耗2移动力。
+  ice_rampart:
+    display_name: 冰壁
+    description: |
+      主墙后方的御水术加固内壁。+3防御。
 
 narrative:
   title: 北方水族围攻战

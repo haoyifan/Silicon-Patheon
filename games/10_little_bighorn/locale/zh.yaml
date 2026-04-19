@@ -43,6 +43,64 @@ unit_classes:
       北夏延族战士，战争彩绘上身。快速、凶猛，
       八年前沃希塔屠杀的仇恨仍在燃烧——那正是
       卡斯特干的。
+  reno:
+    display_name: 里诺少校
+    description: |
+      第一个向营地发起攻击的营指挥官。冲锋在猛烈
+      火力下瓦解，他撤退到悬崖上。沉稳但已动摇。
+  benteen:
+    display_name: 本廷上尉
+    description: |
+      指挥预备营的资深上尉。收到卡斯特最后的信——
+      "快来，带弹药"——但为时已晚。临危不乱。
+  keogh:
+    display_name: 基奥上尉
+    description: |
+      爱尔兰裔军官，I连连长。他的战马科曼奇是
+      山脊上发现的唯一幸存者。持军刀和左轮作战。
+  calhoun:
+    display_name: 卡尔霍恩中尉
+    description: |
+      卡斯特的妹夫，指挥L连守南面散兵线。
+      他的阵地在盖尔的冲锋下最先崩溃。
+  cooke:
+    display_name: 库克中尉
+    description: |
+      卡斯特的副官，以一把夸张的络腮胡闻名。
+      携卡斯特最后的信去找本廷。夏普斯卡宾枪神射手。
+  gall:
+    display_name: 盖尔
+    description: |
+      亨克帕帕战争酋长。率先发起冲锋击溃里诺营，
+      随后北上碾碎卡斯特的侧翼。他的两个妻子
+      在开场攻击中被杀，怒不可遏。
+  rain_in_the_face:
+    display_name: 雨打脸
+    description: |
+      亨克帕帕拉科塔战士，与卡斯特兄弟有私仇。
+      快速、凶猛，复仇心切。
+  two_moons:
+    display_name: 双月
+    description: |
+      北夏延族酋长。率领夏延战士从西面完成包围。
+      战争彩绘满身，八年前沃希塔屠杀的仇恨仍在
+      燃烧——而那正是卡斯特所为。
+  wooden_leg:
+    display_name: 木腿
+    description: |
+      年轻的北夏延族战士。最先冲上卡斯特山脊的
+      人之一。手持长矛与弓。
+  white_bull:
+    display_name: 白牛
+    description: |
+      明尼康朱拉科塔战士，坐牛的侄子。自称在
+      肉搏中亲手杀死了卡斯特。精通骑射。
+  low_dog:
+    display_name: 矮狗
+    description: |
+      奥格拉拉拉科塔族战争首领。与疯马并肩从北翼
+      发起侧翼攻击。曾说骑兵冲锋来时"像受惊的
+      野牛群"。
   native_archer:
     display_name: 原住民弓手
     description: |
@@ -51,17 +109,29 @@ unit_classes:
 
 terrain_types:
   river:
+    display_name: 河流
     description: |
       小大角河——不可通行。
   ford:
+    display_name: 浅滩
     description: |
       浅滩渡口。
-  hill:
+  bluff:
+    display_name: 断崖
     description: |
-      起伏丘陵——提供防御加成。
+      俯瞰山谷的陡峭悬崖。防御+3，移动力消耗2。
   ridge:
+    display_name: 山脊
     description: |
       最后抵抗之丘——堡垒级高防御地形。
+  ravine:
+    display_name: 沟壑
+    description: |
+      穿过丘陵的深沟。防御+2，移动力消耗2。绝佳伏击地形。
+  hill:
+    display_name: 丘陵
+    description: |
+      起伏丘陵——提供防御加成。
 
 narrative:
   title: 小大角河之战

@@ -58,26 +58,62 @@ unit_classes:
       战斗型强兽人队长，在艾辛格的地坑中培育。
       巨大、凶残、目标明确。他带着巨弓和弯刀。
       命令很清楚——把半身人带给萨鲁曼。活的，完好的。
-  uruk_hai:
-    display_name: 强兽人
+  ugluk:
+    display_name: 乌格鲁克
     description: |
-      萨鲁曼的战斗型强兽人——比普通兽人更大、更强、
-      更聪明。白天奔跑不知疲倦。宽铁盾挡住刀剑。
-      他们不崩溃。他们不逃跑。
+      强兽人队长，卢茨的副手。坚韧、残暴，聪明到足以
+      管住普通兽人。
+  mauhur:
+    display_name: 毛胡尔
+    description: |
+      强兽人追踪者和侧翼奇兵。率领一支斥候小队
+      切断森林中的逃跑路线。
+  lugdush:
+    display_name: 卢格杜什
+    description: |
+      强兽人狂战士。脸上涂着萨鲁曼的白手印。
+      以不顾一切的狂怒冲锋。
+  grishnakh:
+    display_name: 格里什纳赫
+    description: |
+      依附于强兽人部队的魔多兽人。比强兽人矮小但更狡猾。
+      为索伦效力，不为萨鲁曼。
+  uruk_archer:
+    display_name: 强兽人弩手
+    description: |
+      手持重型弩的强兽人。铁弩箭在射程内贯穿铠甲。
+  uruk_shield:
+    display_name: 强兽人盾兵
+    description: |
+      手持宽铁盾的强兽人。组成突击前线，极难击倒。
 
 terrain_types:
   forest:
+    display_name: 森林
     description: |
       西岸的古老橡树和榆树。树冠遮蔽冬日阳光。
       适合伏击——或逃跑。
   ruins:
+    display_name: 废墟
     description: |
       阿蒙汉山上的废墟石座和雕刻石柱，努门诺尔人在
       刚铎辉煌时代所建，如今破败蔓草丛生。
-  river:
+  hilltop:
+    display_name: 山顶
     description: |
-      安都因大河，寒冷湍急。除了系着船只的浅滩外
-      无法通过。
+      视见之丘。+2防御，移动消耗2。
+  pillars:
+    display_name: 倒塌石柱
+    description: |
+      倒塌的努门诺尔石柱，半埋在苔藓中。+2防御，移动消耗2。
+  rocks:
+    display_name: 碎石地
+    description: |
+      碎石和岩屑。+1防御，移动消耗2。
+  river:
+    display_name: 安都因河
+    description: |
+      安都因大河，寒冷湍急。无法通行。
 
 narrative:
   title: 阿蒙汉——远征队的分裂

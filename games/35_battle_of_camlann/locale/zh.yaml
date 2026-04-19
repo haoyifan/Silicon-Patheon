@@ -38,6 +38,11 @@ unit_classes:
     description: |
       时代最伟大的巫师。远距离施法打击，治愈伤者，
       他的智慧指引国王。
+  camelot_archer:
+    display_name: 卡美洛弓箭手
+    description: |
+      在城堡城垛上训练的长弓手。箭矢以致命精准度飞越
+      战场，但近战中十分脆弱。
   round_table_knight:
     display_name: 圆桌骑士
     description: |
@@ -58,8 +63,13 @@ unit_classes:
   agravaine:
     display_name: 阿格拉文爵士
     description: |
-      高文之弟，叛变的骑士。剑术依旧锋利，
-      但荣誉早已消逝。
+      高文之弟，叛变的骑士。快马冲锋，迅猛出击，
+      在敌人结阵前从侧翼突破。荣誉早已消逝，但枪矛依旧锋利。
+  saxon_skirmisher:
+    display_name: 撒克逊散兵
+    description: |
+      来自海外的异教战士，为掠夺而与莫德雷德结盟。
+      先投掷标枪，再以战斧近身收割，远近皆可骚扰敌军。
   saxon_warrior:
     display_name: 撒克逊战士
     description: |
@@ -97,6 +107,16 @@ terrain_types:
     description: |
       莫德雷德的战争营地，飘扬着叛乱的黑旗。
       篡位者军队的堡垒指挥所。
+  muddy_ground:
+    display_name: 泥泞地
+    description: |
+      被雨水浸泡、被铁蹄和战靴搅烂的泥地。脚下湿滑，
+      毫无遮蔽。
+  fallen_banner:
+    display_name: 倒落的旗帜
+    description: |
+      破烂的旗帜覆盖在断裂的兵器和阵亡者之上。在满目
+      疮痍中提供聊胜于无的掩护。
 
 narrative:
   title: 卡姆兰之战

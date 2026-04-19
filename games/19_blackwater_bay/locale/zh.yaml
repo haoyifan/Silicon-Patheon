@@ -16,7 +16,33 @@ unit_classes:
     display_name: 达沃斯·海沃斯
     description: |
       洋葱骑士。走私者变国王之手。对史坦尼斯忠诚到
-      超出理性。率领舰队驶入海湾。
+      超出理性。率领舰队驶入海湾。快速灵活——是水手，不是士兵。
+  salladhor_saan:
+    display_name: 萨拉赫·萨恩
+    description: |
+      狭海之王——海盗、雇佣水手，达沃斯的老朋友。
+      他的战船从海湾提供远程火力支援。
+      如果战局无望，他会逃跑。
+  melisandre:
+    display_name: 梅丽珊卓
+    description: |
+      红袍女巫。拉赫洛女祭司。她的火焰能预见未来
+      却守不住一堵墙。脆弱但危险——魔法攻击无视护甲。
+  ser_guyard:
+    display_name: 圭亚德·莫里根爵士
+    description: |
+      史坦尼斯彩虹护卫的骑士。手持利刃、高举雄鹿旗帜
+      率领海滩突击。
+  ser_rolland:
+    display_name: 罗兰·风暴爵士
+    description: |
+      夜歌城私生子。史坦尼斯最凶猛的骑士之一——
+      在海滩上以不顾一切的狂怒作战。
+  ser_parmen:
+    display_name: 帕曼·克莱恩爵士
+    description: |
+      史坦尼斯彩虹护卫的另一位骑士。沉稳、有纪律，
+      坚守他负责的防线。
   baratheon_infantry:
     display_name: 拜拉席恩步兵
     description: |
@@ -43,11 +69,31 @@ unit_classes:
     description: |
       小恶魔。半个人，两倍的智慧。代理国王之手，野火
       陷阱的设计者。在猎狗崩溃时亲自率领突击队穿过地道。
-  clegane:
+  the_hound:
     display_name: 桑铎·克里冈
     description: |
-      猎狗。恐惧火焰，剑术致命。城墙上最危险的人——
-      直到野火摧毁了他的意志。
+      猎狗。恐惧火焰，剑术致命。城墙上最危险的人。
+      巨大的生命值、巨大的攻击力——泥门前的单人毁灭机器。
+  podrick:
+    display_name: 波德瑞克·佩恩
+    description: |
+      提利昂的侍从。年轻、忠诚、被低估。在突击波之间
+      为附近的盟友提供治疗支援。
+  cersei:
+    display_name: 瑟曦·兰尼斯特
+    description: |
+      摄政王后。不是战士，但她的存在坚定了守军的意志。
+      脆弱——让她待在城墙后面。
+  joffrey:
+    display_name: 乔佛里·拜拉席恩
+    description: |
+      少年国王。残忍、懦弱，在战斗中毫无用处。但他头戴
+      王冠——如果他死了，政治后果将是灾难性的。
+  tywin:
+    display_name: 泰温·兰尼斯特
+    description: |
+      老狮子。凯岩城之主。第八回合率领精锐骑兵从国王大道
+      赶到。他的旗帜出现时，战局逆转。
   bronn:
     display_name: 波隆
     description: |
@@ -69,13 +115,16 @@ unit_classes:
 
 terrain_types:
   water:
+    display_name: 水域
     description: |
       黑水湾的海水。深不可测，步行无法通过。
   wildfire:
+    display_name: 野火
     description: |
       野火——炼金术士行会最可怕的武器。烧绿色、烧高温、
       烧一切。站在上面的单位每回合受到巨大伤害。
   city_wall:
+    display_name: 城墙
     description: |
       君临城城墙。百年历史，厚重石料。
 
@@ -94,17 +143,22 @@ narrative:
         野火。海湾在绿色火焰中爆发。船只粉碎。
         人在燃烧。但史坦尼斯继续推进——登陆战开始了。
     - trigger: on_turn_start
-      turn: 8
+      turn: 5
       text: |
         猎狗扔下了剑。"去他的御林铁卫。去他的这座城。
         去他的国王。"提利昂必须亲自率领突击。
     - trigger: on_turn_start
-      turn: 12
+      turn: 8
       text: |
-        国王大道传来号角。泰温·兰尼斯特率领提利尔
-        先锋骑至。四名精锐骑士撞入史坦尼斯侧翼。
+        国王大道传来号角。泰温·兰尼斯特率领精锐骑兵
+        赶到。老狮子驾临了。
     - trigger: on_unit_killed
       unit_id: u_r_tyrion_1
       text: |
         提利昂倒下，脸上被砍了一刀。没有他，
         君临城的城墙守不住。
+    - trigger: on_unit_killed
+      unit_id: u_b_stannis_1
+      text: |
+        史坦尼斯在海滩上被斩杀。进攻动摇了，
+        拜拉席恩大军开始溃散。
