@@ -481,20 +481,13 @@ class LobbyScreen(Screen):
                     style="bold reverse" if is_sel else None,
                 )
 
-        total = sum(e.get("games", 0) for e in lb) // 2 if lb else 0
-        # Show the current selection's 1-indexed position inside the
-        # full list. Range indicators (`[2–6/8]`) confused users into
-        # thinking the cursor might be outside the listed range —
-        # a single position is unambiguous: the highlighted row is
-        # always at this position.
-        position_hint = ""
-        if lb:
-            position_hint = f"  · #{self._ranking_selected + 1}/{len(lb)}"
-        subtitle = Text(
-            f"{total} {t('leaderboard.total_games', lc)}{position_hint}",
-            style="dim",
-            justify="center",
+        # Subtitle is just "position / total_models" — one clear
+        # number for where the cursor is. "Total matches" moved to
+        # the info card on the right so this line stays compact.
+        subtitle_text = (
+            f"{self._ranking_selected + 1} / {len(lb)}" if lb else ""
         )
+        subtitle = Text(subtitle_text, style="dim", justify="center")
         hint_text = (
             t("leaderboard.hint_active", lc)
             if focused
@@ -512,7 +505,11 @@ class LobbyScreen(Screen):
 
     def _render_info_card(self, lc: str) -> RenderableType:
         """About / feedback / community links, plus the ranking
-        disclaimer. Sits to the right of the scoreboard."""
+        disclaimer and the total-matches counter. Sits to the right
+        of the scoreboard."""
+        lb = self.app.state.last_leaderboard
+        total_matches = sum(e.get("games", 0) for e in lb) // 2 if lb else 0
+
         lines: list[Text] = []
 
         disclaimer = Text(
@@ -520,6 +517,14 @@ class LobbyScreen(Screen):
             style="dim italic",
         )
         lines.append(disclaimer)
+        lines.append(Text(""))
+
+        matches_line = Text()
+        matches_line.append(
+            f"{total_matches} {t('leaderboard.total_games', lc)}",
+            style="bold",
+        )
+        lines.append(matches_line)
         lines.append(Text(""))
 
         def kv(label_key: str, value: str, value_style: str = "cyan") -> Text:
