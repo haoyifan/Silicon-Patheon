@@ -14,27 +14,91 @@ description: |
   Inspired by the Loot Train Attack from Game of Thrones.
 
 board:
-  width: 12
-  height: 10
+  width: 18
+  height: 12
   terrain:
-    # Hillside to the north -- Dothraki charge from here
+    # ── Northern hills (y=0-2) ── Dothraki staging ground ──
+    # Ridge line along y=0 — full hilltop cover
     - {x: 0, y: 0, type: hill}
     - {x: 1, y: 0, type: hill}
     - {x: 2, y: 0, type: hill}
     - {x: 3, y: 0, type: hill}
     - {x: 4, y: 0, type: hill}
     - {x: 5, y: 0, type: hill}
-    # Scattered brush -- cover in the open field
-    - {x: 2, y: 3, type: brush}
-    - {x: 5, y: 2, type: brush}
+    - {x: 6, y: 0, type: hill}
+    - {x: 7, y: 0, type: hill}
+    - {x: 8, y: 0, type: hill}
+    - {x: 9, y: 0, type: hill}
+    - {x: 10, y: 0, type: hill}
+    - {x: 11, y: 0, type: hill}
+    - {x: 12, y: 0, type: hill}
+    - {x: 13, y: 0, type: hill}
+    - {x: 14, y: 0, type: hill}
+    - {x: 15, y: 0, type: hill}
+    - {x: 16, y: 0, type: hill}
+    - {x: 17, y: 0, type: hill}
+    # Hill slopes at y=1 — partial cover as riders descend
+    - {x: 0, y: 1, type: hill}
+    - {x: 1, y: 1, type: hill}
+    - {x: 2, y: 1, type: hill}
+    - {x: 5, y: 1, type: hill}
+    - {x: 6, y: 1, type: hill}
+    - {x: 9, y: 1, type: hill}
+    - {x: 10, y: 1, type: hill}
+    - {x: 13, y: 1, type: hill}
+    - {x: 14, y: 1, type: hill}
+    - {x: 17, y: 1, type: hill}
+    # Scattered hill outcrops at y=2
+    - {x: 1, y: 2, type: hill}
+    - {x: 6, y: 2, type: hill}
+    - {x: 13, y: 2, type: hill}
+    # Scorpion emplacement — elevated western position Bronn must reach
+    - {x: 0, y: 2, type: scorpion_position}
+
+    # ── Open field / charge zone (y=3-4) ── brush for partial cover ──
+    - {x: 3, y: 3, type: brush}
+    - {x: 7, y: 3, type: brush}
     - {x: 8, y: 3, type: brush}
-    - {x: 10, y: 2, type: brush}
-    # Scorched ground from dragonfire
-    - {x: 4, y: 4, type: scorched}
-    - {x: 5, y: 4, type: scorched}
-    - {x: 6, y: 4, type: scorched}
-    - {x: 7, y: 4, type: scorched}
-    # The Roseroad runs east-west
+    - {x: 11, y: 4, type: brush}
+    - {x: 15, y: 3, type: brush}
+    - {x: 4, y: 4, type: brush}
+    - {x: 12, y: 3, type: brush}
+
+    # ── Scorched ground (y=5) ── dragonfire strafing run ──
+    - {x: 3, y: 5, type: scorched}
+    - {x: 4, y: 5, type: scorched}
+    - {x: 5, y: 5, type: scorched}
+    - {x: 6, y: 5, type: scorched}
+    - {x: 7, y: 5, type: scorched}
+    - {x: 8, y: 5, type: scorched}
+    - {x: 9, y: 5, type: scorched}
+    - {x: 10, y: 5, type: scorched}
+    - {x: 11, y: 5, type: scorched}
+    - {x: 12, y: 5, type: scorched}
+    - {x: 13, y: 5, type: scorched}
+    - {x: 14, y: 5, type: scorched}
+
+    # ── The Roseroad (y=6-7) ── runs the full width ──
+    # Road surface at y=6
+    - {x: 0, y: 6, type: road}
+    - {x: 1, y: 6, type: road}
+    - {x: 2, y: 6, type: road}
+    - {x: 3, y: 6, type: road}
+    - {x: 4, y: 6, type: road}
+    - {x: 5, y: 6, type: road}
+    - {x: 6, y: 6, type: road}
+    - {x: 7, y: 6, type: road}
+    - {x: 8, y: 6, type: road}
+    - {x: 9, y: 6, type: road}
+    - {x: 10, y: 6, type: road}
+    - {x: 11, y: 6, type: road}
+    - {x: 12, y: 6, type: road}
+    - {x: 13, y: 6, type: road}
+    - {x: 14, y: 6, type: road}
+    - {x: 15, y: 6, type: road}
+    - {x: 16, y: 6, type: road}
+    - {x: 17, y: 6, type: road}
+    # Road surface at y=7
     - {x: 0, y: 7, type: road}
     - {x: 1, y: 7, type: road}
     - {x: 2, y: 7, type: road}
@@ -47,25 +111,73 @@ board:
     - {x: 9, y: 7, type: road}
     - {x: 10, y: 7, type: road}
     - {x: 11, y: 7, type: road}
-    # Loot train wagons along the road -- cover for Lannisters
-    - {x: 7, y: 6, type: wagon}
-    - {x: 9, y: 6, type: wagon}
-    - {x: 11, y: 6, type: wagon}
-    - {x: 8, y: 8, type: wagon}
-    - {x: 10, y: 8, type: wagon}
-    # Blackwater Rush along the south edge
-    - {x: 0, y: 9, type: river}
-    - {x: 1, y: 9, type: river}
-    - {x: 2, y: 9, type: river}
-    - {x: 3, y: 9, type: river}
-    - {x: 4, y: 9, type: river}
-    - {x: 5, y: 9, type: river}
-    - {x: 6, y: 9, type: river}
-    - {x: 7, y: 9, type: river}
-    - {x: 8, y: 9, type: river}
-    - {x: 9, y: 9, type: river}
-    - {x: 10, y: 9, type: river}
-    - {x: 11, y: 9, type: river}
+    - {x: 12, y: 7, type: road}
+    - {x: 13, y: 7, type: road}
+    - {x: 14, y: 7, type: road}
+    - {x: 15, y: 7, type: road}
+    - {x: 16, y: 7, type: road}
+    - {x: 17, y: 7, type: road}
+
+    # ── Loot wagons scattered along the road ── mini-fortifications ──
+    # Western wagon cluster (rear of column)
+    - {x: 2, y: 7, type: wagon}
+    - {x: 4, y: 6, type: wagon}
+    # Central wagon cluster (mid-column, densest loot)
+    - {x: 7, y: 7, type: wagon}
+    - {x: 8, y: 6, type: wagon}
+    - {x: 9, y: 7, type: wagon}
+    - {x: 10, y: 6, type: wagon}
+    # Eastern wagon cluster (vanguard supplies)
+    - {x: 13, y: 7, type: wagon}
+    - {x: 14, y: 6, type: wagon}
+    - {x: 16, y: 7, type: wagon}
+
+    # ── Southern scrubland (y=8-9) ── retreat terrain ──
+    - {x: 1, y: 8, type: brush}
+    - {x: 5, y: 8, type: brush}
+    - {x: 9, y: 8, type: brush}
+    - {x: 14, y: 8, type: brush}
+    - {x: 3, y: 9, type: brush}
+    - {x: 11, y: 9, type: brush}
+    - {x: 16, y: 9, type: brush}
+
+    # ── Blackwater Rush (y=10-11) ── impassable southern border ──
+    - {x: 0, y: 10, type: river}
+    - {x: 1, y: 10, type: river}
+    - {x: 2, y: 10, type: river}
+    - {x: 3, y: 10, type: river}
+    - {x: 4, y: 10, type: river}
+    - {x: 5, y: 10, type: river}
+    - {x: 6, y: 10, type: river}
+    - {x: 7, y: 10, type: river}
+    - {x: 8, y: 10, type: river}
+    - {x: 9, y: 10, type: river}
+    - {x: 10, y: 10, type: river}
+    - {x: 11, y: 10, type: river}
+    - {x: 12, y: 10, type: river}
+    - {x: 13, y: 10, type: river}
+    - {x: 14, y: 10, type: river}
+    - {x: 15, y: 10, type: river}
+    - {x: 16, y: 10, type: river}
+    - {x: 17, y: 10, type: river}
+    - {x: 0, y: 11, type: river}
+    - {x: 1, y: 11, type: river}
+    - {x: 2, y: 11, type: river}
+    - {x: 3, y: 11, type: river}
+    - {x: 4, y: 11, type: river}
+    - {x: 5, y: 11, type: river}
+    - {x: 6, y: 11, type: river}
+    - {x: 7, y: 11, type: river}
+    - {x: 8, y: 11, type: river}
+    - {x: 9, y: 11, type: river}
+    - {x: 10, y: 11, type: river}
+    - {x: 11, y: 11, type: river}
+    - {x: 12, y: 11, type: river}
+    - {x: 13, y: 11, type: river}
+    - {x: 14, y: 11, type: river}
+    - {x: 15, y: 11, type: river}
+    - {x: 16, y: 11, type: river}
+    - {x: 17, y: 11, type: river}
   forts: []
 
 terrain_types:
@@ -103,6 +215,16 @@ terrain_types:
     defense_bonus: 0
     glyph: "x"
     color: bright_black
+  scorpion_position:
+    display_name: Scorpion Emplacement
+    description: |
+      Elevated earthwork where the scorpion ballista is mounted.
+      +2 DEF from the raised position. If Bronn reaches this tile,
+      he mans the ballista -- the only weapon that can wound Drogon.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "#"
+    color: bright_yellow
   river:
     display_name: Blackwater Rush
     description: Impassable river along the south.
@@ -338,22 +460,30 @@ unit_classes:
 
 armies:
   blue:
-    # Daenerys and Drogon approaching from the hills
-    - {class: daenerys, pos: {x: 3, y: 1}}
-    - {class: drogon, pos: {x: 4, y: 0}}
-    # Dothraki charging from the hills
-    - {class: qhono, pos: {x: 1, y: 1}}
-    - {class: aggo, pos: {x: 5, y: 1}}
-    - {class: kovarro, pos: {x: 0, y: 1}}
+    # Drogon circles high above the northern hills — can harass from turn 1
+    - {class: drogon, pos: {x: 8, y: 0}}
+    # Daenerys rides just behind the ridge line
+    - {class: daenerys, pos: {x: 9, y: 1}}
+    # Dothraki riders spread across the hills — choose your attack vector
+    # Western rider — can threaten Bronn's retreat to the scorpion
+    - {class: qhono, pos: {x: 3, y: 0}}
+    # Central rider — can hit the soft middle of the column
+    - {class: kovarro, pos: {x: 9, y: 0}}
+    # Eastern rider — can pressure Jaime and the vanguard
+    - {class: aggo, pos: {x: 15, y: 0}}
   red:
-    # Lannister column along the road
-    - {class: jaime, pos: {x: 8, y: 7}}
-    - {class: bronn, pos: {x: 10, y: 7}}
-    - {class: randyll_tarly, pos: {x: 6, y: 7}}
-    - {class: dickon_tarly, pos: {x: 7, y: 6}}
-    - {class: lannister_captain, pos: {x: 11, y: 7}}
-    - {class: lannister_archer, pos: {x: 9, y: 6}}
-    - {class: lannister_spearman, pos: {x: 7, y: 8}}
+    # ── THE LANNISTER COLUMN — stretched 15 tiles east-to-west ──
+    # VANGUARD (east) — Jaime and Randyll Tarly lead from the front
+    - {class: jaime, pos: {x: 16, y: 7}}
+    - {class: randyll_tarly, pos: {x: 15, y: 6}}
+    # CENTRE (mid) — soft targets, the column's weak belly
+    - {class: dickon_tarly, pos: {x: 12, y: 7}}
+    - {class: lannister_archer, pos: {x: 10, y: 6}}
+    - {class: lannister_spearman, pos: {x: 8, y: 7}}
+    # REARGUARD (west) — Bronn and Captain Lorch guard the tail
+    # Bronn starts at x=5 — the scorpion is at x=0,y=2 — a 3-turn race
+    - {class: lannister_captain, pos: {x: 6, y: 6}}
+    - {class: bronn, pos: {x: 5, y: 7}}
 
 rules:
   max_turns: 14
@@ -377,14 +507,20 @@ narrative:
     world turns to fire.
   events:
     - trigger: on_turn_start
+      turn: 2
+      text: "Drogon dives. A line of fire splits the column in two. Wagons explode, horses scream."
+    - trigger: on_turn_start
       turn: 3
-      text: "Drogon's first pass sets the wagons ablaze. Men scatter, screaming."
+      text: "The Dothraki crest the hill — an ocean of riders. The Lannister men hear the war cry and falter."
     - trigger: on_turn_start
-      turn: 6
-      text: "Bronn reaches the scorpion. He cranks the bolt into place, aims at the black shape in the sky."
+      turn: 5
+      text: "Bronn fights through the chaos toward the scorpion. 'If you don't help me, we're all dead!'"
     - trigger: on_turn_start
-      turn: 10
-      text: "The Lannister line breaks. Dothraki riders pour through the gaps, cutting down fleeing soldiers."
+      turn: 8
+      text: "The column is shattered. Pockets of Lannister resistance hold behind burning wagons."
+    - trigger: on_turn_start
+      turn: 11
+      text: "Jaime stares at the carnage. He sees Daenerys on the ground. He grabs a lance."
     - trigger: on_unit_killed
       unit_id: u_r_jaime_1
       text: "The Kingslayer falls. The lion banner drops into the mud."
