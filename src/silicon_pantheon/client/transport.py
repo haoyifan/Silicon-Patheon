@@ -75,6 +75,8 @@ class ServerClient:
         Yields a ServerClient ready for tool calls.
         """
         cid = connection_id or secrets.token_hex(8)
+        # Strip trailing slash to avoid 307 redirects on every call.
+        url = url.rstrip("/")
         async with streamablehttp_client(url) as (read, write, _get_session_id):
             async with ClientSession(read, write) as session:
                 await session.initialize()
