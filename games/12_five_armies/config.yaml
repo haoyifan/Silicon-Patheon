@@ -310,7 +310,7 @@ unit_classes:
     move: 5
     tags: [hero, orc, assassin]
     sight: 4
-    glyph: B
+    glyph: O
     color: bright_red
 
   fimbul:

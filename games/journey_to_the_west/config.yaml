@@ -48,6 +48,24 @@ board:
   forts: []
 
 terrain_types:
+  mountain:
+    display_name: Mountain
+    description: |
+      Towering peaks and jagged crags. Impassable to all except
+      Sun Wukong, who leaps between the rocks with ease.
+    move_cost: 99
+    passable: false
+    glyph: "^"
+    color: bright_black
+  forest:
+    display_name: Forest
+    description: |
+      Dense woodland along the pilgrim road. Demons lurk among the
+      ancient trees. Costs 2 movement. +1 DEF from cover.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "T"
+    color: green
   river:
     display_name: River
     description: Impassable river.

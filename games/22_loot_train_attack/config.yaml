@@ -79,43 +79,34 @@ board:
     - {x: 14, y: 5, type: scorched}
 
     # ── The Roseroad (y=6-7) ── runs the full width ──
-    # Road surface at y=6
+    # Road surface at y=6 (wagon positions excluded: x=4, 8, 10, 14)
     - {x: 0, y: 6, type: road}
     - {x: 1, y: 6, type: road}
     - {x: 2, y: 6, type: road}
     - {x: 3, y: 6, type: road}
-    - {x: 4, y: 6, type: road}
     - {x: 5, y: 6, type: road}
     - {x: 6, y: 6, type: road}
     - {x: 7, y: 6, type: road}
-    - {x: 8, y: 6, type: road}
     - {x: 9, y: 6, type: road}
-    - {x: 10, y: 6, type: road}
     - {x: 11, y: 6, type: road}
     - {x: 12, y: 6, type: road}
     - {x: 13, y: 6, type: road}
-    - {x: 14, y: 6, type: road}
     - {x: 15, y: 6, type: road}
     - {x: 16, y: 6, type: road}
     - {x: 17, y: 6, type: road}
-    # Road surface at y=7
+    # Road surface at y=7 (wagon positions excluded: x=2, 7, 9, 13, 16)
     - {x: 0, y: 7, type: road}
     - {x: 1, y: 7, type: road}
-    - {x: 2, y: 7, type: road}
     - {x: 3, y: 7, type: road}
     - {x: 4, y: 7, type: road}
     - {x: 5, y: 7, type: road}
     - {x: 6, y: 7, type: road}
-    - {x: 7, y: 7, type: road}
     - {x: 8, y: 7, type: road}
-    - {x: 9, y: 7, type: road}
     - {x: 10, y: 7, type: road}
     - {x: 11, y: 7, type: road}
     - {x: 12, y: 7, type: road}
-    - {x: 13, y: 7, type: road}
     - {x: 14, y: 7, type: road}
     - {x: 15, y: 7, type: road}
-    - {x: 16, y: 7, type: road}
     - {x: 17, y: 7, type: road}
 
     # ── Loot wagons scattered along the road ── mini-fortifications ──

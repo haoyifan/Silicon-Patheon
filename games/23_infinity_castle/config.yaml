@@ -100,7 +100,6 @@ board:
     # === East path cover pillars -- east route is slower but protected ===
     - {x: 12, y: 4, type: pillar}
     - {x: 12, y: 6, type: pillar}
-    - {x: 11, y: 5, type: pillar}
 
     # === Staging room north wall (y=8) -- gap at x=6,7 ===
     - {x: 1, y: 8, type: castle_wall}

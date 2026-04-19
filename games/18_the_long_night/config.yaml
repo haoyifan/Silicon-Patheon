@@ -85,7 +85,7 @@ terrain_types:
     description: |
       A ditch filled with pitch and set ablaze. Impassable — the dead
       must find a gap or be funneled through the breaches.
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "="

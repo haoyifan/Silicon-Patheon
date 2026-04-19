@@ -52,7 +52,6 @@ board:
     - {x: 4, y: 2, type: rock}
     - {x: 9, y: 2, type: rock}
     - {x: 10, y: 2, type: rock}
-    - {x: 2, y: 5, type: rock}
     - {x: 3, y: 5, type: rock}
     - {x: 10, y: 5, type: rock}
     - {x: 11, y: 5, type: rock}
@@ -63,7 +62,6 @@ board:
     - {x: 6, y: 1, type: spice_field}
     - {x: 7, y: 1, type: spice_field}
     - {x: 8, y: 1, type: spice_field}
-    - {x: 1, y: 5, type: spice_field}
     - {x: 12, y: 5, type: spice_field}
     - {x: 5, y: 8, type: spice_field}
     - {x: 8, y: 8, type: spice_field}

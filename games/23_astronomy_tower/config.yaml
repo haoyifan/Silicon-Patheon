@@ -250,7 +250,7 @@ board:
 terrain_types:
   stone_wall:
     display_name: Stone Wall
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "#"

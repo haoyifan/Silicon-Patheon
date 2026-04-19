@@ -85,8 +85,8 @@ board:
     - {x: 10, y: 9, type: water}
     - {x: 11, y: 9, type: water}
   forts:
-    - {x: 5, y: 0}
-    - {x: 6, y: 0}
+    - {x: 5, y: 0, owner: red}
+    - {x: 6, y: 0, owner: red}
 
 terrain_types:
   platform:

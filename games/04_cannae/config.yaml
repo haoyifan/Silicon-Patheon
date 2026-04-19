@@ -441,7 +441,7 @@ win_conditions:
   # Carthage wins by seizing the Roman baggage camp (encirclement complete)
   - {type: seize_enemy_fort}
   # Rome wins by killing Hannibal — the army disintegrates without him
-  - {type: protect_unit, unit_id: u_a_hannibal_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_b_hannibal_1, owning_team: blue}
   # Either side can win by total elimination
   - {type: eliminate_all_enemy_units}
   # Turn cap reached — draw (Rome held off the envelopment)
@@ -480,8 +480,8 @@ narrative:
       turn: 12
       text: "Hoofbeats behind the Roman line — Maharbal's cavalry has closed the pocket. The camp is in danger."
     - trigger: on_unit_killed
-      unit_id: u_b_consul_varro_1
+      unit_id: u_r_consul_varro_1
       text: "Varro falls in the press. Roman morale shatters."
     - trigger: on_unit_killed
-      unit_id: u_a_hannibal_1
+      unit_id: u_b_hannibal_1
       text: "Hannibal is struck down! The Carthaginian envelopment unravels."

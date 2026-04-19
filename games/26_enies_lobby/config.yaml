@@ -150,28 +150,27 @@ board:
     - {x: 4, y: 4, type: plaza}
     - {x: 5, y: 4, type: plaza}
     - {x: 1, y: 5, type: plaza}
-    - {x: 2, y: 5, type: plaza}
+    # x=2,y=5 is courthouse_rubble
     - {x: 3, y: 5, type: plaza}
     - {x: 4, y: 5, type: plaza}
     - {x: 5, y: 5, type: plaza}
-    - {x: 1, y: 6, type: plaza}
+    # x=1,y=6 is courthouse_rubble; x=3,y=6 is fountain
     - {x: 2, y: 6, type: plaza}
-    - {x: 3, y: 6, type: plaza}
     - {x: 4, y: 6, type: plaza}
     - {x: 5, y: 6, type: plaza}
     - {x: 1, y: 7, type: plaza}
     - {x: 2, y: 7, type: plaza}
     - {x: 3, y: 7, type: plaza}
-    - {x: 4, y: 7, type: plaza}
+    # x=4,y=7 is courthouse_rubble
     - {x: 5, y: 7, type: plaza}
     - {x: 1, y: 8, type: plaza}
     - {x: 2, y: 8, type: plaza}
     - {x: 3, y: 8, type: plaza}
     - {x: 4, y: 8, type: plaza}
-    - {x: 5, y: 8, type: plaza}
+    # x=5,y=8 is courthouse_rubble
     - {x: 1, y: 9, type: plaza}
     - {x: 2, y: 9, type: plaza}
-    - {x: 3, y: 9, type: plaza}
+    # x=3,y=9 is courthouse_rubble
     - {x: 4, y: 9, type: plaza}
     - {x: 5, y: 9, type: plaza}
     - {x: 1, y: 10, type: plaza}
@@ -435,7 +434,7 @@ terrain_types:
       Two tiles wide, stretching over the bottomless waterfall.
   collapsed:
     display_name: Collapsed Bridge
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "X"
@@ -446,7 +445,7 @@ terrain_types:
       forces a detour through the Tower's lower levels.
   water:
     display_name: Waterfall
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "~"
@@ -456,7 +455,7 @@ terrain_types:
       Falling in means certain death.
   tower_wall:
     display_name: Tower Wall
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "#"

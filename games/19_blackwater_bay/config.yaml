@@ -127,7 +127,7 @@ board:
 terrain_types:
   water:
     display_name: Water
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "~"
@@ -196,7 +196,7 @@ terrain_types:
       Bronn fires from here.
   city_wall:
     display_name: City Wall
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "#"

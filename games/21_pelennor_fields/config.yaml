@@ -71,7 +71,7 @@ board:
 terrain_types:
   city_wall:
     display_name: City Wall
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "#"
@@ -81,7 +81,7 @@ terrain_types:
       greatest fortress of Men. Impassable except through the gate.
   rammas_wall:
     display_name: Rammas Echor
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "#"

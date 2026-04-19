@@ -226,6 +226,17 @@ board:
   forts: []
 
 terrain_types:
+  forest:
+    display_name: Forest
+    description: |
+      Dense woodland flanking the battlefield. Impassable — the
+      trees funnel the French into the killing corridor between
+      Tramecourt and Agincourt woods.
+    move_cost: 99
+    passable: false
+    glyph: "T"
+    color: green
+
   mud:
     display_name: Mud
     description: |
@@ -429,7 +440,7 @@ unit_classes:
     move: 3
     tags: [infantry, heavy, leader]
     sight: 3
-    glyph: O
+    glyph: U
     color: red
 
   count_of_nevers:

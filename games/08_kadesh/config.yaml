@@ -29,8 +29,9 @@ board:
     - {x: 5, y: 3, type: river}
     - {x: 6, y: 3, type: ford}      # eastern ford
     - {x: 7, y: 3, type: river}
-    - {x: 8, y: 3, type: river}
-    - {x: 9, y: 3, type: river}
+    # x=8,9 at y=3 are dust_cloud (eastern bank ambush zone)
+    - {x: 8, y: 3, type: dust_cloud}
+    - {x: 9, y: 3, type: dust_cloud}
     # Hills on the western bank — rough terrain, good defensive ground
     - {x: 0, y: 2, type: hill}
     - {x: 1, y: 2, type: hill}
@@ -41,8 +42,6 @@ board:
     # Dust cloud on the eastern flank — conceals the chariot ambush
     - {x: 8, y: 4, type: dust_cloud}
     - {x: 9, y: 4, type: dust_cloud}
-    - {x: 8, y: 3, type: dust_cloud}
-    - {x: 9, y: 3, type: dust_cloud}
     # Open plains fill the rest of the map (default terrain)
   forts:
     # Kadesh fortress — Red-owned, north side of the river

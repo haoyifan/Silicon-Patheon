@@ -47,7 +47,6 @@ board:
     - {x: 4, y: 3, type: rock}   # impassable pillar
     - {x: 6, y: 4, type: rock}   # shifted pillar -- narrows east lane
     - {x: 3, y: 4, type: crater}
-    - {x: 6, y: 4, type: crater}
 
     # --- Southern zone: Alliance staging area ---
     # Forest cover for blue's back line
