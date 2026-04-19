@@ -302,7 +302,7 @@ unit_classes:
     hp_max: 26
     atk: 13
     defense: 4
-    res: 10
+    res: 7
     spd: 6
     move: 4
     rng_min: 2
