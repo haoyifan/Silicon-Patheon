@@ -189,37 +189,37 @@ def main() -> int:
 
     # uvicorn calls logging.config.dictConfig() inside its startup,
     # which re-initializes loggers and detaches our FileHandler.
-    # Symptom: ~/.silicon-pantheon/logs/server-*.log was 5 lines
-    # (only the pre-uvicorn startup banner), while the system journal
-    # had every tool dispatch. Re-attach 2s after startup so our log
-    # file actually captures runtime events.
+    # Save a direct reference to the FileHandler BEFORE uvicorn runs
+    # so we can reattach it even if dictConfig wipes all handlers.
+    _saved_fh = None
+    for h in logging.getLogger("silicon-serve").handlers:
+        if isinstance(h, logging.FileHandler):
+            _saved_fh = h
+            break
+
     async def _reattach_handlers() -> None:
         await asyncio.sleep(2.0)
-        # The handlers we set up at the top — re-add them so anything
-        # uvicorn cleared during dictConfig comes back.
         from logging import getLogger as _gl
         target_loggers = (
             "silicon", "silicon.lobby", "silicon.game", "silicon.engine",
-            "silicon-serve", "uvicorn", "uvicorn.error", "uvicorn.access",
+            "silicon-serve", "silicon.leaderboard", "silicon.host",
+            "uvicorn", "uvicorn.error", "uvicorn.access",
             "mcp", "mcp.server", "mcp.server.lowlevel.server",
         )
-        # Find the FileHandler we created earlier by walking the
-        # silicon-serve logger's handlers.
-        seed_handlers = list(_gl("silicon-serve").handlers)
-        if not seed_handlers:
-            log.warning("re-attach: silicon-serve logger has no handlers")
+        if _saved_fh is None:
+            log.warning("re-attach: no saved FileHandler")
             return
         reattached = 0
         for name in target_loggers:
             lg = _gl(name)
-            for h in seed_handlers:
-                if h not in lg.handlers:
-                    lg.addHandler(h)
-                    reattached += 1
+            if _saved_fh not in lg.handlers:
+                lg.addHandler(_saved_fh)
+                reattached += 1
+            lg.setLevel(logging.INFO)
             lg.propagate = False
         log.info(
-            "re-attached %d handler(s) across %d loggers after uvicorn startup",
-            reattached, len(target_loggers),
+            "re-attached FileHandler to %d loggers after uvicorn startup",
+            reattached,
         )
 
     import asyncio  # for the reattach sleep
