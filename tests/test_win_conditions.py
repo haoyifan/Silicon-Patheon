@@ -186,6 +186,49 @@ def test_reach_goal_line_fires_on_axis():
     assert result["reason"] == "reach_goal_line"
 
 
+def test_reach_goal_line_fires_when_unit_has_gone_past_the_line():
+    """Regression: default "crosses" semantic triggers when a unit is
+    past the line, not only exactly on it. Previous == check would
+    fail a red unit at x=0 even when the goal line was x=1, because
+    it had "overshot" into the Greek rear."""
+    # Red team of two: one mostly-starting at x=9 (east), one that
+    # has overshot to x=0 past the goal line at x=1. Median starting
+    # position is on the east side → direction inferred as "<=".
+    r1 = _mkunit("u_r_east", Team.RED, Pos(9, 3))
+    r2 = _mkunit("u_r_crossed", Team.RED, Pos(0, 6))
+    state = _make_state({r1.id: r1, r2.id: r2})
+    state.active_player = Team.RED
+    state._win_conditions = build_conditions([
+        {"type": "reach_goal_line", "team": "red", "axis": "x", "value": 1},
+    ])
+    result = apply(state, EndTurnAction())
+    assert result["winner"] == "red", (
+        "red unit at x=0 should win when the line is x=1 — "
+        "'crosses' means reached OR past"
+    )
+
+
+def test_reach_goal_line_exact_mode_still_requires_equality():
+    """Legacy scenarios that explicitly want the exact-line semantic
+    can opt in with direction: 'exact' — useful if a scenario
+    genuinely rewards landing on a single row, not crossing."""
+    # Blue needs to land exactly on y=7. Unit at y=8 (past) should
+    # NOT trigger under "exact".
+    blue = _mkunit("u_b_1", Team.BLUE, Pos(3, 8))
+    state = _make_state({blue.id: blue})
+    state._win_conditions = build_conditions([
+        {
+            "type": "reach_goal_line",
+            "team": "blue",
+            "axis": "y",
+            "value": 7,
+            "direction": "exact",
+        },
+    ])
+    result = apply(state, EndTurnAction())
+    assert result.get("winner") != "blue"
+
+
 def test_protect_unit_survives_fires_at_turn_cap_when_vip_alive():
     """If the VIP is still alive when turn > max_turns, the protector
     wins (NOT a draw). Complement to protect_unit's VIP-dies-loss."""

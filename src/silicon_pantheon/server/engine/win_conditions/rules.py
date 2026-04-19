@@ -358,19 +358,57 @@ class HoldTile:
 @register("reach_goal_line")
 @dataclass
 class ReachGoalLine:
-    """Any unit of `team` crosses a row/column → win."""
+    """Any unit of `team` crosses a row/column → win.
+
+    `direction` controls how "crossed" is interpreted:
+      - "crosses" (default): the team has reached or gone PAST the
+        line. The side counts as crossed is inferred from where the
+        team's own live units mostly sit right now — if the median
+        team-coord is above `value`, the team needs coord <= value;
+        if below, the team needs coord >= value. This matches the
+        natural scenario semantic ("the Persians win if any of them
+        slip through to x ≤ 1").
+      - "exact": coord must equal value exactly (legacy behavior).
+      - "<=" / ">=": explicit direction, bypasses inference.
+
+    Scenarios written before the `direction` field existed still
+    work — all of them were relying on the intended "crossed"
+    semantic, so "crosses" is the correct default.
+    """
 
     team: str = "blue"
     axis: str = "x"  # "x" or "y"
     value: int = 0
     trigger: str = "end_turn"
+    direction: str = "crosses"  # "crosses" | "exact" | "<=" | ">="
+
+    def _effective_direction(self, state) -> str:
+        if self.direction != "crosses":
+            return self.direction
+        coords = [
+            (u.pos.x if self.axis == "x" else u.pos.y)
+            for u in state.units_of(Team(self.team))
+            if u.alive
+        ]
+        if not coords:
+            return "exact"
+        median = sorted(coords)[len(coords) // 2]
+        return "<=" if median > self.value else ">="
+
+    def _has_crossed(self, coord: int, direction: str) -> bool:
+        if direction == "<=":
+            return coord <= self.value
+        if direction == ">=":
+            return coord >= self.value
+        return coord == self.value
 
     def check(self, state, hook, **_) -> WinResult | None:
         if hook != "end_turn":
             return None
+        direction = self._effective_direction(state)
         for u in state.units_of(Team(self.team)):
             coord = u.pos.x if self.axis == "x" else u.pos.y
-            if coord == self.value:
+            if self._has_crossed(coord, direction):
                 return WinResult(
                     winner=self.team,
                     reason="reach_goal_line",
@@ -386,9 +424,16 @@ class ReachGoalLine:
         eligible = [u for u in state.units_of(Team(self.team)) if u.alive]
         if not eligible:
             return None
+        direction = self._effective_direction(state)
+
         def _dist(u):
             coord = u.pos.x if self.axis == "x" else u.pos.y
+            # A unit that has already crossed reports 0 — don't show
+            # "2 tiles away" for someone who's actually past the line.
+            if self._has_crossed(coord, direction):
+                return 0
             return abs(coord - self.value)
+
         closest = min(eligible, key=_dist)
         d = _dist(closest)
         who = "your" if is_mine else f"{self.team}'s"
