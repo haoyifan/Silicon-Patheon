@@ -4,6 +4,7 @@ the replay writer for one match. Tools operate on a Session.
 
 from __future__ import annotations
 
+import threading
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -91,6 +92,8 @@ class Session:
     tokens_by_team: dict[Team, int] = field(
         default_factory=lambda: {Team.BLUE: 0, Team.RED: 0}
     )
+    # Serialises concurrent tool dispatches for the same game session.
+    lock: threading.Lock = field(default_factory=threading.Lock)
     # Fog-of-war mode for this session. "none" = no filtering.
     fog_of_war: str = "none"
     # Per-team memory of tiles ever seen (classic mode). Kept frozen

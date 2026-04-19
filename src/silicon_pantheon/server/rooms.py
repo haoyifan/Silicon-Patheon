@@ -17,6 +17,8 @@ from typing import Literal
 
 from silicon_pantheon.shared.player_metadata import PlayerMetadata
 
+MAX_ROOMS = 100
+
 
 class Slot(str, Enum):
     A = "a"
@@ -136,7 +138,10 @@ class RoomRegistry:
         config: RoomConfig,
         host: PlayerMetadata,
     ) -> tuple[Room, Slot]:
-        """Create an empty two-slot room, seat the host in slot A."""
+        """Create an empty two-slot room, seat the host in slot A.
+
+        Raises ValueError if the server-wide room limit has been reached.
+        """
         room_id = self._new_id()
         room = Room(
             id=room_id,
@@ -148,6 +153,10 @@ class RoomRegistry:
             },
         )
         with self._lock:
+            if len(self._rooms) >= MAX_ROOMS:
+                raise ValueError(
+                    f"server room limit ({MAX_ROOMS}) reached"
+                )
             self._rooms[room_id] = room
         return room, Slot.A
 

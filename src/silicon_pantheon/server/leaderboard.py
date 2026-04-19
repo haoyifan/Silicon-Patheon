@@ -134,6 +134,7 @@ def query_leaderboard() -> list[dict]:
                 CAST(SUM(CASE WHEN outcome='win' THEN 1 ELSE 0 END) AS REAL)
                     / MAX(COUNT(*), 1) DESC,
                 COUNT(*) DESC
+            LIMIT 100
             """
         ).fetchall()
         return [
