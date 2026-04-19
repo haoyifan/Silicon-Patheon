@@ -75,21 +75,25 @@ board:
     - {x: 13, y: 7, type: river}
     - {x: 14, y: 7, type: river}
     - {x: 15, y: 7, type: river}
-    # -- y=8: river with small boat crossings at far flanks
+    # -- y=8: river with ship docks and small boat crossings
+    #    Fleet docks at x=3-12 connect to the south side of the fleet.
+    #    Small boats on the flanks provide alternative crossings.
     - {x: 0, y: 8, type: river}
     - {x: 2, y: 8, type: river}
-    - {x: 3, y: 8, type: river}
-    - {x: 4, y: 8, type: river}
-    - {x: 5, y: 8, type: river}
-    - {x: 6, y: 8, type: river}
-    - {x: 7, y: 8, type: river}
-    - {x: 8, y: 8, type: river}
-    - {x: 9, y: 8, type: river}
-    - {x: 10, y: 8, type: river}
-    - {x: 11, y: 8, type: river}
-    - {x: 12, y: 8, type: river}
     - {x: 13, y: 8, type: river}
     - {x: 15, y: 8, type: river}
+    # Southern fleet docks — ships extending to meet the south bank
+    - {x: 3, y: 8, type: ship}
+    - {x: 5, y: 8, type: ship}
+    - {x: 6, y: 8, type: ship}
+    - {x: 8, y: 8, type: ship}
+    - {x: 9, y: 8, type: ship}
+    - {x: 11, y: 8, type: ship}
+    - {x: 12, y: 8, type: ship}
+    # Gangway gaps between southern docks
+    - {x: 4, y: 8, type: river}
+    - {x: 7, y: 8, type: river}
+    - {x: 10, y: 8, type: river}
     # -- y=9: south river approach
     - {x: 0, y: 9, type: river}
     - {x: 1, y: 9, type: river}
