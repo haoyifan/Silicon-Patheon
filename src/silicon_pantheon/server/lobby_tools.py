@@ -64,56 +64,6 @@ def _serialize_room_summary(room: Room) -> dict[str, Any]:
     }
 
 
-def _serialize_room_preview(room: Room) -> dict[str, Any]:
-    """Room summary + scenario map for the preview screen."""
-    summary = _serialize_room_summary(room)
-    try:
-        state = load_scenario(room.config.scenario)
-    except Exception as e:  # pragma: no cover - defensive
-        summary["scenario_preview"] = {"error": str(e)}
-        return summary
-    units = [
-        {
-            "id": u.id,
-            "owner": u.owner.value,
-            "class": u.class_,
-            "pos": u.pos.to_dict(),
-            "glyph": u.stats.glyph,
-            "color": u.stats.color,
-        }
-        for u in state.units.values()
-    ]
-    forts = [
-        {"pos": t.pos.to_dict(), "owner": t.fort_owner.value if t.fort_owner else None}
-        for t in state.board.tiles.values()
-        if t.is_fort
-    ]
-    # Enumerate every non-default tile (forts + any explicit terrain)
-    # so the room MapPanel can render forests / mountains / etc. and
-    # the cursor tooltip can describe what's underneath. Without this
-    # the preview only shows units + fort glyphs and falls back to
-    # "plain" everywhere else, even on tiles the scenario painted.
-    tiles: list[dict[str, Any]] = []
-    for tile in state.board.tiles.values():
-        entry: dict[str, Any] = {
-            "x": tile.pos.x,
-            "y": tile.pos.y,
-            "type": tile.type,
-        }
-        if tile.fort_owner is not None:
-            entry["fort_owner"] = tile.fort_owner.value
-        tiles.append(entry)
-    summary["scenario_preview"] = {
-        "width": state.board.width,
-        "height": state.board.height,
-        "units": units,
-        "forts": forts,
-        "tiles": tiles,
-        "max_turns": state.max_turns,
-    }
-    return summary
-
-
 def _enrich_win_conditions(
     win_conditions: list[dict], scenario_name: str
 ) -> list[dict]:
@@ -185,23 +135,33 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
         FINISHED rooms are excluded — they're rubble waiting to be
         vacated and have no relevance to someone picking a match.
+
+        ── Locking ──
+        Connection state check + rooms.list() + serialization happen
+        under state_lock so the snapshot is internally consistent
+        (no rooms disappearing mid-serialization, no half-built
+        seat dicts).
         """
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state == ConnectionState.ANONYMOUS:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "set_player_metadata first",
-            )
         import time as _time
 
         now = _time.monotonic()
+        # Cache is read/written without state_lock; the lookup is an
+        # atomic dict op and the cached result is a fully-built dict
+        # that's safe to share by reference (consumers don't mutate).
         if _list_rooms_cache["result"] is not None and now - _list_rooms_cache["at"] < 1.0:
             return _list_rooms_cache["result"]
-        rooms = [
-            _serialize_room_summary(r)
-            for r in app.rooms.list()
-            if r.status != RoomStatus.FINISHED
-        ]
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state == ConnectionState.ANONYMOUS:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "set_player_metadata first",
+                )
+            rooms = [
+                _serialize_room_summary(r)
+                for r in app.rooms.list()
+                if r.status != RoomStatus.FINISHED
+            ]
         result = _ok({"rooms": rooms})
         _list_rooms_cache["result"] = result
         _list_rooms_cache["at"] = now
@@ -572,35 +532,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         both seats' ready flags — if readiness was previously agreed
         upon, the config shift might change the deal. Fails outside
         the pre-game states (COUNTING_DOWN, IN_GAME, FINISHED).
-        """
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_ROOM:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "update_room_config requires state=in_room",
-            )
-        info = app.conn_to_room.get(connection_id)
-        if info is None:
-            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
-        room_id, slot = info
-        room = app.rooms.get(room_id)
-        if room is None:
-            return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
-        if slot != Slot.A:
-            return _error(
-                ErrorCode.BAD_INPUT, "only the host (slot A) can update room config"
-            )
-        if room.status not in (
-            RoomStatus.WAITING_FOR_PLAYERS,
-            RoomStatus.WAITING_READY,
-        ):
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                f"room is in {room.status.value}; config locked",
-            )
 
-        # Validate every proposed field before mutating so we don't
-        # end up with a partial update on reject.
+        ── Locking ──
+        Input validation + scenario load happen OUTSIDE state_lock
+        (pure I/O). The actual config mutation + readiness reset
+        happen atomically under state_lock.
+        """
+        # ── Input validation (no locks) ──
         scenario_state = None
         if scenario is not None:
             try:
@@ -622,64 +560,143 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 ErrorCode.BAD_INPUT,
                 "fog_of_war must be 'none' | 'classic' | 'line_of_sight'",
             )
+        if max_turns is not None and (max_turns < 1 or max_turns > 200):
+            return _error(
+                ErrorCode.BAD_INPUT, "max_turns must be between 1 and 200"
+            )
+        if turn_time_limit_s is not None and (
+            turn_time_limit_s < 10 or turn_time_limit_s > 3600
+        ):
+            return _error(
+                ErrorCode.BAD_INPUT,
+                "turn_time_limit_s must be between 10 and 3600",
+            )
 
-        if scenario is not None:
-            room.config.scenario = scenario
-            # Switching scenario implicitly resets max_turns to the new
-            # scenario's declared cap unless the host overrides it in
-            # the same call. Otherwise a 10-turn scenario inherits the
-            # 20-turn cap from the previous selection and the win
-            # plugin's "turn budget" check fires too late.
-            if max_turns is None and scenario_state is not None:
-                room.config.max_turns = scenario_state.max_turns
-        if team_assignment is not None:
-            room.config.team_assignment = team_assignment  # type: ignore[assignment]
-        if host_team is not None:
-            room.config.host_team = host_team  # type: ignore[assignment]
-        if fog_of_war is not None:
-            room.config.fog_of_war = fog_of_war  # type: ignore[assignment]
-        if max_turns is not None:
-            if max_turns < 1 or max_turns > 200:
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state != ConnectionState.IN_ROOM:
                 return _error(
-                    ErrorCode.BAD_INPUT, "max_turns must be between 1 and 200"
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "update_room_config requires state=in_room",
                 )
-            room.config.max_turns = max_turns
-        if turn_time_limit_s is not None:
-            if turn_time_limit_s < 10 or turn_time_limit_s > 3600:
+            info = app.conn_to_room.get(connection_id)
+            if info is None:
+                return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+            room_id, slot = info
+            room = app.rooms.get(room_id)
+            if room is None:
+                return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
+            if slot != Slot.A:
                 return _error(
                     ErrorCode.BAD_INPUT,
-                    "turn_time_limit_s must be between 10 and 3600",
+                    "only the host (slot A) can update room config",
                 )
-            room.config.turn_time_limit_s = turn_time_limit_s
+            if room.status not in (
+                RoomStatus.WAITING_FOR_PLAYERS,
+                RoomStatus.WAITING_READY,
+            ):
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    f"room is in {room.status.value}; config locked",
+                )
 
-        # Config change resets readiness so both sides explicitly
-        # re-agree on the new terms.
-        for seat in room.seats.values():
-            seat.ready = False
-        room.recompute_status()
-        log.info(
-            "update_room_config: room=%s scenario=%s fog=%s teams=%s host_team=%s",
-            room_id,
-            room.config.scenario,
-            room.config.fog_of_war,
-            room.config.team_assignment,
-            room.config.host_team,
-        )
+            if scenario is not None:
+                room.config.scenario = scenario
+                # Switching scenario implicitly resets max_turns to the new
+                # scenario's declared cap unless the host overrides it in
+                # the same call.
+                if max_turns is None and scenario_state is not None:
+                    room.config.max_turns = scenario_state.max_turns
+            if team_assignment is not None:
+                room.config.team_assignment = team_assignment  # type: ignore[assignment]
+            if host_team is not None:
+                room.config.host_team = host_team  # type: ignore[assignment]
+            if fog_of_war is not None:
+                room.config.fog_of_war = fog_of_war  # type: ignore[assignment]
+            if max_turns is not None:
+                room.config.max_turns = max_turns
+            if turn_time_limit_s is not None:
+                room.config.turn_time_limit_s = turn_time_limit_s
+
+            # Config change resets readiness so both sides explicitly
+            # re-agree on the new terms.
+            for seat in room.seats.values():
+                seat.ready = False
+            room.recompute_status()
+            log.info(
+                "update_room_config: room=%s scenario=%s fog=%s teams=%s host_team=%s",
+                room_id,
+                room.config.scenario,
+                room.config.fog_of_war,
+                room.config.team_assignment,
+                room.config.host_team,
+            )
         return _ok({})
 
     @mcp.tool()
     def preview_room(connection_id: str, room_id: str) -> dict:
-        """Show scenario map + seat occupancy for a room."""
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state == ConnectionState.ANONYMOUS:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "set_player_metadata first",
-            )
-        room = app.rooms.get(room_id)
-        if room is None:
-            return _error(ErrorCode.ROOM_NOT_FOUND, f"no such room: {room_id}")
-        return _ok({"room": _serialize_room_preview(room)})
+        """Show scenario map + seat occupancy for a room.
+
+        ── Locking ──
+        Connection check + room lookup + summary serialisation happen
+        under state_lock. The scenario YAML load + board enumeration
+        are done OUTSIDE state_lock (pure disk I/O that can be slow)
+        using the scenario name we captured under the lock.
+        """
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state == ConnectionState.ANONYMOUS:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "set_player_metadata first",
+                )
+            room = app.rooms.get(room_id)
+            if room is None:
+                return _error(ErrorCode.ROOM_NOT_FOUND, f"no such room: {room_id}")
+            summary = _serialize_room_summary(room)
+            scenario_name = room.config.scenario
+        # Load scenario + build preview outside the lock — load_scenario
+        # does YAML + plugin resolution that can take 10-20ms.
+        try:
+            state = load_scenario(scenario_name)
+        except Exception as e:  # pragma: no cover - defensive
+            summary["scenario_preview"] = {"error": str(e)}
+            return _ok({"room": summary})
+        units = [
+            {
+                "id": u.id,
+                "owner": u.owner.value,
+                "class": u.class_,
+                "pos": u.pos.to_dict(),
+                "glyph": u.stats.glyph,
+                "color": u.stats.color,
+            }
+            for u in state.units.values()
+        ]
+        forts = [
+            {"pos": t.pos.to_dict(), "owner": t.fort_owner.value if t.fort_owner else None}
+            for t in state.board.tiles.values()
+            if t.is_fort
+        ]
+        tiles: list[dict[str, Any]] = []
+        for tile in state.board.tiles.values():
+            entry: dict[str, Any] = {
+                "x": tile.pos.x,
+                "y": tile.pos.y,
+                "type": tile.type,
+            }
+            if tile.fort_owner is not None:
+                entry["fort_owner"] = tile.fort_owner.value
+            tiles.append(entry)
+        summary["scenario_preview"] = {
+            "width": state.board.width,
+            "height": state.board.height,
+            "units": units,
+            "forts": forts,
+            "tiles": tiles,
+            "max_turns": state.max_turns,
+        }
+        return _ok({"room": summary})
 
     @mcp.tool()
     def create_room(
@@ -698,21 +715,17 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         doesn't load, or if the config fields don't validate.
 
         If `max_turns` is not provided, defaults to whatever the
-        scenario declares in its YAML rules block. Hormuz declares
-        max_turns: 10 (its win plugin red-wins the moment turn > 10
-        without blue meeting the compound objective). Ignoring that
-        and forcing 20 — the previous default — meant the timeout
-        forfeit fired at turn 21 instead of 11, leaving matches
-        running far past the scenario author's intent.
+        scenario declares in its YAML rules block.
+
+        ── Locking ──
+        Field validation + scenario load happen OUTSIDE state_lock
+        (pure I/O on YAML). The actual registration (rooms.create +
+        conn_to_room write + conn.state flip + heartbeat_state write)
+        is done atomically under state_lock with a re-check of the
+        caller's state so a concurrent transition can't slip us into
+        a torn state.
         """
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_LOBBY:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "create_room requires state=in_lobby",
-            )
-        if conn.player is None:
-            return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
+        # ── Input validation (no locks needed) ──
         if team_assignment not in ("fixed", "random"):
             return _error(
                 ErrorCode.BAD_INPUT,
@@ -742,51 +755,80 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             # Honor the scenario's declared cap; the scenario author
             # tuned win conditions / pacing around this number.
             max_turns = scenario_state.max_turns
-        config = RoomConfig(
-            scenario=scenario,
-            max_turns=max_turns,
-            team_assignment=team_assignment,  # type: ignore[arg-type]
-            host_team=host_team,  # type: ignore[arg-type]
-            fog_of_war=fog_of_war,  # type: ignore[arg-type]
-            turn_time_limit_s=turn_time_limit_s,
-        )
-        room, slot = app.rooms.create(config=config, host=conn.player)
-        app.conn_to_room[connection_id] = (room.id, slot)
-        conn.state = ConnectionState.IN_ROOM
-        # Track when this player joined for unready timeout.
+
         import time as _time
         from silicon_pantheon.server.heartbeat import HeartbeatState
-        app.heartbeat_state[connection_id] = HeartbeatState(joined_room_at=_time.time())
+
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state != ConnectionState.IN_LOBBY:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "create_room requires state=in_lobby",
+                )
+            if conn.player is None:
+                return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
+
+            config = RoomConfig(
+                scenario=scenario,
+                max_turns=max_turns,
+                team_assignment=team_assignment,  # type: ignore[arg-type]
+                host_team=host_team,  # type: ignore[arg-type]
+                fog_of_war=fog_of_war,  # type: ignore[arg-type]
+                turn_time_limit_s=turn_time_limit_s,
+            )
+            room, slot = app.rooms.create(config=config, host=conn.player)
+            app.conn_to_room[connection_id] = (room.id, slot)
+            conn.state = ConnectionState.IN_ROOM
+            app.heartbeat_state[connection_id] = HeartbeatState(
+                joined_room_at=_time.time(),
+            )
+            room_id = room.id
+            slot_value = slot.value
+
         _invalidate_room_cache()
-        return _ok({"room_id": room.id, "slot": slot.value})
+        return _ok({"room_id": room_id, "slot": slot_value})
 
     @mcp.tool()
     def join_room(connection_id: str, room_id: str) -> dict:
-        """Take the open seat in an existing room."""
+        """Take the open seat in an existing room.
+
+        ── Locking ──
+        Everything after the input validation runs under state_lock
+        so a race with another ``join_room`` for the same room can't
+        both succeed on the same empty seat.
+        """
         if not room_id or len(room_id) > 128:
             return _error(ErrorCode.BAD_INPUT, "invalid room_id")
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_LOBBY:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "join_room requires state=in_lobby",
-            )
-        if conn.player is None:
-            return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
-        room = app.rooms.get(room_id)
-        if room is None:
-            return _error(ErrorCode.ROOM_NOT_FOUND, f"no such room: {room_id}")
-        result = app.rooms.join(room_id, conn.player)
-        if result is None:
-            return _error(ErrorCode.ROOM_FULL, "room is full")
-        _, slot = result
-        app.conn_to_room[connection_id] = (room_id, slot)
-        conn.state = ConnectionState.IN_ROOM
+
         import time as _time
         from silicon_pantheon.server.heartbeat import HeartbeatState
-        app.heartbeat_state[connection_id] = HeartbeatState(joined_room_at=_time.time())
+
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state != ConnectionState.IN_LOBBY:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "join_room requires state=in_lobby",
+                )
+            if conn.player is None:
+                return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
+            room = app.rooms.get(room_id)
+            if room is None:
+                return _error(ErrorCode.ROOM_NOT_FOUND, f"no such room: {room_id}")
+            result = app.rooms.join(room_id, conn.player)
+            if result is None:
+                return _error(ErrorCode.ROOM_FULL, "room is full")
+            _, slot = result
+            app.conn_to_room[connection_id] = (room_id, slot)
+            conn.state = ConnectionState.IN_ROOM
+            app.heartbeat_state[connection_id] = HeartbeatState(
+                joined_room_at=_time.time(),
+            )
+            slot_value = slot.value
+
         _invalidate_room_cache()
-        return _ok({"room_id": room_id, "slot": slot.value})
+        return _ok({"room_id": room_id, "slot": slot_value})
 
     @mcp.tool()
     def kick_player(connection_id: str) -> dict:
@@ -795,43 +837,63 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         Only works pre-game (WAITING_FOR_PLAYERS, WAITING_READY).
         The kicked player's connection returns to IN_LOBBY.
         Cannot be used during gameplay.
+
+        ── Locking ──
+        Whole sequence runs under state_lock so status + joiner
+        lookup + eviction are atomic.
         """
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_ROOM:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "kick_player requires state=in_room",
-            )
-        info = app.conn_to_room.get(connection_id)
-        if info is None:
-            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
-        room_id, slot = info
-        if slot != Slot.A:
-            return _error(ErrorCode.BAD_INPUT, "only the host (slot A) can kick")
-        room = app.rooms.get(room_id)
-        if room is None:
-            return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
         from silicon_pantheon.server.rooms import RoomStatus
-        if room.status in (RoomStatus.IN_GAME, RoomStatus.FINISHED):
-            return _error(ErrorCode.BAD_INPUT, "cannot kick during gameplay")
-        # Find the joiner's connection.
-        joiner_cid = None
-        for cid, (rid, s) in app.conn_to_room.items():
-            if rid == room_id and s == Slot.B:
-                joiner_cid = cid
-                break
-        if joiner_cid is None:
-            return _error(ErrorCode.BAD_INPUT, "no player to kick (seat B is empty)")
-        # Remove joiner from room, cancel countdown, revert state.
-        _cancel_countdown(app, room_id)
-        app.rooms.leave(room_id, Slot.B)
-        app.conn_to_room.pop(joiner_cid, None)
-        joiner_conn = app.get_connection(joiner_cid)
-        if joiner_conn is not None:
-            joiner_conn.state = ConnectionState.IN_LOBBY
-        app.heartbeat_state.pop(joiner_cid, None)
-        room.recompute_status()
-        log.info("kick_player: host=%s kicked=%s room=%s", connection_id[:8], joiner_cid[:8] if joiner_cid else "?", room_id)
+
+        cancelled_task: Any = None
+        joiner_cid: str | None = None
+        room_id: str | None = None
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state != ConnectionState.IN_ROOM:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "kick_player requires state=in_room",
+                )
+            info = app.conn_to_room.get(connection_id)
+            if info is None:
+                return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+            room_id, slot = info
+            if slot != Slot.A:
+                return _error(ErrorCode.BAD_INPUT, "only the host (slot A) can kick")
+            room = app.rooms.get(room_id)
+            if room is None:
+                return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
+            if room.status in (RoomStatus.IN_GAME, RoomStatus.FINISHED):
+                return _error(ErrorCode.BAD_INPUT, "cannot kick during gameplay")
+            # Find the joiner's connection.
+            for cid, (rid, s) in app.conn_to_room.items():
+                if rid == room_id and s == Slot.B:
+                    joiner_cid = cid
+                    break
+            if joiner_cid is None:
+                return _error(ErrorCode.BAD_INPUT, "no player to kick (seat B is empty)")
+            # Inline countdown cancellation; capture task to cancel
+            # outside the lock. task.cancel() is cheap — just flips
+            # a flag — so it's fine either way, but outside-the-lock
+            # is kinder to contention.
+            cancelled_task = app.autostart_tasks.pop(room_id, None)
+            app.autostart_deadlines.pop(room_id, None)
+            # Remove joiner from room, revert state.
+            app.rooms.leave(room_id, Slot.B)
+            app.conn_to_room.pop(joiner_cid, None)
+            joiner_conn = app._connections.get(joiner_cid)  # noqa: SLF001
+            if joiner_conn is not None:
+                joiner_conn.state = ConnectionState.IN_LOBBY
+            app.heartbeat_state.pop(joiner_cid, None)
+            room.recompute_status()
+        if cancelled_task is not None and not cancelled_task.done():
+            cancelled_task.cancel()
+        log.info(
+            "kick_player: host=%s kicked=%s room=%s",
+            connection_id[:8],
+            joiner_cid[:8] if joiner_cid else "?",
+            room_id,
+        )
         _invalidate_room_cache()
         return _ok({"kicked": joiner_cid[:8] if joiner_cid else None})
 
@@ -844,114 +906,140 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         the opponent will auto-concede via the heartbeat sweeper if
         they don't press anything. Post-match departures are the
         normal 'back to lobby' flow.
+
+        ── Locking ──
+        Whole body under ``app.state_lock()`` so the multi-step
+        transition (pop conn_to_room → vacate seat → maybe evict
+        other player → cleanup sessions / slot_to_team) is atomic.
+        The `async def` signature is kept for consistency with the
+        other lobby tools; it contains no ``await`` so it runs as
+        a normal coroutine that never yields.
         """
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state not in (
-            ConnectionState.IN_ROOM,
-            ConnectionState.IN_GAME,
-        ):
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "leave_room requires state=in_room or in_game",
-            )
-        info = app.conn_to_room.pop(connection_id, None)
-        if info is None:
-            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
-        room_id, slot = info
-        _cancel_countdown(app, room_id)
+        cancelled_task: Any = None
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state not in (
+                ConnectionState.IN_ROOM,
+                ConnectionState.IN_GAME,
+            ):
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "leave_room requires state=in_room or in_game",
+                )
+            info = app.conn_to_room.pop(connection_id, None)
+            if info is None:
+                return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+            room_id, slot = info
+            # Inline countdown cancellation; defer task.cancel()
+            # outside the lock.
+            cancelled_task = app.autostart_tasks.pop(room_id, None)
+            app.autostart_deadlines.pop(room_id, None)
 
-        # If the room is pre-game, evict the OTHER player too so they
-        # don't sit in a dead room. Their next get_room_state poll will
-        # fail and transition them to lobby.
-        room = app.rooms.get(room_id)
-        if room is not None and room.status in (
-            RoomStatus.WAITING_FOR_PLAYERS,
-            RoomStatus.WAITING_READY,
-            RoomStatus.COUNTING_DOWN,
-        ):
-            other_slot = Slot.B if slot == Slot.A else Slot.A
-            for cid, (rid, s) in list(app.conn_to_room.items()):
-                if rid == room_id and s == other_slot:
-                    other_conn = app.get_connection(cid)
-                    if other_conn is not None:
-                        other_conn.state = ConnectionState.IN_LOBBY
-                    app.conn_to_room.pop(cid, None)
-                    log.info(
-                        "leave_room: evicted other player %s from room %s",
-                        cid[:8], room_id,
-                    )
-                    break
-
-        app.rooms.leave(room_id, slot)
-        conn.state = ConnectionState.IN_LOBBY
-        # If the leave deleted the room (post-match + last player
-        # out, or pre-game after evicting the other player), clean up.
-        if app.rooms.get(room_id) is None:
-            app.sessions.pop(room_id, None)
-            app.slot_to_team.pop(room_id, None)
-            log.info("room %s fully cleaned up", room_id)
-        else:
-            # Room still exists (other player's seat was already vacated
-            # above but room deletion needs both seats empty). Force
-            # delete for pre-game rooms.
+            # If the room is pre-game, evict the OTHER player too so they
+            # don't sit in a dead room. Their next get_room_state poll
+            # will fail and transition them to lobby.
+            room = app.rooms.get(room_id)
             if room is not None and room.status in (
                 RoomStatus.WAITING_FOR_PLAYERS,
                 RoomStatus.WAITING_READY,
                 RoomStatus.COUNTING_DOWN,
             ):
-                app.rooms.delete(room_id)
+                other_slot = Slot.B if slot == Slot.A else Slot.A
+                for cid, (rid, s) in list(app.conn_to_room.items()):
+                    if rid == room_id and s == other_slot:
+                        other_conn = app._connections.get(cid)  # noqa: SLF001
+                        if other_conn is not None:
+                            other_conn.state = ConnectionState.IN_LOBBY
+                        app.conn_to_room.pop(cid, None)
+                        log.info(
+                            "leave_room: evicted other player %s from room %s",
+                            cid[:8], room_id,
+                        )
+                        break
+
+            app.rooms.leave(room_id, slot)
+            conn.state = ConnectionState.IN_LOBBY
+            # If the leave deleted the room (post-match + last player
+            # out, or pre-game after evicting the other player), clean
+            # up sessions / slot_to_team under the same lock.
+            if app.rooms.get(room_id) is None:
                 app.sessions.pop(room_id, None)
                 app.slot_to_team.pop(room_id, None)
-                log.info("room %s deleted (player left pre-game)", room_id)
+                log.info("room %s fully cleaned up", room_id)
+            else:
+                # Room still exists (other player's seat was already
+                # vacated above but room deletion needs both seats
+                # empty). Force delete for pre-game rooms.
+                if room is not None and room.status in (
+                    RoomStatus.WAITING_FOR_PLAYERS,
+                    RoomStatus.WAITING_READY,
+                    RoomStatus.COUNTING_DOWN,
+                ):
+                    app.rooms.delete(room_id)
+                    app.sessions.pop(room_id, None)
+                    app.slot_to_team.pop(room_id, None)
+                    log.info("room %s deleted (player left pre-game)", room_id)
+        # Cancel the (possibly running) countdown task outside the lock.
+        if cancelled_task is not None and not cancelled_task.done():
+            cancelled_task.cancel()
         _invalidate_room_cache()
         return _ok({})
 
     @mcp.tool()
     async def get_room_state(connection_id: str) -> dict:
-        """Show the caller's current room, seats, readiness, and countdown."""
+        """Show the caller's current room, seats, readiness, and countdown.
+
+        ── Locking ──
+        Reads (conn, info, room, serialize, autostart_deadlines) are
+        all done under a single ``state_lock`` acquisition so the
+        serialized snapshot is internally consistent.
+        ``_maybe_promote_on_deadline`` is called INSIDE the lock too;
+        it reads+mutates state under the same critical section to
+        avoid a TOCTOU with the deadline.
+        """
         import time as _time
         _t0 = _time.monotonic()
         log.debug(
             "get_room_state ENTER cid=%s", connection_id[:8],
         )
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state not in (
-            ConnectionState.IN_ROOM,
-            ConnectionState.IN_GAME,
-        ):
-            log.debug(
-                "get_room_state REJECT cid=%s state=%s dt=%.3fs",
-                connection_id[:8],
-                conn.state.value if conn else "none",
-                _time.monotonic() - _t0,
-            )
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "get_room_state requires state=in_room or in_game",
-            )
-        info = app.conn_to_room.get(connection_id)
-        if info is None:
-            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
-        room_id, _slot = info
-        room = app.rooms.get(room_id)
-        if room is None:
-            return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
+        summary: dict[str, Any] | None = None
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state not in (
+                ConnectionState.IN_ROOM,
+                ConnectionState.IN_GAME,
+            ):
+                log.debug(
+                    "get_room_state REJECT cid=%s state=%s dt=%.3fs",
+                    connection_id[:8],
+                    conn.state.value if conn else "none",
+                    _time.monotonic() - _t0,
+                )
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "get_room_state requires state=in_room or in_game",
+                )
+            info = app.conn_to_room.get(connection_id)
+            if info is None:
+                return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+            room_id, _slot = info
+            room = app.rooms.get(room_id)
+            if room is None:
+                return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
 
-        # Belt-and-suspenders: if we're polled after the deadline has
-        # passed but the background _run_countdown task hasn't fired
-        # (FastMCP dispatch / event-loop context quirks have been known
-        # to drop the task), promote the room inline. At worst a client
-        # observes the transition one poll later than it would have.
-        _maybe_promote_on_deadline(app, room_id)
+            # Belt-and-suspenders inline promotion. Re-entrant via
+            # RLock so _maybe_promote_on_deadline's own state_lock
+            # acquires are fine if it grows one.
+            _maybe_promote_on_deadline(app, room_id)
+            # Re-read the room after potential inline promotion.
+            room = app.rooms.get(room_id)
+            if room is None:
+                return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
+            summary = _serialize_room_summary(room)
+            countdown = app.autostart_deadlines.get(room_id)
+            if countdown is not None:
+                summary["autostart_in_s"] = max(0.0, countdown - _time.time())
 
-        # Re-read the room after potential inline promotion.
-        room = app.rooms.get(room_id)
-        if room is None:
-            return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
-        summary = _serialize_room_summary(room)
-        countdown = app.autostart_deadlines.get(room_id)
-        if countdown is not None:
-            summary["autostart_in_s"] = max(0.0, countdown - _time.time())
         dt = _time.monotonic() - _t0
         if dt > 1.0:
             log.warning(
@@ -971,53 +1059,77 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         When both seats are filled and both ready, the server starts a
         10s countdown after which the match begins. The countdown is
         cancelled if either player unreadies, leaves, or disconnects.
-        """
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_ROOM:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "set_ready requires state=in_room",
-            )
-        info = app.conn_to_room.get(connection_id)
-        if info is None:
-            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
-        room_id, slot = info
-        room = app.rooms.get(room_id)
-        if room is None:
-            return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
-        seat = room.seats[slot]
-        seat.ready = ready
 
-        log.info(
-            "set_ready: room=%s cid=%s slot=%s ready=%s all_ready=%s seats=%s",
-            room_id,
-            connection_id[:8],
-            slot.value,
-            ready,
-            room.all_ready(),
-            {s.value: (room.seats[s].ready, room.seats[s].player is not None) for s in room.seats},
-        )
+        ── Locking ──
+        Ready-flag flip + countdown start/cancel + status update all
+        happen under state_lock so a concurrent ``leave_room`` or
+        ``unready`` can't race with the countdown start.
+
+        ``_start_countdown`` spawns an asyncio.Task via
+        ``asyncio.create_task``. That call is safe under state_lock
+        — it doesn't block or await — it just schedules a new task
+        on the running event loop.
+        """
+        import time
 
         response: dict[str, Any] = {}
-        if room.all_ready():
-            _start_countdown(app, room_id)
-            deadline = app.autostart_deadlines.get(room_id)
-            if deadline is not None:
-                import time
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state != ConnectionState.IN_ROOM:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "set_ready requires state=in_room",
+                )
+            info = app.conn_to_room.get(connection_id)
+            if info is None:
+                return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+            room_id, slot = info
+            room = app.rooms.get(room_id)
+            if room is None:
+                return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
+            seat = room.seats[slot]
+            seat.ready = ready
 
-                response["autostart_in_s"] = max(0.0, deadline - time.time())
-            room.status = RoomStatus.COUNTING_DOWN
-        else:
-            _cancel_countdown(app, room_id)
-            room.recompute_status()
+            log.info(
+                "set_ready: room=%s cid=%s slot=%s ready=%s all_ready=%s seats=%s",
+                room_id,
+                connection_id[:8],
+                slot.value,
+                ready,
+                room.all_ready(),
+                {
+                    s.value: (room.seats[s].ready, room.seats[s].player is not None)
+                    for s in room.seats
+                },
+            )
+
+            if room.all_ready():
+                _start_countdown(app, room_id)
+                deadline = app.autostart_deadlines.get(room_id)
+                if deadline is not None:
+                    response["autostart_in_s"] = max(0.0, deadline - time.time())
+                room.status = RoomStatus.COUNTING_DOWN
+            else:
+                _cancel_countdown(app, room_id)
+                room.recompute_status()
         return _ok(response)
 
 
 # ---- countdown machinery ----
+#
+# _start_countdown / _cancel_countdown / _maybe_promote_on_deadline
+# all assume the caller ALREADY holds ``app.state_lock()``. They read
+# and mutate app.autostart_tasks, app.autostart_deadlines, and
+# app.rooms, which are state_lock-guarded. `_run_countdown` is the
+# only one that does NOT assume the lock is held (it's a background
+# task; it acquires state_lock itself when it needs to mutate).
 
 
 def _start_countdown(app: App, room_id: str) -> None:
-    """(Re)start a 10s autostart countdown for this room."""
+    """(Re)start a 10s autostart countdown for this room.
+
+    Caller MUST hold ``app.state_lock()``.
+    """
     import time
 
     _cancel_countdown(app, room_id)
@@ -1035,6 +1147,9 @@ def _start_countdown(app: App, room_id: str) -> None:
         loop,
     )
     try:
+        # asyncio.create_task does not await or block — it registers
+        # the coroutine with the running event loop and returns
+        # immediately. Safe under state_lock.
         task = asyncio.create_task(_run_countdown(app, room_id))
     except Exception as e:
         log.exception("start_countdown: create_task failed: %s", e)
@@ -1043,6 +1158,12 @@ def _start_countdown(app: App, room_id: str) -> None:
 
 
 def _cancel_countdown(app: App, room_id: str) -> None:
+    """Cancel any running countdown for this room.
+
+    Caller MUST hold ``app.state_lock()``. ``task.cancel()`` is
+    non-blocking (just flips a flag on the task), so calling it
+    inside the lock is safe.
+    """
     task = app.autostart_tasks.pop(room_id, None)
     if task is not None and not task.done():
         log.info("cancel_countdown: room=%s (task was running)", room_id)
@@ -1053,6 +1174,22 @@ def _cancel_countdown(app: App, room_id: str) -> None:
 
 
 async def _run_countdown(app: App, room_id: str) -> None:
+    """Background task: sleep the countdown, then fire the
+    on_countdown_complete callback under state_lock so the
+    state check + callback + resulting mutations are atomic
+    w.r.t. concurrent lobby operations.
+
+    Cancellation: the outer asyncio.sleep is the only await point.
+    If cancelled during sleep, we return without touching state —
+    the cancelling caller has already popped our task entry from
+    app.autostart_tasks under state_lock. If cancelled AFTER the
+    sleep returns but BEFORE we acquire state_lock, Python's
+    cooperative cancellation model still lets the cancel land on
+    the next checkpoint; since we take the lock synchronously and
+    do no further awaits, there's no later cancel point — so we
+    either run the full callback or return cleanly from the
+    CancelledError caught around sleep.
+    """
     log.info("run_countdown: room=%s sleeping %.2fs", room_id, AUTOSTART_DELAY_S)
     try:
         await asyncio.sleep(AUTOSTART_DELAY_S)
@@ -1060,27 +1197,42 @@ async def _run_countdown(app: App, room_id: str) -> None:
         log.info("run_countdown: room=%s cancelled", room_id)
         return
     log.info("run_countdown: room=%s slept through; checking room", room_id)
-    room = app.rooms.get(room_id)
-    if room is None or not room.all_ready():
-        log.info(
-            "run_countdown: room=%s not promoting (room=%s all_ready=%s)",
-            room_id,
-            room,
-            room and room.all_ready(),
-        )
-        return
-    if app.on_countdown_complete is not None:
+
+    should_fire = False
+    with app.state_lock():
+        room = app.rooms.get(room_id)
+        if room is None or not room.all_ready():
+            log.info(
+                "run_countdown: room=%s not promoting (room=%s all_ready=%s)",
+                room_id,
+                room,
+                room and room.all_ready(),
+            )
+            return
+        if app.on_countdown_complete is not None:
+            should_fire = True
+    # Fire the callback OUTSIDE state_lock. The callback is
+    # start_game_for_room, which takes state_lock itself. Keeping
+    # them nested would still work (RLock is reentrant), but
+    # firing outside is clearer and allows start_game_for_room to
+    # release the lock before it does its replay I/O.
+    if should_fire:
         log.info("run_countdown: room=%s firing on_countdown_complete", room_id)
-        app.on_countdown_complete(room_id)
+        app.on_countdown_complete(room_id)  # type: ignore[misc]
     else:
         log.warning("run_countdown: room=%s on_countdown_complete is None", room_id)
 
 
 def _maybe_promote_on_deadline(app: App, room_id: str) -> None:
     """Synchronous safety net: if the autostart deadline has passed,
-    promote the room even if the background _run_countdown task didn't
-    fire. Called from the polling-read path so every client's next poll
-    (≤1s cadence) will observe the promotion.
+    promote the room even if the background _run_countdown task
+    didn't fire. Called from the polling-read path so every client's
+    next poll (≤1s cadence) will observe the promotion.
+
+    Caller MUST hold ``app.state_lock()``. The on_countdown_complete
+    callback (start_game_for_room) is called INSIDE state_lock —
+    start_game_for_room re-acquires via the RLock (safe), does its
+    fast work, releases, then does the replay I/O outside the lock.
     """
     import time
 
