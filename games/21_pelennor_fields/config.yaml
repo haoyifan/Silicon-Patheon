@@ -35,9 +35,15 @@ board:
     - {x: 1, y: 7, type: city_wall}
     - {x: 1, y: 8, type: city_wall}
     - {x: 1, y: 9, type: city_wall}
+    # ── Rammas Echor — outer wall with breach ──
+    - {x: 5, y: 3, type: rammas_wall}
+    - {x: 6, y: 3, type: rammas_wall}
+    # (6, 4) is the breach — passable gap
+    - {x: 5, y: 4, type: rammas_wall}
+    - {x: 5, y: 5, type: rammas_wall}
+    - {x: 6, y: 5, type: rammas_wall}
     # ── Scattered ruins on the Pelennor (cover) ──
     - {x: 4, y: 2, type: ruins}
-    - {x: 5, y: 3, type: ruins}
     - {x: 3, y: 6, type: ruins}
     - {x: 5, y: 7, type: ruins}
     # ── Osgiliath ruins (east edge) ──
@@ -73,6 +79,18 @@ terrain_types:
     description: |
       The white walls of Minas Tirith. Seven tiers of stone, the
       greatest fortress of Men. Impassable except through the gate.
+  rammas_wall:
+    display_name: Rammas Echor
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: bright_black
+    description: |
+      The outer wall of the Pelennor — the Rammas Echor. Crumbling
+      but still impassable except where the enemy has breached it.
+      A forward defensive position if the defenders choose to hold it.
+
   ruins:
     display_name: Ruins
     move_cost: 2

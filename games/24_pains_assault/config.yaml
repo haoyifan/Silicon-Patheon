@@ -36,6 +36,17 @@ board:
     - {x: 7, y: 5, type: crater}
     - {x: 6, y: 6, type: crater}
     - {x: 7, y: 6, type: crater}
+    # Training grounds -- southern fallback position for blue
+    - {x: 5, y: 9, type: training_grounds}
+    - {x: 6, y: 9, type: training_grounds}
+    - {x: 7, y: 9, type: training_grounds}
+    - {x: 8, y: 9, type: training_grounds}
+    - {x: 6, y: 10, type: training_grounds}
+    # Rubble -- flanking lanes between building clusters
+    - {x: 4, y: 5, type: rubble}
+    - {x: 9, y: 5, type: rubble}
+    - {x: 2, y: 7, type: rubble}
+    - {x: 11, y: 7, type: rubble}
     # Hokage Monument -- northern cliff
     - {x: 5, y: 0, type: monument}
     - {x: 6, y: 0, type: monument}
@@ -59,6 +70,26 @@ terrain_types:
     move_cost: 1
     defense_bonus: 0
     glyph: "o"
+    color: bright_black
+  training_grounds:
+    display_name: Training Grounds
+    description: |
+      Konoha's ninja training fields south of the village center.
+      Open ground with practice posts and earthen berms that
+      provide light cover — a natural fallback position.
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "="
+    color: green
+  rubble:
+    display_name: Rubble
+    description: |
+      Collapsed walls and broken debris between buildings. Slow to
+      cross but offers some cover — useful flanking lanes through
+      the ruined village.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "%"
     color: bright_black
   monument:
     display_name: Hokage Monument

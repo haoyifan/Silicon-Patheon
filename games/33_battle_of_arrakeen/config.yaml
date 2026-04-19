@@ -67,6 +67,13 @@ board:
     - {x: 12, y: 5, type: spice_field}
     - {x: 5, y: 8, type: spice_field}
     - {x: 8, y: 8, type: spice_field}
+    # Worm zone — risky shortcut on the west flank
+    - {x: 1, y: 4, type: worm_zone}
+    - {x: 2, y: 4, type: worm_zone}
+    - {x: 1, y: 5, type: worm_zone}
+    - {x: 2, y: 5, type: worm_zone}
+    - {x: 1, y: 6, type: worm_zone}
+    - {x: 2, y: 6, type: worm_zone}
     # Arrakeen Palace
     - {x: 6, y: 8, type: palace}
     - {x: 7, y: 8, type: palace}
@@ -106,6 +113,17 @@ terrain_types:
     description: |
       Exposed melange deposits. The spice's healing properties
       restore vitality to those who linger here.
+  worm_zone:
+    display_name: Worm Zone
+    move_cost: 3
+    defense_bonus: -2
+    glyph: "W"
+    color: bright_yellow
+    description: |
+      Sandworm territory. The rhythmic vibrations of marching feet
+      attract Shai-Hulud. Crossing here is fast compared to the
+      rocky flanks, but utterly exposed — no cover, and the ground
+      itself may swallow you whole.
   palace:
     display_name: Arrakeen Palace
     move_cost: 1

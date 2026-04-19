@@ -42,6 +42,11 @@ board:
     - {x: 2, y: 5, type: street}
     - {x: 8, y: 5, type: street}
     - {x: 11, y: 5, type: street}
+    # Wall top — elevated firing positions along Wall Rose
+    - {x: 1, y: 9, type: wall_top}
+    - {x: 2, y: 9, type: wall_top}
+    - {x: 9, y: 9, type: wall_top}
+    - {x: 10, y: 9, type: wall_top}
     # Wall Rose at y=10-11 — impassable except the breach
     - {x: 0, y: 10, type: titan_wall}
     - {x: 1, y: 10, type: titan_wall}
@@ -102,6 +107,16 @@ terrain_types:
     description: |
       Collapsed buildings and debris from the titan assault.
       Difficult terrain that slows movement but offers cover.
+  wall_top:
+    display_name: Wall Top
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "="
+    color: white
+    description: |
+      The top of Wall Rose. An elevated firing position that gives
+      ranged units excellent sightlines over the breach. Defenders
+      here fight from behind fortified battlements.
   titan_wall:
     display_name: Titan Wall
     move_cost: 99

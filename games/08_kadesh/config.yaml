@@ -38,6 +38,11 @@ board:
     # Hills on the eastern side
     - {x: 8, y: 5, type: hill}
     - {x: 9, y: 5, type: hill}
+    # Dust cloud on the eastern flank — conceals the chariot ambush
+    - {x: 8, y: 4, type: dust_cloud}
+    - {x: 9, y: 4, type: dust_cloud}
+    - {x: 8, y: 3, type: dust_cloud}
+    - {x: 9, y: 3, type: dust_cloud}
     # Open plains fill the rest of the map (default terrain)
   forts:
     # Kadesh fortress — Red-owned, north side of the river
@@ -57,6 +62,16 @@ terrain_types:
     move_cost: 2
     defense_bonus: 0
     glyph: "="
+    color: yellow
+  dust_cloud:
+    display_name: Dust Cloud
+    description: |
+      A billowing cloud of dust kicked up by chariot wheels on the
+      dry eastern plain. Blocks line of sight. Units inside fight blind.
+    move_cost: 1
+    defense_bonus: 0
+    blocks_sight: true
+    glyph: "%"
     color: yellow
   hill:
     display_name: Hill
@@ -331,6 +346,9 @@ armies:
     - {class: hittite_archer, pos: {x: 3, y: 2}}
     - {class: hittite_chariot_captain, pos: {x: 8, y: 2}}
     - {class: syrian_ally, pos: {x: 9, y: 2}}
+    # Ambush chariots hidden in the dust cloud
+    - {class: hittite_chariot_captain, pos: {x: 9, y: 4}}
+    - {class: hittite_chariot_captain, pos: {x: 9, y: 3}}
 
 rules:
   max_turns: 30

@@ -75,11 +75,11 @@ board:
     - {x: 9, y: 4, type: castle_wall}
 
     # === Side walls y=4 (gap at y=3 for flanking corridors) ===
-    - {x: 0, y: 4, type: castle_wall}
+    # West wall removed -- west flank is wider (fast but exposed)
     - {x: 13, y: 4, type: castle_wall}
 
     # === Central corridor (y=5) -- walls with 2-tile gap at x=6,7 ===
-    - {x: 2, y: 5, type: castle_wall}
+    # West corridor wall pulled back (x=3 only) -- wider west path
     - {x: 3, y: 5, type: castle_wall}
     - {x: 4, y: 5, type: castle_wall}
     - {x: 9, y: 5, type: castle_wall}
@@ -87,7 +87,7 @@ board:
     - {x: 11, y: 5, type: castle_wall}
 
     # === Side walls y=6 (gap at y=7 for flanking corridors) ===
-    - {x: 0, y: 6, type: castle_wall}
+    # West wall removed -- west flank is wider (fast but exposed)
     - {x: 13, y: 6, type: castle_wall}
 
     # === West wing vertical wall (x=4, y=6-7) ===
@@ -96,6 +96,11 @@ board:
     # === East wing vertical wall (x=9, y=6-7) ===
     - {x: 9, y: 6, type: castle_wall}
     - {x: 9, y: 7, type: castle_wall}
+
+    # === East path cover pillars -- east route is slower but protected ===
+    - {x: 12, y: 4, type: pillar}
+    - {x: 12, y: 6, type: pillar}
+    - {x: 11, y: 5, type: pillar}
 
     # === Staging room north wall (y=8) -- gap at x=6,7 ===
     - {x: 1, y: 8, type: castle_wall}

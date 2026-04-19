@@ -62,6 +62,11 @@ board:
     - {x: 5, y: 5, type: prophecy_shelf}
     - {x: 6, y: 5, type: prophecy_shelf}
     - {x: 7, y: 5, type: prophecy_shelf}
+    # Death Chamber — a 2x2 open area with the veil between life and death
+    - {x: 5, y: 3, type: veil}
+    - {x: 6, y: 3, type: veil}
+    - {x: 5, y: 4, type: veil}
+    - {x: 6, y: 4, type: veil}
   forts: []
 
 terrain_types:
@@ -75,6 +80,19 @@ terrain_types:
     description: |
       Black stone walls of the Ministry's deepest level. Ancient,
       cold, and impervious to most spells.
+
+  veil:
+    display_name: The Veil
+    description: |
+      A tattered black curtain fluttering in an unfelt wind, set in a
+      stone archway. The whispers of the dead seep through it. Anyone
+      who lingers near the veil fights distracted and exposed.
+      Cost 1, -1 DEF. A dangerous shortcut through the heart of the
+      Department.
+    move_cost: 1
+    defense_bonus: -1
+    glyph: "V"
+    color: magenta
 
   prophecy_shelf:
     display_name: Prophecy Shelf

@@ -22,7 +22,7 @@ board:
     - {x: 5, y: 9, type: reef}
     - {x: 6, y: 9, type: reef}
     # Hormuz island fortifications (east side)
-    - {x: 9, y: 1, type: fort_wall}
+    - {x: 9, y: 1, type: damaged_wall}
     - {x: 10, y: 0, type: fort_wall}
     - {x: 10, y: 1, type: fort_wall}
     - {x: 10, y: 8, type: fort_wall}
@@ -68,6 +68,17 @@ terrain_types:
     move_cost: 1
     defense_bonus: 2
     glyph: "C"
+    color: yellow
+  damaged_wall:
+    display_name: Damaged Wall
+    description: |
+      A section of the citadel wall weakened by age and prior bombardment.
+      Passable but slow to climb through — an alternative breach point
+      for a determined assault.
+    move_cost: 3
+    defense_bonus: 0
+    passable: true
+    glyph: "%"
     color: yellow
   harbor_chain:
     display_name: Harbor Chain

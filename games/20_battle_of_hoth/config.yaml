@@ -17,7 +17,6 @@ board:
   height: 8
   terrain:
     # Trenches — defensive line across the middle
-    - {x: 1, y: 4, type: trench}
     - {x: 2, y: 4, type: trench}
     - {x: 3, y: 4, type: trench}
     - {x: 4, y: 4, type: trench}
@@ -25,9 +24,16 @@ board:
     - {x: 8, y: 4, type: trench}
     - {x: 9, y: 4, type: trench}
     - {x: 10, y: 4, type: trench}
+    # Ice ridge — western flanking corridor with cover
+    - {x: 0, y: 2, type: ice_ridge}
+    - {x: 1, y: 2, type: ice_ridge}
+    - {x: 0, y: 3, type: ice_ridge}
+    - {x: 1, y: 3, type: ice_ridge}
+    - {x: 0, y: 4, type: ice_ridge}
+    - {x: 1, y: 4, type: ice_ridge}
+    - {x: 0, y: 5, type: ice_ridge}
+    - {x: 1, y: 5, type: ice_ridge}
     # Ice plains — open ground, no cover
-    - {x: 0, y: 2, type: ice_plain}
-    - {x: 1, y: 2, type: ice_plain}
     - {x: 2, y: 2, type: ice_plain}
     - {x: 3, y: 2, type: ice_plain}
     - {x: 4, y: 2, type: ice_plain}
@@ -38,8 +44,6 @@ board:
     - {x: 9, y: 2, type: ice_plain}
     - {x: 10, y: 2, type: ice_plain}
     - {x: 11, y: 2, type: ice_plain}
-    - {x: 0, y: 3, type: ice_plain}
-    - {x: 1, y: 3, type: ice_plain}
     - {x: 2, y: 3, type: ice_plain}
     - {x: 9, y: 3, type: ice_plain}
     - {x: 10, y: 3, type: ice_plain}
@@ -88,6 +92,17 @@ terrain_types:
       Featureless frozen wasteland. No cover whatsoever — anyone
       caught in the open is fully exposed to fire. Slippery
       footing reduces defensive capability.
+
+  ice_ridge:
+    display_name: Ice Ridge
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "^"
+    color: bright_white
+    description: |
+      Jagged ridges of compressed ice along the western approach.
+      Slow going but the frozen formations provide solid cover —
+      a viable flanking route for infantry and light walkers.
 
   echo_base:
     display_name: Echo Base

@@ -19,7 +19,7 @@ board:
     # River Forth — impassable, runs across row 4
     # Bridge is a 2-tile chokepoint at (4,4) and (5,4)
     - {x: 0, y: 4, type: river}
-    - {x: 1, y: 4, type: river}
+    - {x: 1, y: 4, type: ford}
     - {x: 2, y: 4, type: river}
     - {x: 3, y: 4, type: river}
     - {x: 4, y: 4, type: bridge}
@@ -54,6 +54,16 @@ terrain_types:
     defense_bonus: 0
     glyph: "="
     color: yellow
+  ford:
+    display_name: Shallow Ford
+    description: |
+      A shallow stretch of the Forth upstream from the bridge. Chest-deep
+      and treacherous — crossable, but slow and exposed. Any unit caught
+      mid-ford fights at a disadvantage.
+    move_cost: 3
+    defense_bonus: -1
+    glyph: "="
+    color: cyan
   high_ground:
     display_name: Abbey Craig
     description: |

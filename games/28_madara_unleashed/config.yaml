@@ -42,8 +42,10 @@ board:
     - {x: 7, y: 3, type: forest}
 
     # --- Central corridor: defensible rubble ---
+    # Pillars offset to create unequal flanking lanes:
+    # West lane (x=2-3) is wider, east lane (x=6-7) is narrower
     - {x: 4, y: 3, type: rock}   # impassable pillar
-    - {x: 5, y: 3, type: rock}   # impassable pillar (forces split around center)
+    - {x: 6, y: 4, type: rock}   # shifted pillar -- narrows east lane
     - {x: 3, y: 4, type: crater}
     - {x: 6, y: 4, type: crater}
 

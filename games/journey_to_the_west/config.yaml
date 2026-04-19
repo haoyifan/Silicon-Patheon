@@ -39,6 +39,8 @@ board:
     - {x: 6, y: 6, type: river}
     # Bridge at center — narrow chokepoint
     - {x: 6, y: 4, type: bridge}
+    # Ford — second river crossing, slower but safer detour
+    - {x: 6, y: 7, type: ford}
     # Poison swamp — slow, hurts units standing in it
     - {x: 9, y: 4, type: swamp}
     # Thunder Temple goal tile
@@ -54,6 +56,16 @@ terrain_types:
     blocks_sight: false
     glyph: "~"
     color: blue
+  ford:
+    display_name: Ford
+    description: |
+      A shallow river crossing. The water is waist-deep and the
+      current pulls hard, but it is passable on foot. Slower than
+      the bridge and offers no cover, but avoids the chokepoint.
+    move_cost: 3
+    defense_bonus: -1
+    glyph: "."
+    color: cyan
   bridge:
     display_name: Bridge
     move_cost: 1

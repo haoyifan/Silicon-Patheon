@@ -13,51 +13,73 @@ description: |
   Inspired by the Battle of Zion from The Matrix Revolutions.
 
 board:
-  width: 10
-  height: 8
+  width: 12
+  height: 10
   terrain:
+    # Breach ceiling — where sentinels break through (dangerous zone)
+    - {x: 4, y: 0, type: breach_ceiling}
+    - {x: 5, y: 0, type: breach_ceiling}
+    - {x: 6, y: 0, type: breach_ceiling}
+    - {x: 5, y: 1, type: breach_ceiling}
     # Dock bay — main open area where the fighting happens
-    - {x: 2, y: 2, type: dock_bay}
-    - {x: 3, y: 2, type: dock_bay}
-    - {x: 4, y: 2, type: dock_bay}
-    - {x: 5, y: 2, type: dock_bay}
-    - {x: 6, y: 2, type: dock_bay}
-    - {x: 7, y: 2, type: dock_bay}
     - {x: 2, y: 3, type: dock_bay}
     - {x: 3, y: 3, type: dock_bay}
     - {x: 4, y: 3, type: dock_bay}
     - {x: 5, y: 3, type: dock_bay}
     - {x: 6, y: 3, type: dock_bay}
     - {x: 7, y: 3, type: dock_bay}
+    - {x: 8, y: 3, type: dock_bay}
+    - {x: 9, y: 3, type: dock_bay}
+    - {x: 2, y: 4, type: dock_bay}
+    - {x: 3, y: 4, type: dock_bay}
+    - {x: 4, y: 4, type: dock_bay}
+    - {x: 5, y: 4, type: dock_bay}
+    - {x: 6, y: 4, type: dock_bay}
+    - {x: 7, y: 4, type: dock_bay}
+    - {x: 8, y: 4, type: dock_bay}
+    - {x: 9, y: 4, type: dock_bay}
     # Mech suit bays — defensive positions along the sides
-    - {x: 0, y: 4, type: mech_bay}
-    - {x: 1, y: 4, type: mech_bay}
-    - {x: 8, y: 4, type: mech_bay}
-    - {x: 9, y: 4, type: mech_bay}
     - {x: 0, y: 5, type: mech_bay}
-    - {x: 9, y: 5, type: mech_bay}
+    - {x: 1, y: 5, type: mech_bay}
+    - {x: 10, y: 5, type: mech_bay}
+    - {x: 11, y: 5, type: mech_bay}
+    - {x: 0, y: 6, type: mech_bay}
+    - {x: 11, y: 6, type: mech_bay}
     # Tunnels — side approaches the machines can exploit
-    - {x: 0, y: 1, type: tunnel}
     - {x: 0, y: 2, type: tunnel}
     - {x: 0, y: 3, type: tunnel}
-    - {x: 9, y: 1, type: tunnel}
-    - {x: 9, y: 2, type: tunnel}
-    - {x: 9, y: 3, type: tunnel}
+    - {x: 0, y: 4, type: tunnel}
+    - {x: 11, y: 2, type: tunnel}
+    - {x: 11, y: 3, type: tunnel}
+    - {x: 11, y: 4, type: tunnel}
     # Gate — the objective red must breach
-    - {x: 3, y: 6, type: gate}
-    - {x: 4, y: 6, type: gate}
-    - {x: 5, y: 6, type: gate}
-    - {x: 6, y: 6, type: gate}
+    - {x: 4, y: 8, type: gate}
+    - {x: 5, y: 8, type: gate}
+    - {x: 6, y: 8, type: gate}
+    - {x: 7, y: 8, type: gate}
     # Defensive positions — elevated platforms with cover
-    - {x: 2, y: 5, type: defense_platform}
-    - {x: 3, y: 5, type: defense_platform}
-    - {x: 4, y: 5, type: defense_platform}
-    - {x: 5, y: 5, type: defense_platform}
-    - {x: 6, y: 5, type: defense_platform}
-    - {x: 7, y: 5, type: defense_platform}
+    - {x: 2, y: 7, type: defense_platform}
+    - {x: 3, y: 7, type: defense_platform}
+    - {x: 4, y: 7, type: defense_platform}
+    - {x: 5, y: 7, type: defense_platform}
+    - {x: 6, y: 7, type: defense_platform}
+    - {x: 7, y: 7, type: defense_platform}
+    - {x: 8, y: 7, type: defense_platform}
+    - {x: 9, y: 7, type: defense_platform}
   forts: []
 
 terrain_types:
+  breach_ceiling:
+    display_name: Breach Ceiling
+    move_cost: 1
+    defense_bonus: -2
+    glyph: "!"
+    color: bright_red
+    description: |
+      The shattered dock ceiling where sentinels are breaking through.
+      Debris rains down and machines pour in from above — anyone
+      standing here is dangerously exposed. A kill zone.
+
   dock_bay:
     display_name: Dock Bay
     move_cost: 1
@@ -344,31 +366,31 @@ unit_classes:
 armies:
   blue:
     # Niobe — VIP, near the gate
-    - {class: niobe, pos: {x: 5, y: 6}}
+    - {class: niobe, pos: {x: 6, y: 8}}
     # Mifune — center of the defensive line
-    - {class: mifune, pos: {x: 5, y: 4}}
+    - {class: mifune, pos: {x: 6, y: 6}}
     # Zee — support behind the line
-    - {class: zee, pos: {x: 4, y: 5}}
+    - {class: zee, pos: {x: 4, y: 7}}
     # Kid — mobile defender
-    - {class: kid, pos: {x: 3, y: 5}}
+    - {class: kid, pos: {x: 3, y: 6}}
     # Link — operator position
-    - {class: link, pos: {x: 6, y: 5}}
+    - {class: link, pos: {x: 8, y: 7}}
 
   red:
-    # Sentinel Alpha — leading the swarm
-    - {class: sentinel_alpha, pos: {x: 5, y: 0}}
+    # Sentinel Alpha — leading the swarm through the breach
+    - {class: sentinel_alpha, pos: {x: 5, y: 1}}
     # Bomber — ranged threat
-    - {class: sentinel_bomber, pos: {x: 3, y: 0}}
+    - {class: sentinel_bomber, pos: {x: 3, y: 1}}
     # Tunneler — flanking through tunnels
-    - {class: sentinel_tunneler, pos: {x: 0, y: 0}}
+    - {class: sentinel_tunneler, pos: {x: 0, y: 1}}
     # Swarm — overwhelming numbers
-    - {class: sentinel_swarm, pos: {x: 7, y: 0}}
+    - {class: sentinel_swarm, pos: {x: 8, y: 1}}
     # Diggers — slow heavy hitters
-    - {class: digger_heavy, pos: {x: 4, y: 0}}
-    - {class: digger_light, pos: {x: 6, y: 0}}
+    - {class: digger_heavy, pos: {x: 4, y: 1}}
+    - {class: digger_light, pos: {x: 7, y: 2}}
     # Flyers — fast attackers
-    - {class: flyer_interceptor, pos: {x: 2, y: 1}}
-    - {class: flyer_hunter, pos: {x: 8, y: 1}}
+    - {class: flyer_interceptor, pos: {x: 2, y: 2}}
+    - {class: flyer_hunter, pos: {x: 10, y: 2}}
 
 rules:
   max_turns: 10
@@ -377,8 +399,8 @@ rules:
 
 win_conditions:
   # Any red unit reaches the gate -> red wins (breach)
-  - {type: reach_tile, team: red, pos: {x: 4, y: 6}}
-  - {type: reach_tile, team: red, pos: {x: 5, y: 6}}
+  - {type: reach_tile, team: red, pos: {x: 5, y: 8}}
+  - {type: reach_tile, team: red, pos: {x: 6, y: 8}}
   # Niobe dies -> blue loses (no one to relay Neo's signal)
   - {type: protect_unit, unit_id: u_b_niobe_1, owning_team: blue}
   # Niobe survives the turn cap -> Neo succeeds, blue wins

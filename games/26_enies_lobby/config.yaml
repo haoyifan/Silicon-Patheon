@@ -210,6 +210,16 @@ board:
     - {x: 3, y: 2, type: sniper_perch}
     - {x: 4, y: 2, type: sniper_perch}
 
+    # === COURTHOUSE PLAZA FEATURES — break up the open space ===
+    # Scattered courthouse rubble (cover for arriving units)
+    - {x: 2, y: 5, type: courthouse_rubble}
+    - {x: 4, y: 7, type: courthouse_rubble}
+    - {x: 3, y: 9, type: courthouse_rubble}
+    - {x: 5, y: 8, type: courthouse_rubble}
+    - {x: 1, y: 6, type: courthouse_rubble}
+    # Central fountain (impassable, forces routing)
+    - {x: 3, y: 6, type: fountain}
+
     # ===== BRIDGE OF HESITATION — main route (y=5-6, x=6-13) =====
     # 2 tiles wide, 8 tiles long — a killing field
     - {x: 6, y: 5, type: bridge}
@@ -494,6 +504,24 @@ terrain_types:
       The courthouse rooftop — an elevated firing position.
       Excellent defensive cover (+3 DEF) and sightlines down
       the bridge. Costs 2 movement to climb up.
+  courthouse_rubble:
+    display_name: Courthouse Rubble
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "%"
+    color: dim
+    description: |
+      Shattered masonry from the courthouse bombardment. Slows
+      movement but provides useful cover for the incoming assault.
+  fountain:
+    display_name: Fountain
+    move_cost: 99
+    passable: false
+    glyph: "O"
+    color: bright_cyan
+    description: |
+      An ornate World Government fountain in the plaza center.
+      Impassable — forces units to route around it.
   gates_of_justice:
     display_name: Gates of Justice
     move_cost: 1
