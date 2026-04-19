@@ -26,7 +26,7 @@ description: |
 #  y=6     ^ | . . . . . # # . # # . . . . . . . . . .   Wall continues
 #  y=7     ^ | . . . | . ; ; ; ; ; ; . . . . . . . . .   Keep wall + ramparts
 #  y=8     ^ | . . . | . ; ; ; ; o ; . . . . . . . . .   Ramparts + culvert
-#  y=9     ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^   South cliffs
+#  y=9     ^ ^ ^ b b ^ ^ : : ^ ^ ^ l ^ ^ l ^ l l ^ ^ ^   Wall line w/ breaches
 #  y=10    . . . . . . . : : . . . . . . . . . . . . .   Causeway approach
 #  y=11    . . . . . . . . . . . . . . . . . . . . . .   Open field
 #  y=12    . . . . . . . . . . . . . . . . . . . . . .   Uruk staging
@@ -37,9 +37,12 @@ description: |
 #  Deeping Wall: x=7, y=1-8 (impassable, gate at y=4-5).
 #  Ramparts: x=7-12, y=1-2 and y=7-8 (atop the wall).
 #  Culvert: x=10, y=8.
-#  Causeway: x=7-8, y=10.
-#  The gorge opens at y=9 south edge — cliffs force Red through
-#  a narrow approach before the open field.
+#  Causeway: x=7-8, y=10 and x=7-8, y=9 (main ramp up to the gate).
+#  Breach (b): x=3-4, y=9 — the culvert wall blown open by blasting fire.
+#  Ladder (l): x=12, 15, 17, 18, y=9 — siege ladders on the Deeping Wall;
+#    a double ladder at x=17-18 gives the eastern assault a foothold.
+#  Cliffs fill the remaining spans of y=9, channeling attackers into
+#  three distinct approaches (west breach / centre causeway / east ladders).
 # ──────────────────────────────────────────────────────────
 
 board:
@@ -70,26 +73,30 @@ board:
     - {x: 20, y: 0, type: cliff}
     - {x: 21, y: 0, type: cliff}
 
-    # ── South cliffs (y=9) — fortress boundary ──
+    # ── South wall line (y=9) — fortress boundary with breaches ──
+    # Most of y=9 is sheer cliff / wall-face, but three approaches are
+    # passable: the culvert breach (x=3-4), the causeway (x=7-8), and
+    # the eastern siege-ladder section (x=17-18), with two lone
+    # ladder points at x=12 and x=15 that allow bold flanking.
     - {x: 0, y: 9, type: cliff}
     - {x: 1, y: 9, type: cliff}
     - {x: 2, y: 9, type: cliff}
-    - {x: 3, y: 9, type: cliff}
-    - {x: 4, y: 9, type: cliff}
+    - {x: 3, y: 9, type: breach}
+    - {x: 4, y: 9, type: breach}
     - {x: 5, y: 9, type: cliff}
     - {x: 6, y: 9, type: cliff}
-    - {x: 7, y: 9, type: cliff}
-    - {x: 8, y: 9, type: cliff}
+    - {x: 7, y: 9, type: causeway}
+    - {x: 8, y: 9, type: causeway}
     - {x: 9, y: 9, type: cliff}
     - {x: 10, y: 9, type: cliff}
     - {x: 11, y: 9, type: cliff}
-    - {x: 12, y: 9, type: cliff}
+    - {x: 12, y: 9, type: ladder}
     - {x: 13, y: 9, type: cliff}
     - {x: 14, y: 9, type: cliff}
-    - {x: 15, y: 9, type: cliff}
+    - {x: 15, y: 9, type: ladder}
     - {x: 16, y: 9, type: cliff}
-    - {x: 17, y: 9, type: cliff}
-    - {x: 18, y: 9, type: cliff}
+    - {x: 17, y: 9, type: ladder}
+    - {x: 18, y: 9, type: ladder}
     - {x: 19, y: 9, type: cliff}
     - {x: 20, y: 9, type: cliff}
     - {x: 21, y: 9, type: cliff}
@@ -238,6 +245,28 @@ terrain_types:
     defense_bonus: 0
     glyph: ":"
     color: bright_black
+
+  breach:
+    display_name: Wall Breach
+    description: |
+      A gaping hole torn in the Deeping Wall by the sapper's
+      blasting fire. Passable but treacherous footing — costs 2
+      movement and gives +1 defence to whoever holds the rubble.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "b"
+    color: red
+
+  ladder:
+    display_name: Siege Ladder
+    description: |
+      An Uruk siege ladder raised against the wall. Climbing it
+      is slow (cost 2) and exposed to fire from the ramparts
+      above. Defenders atop the wall hold the high ground.
+    move_cost: 2
+    defense_bonus: 0
+    glyph: "l"
+    color: red
 
   keep_wall:
     display_name: Keep Wall
@@ -574,7 +603,7 @@ win_conditions:
 narrative:
   title: "Helm's Deep — The Hornburg Siege"
   description: |
-    A fortress siege in the rain. Six heroes against nine
+    A fortress siege in the rain. Six heroes against eight
     Uruk captains. Hold the wall, protect the king, survive
     until dawn.
   intro: |
@@ -588,19 +617,22 @@ narrative:
     - trigger: on_turn_start
       turn: 3
       text: |
-        Ladders slam against the northern wall. The Uruks
-        begin to scale. Haldir's archers fire into the mass.
+        Ladders slam against the eastern stretch of the
+        Deeping Wall. The Uruks begin to scale. Haldir's
+        archers fire into the mass.
     - trigger: on_turn_start
       turn: 5
       text: |
-        The sapper reaches the culvert! Blasting fire
-        ignites beneath the wall — if the breach holds,
-        the Uruks will pour through.
+        Blasting fire erupts beneath the western wall — the
+        sapper has reached the culvert drain. Stone and men
+        fly into the rain. A breach yawns where the wall
+        stood; Uruks pour through the rubble.
     - trigger: on_turn_start
       turn: 8
       text: |
-        The gate shudders under the ram. Aragorn and Gimli
-        buy time at the causeway. The wall groans.
+        The gate shudders under the ram at the causeway.
+        Aragorn and Gimli wade into the Uruks on the ramp.
+        From east to west the wall groans under three assaults.
     - trigger: on_turn_start
       turn: 12
       text: |

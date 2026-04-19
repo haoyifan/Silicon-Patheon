@@ -133,11 +133,11 @@ board:
     # =============================================
     # TIME ROOM — middle-left room (cols 1-5, rows 6-9)
     # =============================================
-    # North wall
+    # North wall — doorway at x=4 leads up into the Hall of Prophecy
     - {x: 1, y: 5, type: stone_wall}
     - {x: 2, y: 5, type: stone_wall}
     - {x: 3, y: 5, type: stone_wall}
-    - {x: 4, y: 5, type: stone_wall}
+    # door at x=4 (connects Prophecy Hall doorway (4,4) to Time Room)
     - {x: 5, y: 5, type: stone_wall}
     # East wall
     - {x: 5, y: 6, type: stone_wall}
@@ -173,12 +173,10 @@ board:
     - {x: 12, y: 7, type: stone_wall}
     # door at y=8
     - {x: 12, y: 9, type: stone_wall}
-    # South wall
-    - {x: 8, y: 9, type: stone_wall}
+    # South wall (corners (8,9) and (12,9) already set above)
     - {x: 9, y: 9, type: stone_wall}
     # door at x=10
     - {x: 11, y: 9, type: stone_wall}
-    - {x: 12, y: 9, type: stone_wall}
     # The Veil — center of the Death Chamber
     - {x: 10, y: 7, type: veil}
     - {x: 10, y: 6, type: veil}
@@ -186,10 +184,10 @@ board:
     # =============================================
     # BRAIN ROOM — middle-right room (cols 14-18, rows 6-9)
     # =============================================
-    # North wall
+    # North wall — doorway at x=16 leads up into the Planet Room
     - {x: 14, y: 5, type: stone_wall}
     - {x: 15, y: 5, type: stone_wall}
-    - {x: 16, y: 5, type: stone_wall}
+    # door at x=16 (connects Planet Room doorway (16,4) to Brain Room)
     - {x: 17, y: 5, type: stone_wall}
     - {x: 18, y: 5, type: stone_wall}
     # West wall
@@ -197,8 +195,7 @@ board:
     - {x: 14, y: 7, type: stone_wall}
     # door at y=8
     - {x: 14, y: 9, type: stone_wall}
-    # South wall
-    - {x: 14, y: 9, type: stone_wall}
+    # South wall (corner (14,9) already set above)
     - {x: 15, y: 9, type: stone_wall}
     - {x: 16, y: 9, type: stone_wall}
     # door at x=17
@@ -211,19 +208,20 @@ board:
     # CORRIDORS — connecting passages between rooms
     # =============================================
     # North corridor (connecting Prophecy Hall to Planet Room)
-    # Walls along y=2-3 forming the corridor
+    # Walls along y=2-3 forming the corridor; doorway at (9,3)
+    # lets Death Eaters descend into the Death Chamber's spine.
     - {x: 7, y: 1, type: stone_wall}
     - {x: 7, y: 3, type: stone_wall}
     - {x: 8, y: 1, type: stone_wall}
     - {x: 8, y: 3, type: stone_wall}
-    - {x: 9, y: 3, type: stone_wall}
+    # door at (9,3) — opens north corridor onto the central spine
     - {x: 10, y: 1, type: stone_wall}
     - {x: 10, y: 3, type: stone_wall}
     - {x: 11, y: 1, type: stone_wall}
     - {x: 11, y: 3, type: stone_wall}
     - {x: 12, y: 1, type: stone_wall}
     - {x: 12, y: 3, type: stone_wall}
-    # door at x=9 y=1 (north entrance)
+    # door at x=9 y=1 (north entrance, above to outer wall)
 
     # Central spine corridor (y=4, connecting upper and lower rooms)
     # Already has doors from the rooms above
@@ -630,7 +628,7 @@ unit_classes:
     rng_min: 1
     rng_max: 3
     is_magic: true
-    glyph: "Y"
+    glyph: "X"
     color: bright_yellow
 
 armies:
@@ -645,8 +643,8 @@ armies:
     - {class: ron, pos: {x: 7, y: 11}}
     # Luna in the Planet Room
     - {class: luna, pos: {x: 16, y: 2}}
-    # Ginny near the Death Chamber entrance
-    - {class: ginny, pos: {x: 9, y: 5}}
+    # Ginny just inside the Death Chamber doorway
+    - {class: ginny, pos: {x: 9, y: 6}}
 
   red:
     # Death Eaters entering from multiple points
@@ -663,7 +661,8 @@ armies:
     - {class: jugson, pos: {x: 18, y: 11}}
     # Death Eaters at separate entry points
     - {class: death_eater, pos: {x: 15, y: 12}}
-    - {class: death_eater, pos: {x: 1, y: 6}}
+    # Prowls the western south corridor, stalking behind the DA line
+    - {class: death_eater, pos: {x: 1, y: 10}}
 
 rules:
   max_turns: 16

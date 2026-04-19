@@ -91,6 +91,10 @@ terrain_types:
     display_name: 城垛
   causeway:
     display_name: 甬道
+  breach:
+    display_name: 城墙缺口
+  ladder:
+    display_name: 攻城梯
   keep_wall:
     display_name: 内堡墙
 
@@ -106,18 +110,20 @@ narrative:
     - trigger: on_turn_start
       turn: 3
       text: |
-        攻城梯砸上北墙。强兽人开始攀登。
+        攻城梯砸上深墙东段。强兽人开始攀登。
         哈尔迪尔的弓手向人群中齐射。
     - trigger: on_turn_start
       turn: 5
       text: |
-        工兵到达排水沟！爆炸火药在城墙下方引燃——
-        如果缺口守不住，强兽人将蜂拥而入。
+        爆炸火药在西侧城墙下方引燃——工兵到达了排水沟。
+        石块与尸体在雨中飞溅。城墙裂开一道大缺口，
+        强兽人从瓦砾中涌入。
     - trigger: on_turn_start
       turn: 8
       text: |
-        城门在撞锤下颤抖。阿拉贡和吉姆利在甬道上
-        争取时间。城墙在呻吟。
+        撞锤击打下，甬道上的城门颤抖。阿拉贡和吉姆利
+        在斜坡上与强兽人肉搏。从东到西，城墙在三路
+        攻势下呻吟。
     - trigger: on_turn_start
       turn: 12
       text: |

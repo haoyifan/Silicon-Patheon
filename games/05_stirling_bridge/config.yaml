@@ -45,19 +45,20 @@ board:
     - {x: 0, y: 5, type: river}
     - {x: 1, y: 5, type: river}
     - {x: 2, y: 5, type: river}
-    - {x: 3, y: 5, type: river}
     - {x: 4, y: 5, type: river}
     - {x: 0, y: 6, type: river}
     - {x: 1, y: 6, type: river}
     - {x: 2, y: 6, type: river}
-    - {x: 3, y: 6, type: river}
+    - {x: 4, y: 6, type: river}
     - {x: 0, y: 7, type: river}
     - {x: 1, y: 7, type: river}
     - {x: 2, y: 7, type: river}
+    - {x: 4, y: 7, type: river}
 
-    # Western ford — upstream, shallow but slow
+    # Western ford — upstream, shallow but slow (full column crossing)
+    - {x: 3, y: 5, type: ford}
+    - {x: 3, y: 6, type: ford}
     - {x: 3, y: 7, type: ford}
-    - {x: 4, y: 6, type: ford}
 
     # Central river (around the bridge)
     - {x: 5, y: 5, type: river}
@@ -70,13 +71,15 @@ board:
     - {x: 6, y: 7, type: river}
     - {x: 7, y: 7, type: river}
 
-    # Stirling Bridge — 2 tiles wide chokepoint
+    # Stirling Bridge — 2 tiles wide, spanning the full river
+    - {x: 8, y: 5, type: bridge}
+    - {x: 9, y: 5, type: bridge}
     - {x: 8, y: 6, type: bridge}
     - {x: 9, y: 6, type: bridge}
+    - {x: 8, y: 7, type: bridge}
+    - {x: 9, y: 7, type: bridge}
 
     # Eastern river
-    - {x: 8, y: 5, type: river}
-    - {x: 9, y: 5, type: river}
     - {x: 10, y: 5, type: river}
     - {x: 11, y: 5, type: river}
     - {x: 12, y: 5, type: river}
@@ -84,20 +87,18 @@ board:
     - {x: 11, y: 6, type: river}
     - {x: 12, y: 6, type: river}
     - {x: 13, y: 6, type: river}
-    - {x: 8, y: 7, type: river}
-    - {x: 9, y: 7, type: river}
     - {x: 10, y: 7, type: river}
     - {x: 11, y: 7, type: river}
     - {x: 12, y: 7, type: river}
     - {x: 13, y: 7, type: river}
 
-    # Eastern ford — downstream crossing
+    # Eastern ford — downstream crossing (full column)
+    - {x: 14, y: 5, type: ford}
     - {x: 14, y: 6, type: ford}
     - {x: 14, y: 7, type: ford}
 
     # Far eastern river continues
     - {x: 13, y: 5, type: river}
-    - {x: 14, y: 5, type: river}
     - {x: 15, y: 5, type: river}
     - {x: 16, y: 5, type: river}
     - {x: 17, y: 5, type: river}
@@ -108,7 +109,6 @@ board:
     - {x: 17, y: 6, type: river}
     - {x: 18, y: 6, type: river}
     - {x: 19, y: 6, type: river}
-    - {x: 14, y: 7, type: ford}
     - {x: 15, y: 7, type: river}
     - {x: 16, y: 7, type: river}
     - {x: 17, y: 7, type: river}

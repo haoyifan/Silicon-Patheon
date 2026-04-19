@@ -26,10 +26,14 @@ def order_reinforcements(state, turn: int, team: str, **_):
     state.__dict__["_order_arrived"] = True
 
     spawns = [
+        # Sirius charges into the Time Room
         ("sirius", 4, 6),
+        # Lupin bursts through the Death Chamber doorway
         ("lupin", 9, 6),
-        ("tonks", 0, 4),
-        ("moody", 0, 3),
+        # Tonks drops in behind the DA line along the west flank
+        ("tonks", 1, 7),
+        # Moody storms up through the Hall of Prophecy
+        ("moody", 1, 3),
     ]
     for class_name, x, y in spawns:
         uid = f"u_b_{class_name}_1"
@@ -74,7 +78,7 @@ _CLASS_SPECS = {
         "hp_max": 28, "atk": 11, "defense": 5, "res": 7,
         "spd": 4, "rng_min": 1, "rng_max": 3, "move": 3,
         "is_magic": True,
-        "glyph": "E", "color": "bright_yellow",
+        "glyph": "X", "color": "bright_yellow",
         "display_name": "Alastor 'Mad-Eye' Moody",
         "description": "Retired Auror. His magical eye sees through walls.",
     },

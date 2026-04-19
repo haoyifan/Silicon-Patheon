@@ -96,6 +96,11 @@ terrain_types:
     description: |
       福斯河上方的制高点。移动消耗2点。防御+3。
       华莱士在冲锋前将军队埋伏在此处。
+  marsh:
+    display_name: 沼泽地
+    description: |
+      福斯河南岸的沼泽地。湿软危险的地面，
+      吞噬靴子和马蹄。移动消耗2点，防御-1。
 
 narrative:
   title: 斯特灵桥之战
