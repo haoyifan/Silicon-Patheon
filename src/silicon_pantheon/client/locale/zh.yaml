@@ -127,6 +127,7 @@ login_screen:
 # 大厅表格标题
 lobby_table:
   room: "房间"
+  room_id: "房间号"
   host: "房主"
   joiner: "挑战者"
   scenario: "剧本"

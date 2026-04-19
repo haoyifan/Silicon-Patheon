@@ -48,17 +48,21 @@ class LobbyScreen(Screen):
 
         table = Table(expand=True, show_lines=False, header_style="bold")
         table.add_column(" ", width=2)
+        table.add_column(t("lobby_table.room_id", lc), width=8, no_wrap=True)
         table.add_column(t("lobby_table.host", lc), overflow="fold")
         table.add_column(t("lobby_table.joiner", lc), overflow="fold")
         table.add_column(t("lobby_table.scenario", lc), overflow="fold")
         table.add_column(t("lobby_table.col_status", lc))
 
         if not rooms:
-            table.add_row("", t("lobby_table.no_rooms", lc), "", "", "")
+            table.add_row("", "", t("lobby_table.no_rooms", lc), "", "", "")
         else:
             for i, r in enumerate(rooms):
                 marker = "➤" if i == self._selected else " "
                 seats = r.get("seats", {})
+                # Room ID: show short prefix for easy identification
+                room_id = r.get("room_id", "")
+                room_id_short = room_id[:8] if room_id else "—"
                 # Scenario: prefer localized name from cache
                 scenario_raw = r.get("scenario", "")
                 cached = self.app.state.scenario_cache.get(scenario_raw)
@@ -72,6 +76,7 @@ class LobbyScreen(Screen):
                 joiner_name = joiner_player.get("display_name", "") if joiner_player else ""
                 table.add_row(
                     marker,
+                    room_id_short,
                     host_name,
                     joiner_name or "—",
                     scenario_display,

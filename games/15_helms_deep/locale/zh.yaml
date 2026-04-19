@@ -1,0 +1,100 @@
+# 圣盔谷 — 中文本地化
+name: 圣盔谷——号角堡之围
+description: |
+  暴雨倾盆。一万强兽人涌上深溪谷，扑向圣盔谷古堡。
+  阿拉贡、莱戈拉斯、吉姆利和一队罗斯洛瑞恩精灵弓手
+  与希优顿王的近卫军一起驻守深墙。强兽人带来了攻城梯、
+  撞门锤，和一个携带爆炸物的狂战士瞄准排水沟。
+  蓝方必须坚守到黎明——或在城墙上击溃敌军。
+
+unit_classes:
+  aragorn:
+    display_name: 阿拉贡
+    description: |
+      登丹人的族长，西方的游侠。手持安都瑞尔重铸之剑，
+      在深墙上独当一面。
+  legolas:
+    display_name: 莱戈拉斯
+    description: |
+      幽暗密林的精灵王子。在深墙城垛上，每一箭都夺命。
+      在险境中与吉姆利比拼杀敌数——并且领先。
+  gimli:
+    display_name: 吉姆利
+    description: |
+      矮人战士，手持双斧。在城门处寸步不让，
+      将敢于攻入的强兽人劈成碎片。
+  theoden:
+    display_name: 希优顿王
+    description: |
+      洛汗之王。从萨鲁曼的控制中苏醒后，选择在
+      号角堡做最后的抵抗而非逃跑。他的陨落意味着
+      洛汗的沦陷。
+  haldir:
+    display_name: 罗斯洛瑞恩的哈尔迪尔
+    description: |
+      精灵弓箭队长。率领精灵弓手支援号角堡，
+      履行精灵与人类的古老同盟。
+  eomer:
+    display_name: 伊欧默
+    description: |
+      洛汗元帅。被放逐后率领骑兵从外围进攻，
+      在绝望中给予圣盔谷最后的希望。
+  ugluk:
+    display_name: 乌格鲁克
+    description: |
+      强兽人指挥官。率领攻城部队，残暴高效。
+  lurtz:
+    display_name: 鲁兹
+    description: |
+      萨鲁曼的首席精英。弓箭与弯刀双修的混血兽人，
+      在远近两种距离上都极具威胁。
+  sharku:
+    display_name: 夏库
+    description: |
+      骑乘座狼的斥候。绕过防线侧翼包抄。
+  berserker:
+    display_name: 强兽人狂战士
+    description: |
+      携带爆炸物的自杀式突击兵。以排水沟为目标——
+      一旦到达就会炸开城墙。
+  gorul:
+    display_name: 攻城长 戈鲁尔
+    description: |
+      操控攻城撞锤的巨型强兽人。缓慢但坚如磐石。
+  sapper:
+    display_name: 强兽人工兵
+    description: |
+      携带炸药的工兵。目标是排水沟——到达即引爆。
+  mauhur:
+    display_name: 毛胡尔
+    description: |
+      弓箭手和近战兼具的精英强兽人。
+  ghashnak:
+    display_name: 嘎什纳克
+    description: |
+      携带攻城梯的步兵队长。率领梯队攀登深墙。
+
+terrain_types:
+  cliff:
+    display_name: 山崖
+  deeping_wall:
+    display_name: 深墙
+  fortress_gate:
+    display_name: 城门
+  culvert:
+    display_name: 排水沟
+  rampart:
+    display_name: 城垛
+  causeway:
+    display_name: 甬道
+  keep_wall:
+    display_name: 内堡墙
+
+narrative:
+  title: 圣盔谷——号角堡之围
+  description: |
+    暴雨倾盆。一万强兽人涌上深溪谷。阿拉贡、莱戈拉斯和
+    吉姆利在深墙上坚守。希优顿王在号角堡内等待黎明。
+  intro: |
+    雨夜。城墙上的弓手可以看到数不清的火把从谷底延伸到
+    地平线。然后第一波攻城梯撞上了墙壁。

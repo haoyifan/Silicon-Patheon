@@ -1,0 +1,109 @@
+# 战利品列车袭击 — 中文本地化
+name: 战利品列车袭击
+description: |
+  玫瑰大道，河湾地。詹姆·兰尼斯特的军队正押送从高庭
+  掠夺的战利品返回君临——金车、粮车，一条拉得过长的
+  纵队。然后多斯拉克人的嘶吼从山丘上传来，身后是卓耿。
+  丹妮莉丝·坦格利安从天空倾泻龙焰，而她的骑手们碾碎
+  了兰尼斯特的盾墙。波隆冲向蝎弩——唯一能伤到龙的武器。
+
+unit_classes:
+  daenerys:
+    display_name: 丹妮莉丝·坦格利安
+    description: |
+      龙之母，锁链破碎者。第一次在维斯特洛骑龙参战。
+      飞行单位——无视地形。龙焰毁天灭地，但她自身必须被保护。
+  drogon:
+    display_name: 卓耿
+    description: |
+      黑死神转世。丹妮莉丝三条龙中最大的一条。
+      向战场喷射烈焰，将全副铠甲的骑士化为灰烬。
+  qhono:
+    display_name: 柯赫诺
+    description: |
+      多斯拉克血骑。丹妮莉丝最信任的战士之一。
+      挥舞弯刀率先冲锋，战吼响彻原野。
+  aggo:
+    display_name: 阿戈
+    description: |
+      多斯拉克血骑，马背弓箭大师。全速奔驰时射箭，
+      精准致命。
+  kovarro:
+    display_name: 科瓦罗
+    description: |
+      多斯拉克骑手，凶猛无畏。挥舞弯刀直冲兰尼斯特盾墙。
+  jaime:
+    display_name: 詹姆·兰尼斯特
+    description: |
+      弑君者。指挥兰尼斯特纵队。即使戴着金手，
+      仍是维斯特洛最出色的剑客之一。
+  bronn:
+    display_name: 波隆
+    description: |
+      佣兵出身的骑士。唯一敢操作蝎弩射龙的人。
+      远程反龙专家。
+  randyll_tarly:
+    display_name: 兰道·塔利
+    description: |
+      角陵城主，河湾地最优秀的军事指挥官。
+      唯一在战场上击败过劳勃·拜拉席恩的人。
+  dickon_tarly:
+    display_name: 迪肯·塔利
+    description: |
+      兰道的继承人。年轻、勇敢、渴望证明自己。
+      与父亲并肩在盾墙中战斗。
+  lannister_captain:
+    display_name: 洛奇队长
+    description: |
+      指挥后卫的兰尼斯特军官。五王之战的老兵。
+      在辎重车燃烧时坚守阵线。
+  lannister_archer:
+    display_name: 兰尼斯特弓手
+    description: |
+      西境弩手。精准但装填缓慢。
+      拼命向头顶的龙射击。
+  lannister_spearman:
+    display_name: 兰尼斯特长矛兵
+    description: |
+      持盾长矛步兵，组成兰尼斯特阵线。
+      训练有素可以保持队形，但没人教过他们如何面对龙焰。
+
+terrain_types:
+  road:
+    display_name: 玫瑰大道
+  wagon:
+    display_name: 战利品马车
+  hill:
+    display_name: 山丘
+  brush:
+    display_name: 灌木丛
+  scorched:
+    display_name: 焦土
+  river:
+    display_name: 黑水河
+
+narrative:
+  title: 战利品列车袭击
+  description: |
+    玫瑰大道在燃烧。丹妮莉丝和卓耿从天而降，
+    多斯拉克骑手碾碎了兰尼斯特的盾墙。
+  intro: |
+    詹姆先听到声音——山丘传来低沉的隆隆声，
+    然后是多斯拉克的战吼。接着阴影掠过太阳，
+    世界化为火海。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: "卓耿第一次俯冲将辎重车点燃。士兵四散奔逃，惨叫不断。"
+    - trigger: on_turn_start
+      turn: 6
+      text: "波隆冲到了蝎弩前。他转动绞盘装上弩箭，瞄准天空中的黑影。"
+    - trigger: on_turn_start
+      turn: 10
+      text: "兰尼斯特阵线崩溃。多斯拉克骑手涌入缺口，砍杀逃跑的士兵。"
+    - trigger: on_unit_killed
+      unit_id: u_r_jaime_1
+      text: "弑君者倒下了。狮子旗帜跌落泥中。"
+    - trigger: on_unit_killed
+      unit_id: u_b_daenerys_1
+      text: "丹妮莉丝被击落龙背。卓耿发出悲鸣。"

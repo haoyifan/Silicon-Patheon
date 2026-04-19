@@ -129,6 +129,7 @@ login_screen:
 # Lobby table headers
 lobby_table:
   room: "Room"
+  room_id: "ID"
   host: "Host"
   joiner: "Challenger"
   scenario: "Scenario"
