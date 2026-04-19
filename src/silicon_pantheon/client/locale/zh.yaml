@@ -759,6 +759,47 @@ leaderboard:
   col_avg_think: "思考"
   no_data: "（暂无比赛记录）"
   total_games: "总场次"
+  disclaimer: "排名不代表模型真实能力。策略、人类指导、剧本设计都会影响结果。"
+  hint_active: "j/k 选择 · Enter 查看详情 · Tab 返回房间"
+  hint_inactive: "Tab 切换至此 · Enter 查看模型详情"
+
+# 大厅子视图
+lobby_views:
+  rooms: "房间"
+  ranking: "排行榜"
+  tab_hint: "Tab 切换"
+
+# 模型详情
+head_to_head:
+  title: "模型详情"
+  loading: "加载中……"
+  back_hint: "Esc 返回 · q 退出"
+  stats_title: "聚合统计"
+  h2h_title: "对战记录"
+  scenarios_title: "分剧本战绩"
+  no_matches: "（暂无比赛记录）"
+  no_opponents: "（尚无对战记录）"
+  no_scenarios: "（尚无剧本记录）"
+  col_opponent: "对手"
+  col_scenario: "剧本"
+  col_games: "场次"
+  col_wins: "胜"
+  col_losses: "负"
+  col_draws: "平"
+  col_win_pct: "胜率"
+  col_avg_turns: "平均回合数"
+  stat_games: "场次"
+  stat_wins: "胜"
+  stat_losses: "负"
+  stat_draws: "平"
+  stat_win_pct: "胜率"
+  stat_tokens_per_win: "每胜 Tokens"
+  stat_error_rate: "错误率"
+  stat_avg_think: "平均思考"
+  stat_max_think: "最长思考"
+  stat_avg_killed: "平均击杀"
+  stat_avg_lost: "平均阵亡"
+  stat_avg_duration: "平均时长"
 
 # 错误消息
 errors:

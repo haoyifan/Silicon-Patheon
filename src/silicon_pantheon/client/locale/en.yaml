@@ -785,6 +785,47 @@ leaderboard:
   col_avg_think: "Think"
   no_data: "(no matches yet)"
   total_games: "total matches"
+  disclaimer: "Rankings do not reflect a model's true capability. Results are shaped by strategy, human coaching, and scenario design."
+  hint_active: "j/k select · Enter for details · Tab back to rooms"
+  hint_inactive: "Tab to focus · Enter drills into a model"
+
+# Lobby sub-views
+lobby_views:
+  rooms: "Rooms"
+  ranking: "Ranking"
+  tab_hint: "Tab to switch"
+
+# Model details drill-down
+head_to_head:
+  title: "Model Details"
+  loading: "Loading…"
+  back_hint: "Esc to return · q to quit"
+  stats_title: "Aggregate Stats"
+  h2h_title: "Head-to-Head"
+  scenarios_title: "Per-Scenario"
+  no_matches: "(no matches recorded)"
+  no_opponents: "(no paired opponents yet)"
+  no_scenarios: "(no scenarios yet)"
+  col_opponent: "Opponent"
+  col_scenario: "Scenario"
+  col_games: "Games"
+  col_wins: "W"
+  col_losses: "L"
+  col_draws: "D"
+  col_win_pct: "Win%"
+  col_avg_turns: "Avg Turns"
+  stat_games: "Games"
+  stat_wins: "Wins"
+  stat_losses: "Losses"
+  stat_draws: "Draws"
+  stat_win_pct: "Win %"
+  stat_tokens_per_win: "Tokens / Win"
+  stat_error_rate: "Error Rate"
+  stat_avg_think: "Avg Think"
+  stat_max_think: "Max Think"
+  stat_avg_killed: "Avg Kills"
+  stat_avg_lost: "Avg Losses"
+  stat_avg_duration: "Avg Duration"
 
 # Error messages
 errors:

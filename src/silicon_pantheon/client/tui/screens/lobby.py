@@ -26,6 +26,8 @@ class LobbyScreen(Screen):
     def __init__(self, app: TUIApp):
         self.app = app
         self._selected = 0
+        self._ranking_selected = 0
+        self._active_view = "rooms"  # "rooms" | "ranking"
         self._last_poll = 0.0
         self._tutorial = None  # TutorialOverlay | None
         self._confirm = None  # ConfirmModal | None
@@ -45,6 +47,7 @@ class LobbyScreen(Screen):
 
         header = Text(f"{t('lobby_title', lc)} — {self.app.state.display_name}", style="bold yellow")
         subtitle = Text(f"{len(rooms)} {t('lobby_table.room', lc)} {t('lobby_table.open', lc)}", style="dim")
+        view_bar = self._render_view_bar(lc)
 
         table = Table(expand=True, show_lines=False, header_style="bold")
         table.add_column(" ", width=2)
@@ -104,9 +107,11 @@ class LobbyScreen(Screen):
         elif self.app.state.status_message:
             status.append(self.app.state.status_message, style="green")
 
-        body = Group(header, subtitle, Text(""), table, Text(""), keys, status)
-        room_panel = Panel(body, border_style="green", title=t("lobby_title", lc))
-        lb_panel = self._render_leaderboard(lc)
+        rooms_border = "green" if self._active_view == "rooms" else "dim"
+        ranking_border = "cyan" if self._active_view == "ranking" else "dim"
+        body = Group(header, subtitle, view_bar, Text(""), table, Text(""), keys, status)
+        room_panel = Panel(body, border_style=rooms_border, title=t("lobby_title", lc))
+        lb_panel = self._render_leaderboard(lc, border_style=ranking_border)
 
         from rich.layout import Layout
 
@@ -155,6 +160,10 @@ class LobbyScreen(Screen):
             return None
 
         rooms = self.app.state.last_rooms
+        lb = self.app.state.last_leaderboard
+        if key in ("\t", "tab"):
+            self._active_view = "ranking" if self._active_view == "rooms" else "rooms"
+            return None
         if key == "q":
             from silicon_pantheon.client.tui.widgets import ConfirmModal
             async def _quit(yes: bool) -> None:
@@ -167,11 +176,17 @@ class LobbyScreen(Screen):
             )
             return None
         if key in ("down", "j"):
-            if rooms:
+            if self._active_view == "ranking":
+                if lb:
+                    self._ranking_selected = (self._ranking_selected + 1) % len(lb)
+            elif rooms:
                 self._selected = (self._selected + 1) % len(rooms)
             return None
         if key in ("up", "k"):
-            if rooms:
+            if self._active_view == "ranking":
+                if lb:
+                    self._ranking_selected = (self._ranking_selected - 1) % len(lb)
+            elif rooms:
                 self._selected = (self._selected - 1) % len(rooms)
             return None
         if key == "r":
@@ -183,6 +198,8 @@ class LobbyScreen(Screen):
         if key == "n":
             return await self._create_room()
         if key == "enter":
+            if self._active_view == "ranking":
+                return await self._open_model_details()
             return await self._join_selected()
         if key == "p":
             return await self._preview_selected()
@@ -295,10 +312,31 @@ class LobbyScreen(Screen):
             result = r.get("result") or r
             self.app.state.last_leaderboard = result.get("leaderboard", [])
 
-    def _render_leaderboard(self, lc: str) -> RenderableType:
-        lb = self.app.state.last_leaderboard
+    def _render_view_bar(self, lc: str) -> Text:
+        """Header tabs showing which sub-view (rooms/ranking) is active."""
+        rooms_label = t("lobby_views.rooms", lc)
+        ranking_label = t("lobby_views.ranking", lc)
+        hint = t("lobby_views.tab_hint", lc)
+        bar = Text("")
+        if self._active_view == "rooms":
+            bar.append(f"[ {rooms_label} ]", style="bold green")
+            bar.append(f"  {ranking_label}  ", style="dim")
+        else:
+            bar.append(f"  {rooms_label}  ", style="dim")
+            bar.append(f"[ {ranking_label} ]", style="bold cyan")
+        bar.append(f"   {hint}", style="dim italic")
+        return bar
 
-        tbl = Table(expand=True, show_lines=True, header_style="bold", padding=(0, 1))
+    def _render_leaderboard(self, lc: str, border_style: str = "cyan") -> RenderableType:
+        lb = self.app.state.last_leaderboard
+        # Keep the selected index in range if the table shrank between refreshes.
+        if lb and self._ranking_selected >= len(lb):
+            self._ranking_selected = len(lb) - 1
+
+        disclaimer = Text(t("leaderboard.disclaimer", lc), style="dim italic")
+
+        tbl = Table(expand=True, show_lines=False, header_style="bold", padding=(0, 1))
+        tbl.add_column(" ", width=2)
         tbl.add_column(t("leaderboard.col_model", lc), overflow="fold", no_wrap=False)
         tbl.add_column(t("leaderboard.col_games", lc), justify="right")
         tbl.add_column(t("leaderboard.col_wins", lc), justify="right")
@@ -307,15 +345,20 @@ class LobbyScreen(Screen):
         tbl.add_column(t("leaderboard.col_draws", lc), justify="right")
         tbl.add_column(t("leaderboard.col_avg_think", lc), justify="right")
 
+        focused = self._active_view == "ranking"
+
         if not lb:
-            tbl.add_row(t("leaderboard.no_data", lc), "", "", "", "", "", "")
+            tbl.add_row("", t("leaderboard.no_data", lc), "", "", "", "", "", "")
         else:
-            for entry in lb:
+            for i, entry in enumerate(lb):
                 games = entry.get("games", 0)
                 wins = entry.get("wins", 0)
                 win_pct = f"{wins / games * 100:.0f}%" if games else "—"
                 model = entry.get("model", "?")
+                is_sel = focused and i == self._ranking_selected
+                marker = "➤" if is_sel else " "
                 tbl.add_row(
+                    marker,
                     model,
                     str(games),
                     str(wins),
@@ -323,6 +366,7 @@ class LobbyScreen(Screen):
                     str(entry.get("losses", 0)),
                     str(entry.get("draws", 0)),
                     f"{entry.get('avg_think_time_s', 0):.0f}s",
+                    style="bold reverse" if is_sel else None,
                 )
 
         total = sum(e.get("games", 0) for e in lb) // 2 if lb else 0
@@ -330,8 +374,27 @@ class LobbyScreen(Screen):
             f"{total} {t('leaderboard.total_games', lc)}",
             style="dim",
         )
-        body = Group(subtitle, Text(""), tbl)
-        return Panel(body, border_style="cyan", title=t("leaderboard.title", lc))
+        hint_text = (
+            t("leaderboard.hint_active", lc)
+            if focused
+            else t("leaderboard.hint_inactive", lc)
+        )
+        hint = Text(hint_text, style="dim")
+        body = Group(disclaimer, Text(""), subtitle, Text(""), tbl, Text(""), hint)
+        return Panel(body, border_style=border_style, title=t("leaderboard.title", lc))
+
+    async def _open_model_details(self) -> Screen | None:
+        lb = self.app.state.last_leaderboard
+        if not lb:
+            return None
+        idx = min(self._ranking_selected, len(lb) - 1)
+        entry = lb[idx]
+        model = entry.get("model") or ""
+        provider = entry.get("provider") or ""
+        if not model:
+            return None
+        from silicon_pantheon.client.tui.screens.model_details import ModelDetailsScreen
+        return ModelDetailsScreen(self.app, model=model, provider=provider)
 
     async def _create_room(self) -> Screen | None:
         if self.app.client is None:
