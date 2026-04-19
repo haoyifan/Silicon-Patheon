@@ -12,86 +12,437 @@ description: |
   Inspired by the Enies Lobby arc from One Piece by Eiichiro Oda.
 
 board:
-  width: 14
-  height: 12
+  width: 20
+  height: 16
   terrain:
-    # Bridge of Hesitation (y=5-6, x=2-8)
-    - {x: 2, y: 5, type: bridge}
-    - {x: 3, y: 5, type: bridge}
-    - {x: 4, y: 5, type: bridge}
-    - {x: 5, y: 5, type: bridge}
+    # ===== WATERFALL BORDER — north (y=0) =====
+    - {x: 0, y: 0, type: water}
+    - {x: 1, y: 0, type: water}
+    - {x: 2, y: 0, type: water}
+    - {x: 3, y: 0, type: water}
+    - {x: 4, y: 0, type: water}
+    - {x: 5, y: 0, type: water}
+    - {x: 6, y: 0, type: water}
+    - {x: 7, y: 0, type: water}
+    - {x: 8, y: 0, type: water}
+    - {x: 9, y: 0, type: water}
+    - {x: 10, y: 0, type: water}
+    - {x: 11, y: 0, type: water}
+    - {x: 12, y: 0, type: water}
+    - {x: 13, y: 0, type: water}
+    - {x: 14, y: 0, type: water}
+    - {x: 15, y: 0, type: water}
+    - {x: 16, y: 0, type: water}
+    - {x: 17, y: 0, type: water}
+    - {x: 18, y: 0, type: water}
+    - {x: 19, y: 0, type: water}
+    # ===== WATERFALL BORDER — south (y=15) =====
+    - {x: 0, y: 15, type: water}
+    - {x: 1, y: 15, type: water}
+    - {x: 2, y: 15, type: water}
+    - {x: 3, y: 15, type: water}
+    - {x: 4, y: 15, type: water}
+    - {x: 5, y: 15, type: water}
+    - {x: 6, y: 15, type: water}
+    - {x: 7, y: 15, type: water}
+    - {x: 8, y: 15, type: water}
+    - {x: 9, y: 15, type: water}
+    - {x: 10, y: 15, type: water}
+    - {x: 11, y: 15, type: water}
+    - {x: 12, y: 15, type: water}
+    - {x: 13, y: 15, type: water}
+    - {x: 14, y: 15, type: water}
+    - {x: 15, y: 15, type: water}
+    - {x: 16, y: 15, type: water}
+    - {x: 17, y: 15, type: water}
+    - {x: 18, y: 15, type: water}
+    - {x: 19, y: 15, type: water}
+    # ===== WATERFALL BORDER — west col 0, all rows =====
+    - {x: 0, y: 1, type: water}
+    - {x: 0, y: 2, type: water}
+    - {x: 0, y: 3, type: water}
+    - {x: 0, y: 4, type: water}
+    - {x: 0, y: 5, type: water}
+    - {x: 0, y: 6, type: water}
+    - {x: 0, y: 7, type: water}
+    - {x: 0, y: 8, type: water}
+    - {x: 0, y: 9, type: water}
+    - {x: 0, y: 10, type: water}
+    - {x: 0, y: 11, type: water}
+    - {x: 0, y: 12, type: water}
+    - {x: 0, y: 13, type: water}
+    - {x: 0, y: 14, type: water}
+    # ===== WATERFALL — chasm between plaza and tower (x=6, non-bridge) =====
+    - {x: 6, y: 1, type: water}
+    - {x: 6, y: 2, type: water}
+    - {x: 6, y: 3, type: water}
+    - {x: 6, y: 4, type: water}
+    # y=5,6 are upper bridge
+    - {x: 6, y: 9, type: water}
+    # y=10,11 are lower tunnel bridge
+    - {x: 6, y: 12, type: water}
+    - {x: 6, y: 13, type: water}
+    - {x: 6, y: 14, type: water}
+    # ===== WATERFALL — chasm col 7 (non-bridge) =====
+    - {x: 7, y: 1, type: water}
+    - {x: 7, y: 2, type: water}
+    - {x: 7, y: 3, type: water}
+    - {x: 7, y: 4, type: water}
+    # y=5,6 are upper bridge
+    - {x: 7, y: 9, type: water}
+    # y=10,11 are lower tunnel bridge
+    - {x: 7, y: 12, type: water}
+    - {x: 7, y: 13, type: water}
+    - {x: 7, y: 14, type: water}
+    # ===== WATERFALL — chasm col 8 (most rows) =====
+    - {x: 8, y: 1, type: water}
+    - {x: 8, y: 2, type: water}
+    - {x: 8, y: 3, type: water}
+    - {x: 8, y: 4, type: water}
+    # y=5,6 are upper bridge
+    - {x: 8, y: 9, type: water}
+    # y=10,11 are lower tunnel bridge
+    - {x: 8, y: 12, type: water}
+    - {x: 8, y: 13, type: water}
+    - {x: 8, y: 14, type: water}
+    # ===== WATERFALL — chasm col 9 =====
+    - {x: 9, y: 1, type: water}
+    - {x: 9, y: 2, type: water}
+    - {x: 9, y: 3, type: water}
+    - {x: 9, y: 4, type: water}
+    # y=5,6 are bridge
+    - {x: 9, y: 9, type: water}
+    # y=10,11 are tunnel bridge
+    - {x: 9, y: 12, type: water}
+    - {x: 9, y: 13, type: water}
+    - {x: 9, y: 14, type: water}
+    # ===== WATERFALL — east border col 19 (except gates) =====
+    - {x: 19, y: 1, type: water}
+    - {x: 19, y: 2, type: water}
+    - {x: 19, y: 3, type: water}
+    - {x: 19, y: 4, type: water}
+    - {x: 19, y: 5, type: water}
+    - {x: 19, y: 9, type: water}
+    - {x: 19, y: 10, type: water}
+    - {x: 19, y: 11, type: water}
+    - {x: 19, y: 12, type: water}
+    - {x: 19, y: 13, type: water}
+    - {x: 19, y: 14, type: water}
+    # ===== WATERFALL — fill between bridge and tunnel (y=7,8 across chasm) =====
+    - {x: 6, y: 7, type: water}
+    - {x: 6, y: 8, type: water}
+    - {x: 7, y: 7, type: water}
+    - {x: 7, y: 8, type: water}
+    - {x: 8, y: 7, type: water}
+    - {x: 8, y: 8, type: water}
+    - {x: 9, y: 7, type: water}
+    - {x: 9, y: 8, type: water}
+
+    # ===== COURTHOUSE PLAZA — western staging area (x=1-5, y=3-12) =====
+    - {x: 1, y: 3, type: plaza}
+    - {x: 2, y: 3, type: plaza}
+    - {x: 3, y: 3, type: plaza}
+    - {x: 4, y: 3, type: plaza}
+    - {x: 5, y: 3, type: plaza}
+    - {x: 1, y: 4, type: plaza}
+    - {x: 2, y: 4, type: plaza}
+    - {x: 3, y: 4, type: plaza}
+    - {x: 4, y: 4, type: plaza}
+    - {x: 5, y: 4, type: plaza}
+    - {x: 1, y: 5, type: plaza}
+    - {x: 2, y: 5, type: plaza}
+    - {x: 3, y: 5, type: plaza}
+    - {x: 4, y: 5, type: plaza}
+    - {x: 5, y: 5, type: plaza}
+    - {x: 1, y: 6, type: plaza}
+    - {x: 2, y: 6, type: plaza}
+    - {x: 3, y: 6, type: plaza}
+    - {x: 4, y: 6, type: plaza}
+    - {x: 5, y: 6, type: plaza}
+    - {x: 1, y: 7, type: plaza}
+    - {x: 2, y: 7, type: plaza}
+    - {x: 3, y: 7, type: plaza}
+    - {x: 4, y: 7, type: plaza}
+    - {x: 5, y: 7, type: plaza}
+    - {x: 1, y: 8, type: plaza}
+    - {x: 2, y: 8, type: plaza}
+    - {x: 3, y: 8, type: plaza}
+    - {x: 4, y: 8, type: plaza}
+    - {x: 5, y: 8, type: plaza}
+    - {x: 1, y: 9, type: plaza}
+    - {x: 2, y: 9, type: plaza}
+    - {x: 3, y: 9, type: plaza}
+    - {x: 4, y: 9, type: plaza}
+    - {x: 5, y: 9, type: plaza}
+    - {x: 1, y: 10, type: plaza}
+    - {x: 2, y: 10, type: plaza}
+    - {x: 3, y: 10, type: plaza}
+    - {x: 4, y: 10, type: plaza}
+    - {x: 5, y: 10, type: plaza}
+    - {x: 1, y: 11, type: plaza}
+    - {x: 2, y: 11, type: plaza}
+    - {x: 3, y: 11, type: plaza}
+    - {x: 4, y: 11, type: plaza}
+    - {x: 5, y: 11, type: plaza}
+    - {x: 1, y: 12, type: plaza}
+    - {x: 2, y: 12, type: plaza}
+    - {x: 3, y: 12, type: plaza}
+    - {x: 4, y: 12, type: plaza}
+    - {x: 5, y: 12, type: plaza}
+    # Courthouse wall — north side (y=1-2) blocks upper plaza
+    - {x: 1, y: 1, type: tower_wall}
+    - {x: 2, y: 1, type: tower_wall}
+    - {x: 3, y: 1, type: tower_wall}
+    - {x: 4, y: 1, type: tower_wall}
+    - {x: 5, y: 1, type: tower_wall}
+    - {x: 1, y: 2, type: tower_wall}
+    - {x: 5, y: 2, type: tower_wall}
+    # Courthouse wall — south side (y=13-14)
+    - {x: 1, y: 13, type: tower_wall}
+    - {x: 2, y: 13, type: tower_wall}
+    - {x: 3, y: 13, type: tower_wall}
+    - {x: 4, y: 13, type: tower_wall}
+    - {x: 5, y: 13, type: tower_wall}
+    - {x: 1, y: 14, type: tower_wall}
+    - {x: 5, y: 14, type: tower_wall}
+    # Sniper perch — Usopp's elevated position (courthouse roof)
+    - {x: 2, y: 2, type: sniper_perch}
+    - {x: 3, y: 2, type: sniper_perch}
+    - {x: 4, y: 2, type: sniper_perch}
+
+    # ===== BRIDGE OF HESITATION — main route (y=5-6, x=6-13) =====
+    # 2 tiles wide, 8 tiles long — a killing field
     - {x: 6, y: 5, type: bridge}
     - {x: 7, y: 5, type: bridge}
     - {x: 8, y: 5, type: bridge}
-    - {x: 2, y: 6, type: bridge}
-    - {x: 3, y: 6, type: bridge}
-    - {x: 4, y: 6, type: bridge}
-    - {x: 5, y: 6, type: bridge}
+    - {x: 9, y: 5, type: bridge}
     - {x: 6, y: 6, type: bridge}
     - {x: 7, y: 6, type: bridge}
     - {x: 8, y: 6, type: bridge}
-    # Water / waterfall — impassable flanks
-    - {x: 0, y: 4, type: water}
-    - {x: 1, y: 4, type: water}
-    - {x: 2, y: 4, type: water}
-    - {x: 3, y: 4, type: water}
-    - {x: 4, y: 4, type: water}
-    - {x: 5, y: 4, type: water}
-    - {x: 6, y: 4, type: water}
-    - {x: 7, y: 4, type: water}
-    - {x: 8, y: 4, type: water}
-    - {x: 9, y: 4, type: water}
-    - {x: 0, y: 7, type: water}
-    - {x: 1, y: 7, type: water}
-    - {x: 2, y: 7, type: water}
-    - {x: 3, y: 7, type: water}
-    - {x: 4, y: 7, type: water}
-    - {x: 5, y: 7, type: water}
-    - {x: 6, y: 7, type: water}
-    - {x: 7, y: 7, type: water}
-    - {x: 8, y: 7, type: water}
-    - {x: 9, y: 7, type: water}
-    # Water west of the bridge (x=0–1 at bridge rows)
-    - {x: 0, y: 5, type: water}
-    - {x: 0, y: 6, type: water}
-    # Tower of Justice (east side)
-    - {x: 10, y: 3, type: tower_wall}
-    - {x: 10, y: 4, type: tower_wall}
-    - {x: 10, y: 7, type: tower_wall}
-    - {x: 10, y: 8, type: tower_wall}
-    - {x: 13, y: 3, type: tower_wall}
-    - {x: 13, y: 4, type: tower_wall}
-    - {x: 13, y: 7, type: tower_wall}
-    - {x: 13, y: 8, type: tower_wall}
-    # Tower interior
-    - {x: 11, y: 5, type: tower_floor}
-    - {x: 12, y: 5, type: tower_floor}
-    - {x: 11, y: 6, type: tower_floor}
-    - {x: 12, y: 6, type: tower_floor}
-    # Gates of Justice (far east)
-    - {x: 13, y: 5, type: gates_of_justice}
-    - {x: 13, y: 6, type: gates_of_justice}
+    - {x: 9, y: 6, type: bridge}
+    # Collapsed section — half the bridge is gone (x=10)
+    # Only the north tile remains; south tile fell into the waterfall
+    - {x: 10, y: 5, type: bridge}
+    - {x: 10, y: 6, type: collapsed}
+    # Bridge resumes after gap (x=11-13)
+    - {x: 11, y: 5, type: bridge}
+    - {x: 12, y: 5, type: bridge}
+    - {x: 13, y: 5, type: bridge}
+    - {x: 11, y: 6, type: bridge}
+    - {x: 12, y: 6, type: bridge}
+    - {x: 13, y: 6, type: bridge}
+    # Water flanking bridge north (y=3-4 across chasm, x=10-13)
+    - {x: 10, y: 1, type: water}
+    - {x: 11, y: 1, type: water}
+    - {x: 12, y: 1, type: water}
+    - {x: 13, y: 1, type: water}
+    - {x: 10, y: 2, type: water}
+    - {x: 11, y: 2, type: water}
+    - {x: 12, y: 2, type: water}
+    - {x: 13, y: 2, type: water}
+    - {x: 10, y: 3, type: water}
+    - {x: 11, y: 3, type: water}
+    - {x: 12, y: 3, type: water}
+    - {x: 13, y: 3, type: water}
+    - {x: 10, y: 4, type: water}
+    - {x: 11, y: 4, type: water}
+    - {x: 12, y: 4, type: water}
+    - {x: 13, y: 4, type: water}
+    # Water flanking bridge south (y=7-8, x=10-13)
+    - {x: 10, y: 7, type: water}
+    - {x: 11, y: 7, type: water}
+    - {x: 12, y: 7, type: water}
+    - {x: 13, y: 7, type: water}
+    - {x: 10, y: 8, type: water}
+    - {x: 11, y: 8, type: water}
+    - {x: 12, y: 8, type: water}
+    - {x: 13, y: 8, type: water}
+    # Water south of bridge (x=10-13, y=9)
+    - {x: 10, y: 9, type: water}
+    - {x: 11, y: 9, type: water}
+    - {x: 12, y: 9, type: water}
+    - {x: 13, y: 9, type: water}
+    # Tunnel continues under the waterfall (x=10-13, y=10)
+    - {x: 10, y: 10, type: tunnel}
+    - {x: 11, y: 10, type: tunnel}
+    - {x: 12, y: 10, type: tunnel}
+    - {x: 13, y: 10, type: tunnel}
+    # Water surrounding the tunnel (x=10-13, y=11-14)
+    - {x: 10, y: 11, type: water}
+    - {x: 11, y: 11, type: water}
+    - {x: 12, y: 11, type: water}
+    - {x: 13, y: 11, type: water}
+    - {x: 10, y: 12, type: water}
+    - {x: 11, y: 12, type: water}
+    - {x: 12, y: 12, type: water}
+    - {x: 13, y: 12, type: water}
+    - {x: 10, y: 13, type: water}
+    - {x: 11, y: 13, type: water}
+    - {x: 12, y: 13, type: water}
+    - {x: 13, y: 13, type: water}
+    - {x: 10, y: 14, type: water}
+    - {x: 11, y: 14, type: water}
+    - {x: 12, y: 14, type: water}
+    - {x: 13, y: 14, type: water}
+
+    # ===== LOWER TUNNEL — flanking route (y=10-11, x=6-9) =====
+    # Slower but avoids bridge chokepoint. Blueno guards entrance.
+    - {x: 6, y: 10, type: tunnel}
+    - {x: 7, y: 10, type: tunnel}
+    - {x: 8, y: 10, type: tunnel}
+    - {x: 9, y: 10, type: tunnel}
+    - {x: 6, y: 11, type: tunnel}
+    - {x: 7, y: 11, type: tunnel}
+    - {x: 8, y: 11, type: tunnel}
+    - {x: 9, y: 11, type: tunnel}
+    # Tunnel connects to tower ground floor via stairs at x=14,y=10
+    # Plaza connects to tunnel at x=5,y=10 (plaza tile already there)
+
+    # ===== TOWER OF JUSTICE — multi-room fortress (x=14-18) =====
+    # Tower outer walls — north face
+    - {x: 14, y: 1, type: tower_wall}
+    - {x: 15, y: 1, type: tower_wall}
+    - {x: 16, y: 1, type: tower_wall}
+    - {x: 17, y: 1, type: tower_wall}
+    - {x: 18, y: 1, type: tower_wall}
+    # Tower outer walls — south face
+    - {x: 14, y: 14, type: tower_wall}
+    - {x: 15, y: 14, type: tower_wall}
+    - {x: 16, y: 14, type: tower_wall}
+    - {x: 17, y: 14, type: tower_wall}
+    - {x: 18, y: 14, type: tower_wall}
+    # Tower outer walls — west face
+    - {x: 14, y: 2, type: tower_wall}
+    - {x: 14, y: 3, type: tower_wall}
+    - {x: 14, y: 4, type: tower_wall}
+    # x=14 y=5 is tower entrance from bridge
+    # x=14 y=6 is tower entrance from bridge
+    - {x: 14, y: 7, type: tower_wall}
+    - {x: 14, y: 8, type: tower_wall}
+    - {x: 14, y: 9, type: tower_wall}
+    # x=14 y=10 is tunnel entrance to tower
+    - {x: 14, y: 11, type: tower_wall}
+    - {x: 14, y: 12, type: tower_wall}
+    - {x: 14, y: 13, type: tower_wall}
+    # Tower outer walls — east face
+    - {x: 18, y: 2, type: tower_wall}
+    - {x: 18, y: 3, type: tower_wall}
+    - {x: 18, y: 4, type: tower_wall}
+    - {x: 18, y: 5, type: tower_wall}
+    # x=18 y=6-7 is passage to Gates
+    - {x: 18, y: 8, type: tower_wall}
+    - {x: 18, y: 9, type: tower_wall}
+    - {x: 18, y: 10, type: tower_wall}
+    - {x: 18, y: 11, type: tower_wall}
+    - {x: 18, y: 12, type: tower_wall}
+    - {x: 18, y: 13, type: tower_wall}
+
+    # --- Tower interior dividing walls (create rooms) ---
+    # Horizontal wall splits upper and lower tower (y=8, x=15-17)
+    # x=15 y=8 is stairs (defined below)
+    # x=16 y=8 is doorway (open)
+    - {x: 17, y: 8, type: tower_wall}
+    # Vertical wall creates west rooms (x=16, y=3-4)
+    - {x: 16, y: 3, type: tower_wall}
+    - {x: 16, y: 4, type: tower_wall}
+    # Vertical wall creates east rooms (x=16, y=11-12)
+    - {x: 16, y: 11, type: tower_wall}
+    - {x: 16, y: 12, type: tower_wall}
+
+    # --- Tower interior floors ---
+    # Upper entry hall (bridge enters here)
+    - {x: 14, y: 5, type: tower_floor}
+    - {x: 14, y: 6, type: tower_floor}
+    - {x: 15, y: 5, type: tower_floor}
+    - {x: 15, y: 6, type: tower_floor}
+    - {x: 15, y: 7, type: tower_floor}
+    - {x: 16, y: 5, type: tower_floor}
+    - {x: 16, y: 6, type: tower_floor}
+    - {x: 16, y: 7, type: tower_floor}
+    - {x: 17, y: 5, type: tower_floor}
+    - {x: 17, y: 6, type: tower_floor}
+    - {x: 17, y: 7, type: tower_floor}
+    # Upper north room (Kaku's arena)
+    - {x: 15, y: 2, type: tower_floor}
+    - {x: 15, y: 3, type: tower_floor}
+    - {x: 15, y: 4, type: tower_floor}
+    - {x: 16, y: 2, type: tower_floor}
+    - {x: 17, y: 2, type: tower_floor}
+    - {x: 17, y: 3, type: tower_floor}
+    - {x: 17, y: 4, type: tower_floor}
+    - {x: 18, y: 6, type: tower_floor}
+    - {x: 18, y: 7, type: tower_floor}
+    # Lower rooms
+    - {x: 14, y: 10, type: tower_floor}
+    - {x: 15, y: 9, type: tower_floor}
+    - {x: 15, y: 10, type: tower_floor}
+    - {x: 15, y: 11, type: tower_floor}
+    - {x: 15, y: 12, type: tower_floor}
+    - {x: 15, y: 13, type: tower_floor}
+    - {x: 16, y: 8, type: tower_floor}
+    - {x: 16, y: 9, type: tower_floor}
+    - {x: 16, y: 10, type: tower_floor}
+    - {x: 16, y: 13, type: tower_floor}
+    - {x: 17, y: 9, type: tower_floor}
+    - {x: 17, y: 10, type: tower_floor}
+    - {x: 17, y: 11, type: tower_floor}
+    - {x: 17, y: 12, type: tower_floor}
+    - {x: 17, y: 13, type: tower_floor}
+
+    # Tower stairs (connecting upper hall to lower, slow movement)
+    - {x: 15, y: 8, type: tower_stairs}
+
+    # ===== GATES OF JUSTICE — far east (x=19, y=6-8) =====
+    - {x: 19, y: 6, type: gates_of_justice}
+    - {x: 19, y: 7, type: gates_of_justice}
+    - {x: 19, y: 8, type: gates_of_justice}
+
+    # ===== SOUTH SNIPER PERCH — mirror of north perch =====
+    - {x: 2, y: 14, type: sniper_perch}
+    - {x: 3, y: 14, type: sniper_perch}
+    - {x: 4, y: 14, type: sniper_perch}
   forts: []
 
 terrain_types:
-  bridge:
-    display_name: Bridge
+  plaza:
+    display_name: Courthouse Plaza
     move_cost: 1
     defense_bonus: 0
+    glyph: "."
+    color: white
+    description: |
+      The open courtyard of Enies Lobby's courthouse. Paved stone,
+      no cover. The Straw Hats gather here before the assault.
+  bridge:
+    display_name: Bridge of Hesitation
+    move_cost: 1
+    defense_bonus: -1
     glyph: "="
     color: yellow
     description: |
-      The Bridge of Hesitation. A narrow crossing over the
-      bottomless waterfall leading to the Gates of Justice.
+      The Bridge of Hesitation. Narrow, exposed, no cover.
+      Units here are sitting ducks for ranged attacks.
+      Two tiles wide, stretching over the bottomless waterfall.
+  collapsed:
+    display_name: Collapsed Bridge
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "X"
+    color: bright_black
+    description: |
+      A collapsed section of the Bridge of Hesitation. The
+      Buster Call's bombardment shattered these spans. Impassable —
+      forces a detour through the Tower's lower levels.
   water:
-    display_name: Water
+    display_name: Waterfall
     move_cost: 1
     defense_bonus: 0
     passable: false
     glyph: "~"
     color: bright_blue
     description: |
-      The bottomless waterfall beneath the bridge.
+      The bottomless waterfall surrounding Enies Lobby.
       Falling in means certain death.
   tower_wall:
     display_name: Tower Wall
@@ -102,15 +453,47 @@ terrain_types:
     color: bright_black
     description: |
       Impassable stone walls of the Tower of Justice.
+      Thick masonry built to withstand siege weapons.
   tower_floor:
-    display_name: Tower Floor
+    display_name: Tower Interior
     move_cost: 1
-    defense_bonus: 1
+    defense_bonus: 2
     glyph: "T"
     color: dim
     description: |
-      Interior of the Tower of Justice. Some cover from
-      the stone columns.
+      Interior rooms of the Tower of Justice. Stone columns
+      and furniture provide solid cover. Narrow doorways
+      create natural 1v1 duel arenas.
+  tower_stairs:
+    display_name: Tower Stairs
+    move_cost: 3
+    defense_bonus: 0
+    glyph: "/"
+    color: dim
+    description: |
+      Spiral staircase connecting the tower's upper and lower
+      levels. Slow to traverse (costs 3 movement), but the
+      only way to bypass the collapsed bridge section.
+  tunnel:
+    display_name: Water Tunnel
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "_"
+    color: cyan
+    description: |
+      A maintenance tunnel running beneath the waterfall.
+      Narrow and damp. Slower than the bridge (costs 2 movement)
+      but hidden from direct fire. Blueno's territory.
+  sniper_perch:
+    display_name: Sniper Perch
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "^"
+    color: green
+    description: |
+      The courthouse rooftop — an elevated firing position.
+      Excellent defensive cover (+3 DEF) and sightlines down
+      the bridge. Costs 2 movement to climb up.
   gates_of_justice:
     display_name: Gates of Justice
     move_cost: 1
@@ -118,8 +501,9 @@ terrain_types:
     glyph: "G"
     color: bright_red
     description: |
-      The Gates of Justice. Once Robin passes through,
-      she is lost forever.
+      The Gates of Justice. Once Robin passes through these
+      massive doors, she is lost to the World Government forever.
+      The Straw Hats must reach here before it's too late.
 
 unit_classes:
   luffy:
@@ -366,30 +750,36 @@ unit_classes:
 
 armies:
   blue:
-    - {class: luffy, pos: {x: 1, y: 5}}
-    - {class: zoro, pos: {x: 2, y: 6}}
-    - {class: sanji, pos: {x: 1, y: 6}}
-    - {class: nami, pos: {x: 3, y: 5}}
-    - {class: usopp, pos: {x: 4, y: 6}}
-    - {class: robin, pos: {x: 0, y: 2}}
-    - {class: franky, pos: {x: 0, y: 9}}
+    # === MAIN ASSAULT FORCE — courthouse plaza ===
+    - {class: luffy, pos: {x: 3, y: 5}}    # Center plaza, leads the charge
+    - {class: zoro, pos: {x: 2, y: 6}}     # South of Luffy, ready to split
+    - {class: sanji, pos: {x: 2, y: 4}}    # North of Luffy, fast flanker
+    - {class: franky, pos: {x: 4, y: 6}}   # Armored vanguard for bridge push
+    - {class: nami, pos: {x: 3, y: 7}}     # Behind the front line, ranged support
+    - {class: usopp, pos: {x: 3, y: 2}}    # Sniper perch — covers bridge approach
+    # === RESCUE TARGET — isolated at Gates of Justice ===
+    - {class: robin, pos: {x: 19, y: 7}}   # At the Gates, guarded by CP9
 
   red:
-    - {class: lucci, pos: {x: 9, y: 5}}
-    - {class: kaku, pos: {x: 9, y: 6}}
-    - {class: jabra, pos: {x: 11, y: 5}}
-    - {class: blueno, pos: {x: 7, y: 5}}
-    - {class: kalifa, pos: {x: 11, y: 6}}
-    - {class: kumadori, pos: {x: 12, y: 5}}
-    - {class: fukurou, pos: {x: 12, y: 6}}
+    # === BRIDGE DEFENSE — blocking the main approach ===
+    - {class: lucci, pos: {x: 15, y: 6}}   # Tower entry hall, the final wall
+    - {class: kaku, pos: {x: 17, y: 3}}    # Upper north room, ranged threat
+    # === TOWER INTERIOR — spread across rooms ===
+    - {class: jabra, pos: {x: 16, y: 9}}   # Lower hall, fast interceptor
+    - {class: kalifa, pos: {x: 17, y: 6}}  # Inner tower, near Gates passage
+    # === SECONDARY ROUTE DEFENSE ===
+    - {class: blueno, pos: {x: 7, y: 10}}  # Guards the water tunnel entrance
+    # === GATES GUARD — Robin's captors ===
+    - {class: kumadori, pos: {x: 18, y: 7}} # Right next to Robin at Gates
+    - {class: fukurou, pos: {x: 17, y: 12}} # Lower tower, mobile reserve
 
 rules:
-  max_turns: 16
+  max_turns: 20
   first_player: blue
 
 win_conditions:
   # A Straw Hat reaches the Gates of Justice -> rescue!
-  - {type: reach_tile, team: blue, pos: {x: 13, y: 5}}
+  - {type: reach_tile, team: blue, pos: {x: 19, y: 7}}
   # Luffy dies -> blue loses
   - {type: protect_unit, unit_id: u_b_luffy_1, owning_team: blue}
   # Either side wins by total elimination
@@ -410,15 +800,27 @@ narrative:
     the words that change everything: "SAY YOU WANT TO LIVE!"
   events:
     - trigger: on_turn_start
-      turn: 4
+      turn: 3
+      text: |
+        The Straw Hats reach the Bridge of Hesitation. The
+        waterfall roars below — a bottomless chasm with no
+        return. Across the bridge, the Tower of Justice looms.
+    - trigger: on_turn_start
+      turn: 6
       text: |
         Luffy activates Gear Second. Steam rises from his body
         as his blood pumps at superhuman speed. The bridge
         trembles under the force of his attacks.
     - trigger: on_turn_start
-      turn: 10
+      turn: 12
       text: |
-        The battle rages across the bridge. CP9 fights with
+        The Buster Call has been activated. Warships encircle
+        the island. The bridge is crumbling. There is no time
+        left — reach Robin NOW or lose her forever.
+    - trigger: on_turn_start
+      turn: 16
+      text: |
+        The battle rages through the tower. CP9 fights with
         everything they have, but the Straw Hats refuse to fall.
         Each one fights for Robin's freedom.
     - trigger: on_unit_killed
