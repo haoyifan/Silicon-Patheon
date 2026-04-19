@@ -164,6 +164,7 @@ lobby_val:
   fog_classic: "经典"
   fog_permanent: "永久"
   status_waiting_for_players: "等待中"
+  status_waiting_ready: "准备中"
   status_counting_down: "倒计时"
   status_in_game: "进行中"
   status_finished: "已结束"

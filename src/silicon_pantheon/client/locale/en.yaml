@@ -166,6 +166,7 @@ lobby_val:
   fog_classic: "classic"
   fog_permanent: "permanent"
   status_waiting_for_players: "waiting"
+  status_waiting_ready: "ready up"
   status_counting_down: "starting"
   status_in_game: "in game"
   status_finished: "finished"

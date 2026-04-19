@@ -271,7 +271,7 @@ class PlayerPanel(Panel):
             player_name, model_label = self._team_player_info(team)
             header = Text(f"{localized_team(team, lc)}", style=header_style)
             if player_name:
-                header.append(f" ({player_name})", style="white")
+                header.append(f" ({player_name})", style=header_style)
             header.append(":", style=header_style)
             if model_label:
                 header.append(f" {model_label}", style="dim")
