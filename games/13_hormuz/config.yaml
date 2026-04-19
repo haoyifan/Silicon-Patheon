@@ -1,500 +1,333 @@
 schema_version: 1
-license: public_domain
+license: fan_work
+fan_work_source: "Age of Empires / Portuguese colonial history"
 name: Strait of Hormuz
-difficulty: 4
+difficulty: 3
 description: |
-  February 2026 — the United States and Israel open "Operation
-  Epic Fury" with nearly 900 coordinated strikes on Iranian
-  leadership, missile infrastructure, and nuclear facilities in
-  twelve hours. Ayatollah Ali Khamenei is assassinated in Tehran
-  on day 1; Iran confirms his death on 1 March. The IRGC retaliates
-  by closing the Strait of Hormuz with speedboat swarms, Shahed
-  drones, coastal-missile batteries, and sea mines.
-
-  This scenario compresses the opening act into a ten-turn race:
-  a US/Israeli strike package must push through the Strait,
-  finish the decapitation of the regime, and plant boots on a
-  hardened enriched-uranium (the user's "condensed uranium")
-  bunker in the Iranian interior before the IRGC bleeds them dry.
-
-  Blue (US/Israel): fast air (F-35, B-2), naval firepower (Arleigh-
-  Burke destroyer, Tomahawk sub), special forces (Navy SEAL team,
-  Shayetet 13), and two VIP leaders — the US President and the
-  Israeli PM — whose loss ends the operation.
-
-  Red (Iran): Khamenei is deliberately placed forward on a
-  vulnerable IRGC craft at HP 1 — a historical echo of his day-1
-  death, and a free kill for blue on turn 1 if they spend the
-  shot there. IRGC speedboat swarms, Shahed drones, two stationary
-  coastal-missile batteries, a Basij infantry line, an IRGC
-  commando core around the bunker, and sea mines in the Strait
-  corridor that damage any unit stepping on them.
-  Inspired by modern geopolitical tensions in the Strait of Hormuz.
+  1507 — Afonso de Albuquerque leads a Portuguese armada into the
+  Persian Gulf to seize the island fortress of Hormuz, gateway to
+  the spice trade. The Sultan of Hormuz, backed by Ottoman naval
+  support, defends the harbor with war galleys, shore batteries,
+  and palace guards. Albuquerque must break the chain, silence the
+  guns, and storm the citadel before reinforcements arrive.
+  Inspired by the Portuguese conquest of Hormuz (1507).
 
 board:
-  width: 18
+  width: 14
   height: 10
   terrain:
-    # --- Strait of Hormuz chokepoint (x=6..9) ---
-    # Islands at the Omani peninsula (north) and Hormuz island (south)
-    # squeeze naval traffic into the middle y-band.
-    - {x: 6, y: 0, type: island}
-    - {x: 7, y: 0, type: island}
-    - {x: 8, y: 0, type: island}
-    - {x: 6, y: 1, type: island}
-    - {x: 7, y: 1, type: island}
-    - {x: 6, y: 9, type: island}
-    - {x: 7, y: 9, type: island}
-    - {x: 8, y: 9, type: island}
-    - {x: 7, y: 8, type: island}
-    # --- Iranian coast (x=13..14) ---
-    - {x: 13, y: 0, type: beach}
-    - {x: 13, y: 1, type: beach}
-    - {x: 13, y: 2, type: beach}
-    - {x: 13, y: 7, type: beach}
-    - {x: 13, y: 8, type: beach}
-    - {x: 13, y: 9, type: beach}
-    # --- Iranian interior (x=14..17, y in {0..4, 6..9}) ---
-    # Desert inland, with the uranium bunker on the central row at
-    # (15, 5). Hostile mountains flank it north and south.
-    - {x: 14, y: 0, type: desert}
-    - {x: 14, y: 1, type: desert}
-    - {x: 14, y: 2, type: desert}
-    - {x: 14, y: 3, type: mountain}
-    - {x: 14, y: 4, type: desert}
-    - {x: 14, y: 6, type: desert}
-    - {x: 14, y: 7, type: mountain}
-    - {x: 14, y: 8, type: desert}
-    - {x: 14, y: 9, type: desert}
-    - {x: 15, y: 0, type: desert}
-    - {x: 15, y: 1, type: desert}
-    - {x: 15, y: 2, type: mountain}
-    - {x: 15, y: 3, type: desert}
-    - {x: 15, y: 4, type: desert}
-    - {x: 15, y: 5, type: uranium_bunker}
-    - {x: 15, y: 6, type: desert}
-    - {x: 15, y: 7, type: desert}
-    - {x: 15, y: 8, type: mountain}
-    - {x: 15, y: 9, type: desert}
-    - {x: 16, y: 0, type: desert}
-    - {x: 16, y: 1, type: desert}
-    - {x: 16, y: 2, type: desert}
-    - {x: 16, y: 3, type: desert}
-    - {x: 16, y: 4, type: desert}
-    - {x: 16, y: 5, type: desert}
-    - {x: 16, y: 6, type: desert}
-    - {x: 16, y: 7, type: desert}
-    - {x: 16, y: 8, type: desert}
-    - {x: 16, y: 9, type: desert}
-    - {x: 17, y: 0, type: desert}
-    - {x: 17, y: 1, type: desert}
-    - {x: 17, y: 2, type: desert}
-    - {x: 17, y: 3, type: desert}
-    - {x: 17, y: 4, type: desert}
-    - {x: 17, y: 5, type: desert}
-    - {x: 17, y: 6, type: desert}
-    - {x: 17, y: 7, type: desert}
-    - {x: 17, y: 8, type: desert}
-    - {x: 17, y: 9, type: desert}
-    # --- Sea mines ---
-    # IRGC-laid contact mines in the strait corridor. Step on one
-    # and the effects plugin lights you up for 6 damage.
-    - {x: 8, y: 3, type: sea_mine}
-    - {x: 8, y: 6, type: sea_mine}
-    - {x: 9, y: 2, type: sea_mine}
-    - {x: 9, y: 7, type: sea_mine}
+    # Harbor water (impassable shallows flanking the channel)
+    - {x: 5, y: 0, type: reef}
+    - {x: 6, y: 0, type: reef}
+    - {x: 5, y: 9, type: reef}
+    - {x: 6, y: 9, type: reef}
+    # Hormuz island fortifications (east side)
+    - {x: 9, y: 1, type: fort_wall}
+    - {x: 10, y: 0, type: fort_wall}
+    - {x: 10, y: 1, type: fort_wall}
+    - {x: 10, y: 8, type: fort_wall}
+    - {x: 10, y: 9, type: fort_wall}
+    - {x: 9, y: 8, type: fort_wall}
+    # Citadel interior
+    - {x: 11, y: 3, type: citadel}
+    - {x: 12, y: 3, type: citadel}
+    - {x: 11, y: 6, type: citadel}
+    - {x: 12, y: 6, type: citadel}
+    - {x: 11, y: 4, type: citadel}
+    - {x: 11, y: 5, type: citadel}
+    - {x: 12, y: 4, type: citadel}
+    - {x: 12, y: 5, type: citadel}
+    - {x: 13, y: 3, type: citadel}
+    - {x: 13, y: 4, type: citadel}
+    - {x: 13, y: 5, type: citadel}
+    - {x: 13, y: 6, type: citadel}
+    # Harbor chain (slows movement through the narrows)
+    - {x: 7, y: 4, type: harbor_chain}
+    - {x: 7, y: 5, type: harbor_chain}
   forts:
-    # The uranium bunker is owned by Iran. The engine's seize-enemy-
-    # fort rule is NOT listed in win_conditions below — the plugin
-    # gates victory on seize AND Khamenei-killed.
-    - {x: 15, y: 5, owner: red}
+    - {x: 12, y: 5, owner: red}
 
 terrain_types:
-  island:
-    display_name: Island
-    description: Impassable island.
+  reef:
+    display_name: Reef
+    description: Shallow coral reef. Impassable.
     move_cost: 99
     passable: false
-    glyph: "^"
-    color: bright_black
-  beach:
-    display_name: Beach
-    description: Coastal shore. Costs 2 movement. +1 DEF.
-    move_cost: 2
-    defense_bonus: 1
     glyph: "~"
-    color: yellow
-  desert:
-    display_name: Desert
-    move_cost: 1
-    glyph: "."
-    color: yellow
-  mountain:
-    display_name: Mountain
-    description: Impassable mountain.
+    color: bright_black
+  fort_wall:
+    display_name: Fort Wall
+    description: Stone fortification wall. Impassable.
     move_cost: 99
     passable: false
-    glyph: "M"
+    glyph: "#"
     color: bright_black
-  uranium_bunker:
-    display_name: Uranium Bunker
-    description: Hardened bunker. Costs 2 movement. +5 DEF.
-    # Fortified bunker — hard to root defenders out, but the prize
-    # tile for blue. Not impassable: blue needs to step on it.
-    move_cost: 2
-    defense_bonus: 5
-    glyph: "U"
-    color: bright_magenta
-  sea_mine:
-    display_name: Sea Mine
-    description: Contact mine. Damages any unit entering the tile.
+  citadel:
+    display_name: Citadel
+    description: Interior of the Hormuz citadel. +2 DEF.
     move_cost: 1
-    glyph: "*"
-    color: bright_red
-    effects_plugin: sea_mine_effect
+    defense_bonus: 2
+    glyph: "C"
+    color: yellow
+  harbor_chain:
+    display_name: Harbor Chain
+    description: Iron chain across the harbor mouth. Costs 3 movement.
+    move_cost: 3
+    defense_bonus: 0
+    glyph: "="
+    color: bright_black
 
 unit_classes:
-  # ----- BLUE: US + Israel -----
-
-  trump:
-    display_name: US President (Trump)
+  albuquerque:
+    display_name: Afonso de Albuquerque
     description: |
-      Commander-in-chief aboard the carrier group, directing the
-      strike from CENTCOM feeds. Barely combat-capable himself —
-      if he dies, the operation loses political cover and ends.
-    hp_max: 22
-    atk: 5
-    defense: 4
-    res: 3
-    spd: 4
-    rng_min: 1
-    rng_max: 1
-    move: 3
-    tags: [vip, leader, us]
-    sight: 5
-    glyph: T
-    color: bright_cyan
-
-  netanyahu:
-    display_name: Israeli PM (Netanyahu)
-    description: |
-      The Israeli prime minister, coordinating the strike via the
-      war cabinet. Same brittle VIP profile as the US President —
-      losing him ends Israeli participation and the operation.
-    hp_max: 22
-    atk: 5
-    defense: 4
-    res: 3
-    spd: 4
-    rng_min: 1
-    rng_max: 1
-    move: 3
-    tags: [vip, leader, israel]
-    sight: 5
-    glyph: N
-    color: bright_cyan
-
-  f35:
-    display_name: F-35 Stealth Fighter
-    description: |
-      Fifth-generation stealth multirole. Fast, mid-range, decent
-      damage — the main swing piece for clearing mines, drones,
-      and speedboats before the heavies move up.
-    hp_max: 24
-    atk: 12
-    defense: 4
-    res: 4
-    spd: 9
-    rng_min: 2
-    rng_max: 4
-    move: 7
-    tags: [air, stealth]
-    sight: 6
-    glyph: "F"
-    color: cyan
-
-  b2:
-    display_name: B-2 Spirit Bomber
-    description: |
-      The only blue unit with enough punch to threaten the
-      uranium-bunker defenders at stand-off range. Slow to
-      reposition once committed; keep it behind the F-35 screen.
-    hp_max: 30
-    atk: 18
+      The Portuguese Lion of the Sea. Brilliant admiral and ruthless
+      conqueror. Commands from his flagship with sword and cannon.
+      VIP — if he falls, the expedition is over.
+    hp_max: 28
+    atk: 10
     defense: 5
     res: 5
     spd: 5
-    rng_min: 3
-    rng_max: 5
-    move: 5
-    tags: [air, bomber, stealth]
-    sight: 6
-    glyph: B
-    color: cyan
-
-  destroyer:
-    display_name: Arleigh-Burke Destroyer
-    description: |
-      Aegis destroyer with Tomahawk cruise missiles. Strong ranged
-      platform but slow through the Strait — mines and coastal
-      batteries are its nightmare.
-    hp_max: 40
-    atk: 11
-    defense: 6
-    res: 4
-    spd: 4
-    rng_min: 3
-    rng_max: 6
     move: 3
-    tags: [naval, us]
-    sight: 5
-    glyph: D
+    rng_min: 1
+    rng_max: 2
+    tags: [vip, leader]
+    glyph: "A"
+    color: bright_cyan
+
+  joao_de_nova:
+    display_name: "Joao de Nova"
+    description: |
+      Veteran captain of the carrack Flor de la Mar. Experienced
+      naval gunner — his broadsides are devastating at range.
+    hp_max: 22
+    atk: 11
+    defense: 4
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 4
+    glyph: "J"
     color: cyan
 
-  tomahawk_sub:
-    display_name: Tomahawk Sub
+  duarte_pacheco:
+    display_name: Duarte Pacheco
     description: |
-      Submerged Tomahawk platform. Paper-thin armor but big
-      stand-off reach — the scenario's long-arm.
-    hp_max: 22
+      The Achilles of the Indies. Legendary soldier-captain who
+      fights in the vanguard with pike and buckler.
+    hp_max: 26
+    atk: 12
+    defense: 6
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "D"
+    color: cyan
+
+  padre_miguel:
+    display_name: Padre Miguel
+    description: |
+      Jesuit chaplain accompanying the fleet. His prayers bolster
+      the wounded. Channels divine healing magic.
+    hp_max: 18
+    atk: 7
+    defense: 3
+    res: 7
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    can_heal: true
+    heal_amount: 5
+    glyph: "P"
+    color: bright_cyan
+
+  gaspar_almada:
+    display_name: Gaspar de Almada
+    description: |
+      Portuguese bombardier. Specialist in Greek fire and incendiary
+      weapons — his fire pots deal magic damage that ignores armor.
+    hp_max: 20
     atk: 10
     defense: 3
     res: 4
     spd: 5
-    rng_min: 4
-    rng_max: 7
-    move: 4
-    tags: [naval, submarine, us]
-    sight: 5
-    glyph: S
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "G"
     color: cyan
 
-  navy_seal:
-    display_name: Navy SEAL Team
-    description: |
-      The only realistic unit for actually boarding the uranium
-      bunker and raising the flag there. Melee, fast-moving, very
-      squishy if the Basij close.
-    hp_max: 20
-    atk: 10
-    defense: 4
-    res: 3
-    spd: 7
-    rng_min: 1
-    rng_max: 1
-    move: 5
-    tags: [infantry, special_forces, us]
-    sight: 4
-    glyph: E
-    color: cyan
+  # --- RED: Hormuz + Ottoman ---
 
-  shayetet:
-    display_name: Shayetet 13
+  sultan_sayf:
+    display_name: Sultan Sayf ad-Din
     description: |
-      Israeli naval commandos. Paired role with the SEALs — one
-      decoys, one boards. Marginally tougher than a SEAL in melee.
-    hp_max: 22
-    atk: 11
-    defense: 4
-    res: 3
-    spd: 7
+      Sultan of Hormuz. Fights from the citadel with his personal
+      guard. Cunning diplomat turned desperate defender.
+    hp_max: 24
+    atk: 9
+    defense: 5
+    res: 5
+    spd: 4
+    move: 3
     rng_min: 1
-    rng_max: 1
-    move: 5
-    tags: [infantry, special_forces, israel]
-    sight: 4
-    glyph: H
-    color: cyan
-
-  # ----- RED: Iran -----
-
-  khamenei:
-    display_name: Supreme Leader (Khamenei)
-    description: |
-      Scenario kickoff: Khamenei is aboard a forward IRGC craft at
-      the western mouth of the Strait with HP 1 — a historical-echo
-      placement meant to be killed turn 1. Blue must spend a shot
-      on him, or the operation cannot win even if the bunker falls.
-    hp_max: 1
-    atk: 1
-    defense: 0
-    res: 0
-    spd: 3
-    rng_min: 1
-    rng_max: 1
-    move: 2
-    tags: [vip, leader, iran]
-    sight: 4
-    glyph: K
+    rng_max: 2
+    glyph: "S"
     color: bright_red
 
-  irgc_speedboat:
-    display_name: IRGC Speedboat
+  ottoman_admiral:
+    display_name: Reis Amir
     description: |
-      Cheap swarm unit. Low HP, fast, melee-ranged. Dangerous in
-      numbers against isolated blue naval or SEAL craft.
-    hp_max: 12
-    atk: 8
-    defense: 2
-    res: 2
-    spd: 9
-    rng_min: 1
-    rng_max: 1
-    move: 6
-    tags: [naval, swarm, iran]
-    sight: 3
-    glyph: b
-    color: red
-
-  shahed_drone:
-    display_name: Shahed Drone
-    description: |
-      One-way attack drone. Fragile, but with enough range to harry
-      the rear of the blue column. Functionally kamikaze on hit.
-    hp_max: 8
+      Ottoman naval commander sent to reinforce Hormuz. Commands a
+      war galley with skilled archers and rams.
+    hp_max: 26
     atk: 11
-    defense: 1
-    res: 2
-    spd: 7
-    rng_min: 2
-    rng_max: 4
-    move: 6
-    tags: [air, drone, iran]
-    sight: 5
-    glyph: d
-    color: red
-
-  coastal_missile:
-    display_name: Coastal Missile Battery
-    description: |
-      Stationary anti-ship / anti-air launcher on the Iranian
-      littoral. Move 0 — it doesn't reposition. Long reach, heavy
-      hit.
-    hp_max: 22
-    atk: 14
     defense: 5
-    res: 3
-    spd: 3
-    rng_min: 3
-    rng_max: 6
-    move: 0
-    tags: [artillery, iran]
-    sight: 5
-    glyph: M
-    color: red
-
-  basij:
-    display_name: Basij Infantry
-    description: |
-      Paramilitary militia. Nothing special stat-wise, but cheap
-      and numerous — the line defenders around the bunker.
-    hp_max: 18
-    atk: 7
-    defense: 4
     res: 3
     spd: 5
+    move: 4
     rng_min: 1
-    rng_max: 1
-    move: 3
-    tags: [infantry, iran]
-    sight: 3
-    glyph: i
+    rng_max: 2
+    glyph: "R"
     color: red
 
-  irgc_commando:
-    display_name: IRGC Commando
+  hormuz_sorcerer:
+    display_name: Vizier Rashid
     description: |
-      Professional Revolutionary Guard ground force. The SEAL/
-      Shayetet counter around the bunker — similar stats to the
-      blue specops, without the long reach of air or naval.
-    hp_max: 24
+      Court sorcerer and vizier. Wields alchemical fire and wind
+      magic to shatter sails and burn hulls. Bypasses armor entirely.
+    hp_max: 18
     atk: 10
-    defense: 5
+    defense: 2
+    res: 8
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "V"
+    color: bright_red
+
+  hormuz_corsair:
+    display_name: Corsair Tariq
+    description: |
+      Fast corsair captain. His dhow darts between larger ships,
+      boarding and setting fires. Melee assassin on the waves.
+    hp_max: 20
+    atk: 10
+    defense: 3
     res: 3
-    spd: 6
+    spd: 8
+    move: 5
     rng_min: 1
     rng_max: 1
-    move: 4
-    tags: [infantry, special_forces, iran]
-    sight: 4
-    glyph: C
+    glyph: "T"
+    color: red
+
+  shore_gunner:
+    display_name: Gunner Hassan
+    description: |
+      Commander of the shore battery. His fixed cannons hammer
+      ships in the harbor channel with devastating long-range fire.
+    hp_max: 22
+    atk: 12
+    defense: 4
+    res: 3
+    spd: 3
+    move: 0
+    rng_min: 3
+    rng_max: 5
+    glyph: "H"
+    color: red
+
+  palace_guard:
+    display_name: Captain Farid
+    description: |
+      Elite palace guard captain. Heavily armored melee defender
+      of the citadel gates. Wields a two-handed scimitar.
+    hp_max: 26
+    atk: 9
+    defense: 7
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "F"
+    color: red
+
+  ottoman_janissary:
+    display_name: Janissary Kemal
+    description: |
+      Ottoman elite infantry musketeer. His matchlock musket deals
+      magic-type damage at range, piercing Portuguese plate armor.
+    hp_max: 20
+    atk: 9
+    defense: 4
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "K"
     color: red
 
 armies:
   blue:
-    # US/Israeli strike group deploys at the western (Gulf of Oman)
-    # edge. Two VIP leaders in the rear.
-    - {class: trump,         pos: {x: 0, y: 4}}
-    - {class: netanyahu,     pos: {x: 0, y: 5}}
-    - {class: destroyer,     pos: {x: 1, y: 3}}
-    - {class: destroyer,     pos: {x: 1, y: 6}}
-    - {class: tomahawk_sub,  pos: {x: 1, y: 4}}
-    - {class: f35,           pos: {x: 2, y: 2}}
-    - {class: f35,           pos: {x: 2, y: 7}}
-    - {class: b2,            pos: {x: 1, y: 5}}
-    - {class: navy_seal,     pos: {x: 2, y: 4}}
-    - {class: shayetet,      pos: {x: 2, y: 5}}
+    - {class: albuquerque,    pos: {x: 1, y: 4}}
+    - {class: joao_de_nova,   pos: {x: 0, y: 3}}
+    - {class: duarte_pacheco, pos: {x: 2, y: 5}}
+    - {class: padre_miguel,   pos: {x: 0, y: 5}}
+    - {class: gaspar_almada,  pos: {x: 1, y: 6}}
 
   red:
-    # Khamenei deliberately placed forward, HP 1 — a free kill for
-    # blue if they want it.
-    - {class: khamenei,        pos: {x: 4, y: 5}}
-    # Speedboat screen harassing the western approach.
-    - {class: irgc_speedboat,  pos: {x: 5, y: 3}}
-    - {class: irgc_speedboat,  pos: {x: 5, y: 4}}
-    - {class: irgc_speedboat,  pos: {x: 5, y: 5}}
-    - {class: irgc_speedboat,  pos: {x: 5, y: 6}}
-    # Drone swarm from inland airfields.
-    - {class: shahed_drone,    pos: {x: 10, y: 2}}
-    - {class: shahed_drone,    pos: {x: 10, y: 7}}
-    - {class: shahed_drone,    pos: {x: 11, y: 4}}
-    - {class: shahed_drone,    pos: {x: 11, y: 5}}
-    # Coastal batteries on the Iranian shore (static).
-    - {class: coastal_missile, pos: {x: 13, y: 3}}
-    - {class: coastal_missile, pos: {x: 13, y: 6}}
-    # Basij line defending the approaches to the bunker.
-    - {class: basij,           pos: {x: 14, y: 4}}
-    - {class: basij,           pos: {x: 14, y: 5}}
-    - {class: basij,           pos: {x: 14, y: 6}}
-    # IRGC commando core inside the bunker complex.
-    - {class: irgc_commando,   pos: {x: 15, y: 4}}
-    - {class: irgc_commando,   pos: {x: 15, y: 6}}
-    - {class: irgc_commando,   pos: {x: 16, y: 5}}
+    - {class: sultan_sayf,       pos: {x: 12, y: 5}}
+    - {class: ottoman_admiral,   pos: {x: 8, y: 3}}
+    - {class: hormuz_sorcerer,   pos: {x: 11, y: 4}}
+    - {class: hormuz_corsair,    pos: {x: 8, y: 6}}
+    - {class: shore_gunner,      pos: {x: 10, y: 2}}
+    - {class: palace_guard,      pos: {x: 11, y: 5}}
+    - {class: ottoman_janissary, pos: {x: 10, y: 7}}
 
 rules:
-  max_turns: 10
-  fog_of_war: classic
+  max_turns: 14
   first_player: blue
 
 win_conditions:
-  # Blue needs BOTH halves of the Operation Epic Fury strike
-  # package: reach the enriched-uranium bunker AND kill Khamenei.
-  # Red wins if the ten-turn budget expires without the compound
-  # goal met, or if either US/Israeli VIP dies (handled by the
-  # protect_unit rules below). The plugin is the single source of
-  # truth for blue-victory — don't add seize_enemy_fort here or
-  # blue would trigger a premature win from reaching the bunker
-  # alone.
-  - {type: plugin, module: rules, check_fn: enriched_uranium_strike_check}
-  # Safety nets that the plugin defers to:
-  - {type: protect_unit, unit_id: u_b_trump_1,      owning_team: blue}
-  - {type: protect_unit, unit_id: u_b_netanyahu_1,  owning_team: blue}
+  - {type: seize_enemy_fort}
+  - {type: protect_unit, unit_id: u_b_albuquerque_1, owning_team: blue}
   - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
 
 narrative:
-  title: Strait of Hormuz (Operation Epic Fury, 2026)
+  title: "Strait of Hormuz (1507)"
   description: |
-    A ten-turn compressed version of the February 2026 US/Israel
-    strike on Iran: push through the Strait, finish the
-    decapitation begun on day 1, and plant boots on the
-    enriched-uranium bunker.
+    Afonso de Albuquerque leads the Portuguese armada to seize the
+    island fortress of Hormuz, key to the spice trade. The Sultan
+    and his Ottoman allies defend the citadel.
   intro: |
-    28 February 2026. Khamenei has just been hit in Tehran but
-    not yet confirmed dead; his escort craft is still at the mouth
-    of the Strait. B-2s are feet-wet over the Gulf of Oman. The
-    IRGC has mined the Strait and rolled out its coastal-missile
-    regiments. Ten turns to the bunker.
+    The Portuguese fleet rounds the headland into the harbor of
+    Hormuz. Iron chains stretch across the channel. Shore batteries
+    open fire. Albuquerque raises his sword: "For God, King, and
+    the spice trade — break the chain!"
   events:
-    - trigger: on_unit_killed
-      unit_id: u_r_khamenei_1
-      text: "Supreme Leader KIA confirmed. Half the strike package is delivered — now the bunker."
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        Smoke chokes the harbor. Ottoman galleys maneuver behind
+        the chain while Portuguese broadsides hammer the shore
+        batteries. The citadel still stands.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        The harbor chain is breached! Portuguese carracks push
+        through the narrows under withering fire. The citadel
+        gates loom ahead.

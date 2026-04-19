@@ -2,35 +2,41 @@ schema_version: 1
 license: fan_work
 fan_work_source: "Harry Potter (J.K. Rowling / Warner Bros.)"
 name: Astronomy Tower
-difficulty: 2
+difficulty: 3
 description: |
   Hogwarts, June 1997. Death Eaters breach the castle through a
   Vanishing Cabinet. Draco Malfoy confronts a weakened Dumbledore
-  atop the Astronomy Tower while dark wizards and a werewolf fight
-  through the corridors below. The Order guards must hold long
-  enough for Dumbledore to escape — or fall trying.
+  atop the Astronomy Tower while Bellatrix, Fenrir, and other dark
+  wizards fight through the corridors below. The DA and Order
+  members must protect Dumbledore long enough for him to escape.
+  Snape moves among both sides — whose side is he truly on?
   Inspired by the Battle of the Astronomy Tower from Harry Potter by J.K. Rowling.
 
 board:
-  width: 10
-  height: 8
+  width: 12
+  height: 10
   terrain:
-    # Stone walls creating corridor chokepoints
-    # Left corridor wall
-    - {x: 2, y: 2, type: stone_wall}
-    - {x: 2, y: 3, type: stone_wall}
-    - {x: 2, y: 5, type: stone_wall}
-    - {x: 2, y: 6, type: stone_wall}
-    # Right corridor wall
-    - {x: 7, y: 2, type: stone_wall}
-    - {x: 7, y: 3, type: stone_wall}
-    - {x: 7, y: 5, type: stone_wall}
-    - {x: 7, y: 6, type: stone_wall}
-    # Internal walls for chokepoints
-    - {x: 4, y: 3, type: stone_wall}
-    - {x: 6, y: 3, type: stone_wall}
-    - {x: 4, y: 5, type: stone_wall}
-    - {x: 6, y: 5, type: stone_wall}
+    # Tower top (Dumbledore's position)
+    - {x: 5, y: 0, type: tower_parapet}
+    - {x: 6, y: 0, type: tower_parapet}
+    # Corridor walls creating chokepoints
+    - {x: 3, y: 2, type: stone_wall}
+    - {x: 3, y: 3, type: stone_wall}
+    - {x: 8, y: 2, type: stone_wall}
+    - {x: 8, y: 3, type: stone_wall}
+    # Central pillars
+    - {x: 5, y: 4, type: stone_wall}
+    - {x: 6, y: 4, type: stone_wall}
+    # Room of Requirement (healing terrain, side room)
+    - {x: 0, y: 4, type: room_of_requirement}
+    - {x: 0, y: 5, type: room_of_requirement}
+    - {x: 1, y: 4, type: room_of_requirement}
+    # Lower corridor walls
+    - {x: 3, y: 6, type: stone_wall}
+    - {x: 8, y: 6, type: stone_wall}
+    # Vanishing Cabinet room (where Death Eaters enter)
+    - {x: 10, y: 8, type: vanishing_cabinet}
+    - {x: 11, y: 8, type: vanishing_cabinet}
   forts: []
 
 terrain_types:
@@ -43,68 +49,149 @@ terrain_types:
     color: white
     description: |
       Hogwarts castle stone walls. Ancient and impassable.
+  tower_parapet:
+    display_name: Tower Parapet
+    move_cost: 1
+    defense_bonus: 2
+    glyph: "^"
+    color: bright_cyan
+    description: |
+      The top of the Astronomy Tower. Exposed but defensible.
+  room_of_requirement:
+    display_name: Room of Requirement
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "?"
+    color: bright_magenta
+    description: |
+      The Room of Requirement. Provides shelter and whatever
+      the occupant needs most.
+  vanishing_cabinet:
+    display_name: Vanishing Cabinet
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "V"
+    color: dim
+    description: |
+      The Vanishing Cabinet in the Room of Requirement — the
+      Death Eaters' entry point into Hogwarts.
 
 unit_classes:
   dumbledore:
     display_name: Albus Dumbledore
     description: |
       The greatest wizard of the age — but weakened by a cursed
-      ring and the potion in the cave. His wand hand is blackened
-      and dying. Even diminished, he is formidable.
-    hp_max: 20
+      ring and the cave potion. Even diminished, his spells are
+      devastating. VIP — if he falls, blue loses.
+    hp_max: 22
     atk: 14
-    defense: 4
-    res: 10
+    defense: 3
+    res: 9
     spd: 4
     move: 2
     rng_min: 1
     rng_max: 3
     is_magic: true
+    tags: [vip]
     glyph: "D"
     color: bright_cyan
 
-  order_guard:
-    display_name: Order Guard
+  harry:
+    display_name: Harry Potter
     description: |
-      Members of the Order of the Phoenix patrolling the castle
-      corridors. Experienced adult witches and wizards. Trained
-      in basic field healing charms.
-    hp_max: 22
+      Hidden under his Invisibility Cloak atop the tower, frozen
+      by Dumbledore's spell. A skilled duelist with Expelliarmus
+      and Patronus charms.
+    hp_max: 20
+    atk: 10
+    defense: 3
+    res: 7
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "H"
+    color: bright_yellow
+
+  ginny:
+    display_name: Ginny Weasley
+    description: |
+      Fierce DA member with a powerful Bat-Bogey Hex. Quick on
+      her feet and fights with controlled aggression.
+    hp_max: 18
     atk: 9
-    defense: 4
+    defense: 3
     res: 6
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "G"
+    color: cyan
+
+  neville:
+    display_name: Neville Longbottom
+    description: |
+      The bravest of them all. Fights with stubborn determination
+      and surprising toughness. Channels raw courage into his
+      Shield Charms.
+    hp_max: 22
+    atk: 8
+    defense: 5
+    res: 6
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    is_magic: true
+    glyph: "N"
+    color: cyan
+
+  luna:
+    display_name: Luna Lovegood
+    description: |
+      Dreamy but deadly. Her unorthodox spells catch enemies off
+      guard. Stunners and jinxes from unexpected angles.
+    hp_max: 16
+    atk: 9
+    defense: 2
+    res: 8
     spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "L"
+    color: bright_magenta
+
+  snape:
+    display_name: Severus Snape
+    description: |
+      The double agent. Master of Occlumency, Legilimency, and
+      dark curses. Fights for blue but his true allegiance is
+      ambiguous. A terrifyingly skilled wizard.
+    hp_max: 24
+    atk: 12
+    defense: 4
+    res: 8
+    spd: 6
     move: 3
     rng_min: 1
     rng_max: 2
     is_magic: true
-    can_heal: true
-    heal_amount: 4
-    glyph: "o"
+    glyph: "S"
     color: white
 
-  da_student:
-    display_name: DA Student
-    description: |
-      Young members of Dumbledore's Army. Brave beyond their years,
-      patrolling the corridors with Felix Felicis in their veins.
-    hp_max: 16
-    atk: 7
-    defense: 3
-    res: 5
-    spd: 5
-    move: 3
-    rng_min: 1
-    rng_max: 2
-    is_magic: true
-    glyph: "d"
-    color: cyan
+  # --- RED: Death Eaters ---
 
   draco:
     display_name: Draco Malfoy
     description: |
       The conflicted boy with the Dark Mark. Tasked with killing
-      Dumbledore but unable to do it. His heart isn't in the fight.
+      Dumbledore but unable to do it. His hexes are competent but
+      his heart wavers.
     hp_max: 18
     atk: 7
     defense: 3
@@ -117,27 +204,46 @@ unit_classes:
     glyph: "Z"
     color: bright_red
 
+  bellatrix:
+    display_name: Bellatrix Lestrange
+    description: |
+      The Dark Lord's most devoted servant. Her Cruciatus and
+      Killing Curses make her the deadliest witch alive. Savage,
+      fast, and utterly ruthless.
+    hp_max: 24
+    atk: 13
+    defense: 3
+    res: 7
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "B"
+    color: bright_red
+
   fenrir:
     display_name: Fenrir Greyback
     description: |
-      The savage werewolf. Not a Death Eater by ideology — just a
-      monster who enjoys the violence. Melee beast, not a wizard.
+      The savage werewolf. Not a wizard — just a monster who
+      enjoys violence. Fights with claws and teeth. Physical
+      damage only, but devastating up close.
     hp_max: 28
     atk: 12
-    defense: 5
+    defense: 6
     res: 2
-    spd: 6
+    spd: 7
     move: 4
     rng_min: 1
     rng_max: 1
     glyph: "F"
     color: bright_red
 
-  death_eater:
-    display_name: Death Eater
+  amycus:
+    display_name: Amycus Carrow
     description: |
-      Dark wizards who infiltrated Hogwarts through the Vanishing
-      Cabinet. Masked and ruthless.
+      Death Eater who specializes in the Cruciatus Curse. A
+      sadistic bully with genuine dark arts skill.
     hp_max: 20
     atk: 9
     defense: 3
@@ -147,50 +253,96 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "x"
-    color: bright_black
+    glyph: "A"
+    color: red
+
+  alecto:
+    display_name: Alecto Carrow
+    description: |
+      Amycus's sister and fellow Death Eater. Her hexes focus on
+      binding and immobilization. Fights dirty.
+    hp_max: 20
+    atk: 8
+    defense: 3
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "E"
+    color: red
+
+  yaxley:
+    display_name: Yaxley
+    description: |
+      Senior Death Eater and Imperius Curse specialist. Tall,
+      brutal, and experienced. A dangerous melee combatant with
+      dark magic backup.
+    hp_max: 24
+    atk: 10
+    defense: 5
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    is_magic: true
+    glyph: "Y"
+    color: red
+
+  gibbon:
+    display_name: Gibbon
+    description: |
+      Death Eater who cast the Dark Mark over the tower. A
+      competent duelist specializing in fire curses.
+    hp_max: 18
+    atk: 9
+    defense: 3
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "X"
+    color: red
 
 armies:
   blue:
-    # Dumbledore — atop the tower
+    # Dumbledore atop the tower
     - {class: dumbledore, pos: {x: 5, y: 0}}
-    # Order guards — defending corridors
-    - {class: order_guard, pos: {x: 3, y: 1}}
-    - {class: order_guard, pos: {x: 5, y: 2}}
-    - {class: order_guard, pos: {x: 8, y: 1}}
-    # DA students — scattered through the tower
-    - {class: da_student, pos: {x: 4, y: 1}}
-    - {class: da_student, pos: {x: 6, y: 1}}
-    - {class: da_student, pos: {x: 5, y: 4}}
-    - {class: da_student, pos: {x: 3, y: 4}}
+    # Harry hidden beside him
+    - {class: harry, pos: {x: 6, y: 0}}
+    # Snape in the corridors (double agent, fights for blue)
+    - {class: snape, pos: {x: 5, y: 3}}
+    # DA members patrolling
+    - {class: ginny, pos: {x: 4, y: 2}}
+    - {class: neville, pos: {x: 7, y: 2}}
+    - {class: luna, pos: {x: 1, y: 3}}
 
   red:
-    # Draco — leading the assault
-    - {class: draco, pos: {x: 5, y: 7}}
-    # Fenrir — the werewolf
-    - {class: fenrir, pos: {x: 3, y: 7}}
-    # Death Eaters — main force pushing upward
-    - {class: death_eater, pos: {x: 1, y: 7}}
-    - {class: death_eater, pos: {x: 4, y: 6}}
-    - {class: death_eater, pos: {x: 6, y: 6}}
-    - {class: death_eater, pos: {x: 8, y: 7}}
-    - {class: death_eater, pos: {x: 9, y: 7}}
-    - {class: death_eater, pos: {x: 3, y: 6}}
-    - {class: death_eater, pos: {x: 8, y: 6}}
-    - {class: death_eater, pos: {x: 5, y: 6}}
+    # Death Eaters breaching from the south
+    - {class: draco, pos: {x: 5, y: 8}}
+    - {class: bellatrix, pos: {x: 6, y: 9}}
+    - {class: fenrir, pos: {x: 4, y: 9}}
+    - {class: amycus, pos: {x: 7, y: 7}}
+    - {class: alecto, pos: {x: 9, y: 8}}
+    - {class: yaxley, pos: {x: 3, y: 8}}
+    - {class: gibbon, pos: {x: 10, y: 9}}
 
 rules:
   max_turns: 14
   first_player: red
 
 win_conditions:
-  # Dumbledore dies -> blue loses.
+  # Dumbledore dies -> blue loses
   - {type: protect_unit, unit_id: u_b_dumbledore_1, owning_team: blue}
-  # Dumbledore survives the turn cap -> blue wins (he escapes).
+  # Dumbledore survives the turn cap -> blue wins (he escapes)
   - {type: protect_unit_survives, unit_id: u_b_dumbledore_1, owning_team: blue}
-  # Either side wins by total elimination.
+  # Either side wins by total elimination
   - {type: eliminate_all_enemy_units}
-  # Backstop.
+  # Backstop
   - {type: max_turns_draw}
 
 narrative:
@@ -198,26 +350,30 @@ narrative:
   description: |
     Hogwarts, June 1997. Death Eaters have breached the castle
     through a Vanishing Cabinet. Dumbledore, weakened from
-    retrieving a Horcrux, faces Draco Malfoy on the tower.
+    retrieving a Horcrux, faces Draco Malfoy on the tower while
+    his allies fight below.
   intro: |
     The Dark Mark hangs over the Astronomy Tower. Spells flash
     in the corridors below. Dumbledore stands at the parapet,
     his cursed hand hidden beneath his robes. Draco's wand hand
-    trembles.
+    trembles. In the shadows, Snape moves with purpose — but
+    whose purpose?
   events:
     - trigger: on_turn_start
       turn: 4
       text: |
         Fenrir Greyback howls through the corridors. The sound
-        of breaking stone echoes as spells blow holes in the
-        castle walls.
+        of breaking stone echoes as curses blow holes in the
+        castle walls. Bellatrix's cackle rings out.
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
-        The fighting grows desperate. Order members fall back
-        toward the tower stairs, buying time.
+        The fighting grows desperate. Luna's Patronus flashes
+        silver through the smoke. Neville bleeds but refuses
+        to fall. The tower stairs are slick with spell-fire.
     - trigger: on_unit_killed
       unit_id: u_b_dumbledore_1
       text: |
         The greatest wizard of the age falls from the tower.
-        The defenders' morale shatters.
+        The defenders' morale shatters. The Dark Mark burns
+        brighter overhead.

@@ -48,37 +48,33 @@ class LobbyScreen(Screen):
 
         table = Table(expand=True, show_lines=False, header_style="bold")
         table.add_column(" ", width=2)
-        table.add_column(t("lobby_table.room", lc), overflow="fold")
         table.add_column(t("lobby_table.host", lc), overflow="fold")
+        table.add_column(t("lobby_table.joiner", lc), overflow="fold")
         table.add_column(t("lobby_table.scenario", lc), overflow="fold")
-        table.add_column(t("lobby_table.teams", lc))
-        table.add_column(t("lobby_table.fog", lc))
-        table.add_column(t("lobby_table.seats", lc))
         table.add_column(t("lobby_table.col_status", lc))
 
         if not rooms:
-            table.add_row("", t("lobby_table.no_rooms", lc), "", "", "", "", "", "")
+            table.add_row("", t("lobby_table.no_rooms", lc), "", "", "")
         else:
             for i, r in enumerate(rooms):
                 marker = "➤" if i == self._selected else " "
                 seats = r.get("seats", {})
-                occ = sum(1 for s in seats.values() if s.get("occupied"))
-                # Scenario: show human-readable name from config
+                # Scenario: prefer localized name from cache
                 scenario_raw = r.get("scenario", "")
-                scenario_display = r.get("scenario_display_name") or scenario_raw.replace("_", " ").lstrip("0123456789_")
-                # Players: host + joiner if present
-                players = r.get("host_name", "")
-                joiner = seats.get("b", {}).get("player", {})
-                if joiner and joiner.get("display_name"):
-                    players += f" vs {joiner['display_name']}"
+                cached = self.app.state.scenario_cache.get(scenario_raw)
+                if cached:
+                    scenario_display = cached.get("name") or scenario_raw
+                else:
+                    scenario_display = scenario_raw.replace("_", " ").lstrip("0123456789_")
+                # Host and joiner as separate columns
+                host_name = r.get("host_name", "")
+                joiner_player = seats.get("b", {}).get("player") or {}
+                joiner_name = joiner_player.get("display_name", "") if joiner_player else ""
                 table.add_row(
                     marker,
-                    r.get("room_id", "")[:10],
-                    players,
+                    host_name,
+                    joiner_name or "—",
                     scenario_display,
-                    t(f"lobby_val.team_{r.get('team_assignment', 'fixed')}", lc),
-                    t(f"lobby_val.fog_{r.get('fog_of_war', 'none')}", lc),
-                    f"{occ}/2",
                     t(f"lobby_val.status_{r.get('status', 'unknown')}", lc),
                     style="bold" if i == self._selected else None,
                 )
@@ -284,7 +280,7 @@ class LobbyScreen(Screen):
     def _render_leaderboard(self, lc: str) -> RenderableType:
         lb = self.app.state.last_leaderboard
 
-        tbl = Table(expand=True, show_lines=False, header_style="bold", padding=(0, 1))
+        tbl = Table(expand=True, show_lines=True, header_style="bold", padding=(0, 1))
         tbl.add_column(t("leaderboard.col_model", lc), overflow="fold", no_wrap=False)
         tbl.add_column(t("leaderboard.col_games", lc), justify="right")
         tbl.add_column(t("leaderboard.col_wins", lc), justify="right")

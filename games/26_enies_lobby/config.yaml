@@ -5,75 +5,69 @@ name: "Enies Lobby — Rescue Robin"
 difficulty: 3
 description: |
   Enies Lobby, the Judicial Island. The Straw Hat Pirates storm the
-  Bridge of Hesitation to rescue Nico Robin from CP9 and the World
-  Government. Luffy's crew must fight through the elite assassins
-  and reach Spandam before Robin is dragged through the Gates of
-  Justice forever.
+  Tower of Justice to rescue Nico Robin from CP9. Each Straw Hat
+  faces their matched opponent in a battle that will define the
+  crew. Luffy must defeat Rob Lucci and reach Robin before she is
+  dragged through the Gates of Justice.
   Inspired by the Enies Lobby arc from One Piece by Eiichiro Oda.
 
 board:
   width: 14
-  height: 10
+  height: 12
   terrain:
-    # Bridge of Hesitation (y=4-5, x=3-10)
-    - {x: 3, y: 4, type: bridge}
-    - {x: 4, y: 4, type: bridge}
-    - {x: 5, y: 4, type: bridge}
-    - {x: 6, y: 4, type: bridge}
-    - {x: 7, y: 4, type: bridge}
-    - {x: 8, y: 4, type: bridge}
-    - {x: 9, y: 4, type: bridge}
-    - {x: 10, y: 4, type: bridge}
+    # Bridge of Hesitation (y=5-6, x=2-8)
+    - {x: 2, y: 5, type: bridge}
     - {x: 3, y: 5, type: bridge}
     - {x: 4, y: 5, type: bridge}
     - {x: 5, y: 5, type: bridge}
     - {x: 6, y: 5, type: bridge}
     - {x: 7, y: 5, type: bridge}
     - {x: 8, y: 5, type: bridge}
-    - {x: 9, y: 5, type: bridge}
-    - {x: 10, y: 5, type: bridge}
-    # Water / gap — impassable areas flanking the bridge
-    # North side gap
-    - {x: 0, y: 3, type: water}
-    - {x: 1, y: 3, type: water}
-    - {x: 2, y: 3, type: water}
-    - {x: 3, y: 3, type: water}
-    # x=4-9 at y=3 removed — bridge widened to 3 rows (y=3,4,5)
-    - {x: 4, y: 3, type: bridge}
-    - {x: 5, y: 3, type: bridge}
-    - {x: 6, y: 3, type: bridge}
-    - {x: 7, y: 3, type: bridge}
-    - {x: 8, y: 3, type: bridge}
-    - {x: 9, y: 3, type: bridge}
-    - {x: 10, y: 3, type: water}
-    - {x: 11, y: 3, type: water}
-    - {x: 12, y: 3, type: water}
-    - {x: 13, y: 3, type: water}
-    # South side gap
-    - {x: 0, y: 6, type: water}
-    - {x: 1, y: 6, type: water}
-    - {x: 2, y: 6, type: water}
-    - {x: 3, y: 6, type: water}
-    - {x: 4, y: 6, type: water}
-    - {x: 5, y: 6, type: water}
-    - {x: 6, y: 6, type: water}
-    - {x: 7, y: 6, type: water}
-    - {x: 8, y: 6, type: water}
-    - {x: 9, y: 6, type: water}
-    - {x: 10, y: 6, type: water}
-    - {x: 11, y: 6, type: water}
-    - {x: 12, y: 6, type: water}
-    - {x: 13, y: 6, type: water}
-    # Tower of Justice walls (east side)
-    - {x: 11, y: 2, type: tower_wall}
-    - {x: 12, y: 2, type: tower_wall}
-    - {x: 13, y: 2, type: tower_wall}
+    - {x: 2, y: 6, type: bridge}
+    - {x: 3, y: 6, type: bridge}
+    - {x: 4, y: 6, type: bridge}
+    - {x: 5, y: 6, type: bridge}
+    - {x: 6, y: 6, type: bridge}
+    - {x: 7, y: 6, type: bridge}
+    - {x: 8, y: 6, type: bridge}
+    # Water / waterfall — impassable flanks
+    - {x: 0, y: 4, type: water}
+    - {x: 1, y: 4, type: water}
+    - {x: 2, y: 4, type: water}
+    - {x: 3, y: 4, type: water}
+    - {x: 4, y: 4, type: water}
+    - {x: 5, y: 4, type: water}
+    - {x: 6, y: 4, type: water}
+    - {x: 7, y: 4, type: water}
+    - {x: 8, y: 4, type: water}
+    - {x: 9, y: 4, type: water}
+    - {x: 0, y: 7, type: water}
+    - {x: 1, y: 7, type: water}
+    - {x: 2, y: 7, type: water}
+    - {x: 3, y: 7, type: water}
+    - {x: 4, y: 7, type: water}
+    - {x: 5, y: 7, type: water}
+    - {x: 6, y: 7, type: water}
+    - {x: 7, y: 7, type: water}
+    - {x: 8, y: 7, type: water}
+    - {x: 9, y: 7, type: water}
+    # Tower of Justice (east side)
+    - {x: 10, y: 3, type: tower_wall}
+    - {x: 10, y: 4, type: tower_wall}
+    - {x: 10, y: 7, type: tower_wall}
+    - {x: 10, y: 8, type: tower_wall}
     - {x: 13, y: 3, type: tower_wall}
     - {x: 13, y: 4, type: tower_wall}
-    - {x: 13, y: 6, type: tower_wall}
-    - {x: 11, y: 7, type: tower_wall}
-    - {x: 12, y: 7, type: tower_wall}
     - {x: 13, y: 7, type: tower_wall}
+    - {x: 13, y: 8, type: tower_wall}
+    # Tower interior
+    - {x: 11, y: 5, type: tower_floor}
+    - {x: 12, y: 5, type: tower_floor}
+    - {x: 11, y: 6, type: tower_floor}
+    - {x: 12, y: 6, type: tower_floor}
+    # Gates of Justice (far east)
+    - {x: 13, y: 5, type: gates_of_justice}
+    - {x: 13, y: 6, type: gates_of_justice}
   forts: []
 
 terrain_types:
@@ -94,7 +88,7 @@ terrain_types:
     glyph: "~"
     color: bright_blue
     description: |
-      The bottomless waterfall beneath the Bridge of Hesitation.
+      The bottomless waterfall beneath the bridge.
       Falling in means certain death.
   tower_wall:
     display_name: Tower Wall
@@ -104,33 +98,51 @@ terrain_types:
     glyph: "#"
     color: bright_black
     description: |
-      The Tower of Justice. Impassable stone walls of the
-      World Government's fortress.
+      Impassable stone walls of the Tower of Justice.
+  tower_floor:
+    display_name: Tower Floor
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "T"
+    color: dim
+    description: |
+      Interior of the Tower of Justice. Some cover from
+      the stone columns.
+  gates_of_justice:
+    display_name: Gates of Justice
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "G"
+    color: bright_red
+    description: |
+      The Gates of Justice. Once Robin passes through,
+      she is lost forever.
 
 unit_classes:
   luffy:
     display_name: Monkey D. Luffy
     description: |
-      The Rubber Captain. His body stretches, bounces, and
-      deflects. In Gear Second, his speed and power explode.
-      He will rescue Robin or die trying.
-    hp_max: 35
+      The Rubber Captain in Gear Second. His body stretches,
+      bounces, and deflects. He will rescue Robin or die trying.
+      VIP — if Luffy falls, the rescue fails.
+    hp_max: 34
     atk: 13
     defense: 5
     res: 4
     spd: 7
     move: 5
     rng_min: 1
-    rng_max: 1
+    rng_max: 2
+    tags: [vip]
     glyph: "L"
     color: bright_yellow
 
   zoro:
     display_name: Roronoa Zoro
     description: |
-      Three-Sword Style master. Fights with a blade in each hand
-      and one in his mouth. Nothing stands in his way — he cuts
-      through steel and stone alike.
+      Three-Sword Style master. Cuts through steel and stone.
+      His Asura technique creates the illusion of three-headed,
+      six-armed devastation.
     hp_max: 28
     atk: 14
     defense: 6
@@ -146,8 +158,8 @@ unit_classes:
     display_name: Sanji
     description: |
       Black Leg Sanji. Fights exclusively with devastating kicks.
-      The fastest Straw Hat — his Diable Jambe sets his leg ablaze
-      with friction.
+      Diable Jambe sets his leg ablaze — fire damage bypasses
+      physical defense.
     hp_max: 26
     atk: 12
     defense: 5
@@ -156,17 +168,18 @@ unit_classes:
     move: 5
     rng_min: 1
     rng_max: 1
+    is_magic: true
     glyph: "S"
     color: yellow
 
   nami:
     display_name: Nami
     description: |
-      The Cat Burglar and navigator. Her Clima-Tact controls
-      weather — lightning bolts, mirages, and thunderclouds.
-      Fragile but dangerous at range.
+      The Cat Burglar. Her Clima-Tact controls weather —
+      lightning bolts, thunderclouds, and mirages. Fragile but
+      devastating magic damage at range.
     hp_max: 16
-    atk: 8
+    atk: 9
     defense: 2
     res: 6
     spd: 5
@@ -178,13 +191,12 @@ unit_classes:
     color: bright_yellow
 
   usopp:
-    display_name: Usopp
+    display_name: Usopp (Sogeking)
     description: |
       The Sniper King. A coward with perfect aim. His Kabuto
-      slingshot can hit targets from absurd distances with
-      explosive ammunition.
-    hp_max: 14
-    atk: 9
+      slingshot hits from absurd range with explosive pellets.
+    hp_max: 16
+    atk: 10
     defense: 2
     res: 3
     spd: 4
@@ -194,34 +206,32 @@ unit_classes:
     glyph: "U"
     color: yellow
 
-  chopper:
-    display_name: Tony Tony Chopper
+  robin:
+    display_name: Nico Robin
     description: |
-      The crew's doctor. A reindeer who ate the Human-Human Fruit.
-      Transforms between forms for fighting and healing. Will save
-      anyone, friend or foe.
-    hp_max: 20
+      The archaeologist they came to save. Her Hana Hana Fruit
+      sprouts limbs from any surface — ranged grapples and joint
+      locks that deal magic damage.
+    hp_max: 18
     atk: 8
-    defense: 5
-    res: 4
-    spd: 5
+    defense: 2
+    res: 6
+    spd: 4
     move: 3
     rng_min: 1
-    rng_max: 1
-    can_heal: true
-    heal_amount: 5
-    glyph: "C"
-    color: bright_cyan
+    rng_max: 3
+    is_magic: true
+    glyph: "R"
+    color: bright_magenta
 
   franky:
     display_name: Franky
     description: |
       The cyborg shipwright. Powered by cola, armored with steel.
-      His Coup de Vent air cannon and iron fists make him a
-      walking battleship.
+      Coup de Vent air cannon and iron fists. Walking battleship.
     hp_max: 30
     atk: 11
-    defense: 8
+    defense: 7
     res: 2
     spd: 4
     move: 3
@@ -230,29 +240,31 @@ unit_classes:
     glyph: "F"
     color: cyan
 
+  # --- RED: CP9 ---
+
   lucci:
     display_name: Rob Lucci
     description: |
-      CP9's strongest agent in history. Leopard Zoan user. His
-      Rokushiki martial arts and Rokuogan shockwave make him a
-      killing machine. 4000 doriki — double any other CP9 agent.
+      CP9's strongest agent in history. Leopard Zoan user with
+      Rokuogan shockwave. 4000 doriki — double any other agent.
+      VIP — if Lucci falls, CP9 crumbles.
     hp_max: 34
     atk: 14
     defense: 6
-    res: 3
+    res: 4
     spd: 7
     move: 4
     rng_min: 1
     rng_max: 1
+    tags: [vip]
     glyph: "X"
     color: bright_red
 
   kaku:
     display_name: Kaku
     description: |
-      CP9 agent and Giraffe Zoan user. His long neck extends
-      his sword reach to absurd lengths. Surprisingly dangerous
-      despite the ridiculous animal form.
+      Giraffe Zoan user. His impossibly long neck extends his
+      Rankyaku air blades to absurd range. Surprisingly lethal.
     hp_max: 26
     atk: 11
     defense: 5
@@ -267,9 +279,8 @@ unit_classes:
   jabra:
     display_name: Jabra
     description: |
-      CP9 agent and Wolf Zoan user. Fast and savage in wolf form.
-      Uses Tekkai Kenpo — iron body martial arts — to attack
-      while maintaining steel-hard defense.
+      Wolf Zoan user. Tekkai Kenpo lets him maintain iron-body
+      defense while attacking. Fast and savage in wolf form.
     hp_max: 24
     atk: 10
     defense: 5
@@ -284,8 +295,8 @@ unit_classes:
   blueno:
     display_name: Blueno
     description: |
-      CP9 agent with the Door-Door Fruit. Can create doors in
-      anything — walls, air, even people. A defensive specialist.
+      Door-Door Fruit user. Creates doors in walls, air, and
+      even people. A defensive specialist who controls space.
     hp_max: 26
     atk: 9
     defense: 7
@@ -297,96 +308,98 @@ unit_classes:
     glyph: "B"
     color: red
 
-  spandam:
-    display_name: Spandam
+  kalifa:
+    display_name: Kalifa
     description: |
-      CP9's incompetent director. The weakest villain imaginable
-      — power level of 9. Has Robin in chains and the authority
-      of the World Government behind him.
-    hp_max: 10
-    atk: 3
-    defense: 2
-    res: 2
-    spd: 3
-    move: 2
+      Bubble-Bubble Fruit user. Her soap bubbles sap strength
+      and smooth away resistance. Magic damage dealer who
+      weakens opponents on contact.
+    hp_max: 20
+    atk: 8
+    defense: 3
+    res: 6
+    spd: 6
+    move: 3
     rng_min: 1
-    rng_max: 1
-    glyph: "!"
-    color: dim
+    rng_max: 2
+    is_magic: true
+    glyph: "Q"
+    color: red
 
-  marine_guard:
-    display_name: Marine Guard
+  kumadori:
+    display_name: Kumadori
     description: |
-      Enies Lobby garrison Marines. Professional soldiers
-      guarding the judicial island.
-    hp_max: 18
-    atk: 6
+      Kabuki-themed CP9 agent. Life Return lets him control
+      every cell in his body — his hair becomes a weapon.
+      Dramatic, durable, and surprisingly tough.
+    hp_max: 26
+    atk: 9
     defense: 5
-    res: 2
+    res: 4
     spd: 4
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "m"
+    glyph: "M"
+    color: red
+
+  fukurou:
+    display_name: Fukurou
+    description: |
+      The owl-like CP9 agent. His Soru speed and Jugon punches
+      hit hard. Also has a big mouth — literally and figuratively.
+      Ranged air pressure attacks bypass armor.
+    hp_max: 22
+    atk: 9
+    defense: 4
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "O"
     color: red
 
 armies:
   blue:
-    # Luffy — leading the charge
-    - {class: luffy, pos: {x: 1, y: 4}}
-    # Zoro — beside Luffy
-    - {class: zoro, pos: {x: 2, y: 4}}
-    # Sanji — south lane
-    - {class: sanji, pos: {x: 1, y: 5}}
-    # Nami — ranged support from rear
-    - {class: nami, pos: {x: 0, y: 4}}
-    # Usopp — far back, sniping
-    - {class: usopp, pos: {x: 0, y: 5}}
-    # Chopper — healing support
-    - {class: chopper, pos: {x: 2, y: 5}}
-    # Franky — heavy hitter
-    - {class: franky, pos: {x: 0, y: 2}}
+    - {class: luffy, pos: {x: 1, y: 5}}
+    - {class: zoro, pos: {x: 2, y: 6}}
+    - {class: sanji, pos: {x: 1, y: 6}}
+    - {class: nami, pos: {x: 0, y: 5}}
+    - {class: usopp, pos: {x: 0, y: 6}}
+    - {class: robin, pos: {x: 0, y: 2}}
+    - {class: franky, pos: {x: 0, y: 9}}
 
   red:
-    # Lucci — guarding the bridge
-    - {class: lucci, pos: {x: 8, y: 4}}
-    # Kaku — on the bridge
-    - {class: kaku, pos: {x: 9, y: 5}}
-    # Jabra — flanking
-    - {class: jabra, pos: {x: 10, y: 4}}
-    # Blueno — blocking
+    - {class: lucci, pos: {x: 9, y: 5}}
+    - {class: kaku, pos: {x: 9, y: 6}}
+    - {class: jabra, pos: {x: 11, y: 5}}
     - {class: blueno, pos: {x: 7, y: 5}}
-    # Spandam — at the far end with Robin
-    - {class: spandam, pos: {x: 12, y: 5}}
-    # Marine guards — defending the bridge and tower
-    - {class: marine_guard, pos: {x: 6, y: 4}}
-    - {class: marine_guard, pos: {x: 6, y: 5}}
-    - {class: marine_guard, pos: {x: 10, y: 5}}
-    - {class: marine_guard, pos: {x: 11, y: 4}}
-    - {class: marine_guard, pos: {x: 11, y: 5}}
-    - {class: marine_guard, pos: {x: 12, y: 4}}
-    - {class: marine_guard, pos: {x: 11, y: 1}}
+    - {class: kalifa, pos: {x: 11, y: 6}}
+    - {class: kumadori, pos: {x: 12, y: 5}}
+    - {class: fukurou, pos: {x: 12, y: 6}}
 
 rules:
-  max_turns: 18
+  max_turns: 16
   first_player: blue
 
 win_conditions:
-  # A Straw Hat reaches Spandam/Robin -> rescue!
+  # A Straw Hat reaches the Gates of Justice -> rescue!
   - {type: reach_tile, team: blue, pos: {x: 13, y: 5}}
-  # Luffy dies -> blue loses (captain falls).
+  # Luffy dies -> blue loses
   - {type: protect_unit, unit_id: u_b_luffy_1, owning_team: blue}
-  # Either side wins by total elimination.
+  # Either side wins by total elimination
   - {type: eliminate_all_enemy_units}
-  # Backstop.
+  # Backstop
   - {type: max_turns_draw}
 
 narrative:
   title: "Enies Lobby — Rescue Robin"
   description: |
     Enies Lobby, the Judicial Island. The Straw Hats declare war
-    on the World Government to save their archaeologist. Luffy faces
-    CP9's strongest — Rob Lucci — on the Bridge of Hesitation.
+    on the World Government to save their archaeologist. Each crew
+    member faces their matched CP9 opponent.
   intro: |
     "I WANT TO LIVE!" Robin's cry echoes across the waterfall.
     Luffy stands on the courthouse roof, Sogeking's flag burning

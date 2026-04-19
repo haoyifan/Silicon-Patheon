@@ -2,56 +2,67 @@ schema_version: 1
 license: fan_work
 fan_work_source: "Naruto (Masashi Kishimoto / Shueisha)"
 name: Madara Unleashed
-difficulty: 3
+difficulty: 4
 description: |
-  Fourth Great Ninja War. Madara Uchiha has been resurrected and
-  stands alone against the entire Allied Shinobi Forces. With the
-  Rinnegan and near-infinite chakra, he is a one-man army. The
-  Five Kage and Naruto in Sage Mode must survive long enough for
-  the sealing jutsu to be prepared. Killing Madara is nearly
-  impossible — the alliance wins through endurance, not force.
-  Inspired by Madara's rampage in the Fourth Shinobi World War from Naruto Shippūden by Masashi Kishimoto.
+  Fourth Great Ninja War. Madara Uchiha and Obito have merged with
+  the Ten-Tails, reshaping the battlefield. The Shinobi Alliance's
+  strongest — Naruto in Kurama Mode, Sasuke with Eternal Mangekyo,
+  Kakashi, Might Guy, Gaara, Tsunade, and the resurrected Fourth
+  Hokage Minato — face the ultimate threat. Madara is a super-tank
+  but not invincible: magic damage (ninjutsu) bypasses his physical
+  defense. Guy can open the Eighth Gate for devastating but suicidal
+  power.
+  Inspired by the Fourth Shinobi World War from Naruto Shippuden by Masashi Kishimoto.
 
 board:
   width: 14
   height: 12
   terrain:
-    # Rocky outcroppings scattered across the battlefield
+    # Rocky outcroppings from previous jutsu impacts
     - {x: 3, y: 3, type: rock}
     - {x: 10, y: 3, type: rock}
     - {x: 6, y: 4, type: rock}
     - {x: 8, y: 4, type: rock}
-    - {x: 2, y: 5, type: rock}
-    - {x: 11, y: 5, type: rock}
-    - {x: 5, y: 6, type: rock}
-    - {x: 9, y: 6, type: rock}
-    - {x: 1, y: 7, type: rock}
-    - {x: 7, y: 7, type: rock}
-    - {x: 12, y: 7, type: rock}
-    - {x: 4, y: 9, type: rock}
-    - {x: 10, y: 9, type: rock}
+    - {x: 2, y: 6, type: rock}
+    - {x: 11, y: 6, type: rock}
+    - {x: 5, y: 7, type: rock}
+    - {x: 9, y: 7, type: rock}
+    # Crater from meteor impact (rough terrain, no DEF bonus)
+    - {x: 6, y: 2, type: crater}
+    - {x: 7, y: 2, type: crater}
+    - {x: 8, y: 2, type: crater}
+    - {x: 7, y: 3, type: crater}
   forts: []
 
 terrain_types:
   rock:
     display_name: Rock
     move_cost: 2
-    defense_bonus: 3
+    defense_bonus: 2
     glyph: "^"
     color: bright_black
     description: |
-      Jagged rock formations thrust up from the battlefield by
-      previous jutsu impacts. Hard to cross but excellent cover.
+      Jagged rock formations thrust up by jutsu impacts.
+      Hard to cross but decent cover.
+  crater:
+    display_name: Crater
+    move_cost: 2
+    defense_bonus: 0
+    glyph: "o"
+    color: dim
+    description: |
+      Meteor impact crater. Rough terrain with no defensive
+      value — just scorched earth.
 
 unit_classes:
   naruto:
     display_name: Naruto Uzumaki
     description: |
-      In Sage Mode, fused with nature energy. His Rasengan variants
-      and shadow clones make him the alliance's strongest fighter.
-      If he survives, the sealing jutsu will end the war.
-    hp_max: 35
-    atk: 13
+      In Kurama Chakra Mode, cloaked in golden Nine-Tails energy.
+      Massive Rasengan variants and Bijuu-powered attacks. The
+      alliance's strongest fighter and key to the sealing jutsu.
+    hp_max: 36
+    atk: 14
     defense: 5
     res: 7
     spd: 8
@@ -62,227 +73,233 @@ unit_classes:
     glyph: "N"
     color: bright_yellow
 
+  sasuke:
+    display_name: Sasuke Uchiha
+    description: |
+      Eternal Mangekyo Sharingan wielder. Amaterasu burns through
+      anything — undodgeable black flames that deal magic damage.
+      His Susanoo provides defensive backup.
+    hp_max: 28
+    atk: 13
+    defense: 4
+    res: 7
+    spd: 8
+    move: 4
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "S"
+    color: bright_blue
+
+  kakashi:
+    display_name: Kakashi Hatake
+    description: |
+      The Copy Ninja. Kamui warps targets into another dimension.
+      His Sharingan gives him unmatched tactical awareness and
+      a thousand copied jutsu.
+    hp_max: 24
+    atk: 11
+    defense: 4
+    res: 6
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "K"
+    color: white
+
+  guy:
+    display_name: Might Guy
+    description: |
+      The Sublime Green Beast. Taijutsu master who can open the
+      Eight Gates. In Eighth Gate mode, he is the strongest
+      physical fighter alive — but it will kill him. Glass cannon
+      with devastating melee.
+    hp_max: 20
+    atk: 16
+    defense: 3
+    res: 2
+    spd: 10
+    move: 6
+    rng_min: 1
+    rng_max: 1
+    glyph: "G"
+    color: bright_green
+
   gaara:
     display_name: Gaara
     description: |
-      Fifth Kazekage. His Sand Shield provides unmatched defense,
-      and his Sand Coffin strikes from range. The alliance's
-      defensive anchor.
+      Fifth Kazekage. Sand Shield provides unmatched defense, and
+      Sand Coffin strikes from range. The alliance's defensive
+      anchor with magic-type sand jutsu.
     hp_max: 28
     atk: 10
-    defense: 10
+    defense: 8
     res: 6
     spd: 4
     move: 3
     rng_min: 2
     rng_max: 3
     is_magic: true
-    glyph: "G"
+    glyph: "A"
     color: yellow
 
-  onoki:
-    display_name: Onoki
-    description: |
-      Third Tsuchikage. His Particle Style disintegrates anything
-      at the molecular level — the longest range jutsu on the
-      field. Old and fragile, but devastating.
-    hp_max: 20
-    atk: 12
-    defense: 3
-    res: 7
-    spd: 3
-    move: 3
-    rng_min: 2
-    rng_max: 4
-    is_magic: true
-    glyph: "O"
-    color: bright_black
-
   tsunade:
-    display_name: Tsunade
+    display_name: Tsunade Senju
     description: |
-      Fifth Hokage. Her Creation Rebirth technique and medical
-      ninjutsu keep the alliance fighting. Also punches holes
-      in mountains.
+      Fifth Hokage. Creation Rebirth and medical ninjutsu keep
+      the alliance fighting. Also punches holes in mountains.
+      The alliance's healer.
     hp_max: 30
-    atk: 9
+    atk: 10
     defense: 4
-    res: 8
+    res: 7
     spd: 5
     move: 3
     rng_min: 1
     rng_max: 1
     is_magic: true
     can_heal: true
-    heal_amount: 8
+    heal_amount: 7
     glyph: "T"
-    color: yellow
-
-  raikage:
-    display_name: Raikage
-    description: |
-      Fourth Raikage. Lightning armor makes him the fastest shinobi
-      alive. His Lariat hits like a freight train. All speed, no
-      subtlety.
-    hp_max: 32
-    atk: 14
-    defense: 6
-    res: 4
-    spd: 9
-    move: 5
-    rng_min: 1
-    rng_max: 1
-    glyph: "R"
     color: bright_cyan
 
-  mei:
-    display_name: Mei Terumi
+  minato:
+    display_name: Minato Namikaze
     description: |
-      Fifth Mizukage. Dual kekkei genkai — Lava Release and Boil
-      Release. Her corrosive mist and lava streams control space
-      at medium range.
+      The Fourth Hokage, resurrected via Edo Tensei. The Yellow
+      Flash — teleportation jutsu makes him the fastest shinobi
+      in history. Flying Raijin strikes bypass positioning.
     hp_max: 24
-    atk: 10
+    atk: 12
     defense: 3
-    res: 7
-    spd: 5
-    move: 3
-    rng_min: 2
-    rng_max: 3
+    res: 6
+    spd: 9
+    move: 6
+    rng_min: 1
+    rng_max: 2
     is_magic: true
     glyph: "M"
-    color: bright_blue
+    color: bright_yellow
 
-  allied_shinobi:
-    display_name: Allied Shinobi
-    description: |
-      Rank-and-file shinobi from the Five Great Nations, fighting
-      together for the first time in history. They know they cannot
-      beat Madara — but they can buy time.
-    hp_max: 16
-    atk: 6
-    defense: 4
-    res: 3
-    spd: 5
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    glyph: "a"
-    color: cyan
+  # --- RED: Madara + Obito + Ten-Tails ---
 
   madara:
     display_name: Madara Uchiha
     description: |
-      The legendary Uchiha. Rinnegan, Susanoo, meteor summoning,
-      infinite Tsukuyomi — the most powerful shinobi who ever
-      lived. INTENTIONALLY OVERPOWERED. This is a boss fight.
-    hp_max: 60
-    atk: 16
-    defense: 12
-    res: 10
+      The legendary Uchiha reborn. Rinnegan, Susanoo, meteor
+      summoning. VIP super-tank — extremely high HP and DEF,
+      but vulnerable to magic damage (ninjutsu). RES is notably
+      lower than his physical defense.
+    hp_max: 55
+    atk: 15
+    defense: 10
+    res: 5
     spd: 6
     move: 4
     rng_min: 1
     rng_max: 3
     is_magic: true
+    tags: [vip]
     glyph: "!"
     color: bright_red
 
-  white_zetsu:
-    display_name: White Zetsu Clone
+  obito:
+    display_name: Obito Uchiha
     description: |
-      Mass-produced plant soldiers from Madara's army. Weak and
-      expendable — they exist to distract and overwhelm through
-      sheer numbers.
-    hp_max: 12
-    atk: 5
-    defense: 3
-    res: 2
-    spd: 5
+      The masked man behind the war. Kamui makes him intangible —
+      high evasion via SPD. His Wood Release and Sharingan
+      genjutsu deal magic damage at range.
+    hp_max: 32
+    atk: 12
+    defense: 4
+    res: 6
+    spd: 7
     move: 4
     rng_min: 1
-    rng_max: 1
-    glyph: "w"
-    color: green
+    rng_max: 2
+    is_magic: true
+    glyph: "O"
+    color: bright_red
 
-  reanimated_ninja:
-    display_name: Reanimated Ninja
+  tentails_head:
+    display_name: Ten-Tails Head
     description: |
-      A shinobi brought back through Edo Tensei. Retains their
-      jutsu from life and attacks with ranged ninjutsu. Harder
-      to kill than the expendable Zetsu clones.
-    hp_max: 18
-    atk: 8
-    defense: 4
+      The primary body of the Ten-Tails beast. Enormous and
+      devastating — its Tailed Beast Bomb is a ranged magic
+      attack that obliterates everything. Slow but lethal.
+    hp_max: 40
+    atk: 14
+    defense: 7
     res: 4
+    spd: 3
+    move: 2
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    glyph: "X"
+    color: bright_red
+
+  tentails_arm:
+    display_name: Ten-Tails Arm
+    description: |
+      A fission clone of the Ten-Tails. Massive grasping limb
+      that swats shinobi like insects. Pure physical devastation.
+    hp_max: 30
+    atk: 12
+    defense: 6
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "W"
+    color: red
+
+  tentails_maw:
+    display_name: Ten-Tails Maw
+    description: |
+      A fission clone shaped like a gaping mouth. Devours chakra
+      and flesh alike. Its bite deals magic damage as it drains
+      life force.
+    hp_max: 28
+    atk: 11
+    defense: 4
+    res: 5
     spd: 5
     move: 3
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "r"
-    color: bright_red
-
-  zetsu_medic:
-    display_name: Zetsu Medic
-    description: |
-      A White Zetsu variant that can merge with and repair other
-      Zetsu clones. Its healing is weak but keeps the fodder alive.
-    hp_max: 10
-    atk: 5
-    defense: 3
-    res: 2
-    spd: 5
-    move: 4
-    rng_min: 1
-    rng_max: 1
-    can_heal: true
-    heal_amount: 3
-    glyph: "z"
-    color: green
+    glyph: "V"
+    color: red
 
 armies:
   blue:
-    # Naruto — forward position
-    - {class: naruto, pos: {x: 7, y: 8}}
-    # Five Kage — spread across the southern line
-    - {class: gaara, pos: {x: 5, y: 9}}
-    - {class: onoki, pos: {x: 9, y: 10}}
-    - {class: tsunade, pos: {x: 7, y: 10}}
-    - {class: raikage, pos: {x: 3, y: 8}}
-    - {class: mei, pos: {x: 11, y: 9}}
-    # Allied shinobi — defensive screen
-    - {class: allied_shinobi, pos: {x: 2, y: 9}}
-    - {class: allied_shinobi, pos: {x: 4, y: 10}}
-    - {class: allied_shinobi, pos: {x: 6, y: 11}}
-    - {class: allied_shinobi, pos: {x: 8, y: 11}}
-    - {class: allied_shinobi, pos: {x: 10, y: 10}}
-    - {class: allied_shinobi, pos: {x: 12, y: 10}}
-    - {class: allied_shinobi, pos: {x: 5, y: 11}}
-    - {class: allied_shinobi, pos: {x: 9, y: 11}}
+    - {class: naruto, pos: {x: 7, y: 9}}
+    - {class: sasuke, pos: {x: 5, y: 9}}
+    - {class: kakashi, pos: {x: 9, y: 9}}
+    - {class: guy, pos: {x: 3, y: 10}}
+    - {class: gaara, pos: {x: 6, y: 10}}
+    - {class: tsunade, pos: {x: 8, y: 10}}
+    - {class: minato, pos: {x: 11, y: 10}}
 
   red:
-    # Madara — center-north, alone and terrifying
-    - {class: madara, pos: {x: 7, y: 2}}
-    # White Zetsu — spread around Madara
-    - {class: white_zetsu, pos: {x: 3, y: 1}}
-    - {class: white_zetsu, pos: {x: 5, y: 1}}
-    - {class: white_zetsu, pos: {x: 9, y: 1}}
-    - {class: white_zetsu, pos: {x: 11, y: 1}}
-    - {class: reanimated_ninja, pos: {x: 4, y: 2}}
-    - {class: reanimated_ninja, pos: {x: 10, y: 2}}
-    - {class: zetsu_medic, pos: {x: 6, y: 3}}
-    - {class: white_zetsu, pos: {x: 8, y: 3}}
-    - {class: white_zetsu, pos: {x: 7, y: 0}}
+    - {class: madara, pos: {x: 7, y: 1}}
+    - {class: obito, pos: {x: 5, y: 1}}
+    - {class: tentails_head, pos: {x: 7, y: 0}}
+    - {class: tentails_arm, pos: {x: 4, y: 0}}
+    - {class: tentails_maw, pos: {x: 10, y: 0}}
 
 rules:
-  max_turns: 16
+  max_turns: 14
   first_player: red
 
 win_conditions:
-  # Naruto dies → blue loses (sealing jutsu fails)
+  # Naruto dies -> sealing jutsu fails, blue loses
   - {type: protect_unit, unit_id: u_b_naruto_1, owning_team: blue}
-  # Naruto alive at turn cap → sealing jutsu prepared, blue wins
+  # Naruto survives to turn cap -> sealing jutsu prepared, blue wins
   - {type: protect_unit_survives, unit_id: u_b_naruto_1, owning_team: blue}
   # Either side wins by total elimination
   - {type: eliminate_all_enemy_units}
@@ -292,30 +309,43 @@ win_conditions:
 narrative:
   title: Madara Unleashed
   description: |
-    The Fourth Great Ninja War. Madara Uchiha, resurrected in his
-    prime, faces the entire Allied Shinobi Forces. The Five Kage
-    and Naruto must survive until the sealing jutsu is ready.
+    The Fourth Great Ninja War reaches its climax. Madara Uchiha
+    and Obito, empowered by the Ten-Tails, face the Shinobi
+    Alliance's seven strongest fighters.
   intro: |
-    The sky darkens. A single figure stands on the ridge, Rinnegan
-    eyes glowing purple. Madara Uchiha smiles — he hasn't had a
-    real fight in decades. Behind him, an army of White Zetsu
-    stretches to the horizon.
+    The sky splits open. Madara Uchiha floats above the battlefield,
+    Rinnegan blazing, Susanoo flickering around him. Beside him,
+    Obito phases in and out of reality. Behind them, the Ten-Tails
+    roars — a sound that shakes the continent. Naruto's golden
+    chakra cloak flares. "Let's go, Sasuke."
   events:
     - trigger: on_turn_start
-      turn: 4
+      turn: 3
       text: |
-        Madara drops two meteors from the sky. The Kage barely
-        deflect them — Onoki strains under the weight, his back
-        cracking. "Is that all you've got, Onoki?"
+        Madara drops a meteor from the sky. Gaara's sand barely
+        catches it — Onoki's back cracks under the weight.
+        "Is that all you've got?" Madara smiles.
     - trigger: on_turn_start
-      turn: 10
+      turn: 7
       text: |
-        Madara activates his perfect Susanoo. A colossal armored
-        warrior materializes around him, blade cleaving through
-        mountains. The alliance staggers.
+        Guy opens the Seventh Gate. Green chakra erupts from his
+        body. "If I cannot defeat him with taijutsu, then I have
+        no right to call myself a shinobi!" The Eighth Gate beckons.
+    - trigger: on_turn_start
+      turn: 11
+      text: |
+        Naruto and Sasuke combine attacks — Rasengan and Amaterasu
+        fuse into a spiraling inferno. Even Madara is forced to
+        block. The sealing jutsu is almost ready.
     - trigger: on_unit_killed
       unit_id: u_b_naruto_1
       text: |
-        Naruto falls. The Sage Mode chakra fades from his eyes.
-        Without the Nine-Tails jinchuriki, the sealing jutsu
-        cannot be completed. The war is lost.
+        Naruto falls. The golden chakra fades. Without the
+        Nine-Tails jinchuriki, the sealing jutsu cannot be
+        completed. The war is lost.
+    - trigger: on_unit_killed
+      unit_id: u_r_madara_1
+      text: |
+        Madara staggers, Rinnegan flickering. For the first time,
+        the legendary Uchiha looks surprised. "Interesting...
+        you actually managed to surpass me."
