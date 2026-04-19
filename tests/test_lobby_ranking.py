@@ -145,9 +145,9 @@ def test_lobby_ranking_scrolls_when_selection_goes_past_viewport():
     )
 
 
-def test_lobby_layout_is_vertical_rooms_above_leaderboard():
-    """split_column puts rooms on top, leaderboard below — verify
-    text ordering in the rendered output."""
+def test_lobby_layout_scoreboard_above_rooms():
+    """Ranking scoreboard is a compact widget at the TOP; rooms
+    panel takes the rest of the screen below it."""
     app = _FakeApp()
     app.state.display_name = "alice"
     app.state.last_leaderboard = [
@@ -157,7 +157,7 @@ def test_lobby_layout_is_vertical_rooms_above_leaderboard():
     out = _render(LobbyScreen(app))
     rooms_idx = out.find("Lobby — alice")
     lb_idx = out.find("Leaderboard")
-    assert 0 <= rooms_idx < lb_idx, "rooms panel must render above leaderboard"
+    assert 0 <= lb_idx < rooms_idx, "scoreboard must render above rooms panel"
 
 
 def test_leaderboard_table_has_row_dividers():
@@ -171,8 +171,12 @@ def test_leaderboard_table_has_row_dividers():
         for i in range(4)
     ]
     out = _render(LobbyScreen(app))
-    # Rich's show_lines=True emits box-drawing chars for row separators.
-    assert "├" in out, "leaderboard rows should be separated by dividers"
+    # DOUBLE_EDGE box with show_lines=True emits `╟──┼──┼──╢` row
+    # separators inside a double-line outer. Any of these cross/edge
+    # characters confirms rows are separated.
+    assert any(c in out for c in "├┼╟"), (
+        "leaderboard rows should be separated by dividers"
+    )
 
 
 def test_model_details_renders_with_data():

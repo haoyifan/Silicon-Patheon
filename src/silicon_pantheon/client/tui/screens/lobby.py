@@ -12,6 +12,7 @@ import asyncio
 import logging
 from typing import Any
 
+from rich import box
 from rich.align import Align
 from rich.console import Group, RenderableType
 from rich.panel import Panel
@@ -21,13 +22,13 @@ from rich.text import Text
 from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 
-# Viewport sizes for the two stacked panels. Each panel windows its
-# list to these many rows; j/k auto-scrolls to keep the selected row
-# visible. Tuned for an 80×30 terminal where the split_column 2:3
-# gives the rooms panel ~12 lines and leaderboard ~18 lines after
-# borders/headers.
-ROOMS_VISIBLE_ROWS = 8
-LEADERBOARD_VISIBLE_ROWS = 12
+# Viewport sizes. The ranking board sits as a compact scoreboard
+# widget at the top (centered, ~50% width, fixed 14-row box).
+# Rooms panel gets full width + the remaining vertical space.
+ROOMS_VISIBLE_ROWS = 12
+LEADERBOARD_VISIBLE_ROWS = 6
+# Height of the ranking-row band that holds the centered scoreboard.
+RANKING_BAND_HEIGHT = 14
 
 
 class LobbyScreen(Screen):
@@ -191,13 +192,24 @@ class LobbyScreen(Screen):
 
         from rich.layout import Layout
 
+        # Ranking sits as a compact centered scoreboard at the TOP
+        # (fixed short band), rooms below gets full width and the
+        # rest of the vertical space. The side-spacers recede to dim
+        # so the scoreboard reads as a focal widget.
         main = Layout()
         main.split_column(
-            Layout(name="rooms", ratio=2),
-            Layout(name="leaderboard", ratio=3),
+            Layout(name="ranking_band", size=RANKING_BAND_HEIGHT),
+            Layout(name="rooms", ratio=1),
         )
+        main["ranking_band"].split_row(
+            Layout(name="lb_spacer_l", ratio=1),
+            Layout(name="leaderboard", ratio=2),
+            Layout(name="lb_spacer_r", ratio=1),
+        )
+        main["ranking_band"]["leaderboard"].update(lb_panel)
+        main["ranking_band"]["lb_spacer_l"].update(Text(""))
+        main["ranking_band"]["lb_spacer_r"].update(Text(""))
         main["rooms"].update(room_panel)
-        main["leaderboard"].update(lb_panel)
 
         if self._confirm is not None:
             return self._confirm.render()
@@ -414,22 +426,27 @@ class LobbyScreen(Screen):
         if lb and self._ranking_selected >= len(lb):
             self._ranking_selected = len(lb) - 1
 
-        disclaimer = Text(t("leaderboard.disclaimer", lc), style="dim italic")
-
-        tbl = Table(expand=True, show_lines=True, header_style="bold", padding=(0, 1))
-        tbl.add_column(" ", width=2)
+        # Compact "scoreboard" style: heavy double-edge box, rank column
+        # with medals, trimmed stats. The full drill-down is one Enter
+        # away, so this view only needs the headline numbers.
+        tbl = Table(
+            expand=True,
+            show_lines=True,
+            header_style="bold yellow",
+            box=box.DOUBLE_EDGE,
+            padding=(0, 1),
+        )
+        tbl.add_column("#", justify="right", width=3, no_wrap=True)
         tbl.add_column(t("leaderboard.col_model", lc), overflow="fold", no_wrap=False)
-        tbl.add_column(t("leaderboard.col_games", lc), justify="right")
-        tbl.add_column(t("leaderboard.col_wins", lc), justify="right")
-        tbl.add_column(t("leaderboard.col_win_pct", lc), justify="right")
-        tbl.add_column(t("leaderboard.col_losses", lc), justify="right")
-        tbl.add_column(t("leaderboard.col_draws", lc), justify="right")
-        tbl.add_column(t("leaderboard.col_avg_think", lc), justify="right")
+        tbl.add_column(t("leaderboard.col_games", lc), justify="right", width=5)
+        tbl.add_column("W-L-D", justify="center", width=8, no_wrap=True)
+        tbl.add_column(t("leaderboard.col_win_pct", lc), justify="right", width=5)
 
         focused = self._active_view == "ranking"
+        medals = {0: "🥇", 1: "🥈", 2: "🥉"}
 
         if not lb:
-            tbl.add_row("", t("leaderboard.no_data", lc), "", "", "", "", "", "")
+            tbl.add_row("", t("leaderboard.no_data", lc), "", "", "")
         else:
             visible, self._ranking_scroll = self._slice_for_viewport(
                 lb, self._ranking_selected, self._ranking_scroll, LEADERBOARD_VISIBLE_ROWS
@@ -438,19 +455,18 @@ class LobbyScreen(Screen):
                 i = offset + self._ranking_scroll
                 games = entry.get("games", 0)
                 wins = entry.get("wins", 0)
+                losses = entry.get("losses", 0)
+                draws = entry.get("draws", 0)
                 win_pct = f"{wins / games * 100:.0f}%" if games else "—"
                 model = entry.get("model", "?")
                 is_sel = focused and i == self._ranking_selected
-                marker = "➤" if is_sel else " "
+                rank_cell = medals.get(i, f"#{i + 1}")
                 tbl.add_row(
-                    marker,
-                    model,
+                    rank_cell,
+                    ("➤ " if is_sel else "") + model,
                     str(games),
-                    str(wins),
+                    f"{wins}-{losses}-{draws}",
                     win_pct,
-                    str(entry.get("losses", 0)),
-                    str(entry.get("draws", 0)),
-                    f"{entry.get('avg_think_time_s', 0):.0f}s",
                     style="bold reverse" if is_sel else None,
                 )
 
@@ -458,19 +474,31 @@ class LobbyScreen(Screen):
         lb_more = ""
         if lb and len(lb) > LEADERBOARD_VISIBLE_ROWS:
             shown = min(LEADERBOARD_VISIBLE_ROWS, len(lb) - self._ranking_scroll)
-            lb_more = f"  [{self._ranking_scroll + 1}–{self._ranking_scroll + shown} of {len(lb)}]"
+            lb_more = f"  [{self._ranking_scroll + 1}–{self._ranking_scroll + shown}/{len(lb)}]"
         subtitle = Text(
             f"{total} {t('leaderboard.total_games', lc)}{lb_more}",
             style="dim",
+            justify="center",
         )
         hint_text = (
             t("leaderboard.hint_active", lc)
             if focused
             else t("leaderboard.hint_inactive", lc)
         )
-        hint = Text(hint_text, style="dim")
-        body = Group(disclaimer, Text(""), subtitle, Text(""), tbl, Text(""), hint)
-        return Panel(body, border_style=border_style, title=t("leaderboard.title", lc))
+        hint = Text(hint_text, style="dim italic", justify="center")
+        disclaimer = Text(
+            t("leaderboard.disclaimer", lc),
+            style="dim italic",
+            justify="center",
+        )
+        body = Group(tbl, subtitle, hint, disclaimer)
+        return Panel(
+            body,
+            border_style=border_style,
+            title=f"🏆 {t('leaderboard.title', lc)}",
+            box=box.DOUBLE,
+            padding=(0, 1),
+        )
 
     async def _open_model_details(self) -> Screen | None:
         lb = self.app.state.last_leaderboard
