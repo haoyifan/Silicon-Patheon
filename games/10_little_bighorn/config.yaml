@@ -99,7 +99,7 @@ terrain_types:
     description: Rolling grassland hills. +2 DEF, costs 2 movement.
     move_cost: 2
     defense_bonus: 2
-    glyph: "^"
+    glyph: "h"
     color: green
 
 unit_classes:

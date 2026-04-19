@@ -83,7 +83,7 @@ terrain_types:
     display_name: Great Hall
     move_cost: 1
     defense_bonus: 2
-    glyph: "H"
+    glyph: "="
     color: bright_yellow
     description: |
       The Great Hall of Hogwarts. Enchanted ceiling, long tables

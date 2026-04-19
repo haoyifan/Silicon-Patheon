@@ -159,7 +159,7 @@ terrain_types:
     description: Inner keep fortification. Impassable.
     move_cost: 99
     passable: false
-    glyph: "#"
+    glyph: "|"
     color: white
 
 # ──────────────────────────────────────────────────────────

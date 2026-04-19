@@ -105,7 +105,7 @@ terrain_types:
     description: Dense woodland. Costs 2 movement. +1 DEF. Blocks ranged attacks beyond 2 tiles.
     move_cost: 2
     defense_bonus: 1
-    glyph: "T"
+    glyph: "f"
     color: green
 
   river:

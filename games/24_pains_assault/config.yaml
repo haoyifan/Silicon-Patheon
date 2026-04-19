@@ -65,7 +65,7 @@ terrain_types:
     description: The carved cliff faces of past Hokage. Impassable terrain.
     move_cost: 99
     passable: false
-    glyph: "#"
+    glyph: "M"
     color: bright_yellow
 
 unit_classes:
@@ -325,6 +325,10 @@ armies:
     - {class: human, pos: {x: 3, y: 1}}
     - {class: preta, pos: {x: 11, y: 1}}
     - {class: naraka, pos: {x: 7, y: 2}}
+
+plugin_hooks:
+  on_turn_start:
+    - naruto_reinforcement
 
 rules:
   max_turns: 20

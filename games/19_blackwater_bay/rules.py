@@ -1,6 +1,6 @@
-"""Blackwater Bay — Tyrell reinforcement at turn 12.
+"""Blackwater Bay — Tyrell reinforcement at turn 8.
 
-Turn 12: four Tyrell knights spawn at the eastern edge for red.
+Turn 8: four Tyrell knights spawn at the eastern edge for red.
 Tywin Lannister and the Tyrells arrive to save King's Landing.
 
 Guarded by a once-only flag so repeated on_turn_start invocations
@@ -43,8 +43,8 @@ _TYRELL_SPAWNS = [
 
 def tyrell_reinforcements(state, turn: int, team: str, **_):
     """Called every on_turn_start. Spawns Tyrell knights on
-    turn 12 (one-shot)."""
-    if turn != 12 or state.__dict__.get("_tyrell_arrived"):
+    turn 8 (one-shot)."""
+    if turn != 8 or state.__dict__.get("_tyrell_arrived"):
         return
     state.__dict__["_tyrell_arrived"] = True
     for i, (x, y) in enumerate(_TYRELL_SPAWNS, start=1):

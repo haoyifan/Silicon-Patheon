@@ -74,7 +74,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 2
     heals: 3
-    glyph: "T"
+    glyph: "+"
     color: yellow
 
 unit_classes:

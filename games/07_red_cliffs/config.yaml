@@ -315,7 +315,7 @@ unit_classes:
     move: 4
     tags: [admiral]
     sight: 3
-    glyph: M
+    glyph: Q
     color: red
 
   northern_archer:
