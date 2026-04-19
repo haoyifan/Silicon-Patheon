@@ -209,15 +209,16 @@ unit_classes:
     display_name: Tina Goldstein
     description: |
       MACUSA Auror, fierce and determined. Her wand work is sharp
-      and her protective instincts even sharper.
+      and her protective instincts even sharper — she keeps
+      Grindelwald's acolytes at bay with precise long-arc jinxes.
     hp_max: 22
     atk: 9
     defense: 4
     res: 6
     spd: 6
     move: 4
-    rng_min: 1
-    rng_max: 2
+    rng_min: 2
+    rng_max: 3
     is_magic: true
     glyph: "T"
     color: bright_cyan
