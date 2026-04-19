@@ -1,0 +1,532 @@
+schema_version: 1
+license: fan_work
+fan_work_source: "The Lord of the Rings (J.R.R. Tolkien / Warner Bros.)"
+name: "Helm's Deep — The Hornburg Siege"
+difficulty: 5
+description: |
+  Rain hammers the gorge. Ten thousand Uruk-hai pour up the
+  Deeping Coomb toward the ancient fortress of Helm's Deep.
+  Aragorn, Legolas, Gimli, and a company of Galadhrim elves
+  man the Deeping Wall alongside King Théoden's household
+  guard. The Uruks bring siege ladders, a battering ram for
+  the gate, and a berserker with blasting fire for the
+  culvert. Blue must hold the fortress until dawn — or break
+  the host on the walls.
+  Inspired by the Battle of Helm's Deep from The Lord of the Rings by J.R.R. Tolkien.
+
+# ──────────────────────────────────────────────────────────
+#  MAP LAYOUT  (12 wide × 10 tall)
+#
+#  x=0-1   Inner Keep (Théoden's refuge — Red's reach_tile target)
+#  x=2-3   Fortress courtyard
+#  x=4     Deeping Wall (impassable stone, gate at y=4-5)
+#  x=5     Ramparts atop the wall (+3 DEF for defenders)
+#  x=6-7   Causeway / approach ground
+#  x=8-11  Open field (Uruk staging area)
+#
+#  y=0, y=9  Mountain cliffs (impassable borders)
+#  Gate at (4,4) and (4,5) — the only passage through the wall
+#  Culvert breach at (4,8) — weakened section
+# ──────────────────────────────────────────────────────────
+
+board:
+  width: 12
+  height: 10
+  terrain:
+    # ── Mountain cliffs: north edge (y=0) ──
+    - {x: 0, y: 0, type: cliff}
+    - {x: 1, y: 0, type: cliff}
+    - {x: 2, y: 0, type: cliff}
+    - {x: 3, y: 0, type: cliff}
+    - {x: 4, y: 0, type: cliff}
+    - {x: 5, y: 0, type: cliff}
+    - {x: 6, y: 0, type: cliff}
+    - {x: 7, y: 0, type: cliff}
+    - {x: 8, y: 0, type: cliff}
+    - {x: 9, y: 0, type: cliff}
+    - {x: 10, y: 0, type: cliff}
+    - {x: 11, y: 0, type: cliff}
+
+    # ── Mountain cliffs: south edge (y=9) ──
+    - {x: 0, y: 9, type: cliff}
+    - {x: 1, y: 9, type: cliff}
+    - {x: 2, y: 9, type: cliff}
+    - {x: 3, y: 9, type: cliff}
+    - {x: 4, y: 9, type: cliff}
+    - {x: 5, y: 9, type: cliff}
+    - {x: 6, y: 9, type: cliff}
+    - {x: 7, y: 9, type: cliff}
+    - {x: 8, y: 9, type: cliff}
+    - {x: 9, y: 9, type: cliff}
+    - {x: 10, y: 9, type: cliff}
+    - {x: 11, y: 9, type: cliff}
+
+    # ── The Deeping Wall (x=4, impassable except at gate) ──
+    - {x: 4, y: 1, type: deeping_wall}
+    - {x: 4, y: 2, type: deeping_wall}
+    - {x: 4, y: 3, type: deeping_wall}
+    - {x: 4, y: 4, type: fortress_gate}     # Main gate — upper
+    - {x: 4, y: 5, type: fortress_gate}     # Main gate — lower
+    - {x: 4, y: 6, type: deeping_wall}
+    - {x: 4, y: 7, type: deeping_wall}
+    - {x: 4, y: 8, type: culvert}           # Weakened culvert section
+
+    # ── Ramparts atop the wall (x=5, defenders fire from here) ──
+    - {x: 5, y: 1, type: rampart}
+    - {x: 5, y: 2, type: rampart}
+    - {x: 5, y: 3, type: rampart}
+    - {x: 5, y: 6, type: rampart}
+    - {x: 5, y: 7, type: rampart}
+    - {x: 5, y: 8, type: rampart}
+
+    # ── Causeway (x=6, narrow approach to the gate) ──
+    - {x: 6, y: 4, type: causeway}
+    - {x: 6, y: 5, type: causeway}
+
+    # ── Inner keep walls (x=1, partial — protect the throne) ──
+    - {x: 1, y: 1, type: keep_wall}
+    - {x: 1, y: 2, type: keep_wall}
+    - {x: 1, y: 7, type: keep_wall}
+    - {x: 1, y: 8, type: keep_wall}
+
+  forts:
+    - {x: 0, y: 4, owner: blue}
+
+terrain_types:
+  cliff:
+    display_name: Mountain Cliff
+    description: Impassable mountain rock bordering the gorge.
+    move_cost: 99
+    passable: false
+    blocks_sight: true
+    glyph: "^"
+    color: bright_black
+
+  deeping_wall:
+    display_name: Deeping Wall
+    description: |
+      Ancient stone fortification. Impassable — units must go
+      through the gate or find a breach.
+    move_cost: 99
+    passable: false
+    defense_bonus: 5
+    glyph: "#"
+    color: yellow
+
+  fortress_gate:
+    display_name: Fortress Gate
+    description: |
+      Iron-bound oak gate of the Hornburg. Passable but slow
+      (cost 2). +3 DEF for units holding it.
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "="
+    color: yellow
+
+  culvert:
+    display_name: Culvert
+    description: |
+      Storm drain beneath the wall. The weakest point — a
+      berserker with blasting fire can breach it. Passable
+      but costs 2 movement. +1 DEF.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "o"
+    color: bright_black
+
+  rampart:
+    display_name: Rampart
+    description: |
+      Top of the Deeping Wall. Excellent firing position for
+      archers. +3 DEF, costs 2 movement to climb.
+    move_cost: 2
+    defense_bonus: 3
+    glyph: ";"
+    color: yellow
+
+  causeway:
+    display_name: Causeway
+    description: |
+      Narrow stone ramp leading to the gate. Funnels attackers
+      into a killzone. No defense bonus, normal movement.
+    move_cost: 1
+    defense_bonus: 0
+    glyph: ":"
+    color: bright_black
+
+  keep_wall:
+    display_name: Keep Wall
+    description: Inner keep fortification. Impassable.
+    move_cost: 99
+    passable: false
+    glyph: "#"
+    color: white
+
+# ──────────────────────────────────────────────────────────
+#  UNIT CLASSES
+# ──────────────────────────────────────────────────────────
+
+unit_classes:
+
+  # ── BLUE: Defenders of the Hornburg ──
+
+  aragorn:
+    display_name: Aragorn
+    description: |
+      Heir of Isildur. Commands the gate defense. Switches
+      between Andúril and bow as the fight demands. The best
+      all-round fighter on the wall.
+    hp_max: 38
+    atk: 12
+    defense: 7
+    res: 5
+    spd: 7
+    rng_min: 1
+    rng_max: 2
+    move: 5
+    tags: [hero, ranger, dunedain]
+    sight: 5
+    glyph: A
+    color: cyan
+
+  legolas:
+    display_name: Legolas
+    description: |
+      Prince of the Woodland Realm. Counts kills with Gimli
+      through the night. Deadly at range from the ramparts —
+      every arrow finds an eye-slit.
+    hp_max: 22
+    atk: 10
+    defense: 3
+    res: 4
+    spd: 8
+    rng_min: 2
+    rng_max: 4
+    move: 5
+    tags: [hero, archer, elf]
+    sight: 6
+    glyph: L
+    color: cyan
+
+  gimli:
+    display_name: Gimli
+    description: |
+      Dwarf of Erebor. Counts kills with Legolas. Throws
+      himself into the thickest melee and dares them to come
+      at him. The gate's last line of defense.
+    hp_max: 30
+    atk: 11
+    defense: 8
+    res: 4
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [hero, dwarf, melee]
+    sight: 3
+    glyph: G
+    color: cyan
+
+  theoden:
+    display_name: Théoden King
+    description: |
+      King of Rohan. Newly freed from Saruman's spell. Old
+      and weary but unbowed. If he falls, the keep's heart
+      breaks. Protect him at all costs.
+    hp_max: 32
+    atk: 9
+    defense: 7
+    res: 5
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [vip, king, rohan]
+    sight: 4
+    glyph: T
+    color: bright_cyan
+
+  haldir:
+    display_name: Haldir of Lórien
+    description: |
+      Marchwarden of Lothlórien, leading Galadriel's archers
+      to the Hornburg. Centuries of woodland warfare make him
+      a peerless archer-captain. Commands the rampart defense.
+    hp_max: 26
+    atk: 10
+    defense: 5
+    res: 4
+    spd: 7
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [hero, archer, elf, captain]
+    sight: 5
+    glyph: H
+    color: cyan
+
+  eomer:
+    display_name: Éomer
+    description: |
+      Third Marshal of the Mark, Théoden's nephew. A cavalry
+      officer fighting dismounted on the wall tonight. Heavy
+      spear and fury — dangerous in melee, mobile enough to
+      plug gaps in the line.
+    hp_max: 30
+    atk: 10
+    defense: 6
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [hero, rohan, marshal]
+    sight: 4
+    glyph: E
+    color: cyan
+
+  # ── RED: Saruman's host from Isengard ──
+
+  ugluk:
+    display_name: Uglúk
+    description: |
+      Captain of the Uruk scouts, veteran of the hunt across
+      Rohan. Commands the main assault column. Brutal,
+      disciplined, and smart enough to exploit any breach.
+    hp_max: 34
+    atk: 11
+    defense: 6
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [captain, uruk, leader]
+    sight: 4
+    glyph: K
+    color: red
+
+  lurtz:
+    display_name: Lurtz
+    description: |
+      The first Uruk-hai. Survived Amon Hen in this telling.
+      Bow and blade both — opens with a crossbow shot from
+      range, then closes for the kill. Saruman's finest.
+    hp_max: 32
+    atk: 10
+    defense: 5
+    res: 3
+    spd: 7
+    rng_min: 1
+    rng_max: 3
+    move: 5
+    tags: [captain, uruk, hybrid]
+    sight: 4
+    glyph: Z
+    color: red
+
+  sharku:
+    display_name: Sharkû
+    description: |
+      Warg-rider captain, now dismounted for the siege. Leads
+      the southern scaling party toward the culvert. Fast,
+      vicious, and expendable.
+    hp_max: 28
+    atk: 9
+    defense: 4
+    res: 2
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [captain, uruk, warg_rider]
+    sight: 4
+    glyph: S
+    color: red
+
+  berserker:
+    display_name: Uruk Berserker
+    description: |
+      No armor, no fear, no retreat. The champion of the
+      assault — bred to breach the wall or die trying. Massive
+      attack, paper-thin defense. The torch-bearer.
+    hp_max: 36
+    atk: 14
+    defense: 3
+    res: 1
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [berserker, uruk, siege]
+    sight: 3
+    glyph: B
+    color: bright_red
+
+  siege_captain:
+    display_name: Gorûl the Ram-master
+    description: |
+      Siege specialist who commands the battering ram at the
+      gate. Slower than the infantry but hits like a siege
+      engine. Built to smash chokepoints.
+    hp_max: 38
+    atk: 12
+    defense: 7
+    res: 2
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [captain, uruk, siege]
+    sight: 3
+    glyph: R
+    color: red
+
+  sapper:
+    display_name: Uruk Sapper
+    description: |
+      Carries Saruman's blasting fire — a primitive explosive
+      charge. Slow and fragile, but if he reaches the culvert
+      the wall comes down. Kill him before he gets there.
+    hp_max: 18
+    atk: 6
+    defense: 2
+    res: 1
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [sapper, uruk, siege]
+    sight: 3
+    glyph: "!"
+    color: bright_red
+
+  crossbow_captain:
+    display_name: Mauhúr
+    description: |
+      Leader of the Uruk crossbow company. Provides covering
+      fire from beyond the wall's reach. Accurate, patient,
+      lethal against exposed defenders.
+    hp_max: 22
+    atk: 9
+    defense: 3
+    res: 2
+    spd: 5
+    rng_min: 2
+    rng_max: 4
+    move: 4
+    tags: [captain, uruk, crossbow]
+    sight: 5
+    glyph: X
+    color: red
+
+  ladder_captain:
+    display_name: Ghâshnak
+    description: |
+      Commands the ladder teams on the northern flank. His
+      job is to swarm the ramparts and overwhelm the elven
+      archers with sheer numbers. High mobility, moderate
+      armor.
+    hp_max: 26
+    atk: 9
+    defense: 5
+    res: 2
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [captain, uruk, ladder]
+    sight: 4
+    glyph: N
+    color: red
+
+armies:
+  blue:
+    # Théoden in the inner keep, protected.
+    - {class: theoden,  pos: {x: 0, y: 5}}
+    # Aragorn and Gimli hold the gate from the courtyard side.
+    - {class: aragorn,  pos: {x: 3, y: 4}}
+    - {class: gimli,    pos: {x: 3, y: 5}}
+    # Legolas and Haldir on the ramparts (north and south sections).
+    - {class: legolas,  pos: {x: 5, y: 2}}
+    - {class: haldir,   pos: {x: 5, y: 7}}
+    # Éomer as mobile reserve in the courtyard.
+    - {class: eomer,    pos: {x: 2, y: 4}}
+
+  red:
+    # Gate assault column — Uglúk, Gorûl the Ram-master, Berserker
+    - {class: ugluk,            pos: {x: 8,  y: 4}}
+    - {class: siege_captain,    pos: {x: 9,  y: 5}}
+    - {class: berserker,        pos: {x: 8,  y: 5}}
+    # Northern ladder assault — Ghâshnak
+    - {class: ladder_captain,   pos: {x: 9,  y: 2}}
+    # Southern culvert approach — Sharkû + Sapper
+    - {class: sharku,           pos: {x: 9,  y: 7}}
+    - {class: sapper,           pos: {x: 10, y: 8}}
+    # Lurtz with crossbow — ranging from the east
+    - {class: lurtz,            pos: {x: 10, y: 3}}
+    # Mauhúr providing covering fire from distance
+    - {class: crossbow_captain, pos: {x: 11, y: 5}}
+
+rules:
+  max_turns: 12
+  fog_of_war: false
+  first_player: blue
+
+win_conditions:
+  # Blue loses instantly if Théoden falls.
+  - {type: protect_unit, unit_id: u_b_theoden_1, owning_team: blue}
+  # Red wins by reaching the inner keep throne (x=0, y=4 or y=5).
+  - {type: reach_tile, team: red, pos: {x: 0, y: 4}}
+  - {type: reach_tile, team: red, pos: {x: 0, y: 5}}
+  # Either side wins by eliminating all enemies.
+  - {type: eliminate_all_enemy_units}
+  # Blue wins if Théoden survives 12 turns — Gandalf arrives at dawn.
+  - {type: protect_unit_survives, unit_id: u_b_theoden_1, owning_team: blue}
+  - {type: max_turns_draw}
+
+narrative:
+  title: "Helm's Deep — The Hornburg Siege"
+  description: |
+    A fortress siege in the rain. Six heroes against nine
+    Uruk captains. Hold the wall, protect the king, survive
+    until dawn.
+  intro: |
+    Rain on the Deeping Wall. Lightning silhouettes ten
+    thousand Uruks filling the gorge from cliff to cliff.
+    Théoden retreats to the keep. Aragorn draws Andúril at
+    the gate. Haldir sets the elven bows along the rampart.
+    The horn of Helm Hammerhand sounds in the Deep — one
+    last time.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        Ladders slam against the northern wall. The Uruks
+        begin to scale. Haldir's archers fire into the mass.
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        The sapper reaches the culvert! Blasting fire
+        ignites beneath the wall — if the breach holds,
+        the Uruks will pour through.
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        The gate shudders under the ram. Aragorn and Gimli
+        buy time at the causeway. The wall groans.
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        A white light on the eastern ridge. Gandalf the
+        White rides down with the dawn. The siege breaks.
+    - trigger: on_unit_killed
+      unit_id: u_b_theoden_1
+      text: |
+        The king has fallen. The Hornburg loses its heart —
+        the defenders break.
+    - trigger: on_unit_killed
+      unit_id: u_b_haldir_1
+      text: |
+        Haldir falls on the rampart, pierced by Uruk blades.
+        The elven line wavers.

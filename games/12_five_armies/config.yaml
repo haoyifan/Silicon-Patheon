@@ -5,449 +5,518 @@ name: Battle of Five Armies
 difficulty: 5
 description: |
   Smaug is dead, killed by Bard's black arrow. Thorin Oakenshield
-  has reclaimed Erebor and the dragon-hoard within. Bard, leading
-  the homeless men of Laketown, comes to the mountain demanding a
-  share. Thranduil's wood-elves arrive with claims of their own.
-  As the three peoples are about to spill blood at the gate of
-  the Lonely Mountain, a goblin army with Wargs pours off the
-  northern slopes. The three would-be enemies suddenly become
-  three allies. Then the Eagles arrive. Then Beorn.
+  has reclaimed Erebor and the dragon-hoard within. But a goblin
+  army led by Azog the Defiler pours from Gundabad, flanking with
+  warg cavalry and a shrieking bat swarm. Dwarves, elves, and men
+  must hold the slopes of Erebor or be swept away. Every alliance
+  member brings something different to the line: Gandalf's magic,
+  Bard's deadly bow, Thranduil's blade, Dwalin's axe, and Beorn's
+  unstoppable rage.
   Inspired by the Battle of Five Armies from The Hobbit by J.R.R. Tolkien.
 
+# ───────────────────────────────────────────────────────
+#  MAP LAYOUT  (12 wide x 10 tall)
+#
+#  y=0  ^ ^ ^ ^ . . . . ^ ^ ^ ^   Mountain ridge
+#  y=1  ^ . . F . . . . . . . ^   Erebor gate (F=fort), mountain flanks
+#  y=2  . . # . . T T . . # . .   Ruins of Dale (#), trees (T)
+#  y=3  . . # . . . . . . # . .   Ruins continue — Blue defensive line
+#  y=4  . . . . . . . . . . . .   Open ground — no-man's-land
+#  y=5  . . . . ~ ~ ~ ~ . . . .   River crossing (~ impassable except bridge)
+#  y=6  T . . . . . . . . . . T   Forest flanks
+#  y=7  T . . . . . . . . . . T   Red approaches from multiple angles
+#  y=8  . . . . . . . . . . . .   Red staging area
+#  y=9  . . . . . F . . . . . .   Goblin camp (F=red fort)
+# ───────────────────────────────────────────────────────
+
 board:
-  width: 18
-  height: 14
+  width: 12
+  height: 10
   terrain:
-    # The Lonely Mountain dominates the north. Mountain (impassable
-    # to most) at y=0..1.
+    # ── Mountain ridge (y=0) ──
     - {x: 0, y: 0, type: mountain}
     - {x: 1, y: 0, type: mountain}
     - {x: 2, y: 0, type: mountain}
     - {x: 3, y: 0, type: mountain}
-    - {x: 4, y: 0, type: mountain}
-    - {x: 5, y: 0, type: mountain}
-    - {x: 6, y: 0, type: mountain}
-    - {x: 7, y: 0, type: mountain}
     - {x: 8, y: 0, type: mountain}
     - {x: 9, y: 0, type: mountain}
     - {x: 10, y: 0, type: mountain}
     - {x: 11, y: 0, type: mountain}
-    - {x: 12, y: 0, type: mountain}
-    - {x: 13, y: 0, type: mountain}
-    - {x: 14, y: 0, type: mountain}
-    - {x: 15, y: 0, type: mountain}
-    - {x: 16, y: 0, type: mountain}
-    - {x: 17, y: 0, type: mountain}
+    # Gap at x=4..7 y=0 is the high pass — accessible but costly
+
+    # ── Mountain flanks (y=1) ──
     - {x: 0, y: 1, type: mountain}
-    - {x: 2, y: 1, type: mountain}
-    - {x: 3, y: 1, type: mountain}
-    - {x: 4, y: 1, type: mountain}
-    - {x: 5, y: 1, type: mountain}
-    - {x: 6, y: 1, type: mountain}
-    - {x: 7, y: 1, type: mountain}
-    - {x: 8, y: 1, type: mountain}
-    - {x: 10, y: 1, type: mountain}
     - {x: 11, y: 1, type: mountain}
-    - {x: 12, y: 1, type: mountain}
-    - {x: 13, y: 1, type: mountain}
-    - {x: 14, y: 1, type: mountain}
-    - {x: 15, y: 1, type: mountain}
-    - {x: 16, y: 1, type: mountain}
-    - {x: 17, y: 1, type: mountain}
-    # Erebor's gate — fort tile in the south slope. Goblin gate
-    # opening at the northwest.
-    # Dale's ruins — forest-equivalent in the middle-south.
-    - {x: 5, y: 6, type: ruins}
-    - {x: 6, y: 6, type: ruins}
-    - {x: 7, y: 6, type: ruins}
-    - {x: 5, y: 7, type: ruins}
-    - {x: 6, y: 7, type: ruins}
-    - {x: 7, y: 7, type: ruins}
-    # Running River along the east edge.
-    - {x: 14, y: 5, type: river}
-    - {x: 14, y: 6, type: river}
-    - {x: 14, y: 7, type: river}
-    - {x: 14, y: 8, type: river}
-    - {x: 14, y: 9, type: river}
-    - {x: 14, y: 10, type: river}
-    - {x: 14, y: 11, type: river}
-    - {x: 14, y: 12, type: river}
-    - {x: 14, y: 13, type: river}
+
+    # ── Ruins of Dale (y=2..3) — cover for Blue's defensive line ──
+    - {x: 2, y: 2, type: ruins}
+    - {x: 3, y: 2, type: ruins}
+    - {x: 9, y: 2, type: ruins}
+    - {x: 2, y: 3, type: ruins}
+    - {x: 9, y: 3, type: ruins}
+
+    # ── Trees near Dale — concealment and flanking cover ──
+    - {x: 5, y: 2, type: forest}
+    - {x: 6, y: 2, type: forest}
+
+    # ── River (y=5) — impassable except at the bridge (x=5,6) ──
+    - {x: 2, y: 5, type: river}
+    - {x: 3, y: 5, type: river}
+    - {x: 4, y: 5, type: river}
+    - {x: 7, y: 5, type: river}
+    - {x: 8, y: 5, type: river}
+    - {x: 9, y: 5, type: river}
+    # x=5 and x=6 at y=5 are open — the bridge / ford
+
+    # ── Forest flanks (y=6..7) — flanking paths for fast units ──
+    - {x: 0, y: 6, type: forest}
+    - {x: 1, y: 6, type: forest}
+    - {x: 10, y: 6, type: forest}
+    - {x: 11, y: 6, type: forest}
+    - {x: 0, y: 7, type: forest}
+    - {x: 11, y: 7, type: forest}
+
   forts:
-    # Blue (Dwarves/Elves/Men) fort — the Gate of Erebor, moved
-    # behind blue's defensive line so goblins can't seize it on
-    # turn 1. Blue units cluster at y=3-6; fort at y=5 is inside
-    # the perimeter.
-    - {x: 9, y: 5, owner: blue}
-    # Red (Goblins/Wargs) staging area — the goblin camp south of
-    # the battlefield. Gives red a fort-heal position and makes
-    # seize_enemy_fort work symmetrically.
-    - {x: 2, y: 10, owner: red}
+    # Erebor Gate — Blue's stronghold behind the defensive line
+    - {x: 4, y: 1, owner: blue}
+    # Goblin Camp — Red's staging area in the south
+    - {x: 5, y: 9, owner: red}
 
 terrain_types:
   mountain:
     display_name: Mountain
-    description: Impassable mountain. +3 DEF.
+    description: Impassable mountain crags. +3 DEF for any unit that can enter.
     move_cost: 99
     passable: false
     defense_bonus: 3
     glyph: "^"
     color: bright_black
-    # Eagles can fly over mountains.
-    class_overrides:
-      eagle:
-        passable: true
-        move_cost: 1
+
   ruins:
-    display_name: Ruins
-    description: Crumbling ruins. Costs 2 movement. +2 DEF.
+    display_name: Ruins of Dale
+    description: Crumbling stone walls of the old city. Costs 2 movement. +2 DEF.
     move_cost: 2
     defense_bonus: 2
-    glyph: "%"
+    glyph: "#"
     color: yellow
+
+  forest:
+    display_name: Forest
+    description: Dense woodland. Costs 2 movement. +1 DEF. Blocks ranged attacks beyond 2 tiles.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "T"
+    color: green
+
   river:
-    display_name: River
-    description: Impassable river.
+    display_name: Running River
+    description: The swift river from Erebor. Impassable except at the ford.
     move_cost: 99
     passable: false
     glyph: "~"
     color: blue
 
 unit_classes:
+  # ═══════════════════════════════════════
+  #  BLUE — The Free Peoples (7 units)
+  # ═══════════════════════════════════════
+
   thorin:
     display_name: Thorin Oakenshield
     description: |
-      King under the Mountain. Has reclaimed Erebor. Will not yield
-      a single coin until the goblins force his hand. The novel
-      ends with his death — historical/literary outcome the
-      protect_unit rule reflects.
-    hp_max: 38
-    atk: 12
-    defense: 7
-    res: 3
-    spd: 6
-    rng_min: 1
-    rng_max: 1
-    move: 4
-    tags: [vip, king, dwarf]
-    sight: 4
-    glyph: T
-    color: bright_cyan
-
-  bilbo:
-    display_name: Bilbo Baggins
-    description: |
-      Hobbit burglar of the company. Wears a magic ring most of
-      the battle. Soft, sneaky, very high speed for his size.
-    hp_max: 16
-    atk: 5
-    defense: 3
-    res: 3
-    spd: 8
-    rng_min: 1
-    rng_max: 1
-    move: 5
-    tags: [hero, hobbit]
-    sight: 4
-    glyph: H
-    color: cyan
-
-  dwarf_warrior:
-    display_name: Dwarf Warrior
-    description: |
-      Of Dáin's Iron Hills company, just arrived to relieve
-      Thorin. Stout, slow, hits hard.
-    hp_max: 24
-    atk: 9
-    defense: 6
+      King under the Mountain. Heavy armor, oaken shield, and
+      Orcrist the goblin-cleaver. Thorin is the linchpin of the
+      defense — if he falls, morale collapses. Slow but extremely
+      durable. His counter-charge can break any line.
+    hp_max: 40
+    atk: 13
+    defense: 8
     res: 3
     spd: 5
     rng_min: 1
     rng_max: 1
     move: 3
-    tags: [dwarf]
-    sight: 3
-    glyph: D
-    color: cyan
+    tags: [vip, king, dwarf, tank]
+    sight: 4
+    glyph: T
+    color: bright_cyan
 
-  thranduil:
-    display_name: Thranduil
+  dwalin:
+    display_name: Dwalin
     description: |
-      Elven-king of the Wood. Came for the dragon-treasure, stays
-      to fight the goblins. Reluctant ally; brilliant swordsman.
+      Thorin's fiercest warrior-companion, wielding twin axes
+      Grasper and Keeper. Faster than Thorin, less armored, and
+      hits like a landslide. The bruiser who punishes anything
+      that gets past the front line.
     hp_max: 30
-    atk: 10
+    atk: 14
     defense: 5
-    res: 5
-    spd: 8
+    res: 2
+    spd: 6
     rng_min: 1
     rng_max: 1
-    move: 5
-    tags: [hero, elf, king]
-    sight: 5
-    glyph: E
-    color: cyan
-
-  wood_elf_archer:
-    display_name: Wood-Elf Archer
-    description: |
-      Mirkwood elf. Light, fast, deadly at range.
-    hp_max: 16
-    atk: 10
-    defense: 2
-    res: 3
-    spd: 7
-    rng_min: 2
-    rng_max: 4
-    move: 5
-    tags: [archer, elf]
-    sight: 5
-    glyph: A
-    color: cyan
+    move: 4
+    tags: [hero, dwarf, assassin]
+    sight: 3
+    glyph: D
+    color: bright_cyan
 
   bard:
     display_name: Bard the Bowman
     description: |
-      Heir of Girion of Dale. Killed Smaug with the last of his
-      family's black arrows. Now leads the homeless men of
-      Laketown.
-    hp_max: 24
-    atk: 10
-    defense: 4
+      Slayer of Smaug, heir of Girion. The deadliest archer on
+      the field — long range, high attack, but fragile in melee.
+      Must be protected behind the front line to deliver his
+      devastating volleys.
+    hp_max: 20
+    atk: 13
+    defense: 3
     res: 3
     spd: 6
     rng_min: 2
-    rng_max: 3
+    rng_max: 4
     move: 4
-    tags: [hero, archer, man]
+    tags: [hero, archer, man, ranged]
     sight: 5
     glyph: B
-    color: cyan
+    color: bright_cyan
 
-  laketown_militia:
-    display_name: Laketown Militia
+  thranduil:
+    display_name: Thranduil
     description: |
-      Survivors of Smaug's burning of Esgaroth — fishermen and
-      townsfolk with whatever weapons they could salvage.
-    hp_max: 14
-    atk: 7
+      Elven-king of the Woodland Realm. Came for treasure, stays
+      to fight evil. Lightning-fast swordsman with high resistance
+      to magic. His speed lets him reposition to plug gaps or
+      chase down flankers. The only Blue unit fast enough to
+      intercept warg riders.
+    hp_max: 28
+    atk: 11
+    defense: 4
+    res: 6
+    spd: 9
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [hero, elf, king, assassin]
+    sight: 5
+    glyph: E
+    color: bright_cyan
+
+  gandalf:
+    display_name: Gandalf the Grey
+    description: |
+      The wizard arrived just in time to warn of the goblin host.
+      Ranged magical attacks and a healing aura that restores 4 HP
+      to all adjacent allies at the start of each turn. Fragile
+      for his power — keep him behind the tanks.
+    hp_max: 22
+    atk: 10
     defense: 3
+    res: 8
+    spd: 7
+    rng_min: 1
+    rng_max: 3
+    move: 4
+    tags: [hero, wizard, support, healer]
+    sight: 6
+    glyph: G
+    color: bright_cyan
+    aura:
+      type: heal
+      amount: 4
+      range: 1
+
+  beorn:
+    display_name: Beorn
+    description: |
+      The skin-changer of the Carrock, in his terrible bear form.
+      A walking siege engine — highest HP and ATK on the field,
+      but only average speed. He can shatter any unit in two hits
+      but must be positioned carefully or he gets kited. Immune to
+      fear effects.
+    hp_max: 50
+    atk: 16
+    defense: 7
+    res: 4
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [hero, bear, tank]
+    sight: 4
+    glyph: R
+    color: bright_cyan
+
+  bilbo:
+    display_name: Bilbo Baggins
+    description: |
+      The hobbit burglar, wearing Sting and the magic ring. Nearly
+      invisible — enemies need adjacent line of sight to target
+      him. Negligible damage but the fastest unit on the board.
+      His role is scouting, objective capture, and distraction.
+      Lose him and you lose nothing; use him well and he wins you
+      the game.
+    hp_max: 12
+    atk: 4
+    defense: 2
+    res: 3
+    spd: 10
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [hero, hobbit, scout, stealth]
+    sight: 4
+    glyph: H
+    color: bright_cyan
+
+  # ═══════════════════════════════════════
+  #  RED — The Goblin Host (8 units)
+  # ═══════════════════════════════════════
+
+  azog:
+    display_name: Azog the Defiler
+    description: |
+      Pale Orc, scourge of Moria. Massive, brutal, and cunning.
+      Wields a spiked mace and prosthetic blade-arm. The supreme
+      commander — his death shatters goblin morale. Tougher than
+      Thorin but slower. His presence terrifies lesser units.
+    hp_max: 44
+    atk: 14
+    defense: 7
     res: 2
     spd: 5
     rng_min: 1
     rng_max: 1
     move: 4
-    tags: [militia, man]
-    sight: 3
-    glyph: M
-    color: cyan
+    tags: [vip, chief, orc, tank]
+    sight: 4
+    glyph: A
+    color: bright_red
 
   bolg:
-    display_name: Bolg of the North
+    display_name: Bolg
     description: |
-      Son of Azog. Leads the goblin army to avenge his father at
-      Thorin's hands. Two-handed mace, faster than he looks.
+      Son of Azog, leads the flanking force from Gundabad.
+      Faster than his father, with a two-handed mace that cleaves
+      through armor. A shock trooper who excels at breaking
+      defensive lines.
     hp_max: 34
-    atk: 12
+    atk: 13
     defense: 5
     res: 2
     spd: 7
     rng_min: 1
     rng_max: 1
     move: 5
-    tags: [vip, chief, goblin]
+    tags: [hero, orc, assassin]
     sight: 4
     glyph: B
     color: bright_red
 
-  goblin_warrior:
-    display_name: Goblin Warrior
+  fimbul:
+    display_name: Fimbul the Hunter
     description: |
-      Crooked, snarling, numerous. Cheap; the goblin army is
-      mostly these.
-    hp_max: 14
-    atk: 7
-    defense: 3
-    res: 2
-    spd: 5
-    rng_min: 1
-    rng_max: 1
-    move: 4
-    tags: [goblin]
-    sight: 3
-    glyph: g
-    color: red
-
-  goblin_archer:
-    display_name: Goblin Archer
-    description: |
-      Stunted bow, poisoned tip. Fragile but irritating from cover.
-    hp_max: 12
-    atk: 7
-    defense: 2
+      Azog's chief tracker and warg-master. Ranged specialist
+      with a cruelly barbed crossbow. Picks off wounded units
+      from behind the orc line. Lower damage than Bard but
+      better armor and a poison tag that reduces healing received.
+    hp_max: 22
+    atk: 10
+    defense: 4
     res: 2
     spd: 6
     rng_min: 2
     rng_max: 3
     move: 4
-    tags: [goblin, archer]
-    sight: 4
-    glyph: a
-    color: red
+    tags: [orc, archer, ranged]
+    sight: 5
+    glyph: F
+    color: bright_red
 
-  warg_rider:
-    display_name: Warg Rider
+  yazneg:
+    display_name: Yazneg
     description: |
-      Goblin mounted on a warg — wolf-creature of malevolent
-      cunning. Fast, snarling, very dangerous on a flank.
-    hp_max: 22
+      Orc captain and warg rider. Blazing speed, flanking
+      specialist. Circles around defensive lines through forest
+      paths to strike at archers and healers. Glass cannon — hits
+      hard but crumbles under focused fire.
+    hp_max: 24
+    atk: 11
+    defense: 3
+    res: 2
+    spd: 9
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [orc, warg, mounted, assassin]
+    sight: 4
+    glyph: Y
+    color: bright_red
+
+  narzug:
+    display_name: Narzug
+    description: |
+      Orc signal-caller mounted on a war warg. Fast cavalry that
+      coordinates the goblin advance. His war-horn aura grants
+      +2 ATK to all adjacent allies. Moderate stats but his
+      buffing presence makes the units around him deadly.
+    hp_max: 26
     atk: 9
     defense: 4
     res: 2
     spd: 8
     rng_min: 1
     rng_max: 1
-    move: 6
-    tags: [warg, mounted]
+    move: 5
+    tags: [orc, warg, mounted, support]
     sight: 4
-    glyph: W
+    glyph: N
     color: bright_red
+    aura:
+      type: attack_buff
+      amount: 2
+      range: 1
 
-  eagle:
-    display_name: Great Eagle
+  grinnah:
+    display_name: Grinnah
     description: |
-      Lord of the Eagles answers Gwaihir's call. Spawns at turn 15
-      from the southern sky if the goblins haven't already won.
-      Can fly over mountains.
-    hp_max: 26
-    atk: 9
-    defense: 5
-    res: 3
-    spd: 10
+      The Goblin-town torturer, now serving as Azog's field
+      surgeon. A skulking healer who patches up wounded orcs with
+      crude but effective methods. Restores 5 HP to one adjacent
+      ally per turn. Worthless in combat — protect him or lose
+      your sustain.
+    hp_max: 16
+    atk: 5
+    defense: 3
+    res: 2
+    spd: 6
     rng_min: 1
     rng_max: 1
-    move: 8
-    can_enter_mountain: true
-    can_enter_forest: true
-    tags: [eagle, flying, reinforcement]
-    sight: 6
-    glyph: V
-    color: bright_yellow
+    move: 4
+    tags: [goblin, healer, support]
+    sight: 3
+    glyph: g
+    color: red
+    aura:
+      type: heal
+      amount: 5
+      range: 1
 
-  beorn_bear:
-    display_name: Beorn (bear form)
+  bat_swarm:
+    display_name: Bat Swarm
     description: |
-      Skin-changer of the Carrock. Arrives in his great bear shape
-      at turn 18. The deciding stroke in the novel — kills Bolg
-      personally.
-    hp_max: 48
-    atk: 16
-    defense: 8
-    res: 3
+      A shrieking cloud of giant bats from the mountains. They
+      block line of sight for ranged attacks passing through their
+      tile. Weak in direct combat but their disruption nullifies
+      Blue's ranged advantage. Can enter forest at normal cost.
+    hp_max: 18
+    atk: 6
+    defense: 2
+    res: 1
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [bat, flying, disruptor]
+    sight: 5
+    glyph: w
+    color: red
+
+  gundabad_berserker:
+    display_name: Gundabad Berserker
+    description: |
+      A massive, scarred orc from Mount Gundabad, driven into a
+      frenzy. No armor, no self-preservation, just raw damage.
+      The highest ATK among Red's infantry. Charges straight at
+      the highest-value target and trades his life for theirs.
+    hp_max: 28
+    atk: 15
+    defense: 2
+    res: 1
     spd: 7
     rng_min: 1
     rng_max: 1
     move: 5
-    tags: [bear, hero, reinforcement]
-    sight: 4
-    glyph: R
-    color: bright_yellow
+    tags: [orc, berserker]
+    sight: 3
+    glyph: X
+    color: bright_red
 
 armies:
   blue:
-    # The three allies on the south slopes.
-    - {class: thorin, pos: {x: 9, y: 3}}
-    - {class: bilbo, pos: {x: 10, y: 3}}
-    - {class: dwarf_warrior, pos: {x: 8, y: 3}}
-    - {class: dwarf_warrior, pos: {x: 9, y: 4}}
-    - {class: dwarf_warrior, pos: {x: 10, y: 4}}
-    - {class: dwarf_warrior, pos: {x: 8, y: 4}}
-    - {class: dwarf_warrior, pos: {x: 11, y: 3}}
-    - {class: dwarf_warrior, pos: {x: 7, y: 3}}
-    - {class: thranduil, pos: {x: 4, y: 5}}
-    - {class: wood_elf_archer, pos: {x: 3, y: 5}}
-    - {class: wood_elf_archer, pos: {x: 4, y: 6}}
-    - {class: wood_elf_archer, pos: {x: 5, y: 5}}
-    - {class: wood_elf_archer, pos: {x: 4, y: 4}}
-    - {class: wood_elf_archer, pos: {x: 3, y: 6}}
-    - {class: wood_elf_archer, pos: {x: 5, y: 4}}
-    - {class: bard, pos: {x: 13, y: 5}}
-    - {class: laketown_militia, pos: {x: 12, y: 5}}
-    - {class: laketown_militia, pos: {x: 13, y: 6}}
-    - {class: laketown_militia, pos: {x: 12, y: 6}}
-    - {class: laketown_militia, pos: {x: 13, y: 4}}
-    - {class: laketown_militia, pos: {x: 12, y: 4}}
+    # Thorin and Dwalin hold the center behind the ruins
+    - {class: thorin, pos: {x: 5, y: 2}}
+    - {class: dwalin, pos: {x: 6, y: 3}}
+    # Bard on the right flank, elevated in the ruins
+    - {class: bard, pos: {x: 9, y: 2}}
+    # Thranduil on the left flank, ready to intercept
+    - {class: thranduil, pos: {x: 2, y: 3}}
+    # Gandalf behind the center line
+    - {class: gandalf, pos: {x: 5, y: 1}}
+    # Beorn anchoring the right-center
+    - {class: beorn, pos: {x: 7, y: 1}}
+    # Bilbo scouting forward
+    - {class: bilbo, pos: {x: 3, y: 2}}
+
   red:
-    # Goblin army pouring from the northwest gate (between mountain
-    # tiles at (1, 1) and (9, 1)).
-    - {class: bolg, pos: {x: 1, y: 2}}
-    - {class: warg_rider, pos: {x: 0, y: 2}}
-    - {class: warg_rider, pos: {x: 4, y: 2}}
-    - {class: warg_rider, pos: {x: 2, y: 2}}
-    - {class: warg_rider, pos: {x: 1, y: 3}}
-    - {class: goblin_warrior, pos: {x: 0, y: 3}}
-    - {class: goblin_warrior, pos: {x: 0, y: 4}}
-    - {class: goblin_warrior, pos: {x: 1, y: 4}}
-    - {class: goblin_warrior, pos: {x: 2, y: 3}}
-    - {class: goblin_warrior, pos: {x: 2, y: 4}}
-    - {class: goblin_warrior, pos: {x: 3, y: 3}}
-    - {class: goblin_warrior, pos: {x: 3, y: 4}}
-    - {class: goblin_warrior, pos: {x: 4, y: 3}}
-    - {class: goblin_warrior, pos: {x: 0, y: 5}}
-    - {class: goblin_warrior, pos: {x: 1, y: 5}}
-    - {class: goblin_warrior, pos: {x: 2, y: 5}}
-    - {class: goblin_warrior, pos: {x: 0, y: 6}}
-    - {class: goblin_warrior, pos: {x: 1, y: 6}}
-    - {class: goblin_warrior, pos: {x: 2, y: 6}}
-    - {class: goblin_archer, pos: {x: 0, y: 7}}
-    - {class: goblin_archer, pos: {x: 1, y: 7}}
-    - {class: goblin_archer, pos: {x: 2, y: 7}}
-    - {class: goblin_archer, pos: {x: 0, y: 8}}
-    - {class: goblin_archer, pos: {x: 1, y: 8}}
-    - {class: goblin_archer, pos: {x: 2, y: 8}}
+    # Azog commanding from the center-south
+    - {class: azog, pos: {x: 5, y: 8}}
+    # Bolg leading the right flank through the forest
+    - {class: bolg, pos: {x: 10, y: 7}}
+    # Fimbul providing ranged support from behind
+    - {class: fimbul, pos: {x: 6, y: 9}}
+    # Yazneg flanking wide left through the forest
+    - {class: yazneg, pos: {x: 1, y: 7}}
+    # Narzug buffing the center push
+    - {class: narzug, pos: {x: 4, y: 8}}
+    # Grinnah healing behind the front line
+    - {class: grinnah, pos: {x: 5, y: 9}}
+    # Bat swarm rushing to block Bard's line of fire
+    - {class: bat_swarm, pos: {x: 8, y: 8}}
+    # Gundabad berserker charging straight up the middle
+    - {class: gundabad_berserker, pos: {x: 6, y: 7}}
 
 rules:
-  max_turns: 30
+  max_turns: 25
   fog_of_war: false
-  first_player: red
+  first_player: blue
 
 win_conditions:
   - {type: protect_unit, unit_id: u_b_thorin_1, owning_team: blue}
-  - {type: protect_unit, unit_id: u_r_bolg_1, owning_team: red}
-  # Red wins by seizing the Lonely Mountain gate.
-  - {type: seize_enemy_fort}
+  - {type: protect_unit, unit_id: u_r_azog_1, owning_team: red}
   - {type: eliminate_all_enemy_units}
+  - {type: reach_tile, unit_id: u_r_azog_1, pos: {x: 4, y: 1}, team: red}
+  - {type: seize_enemy_fort}
   - {type: max_turns_draw}
-
-plugin_hooks:
-  on_turn_start:
-    - second_goblin_wave
-    - eagles_arrive
-    - beorn_arrives
 
 narrative:
   title: Battle of the Five Armies
   description: |
-    Dwarves, elves, and men against goblins and wargs at the foot
-    of the Lonely Mountain — with surprise reinforcements from the
-    sky and the wood.
+    Dwarves, elves, and men hold the slopes of Erebor against the
+    goblin host of Azog the Defiler. The river splits the field,
+    the ruins of Dale offer cover, and the forests hide flanking
+    warg riders. A battle of coordination versus overwhelming force.
   intro: |
-    Morning at the foot of Erebor. Three peoples stand on the
-    edge of war with each other. A horn from the north stops them
-    all in their tracks: goblins, in their tens of thousands.
+    Dawn breaks grey over the Lonely Mountain. Thorin Oakenshield
+    stands at the Gate of Erebor with unlikely allies — Thranduil's
+    elves on the left, Bard's men on the right, Gandalf's staff
+    glowing in the center. Beorn growls beside them. From the south,
+    a dark tide: Azog's host, warg riders on the flanks, bats
+    darkening the sky. The river is the only thing between them. It
+    will not hold for long.
   events:
     - trigger: on_turn_start
-      turn: 5
-      text: "More goblins pour from the mountain gates."
-    - trigger: on_turn_start
-      turn: 15
-      text: "A great cry rings out: 'The Eagles! The Eagles are coming!'"
-    - trigger: on_turn_start
-      turn: 18
-      text: "Beorn in bear form bursts from the south, rending wargs aside."
+      turn: 1
+      text: "Azog raises his mace. The goblin drums begin."
     - trigger: on_unit_killed
       unit_id: u_b_thorin_1
-      text: "Thorin has fallen. The dragon-sickness ends with him."
+      text: "Thorin has fallen. The line breaks. Erebor is lost."
+    - trigger: on_unit_killed
+      unit_id: u_r_azog_1
+      text: "Azog the Defiler is slain! The goblin host wavers and scatters."
     - trigger: on_unit_killed
       unit_id: u_r_bolg_1
-      text: "Bolg of the North is dead. The goblin host wavers."
+      text: "Bolg falls. The flanking force loses its nerve."
+    - trigger: on_unit_killed
+      unit_id: u_b_gandalf_1
+      text: "Gandalf falls! The healing light goes out."

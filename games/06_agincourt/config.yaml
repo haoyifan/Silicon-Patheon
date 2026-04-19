@@ -3,141 +3,356 @@ license: public_domain
 name: Agincourt
 difficulty: 5
 description: |
-  October 25, 1415. St. Crispin's Day. Henry V's small, exhausted,
-  dysentery-ridden English army is cornered by a French force three
-  times its size on a narrow field dotted with trees. Henry plants
-  sharpened stakes in front of his line, places his longbowmen on
-  the flanks, and waits for the French to charge. The flower of
-  French chivalry — knights in full plate — advances under a sky
-  black with arrows, picking their way through scattered woodland
-  that breaks up the charge. Most never reach the English line.
-  Inspired by the Battle of Agincourt (1415), Hundred Years' War, England vs France.
+  October 25, 1415. St. Crispin's Day. Henry V's starving, dysentery-
+  racked army of six thousand is pinned against a freshly ploughed
+  field between two dense woods. Facing them: the cream of French
+  nobility — twenty thousand armored men-at-arms and mounted knights,
+  so confident of victory they argued all night over who would take
+  the English king prisoner. Henry stakes his archers into the mud
+  between the treelines, narrows the field to a killing corridor, and
+  waits. The French charge. The rain-soaked earth sucks plate boots
+  ankle-deep, horses founder, and the longbows fire six shafts a
+  minute into a mass that cannot spread out or turn back. Most of the
+  French never swing a sword.
+  Inspired by the Battle of Agincourt (1415), Hundred Years' War.
 
 board:
-  width: 10
-  height: 14
+  width: 12
+  height: 10
   terrain:
-    # Sparse forest patches on flanks — historically the battle was
-    # between two forests, but the tree line is thin enough that
-    # French knights can push through the gaps to flank.
+    # ── West forest (left wall of the corridor) ──
+    - {x: 0, y: 0, type: forest}
+    - {x: 0, y: 1, type: forest}
+    - {x: 0, y: 2, type: forest}
+    - {x: 0, y: 3, type: forest}
     - {x: 0, y: 4, type: forest}
+    - {x: 0, y: 5, type: forest}
+    - {x: 0, y: 6, type: forest}
     - {x: 0, y: 7, type: forest}
-    - {x: 0, y: 10, type: forest}
-    - {x: 9, y: 4, type: forest}
-    - {x: 9, y: 7, type: forest}
-    - {x: 9, y: 10, type: forest}
-    # Sparse forest in the central corridor — slows the French
-    # advance and gives cover, but leaves enough gaps to maneuver.
-    # Slows the French advance and provides cover.
-    - {x: 3, y: 5, type: forest}
-    - {x: 5, y: 5, type: forest}
-    - {x: 7, y: 5, type: forest}
-    - {x: 2, y: 7, type: forest}
-    - {x: 4, y: 7, type: forest}
-    - {x: 6, y: 7, type: forest}
-    - {x: 3, y: 9, type: forest}
-    - {x: 5, y: 9, type: forest}
-    - {x: 7, y: 9, type: forest}
-    # Sharpened stakes in front of the English line — impassable.
-    - {x: 3, y: 11, type: stakes}
-    - {x: 4, y: 11, type: stakes}
-    - {x: 5, y: 11, type: stakes}
-    - {x: 6, y: 11, type: stakes}
+    - {x: 0, y: 8, type: forest}
+    - {x: 0, y: 9, type: forest}
+    - {x: 1, y: 0, type: forest}
+    - {x: 1, y: 1, type: forest}
+    - {x: 1, y: 2, type: forest}
+    - {x: 1, y: 3, type: forest}
+    - {x: 1, y: 4, type: forest}
+    - {x: 1, y: 5, type: forest}
+    - {x: 1, y: 6, type: forest}
+    - {x: 1, y: 7, type: forest}
+    - {x: 1, y: 8, type: forest}
+    - {x: 1, y: 9, type: forest}
+    # ── East forest (right wall of the corridor) ──
+    - {x: 10, y: 0, type: forest}
+    - {x: 10, y: 1, type: forest}
+    - {x: 10, y: 2, type: forest}
+    - {x: 10, y: 3, type: forest}
+    - {x: 10, y: 4, type: forest}
+    - {x: 10, y: 5, type: forest}
+    - {x: 10, y: 6, type: forest}
+    - {x: 10, y: 7, type: forest}
+    - {x: 10, y: 8, type: forest}
+    - {x: 10, y: 9, type: forest}
+    - {x: 11, y: 0, type: forest}
+    - {x: 11, y: 1, type: forest}
+    - {x: 11, y: 2, type: forest}
+    - {x: 11, y: 3, type: forest}
+    - {x: 11, y: 4, type: forest}
+    - {x: 11, y: 5, type: forest}
+    - {x: 11, y: 6, type: forest}
+    - {x: 11, y: 7, type: forest}
+    - {x: 11, y: 8, type: forest}
+    - {x: 11, y: 9, type: forest}
+    # ── Muddy field (rows 2–6) — the killing ground ──
+    # Five rows of freshly ploughed, rain-soaked earth the French
+    # must slog through under arrow fire. Move cost 3, DEF -2.
+    - {x: 2, y: 2, type: mud}
+    - {x: 3, y: 2, type: mud}
+    - {x: 4, y: 2, type: mud}
+    - {x: 5, y: 2, type: mud}
+    - {x: 6, y: 2, type: mud}
+    - {x: 7, y: 2, type: mud}
+    - {x: 8, y: 2, type: mud}
+    - {x: 9, y: 2, type: mud}
+    - {x: 2, y: 3, type: mud}
+    - {x: 3, y: 3, type: mud}
+    - {x: 4, y: 3, type: mud}
+    - {x: 5, y: 3, type: mud}
+    - {x: 6, y: 3, type: mud}
+    - {x: 7, y: 3, type: mud}
+    - {x: 8, y: 3, type: mud}
+    - {x: 9, y: 3, type: mud}
+    - {x: 2, y: 4, type: mud}
+    - {x: 3, y: 4, type: mud}
+    - {x: 4, y: 4, type: mud}
+    - {x: 5, y: 4, type: mud}
+    - {x: 6, y: 4, type: mud}
+    - {x: 7, y: 4, type: mud}
+    - {x: 8, y: 4, type: mud}
+    - {x: 9, y: 4, type: mud}
+    - {x: 2, y: 5, type: mud}
+    - {x: 3, y: 5, type: mud}
+    - {x: 4, y: 5, type: mud}
+    - {x: 5, y: 5, type: mud}
+    - {x: 6, y: 5, type: mud}
+    - {x: 7, y: 5, type: mud}
+    - {x: 8, y: 5, type: mud}
+    - {x: 9, y: 5, type: mud}
+    - {x: 2, y: 6, type: mud}
+    - {x: 3, y: 6, type: mud}
+    - {x: 4, y: 6, type: mud}
+    - {x: 5, y: 6, type: mud}
+    - {x: 6, y: 6, type: mud}
+    - {x: 7, y: 6, type: mud}
+    - {x: 8, y: 6, type: mud}
+    - {x: 9, y: 6, type: mud}
+    # ── English stakes (row 7) — impassable to cavalry ──
+    # Sharpened wooden stakes driven into the ground at an angle.
+    # Infantry can pick through; horses cannot.
+    - {x: 3, y: 7, type: stakes}
+    - {x: 4, y: 7, type: stakes}
+    - {x: 5, y: 7, type: stakes}
+    - {x: 6, y: 7, type: stakes}
+    - {x: 7, y: 7, type: stakes}
+    - {x: 8, y: 7, type: stakes}
   forts: []
 
 terrain_types:
+  mud:
+    display_name: Mud
+    description: |
+      Freshly ploughed, rain-soaked earth. Horses founder, armored
+      men sink to their knees. Costs 3 movement and exposes anyone
+      stuck in it (DEF -2).
+    move_cost: 3
+    defense_bonus: -2
+    glyph: ","
+    color: bright_black
   stakes:
     display_name: Stakes
-    description: Impassable sharpened stakes.
-    move_cost: 99
-    passable: false
+    description: |
+      Sharpened wooden stakes driven at chest-height angles.
+      Impassable to cavalry; infantry may pass at high cost.
+    move_cost: 4
+    passable: true
+    defense_bonus: 0
     glyph: "#"
     color: yellow
 
 unit_classes:
+  # ═══════════════════════════════════════════════
+  #  BLUE — English (6 units)
+  # ═══════════════════════════════════════════════
   henry_v:
     display_name: Henry V
     description: |
-      King of England. Twenty-eight, scarred from an arrow at
-      Shrewsbury years ago. Fights in the front rank with his men.
-      The "we few, we happy few" speech happens about now.
-    hp_max: 32
+      King of England, twenty-eight, a scar from a Shrewsbury arrow
+      across his face. Fights dismounted in the front rank wearing a
+      jeweled bascinet. If he falls, the army shatters.
+    hp_max: 30
     atk: 10
-    defense: 6
+    defense: 7
     res: 4
     spd: 6
     rng_min: 1
     rng_max: 1
     move: 4
-    tags: [vip, king]
+    tags: [vip, king, infantry]
     sight: 4
     glyph: H
     color: bright_cyan
 
-  longbowman:
-    display_name: English Longbowman
+  thomas_erpingham:
+    display_name: Sir Thomas Erpingham
     description: |
-      Welsh and English yeoman with the great war bow. Has shot
-      since he could walk. Six-arrow nock-and-loose every minute,
-      out to 250 yards. Soft in melee, but rarely lets the enemy
-      close.
-    hp_max: 14
-    atk: 10
+      Veteran knight, fifty-eight years old, commanding the archers.
+      Carries a long-range yew bow personally — his shots arc high
+      and strike at extreme distance. Threw his baton into the air
+      to signal the first volley.
+    hp_max: 16
+    atk: 11
     defense: 2
+    res: 3
+    spd: 5
+    rng_min: 3
+    rng_max: 5
+    move: 3
+    tags: [archer, sniper]
+    sight: 5
+    glyph: E
+    color: cyan
+
+  rapid_bowman:
+    display_name: Cadwgan's Welsh Bowmen
+    description: |
+      Cadwgan ap Dafydd's company of Welsh longbowmen — the fastest
+      nock-and-loose on the field. They sacrifice range for sheer
+      volume of fire, loosing six shafts a minute into the packed
+      French column.
+    hp_max: 14
+    atk: 9
+    defense: 2
+    res: 2
+    spd: 7
+    rng_min: 2
+    rng_max: 4
+    move: 4
+    tags: [archer, rapid]
+    sight: 4
+    glyph: W
+    color: cyan
+
+  stakebow:
+    display_name: Owain's Stake-setters
+    description: |
+      Owain ap Maredudd's archers — the men who hammered the stakes
+      into the mud before dawn. Good bowmen in their own right, and
+      the stakes they planted are what keeps the cavalry at bay.
+      Positioned directly behind the stake line for maximum effect.
+    hp_max: 16
+    atk: 8
+    defense: 3
     res: 2
     spd: 5
     rng_min: 2
     rng_max: 4
-    move: 4
-    tags: [archer]
+    move: 3
+    tags: [archer, stakes]
     sight: 4
-    glyph: A
+    glyph: O
     color: cyan
 
-  english_man_at_arms:
-    display_name: English Man-at-Arms
+  duke_of_york:
+    display_name: Duke of York
     description: |
-      Henry's foot men-at-arms — chainmail, pollaxe, dismounted.
-      Anchor of the English line.
-    hp_max: 24
-    atk: 8
+      Edward, Duke of York. Fifty years old, too fat for his armor,
+      commands the English right. A seasoned brawler who will die
+      face-down in the mud at Agincourt — but not before taking
+      several French lords with him.
+    hp_max: 26
+    atk: 9
     defense: 6
     res: 3
     spd: 5
     rng_min: 1
     rng_max: 1
     move: 3
-    tags: [infantry]
+    tags: [infantry, knight]
     sight: 3
-    glyph: M
+    glyph: Y
     color: cyan
 
-  french_knight:
-    display_name: French Knight
+  # ═══════════════════════════════════════════════
+  #  RED — French (8 units)
+  # ═══════════════════════════════════════════════
+  constable_dalbret:
+    display_name: Constable d'Albret
     description: |
-      Heavy plate, lance, spurred horse — the flower of French
-      chivalry. Powerful in melee but slow, and the English
-      longbowmen will pick them off on the approach.
-    hp_max: 26
-    atk: 11
+      Charles d'Albret, Constable of France — supreme commander of
+      the French army. Dismounted for the assault, weighed down by
+      sixty pounds of Milanese plate. Slow but nearly impossible to
+      kill in melee. Historically killed in the fighting.
+    hp_max: 34
+    atk: 10
+    defense: 8
+    res: 4
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 2
+    tags: [infantry, heavy, leader]
+    sight: 3
+    glyph: C
+    color: bright_red
+
+  duke_of_alencon:
+    display_name: Duke of Alen\u00e7on
+    description: |
+      Jean I, Duke of Alen\u00e7on. The finest swordsman in France, the
+      man who nearly reached Henry V and struck his crown. Mounted
+      on a destrier, devastating on the charge — if he can reach the
+      English line through the mud.
+    hp_max: 28
+    atk: 13
     defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [cavalry, heavy, leader]
+    sight: 3
+    glyph: A
+    color: bright_red
+
+  duke_of_orleans:
+    display_name: Duke of Orl\u00e9ans
+    description: |
+      Charles, Duke of Orl\u00e9ans, twenty-one years old. Poet, prince
+      of the blood, and nominal co-commander of the vanguard. Wears
+      ornate tournament plate. Captured alive at Agincourt and held
+      prisoner in England for twenty-five years.
+    hp_max: 26
+    atk: 9
+    defense: 7
+    res: 4
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, heavy, leader]
+    sight: 3
+    glyph: O
+    color: red
+
+  count_of_nevers:
+    display_name: Count of Nevers
+    description: |
+      Philippe, Count of Nevers — brother of the Duke of Burgundy
+      (who sat this battle out). Leads a contingent of Burgundian
+      men-at-arms on horseback. Reckless charger. Historically
+      killed in the melee.
+    hp_max: 24
+    atk: 11
+    defense: 4
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [cavalry, heavy, leader]
+    sight: 3
+    glyph: N
+    color: red
+
+  duke_of_bar:
+    display_name: Duke of Bar
+    description: |
+      Edward III, Duke of Bar. Commands the second line. Another
+      mounted lord who will charge straight into the arrow storm.
+      Good armor, adequate skill — but the mud does not care about
+      bloodlines.
+    hp_max: 26
+    atk: 10
+    defense: 6
     res: 3
     spd: 4
     rng_min: 1
     rng_max: 1
     move: 3
-    tags: [knight, heavy]
+    tags: [cavalry, heavy, leader]
     sight: 3
-    glyph: K
-    color: bright_red
+    glyph: B
+    color: red
 
-  french_crossbow:
-    display_name: French Crossbow
+  lord_dampierre:
+    display_name: Lord Dampierre
     description: |
-      Genoese mercenary crossbowmen — slow to reload, but their
-      bolts punch through armor.
+      David de Rambures, Master of the Crossbows — commands the
+      French ranged contingent. Genoese mercenary crossbowmen under
+      his banner. Their bolts punch through English mail, but they
+      fire once to the longbow's six.
     hp_max: 14
-    atk: 8
+    atk: 9
     defense: 2
     res: 2
     spd: 4
@@ -146,14 +361,15 @@ unit_classes:
     move: 3
     tags: [crossbow]
     sight: 4
-    glyph: C
+    glyph: D
     color: red
 
-  french_man_at_arms:
-    display_name: French Man-at-Arms
+  french_men_at_arms_left:
+    display_name: Picard Men-at-Arms
     description: |
-      Lower-tier French foot — chainmail, sword, no horse. Slower
-      than the knights but steadier on rough ground.
+      The common foot of the French left — armored men-at-arms
+      from Picardy. Dismounted, trudging through the mud behind
+      their lords. Tough and numerous.
     hp_max: 22
     atk: 8
     defense: 5
@@ -162,92 +378,117 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     move: 3
+    tags: [infantry, heavy]
+    sight: 3
+    glyph: P
+    color: red
+
+  french_men_at_arms_right:
+    display_name: Norman Men-at-Arms
+    description: |
+      The common foot of the French right — Norman men-at-arms in
+      chainmail and bascinet. Less armored than the Picards but
+      faster through the mire.
+    hp_max: 20
+    atk: 8
+    defense: 4
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
     tags: [infantry]
     sight: 3
-    glyph: F
+    glyph: M
     color: red
 
 armies:
   blue:
-    # Henry in the center of his line; longbowmen on the flanks
-    # behind the stakes; men-at-arms anchoring the center.
-    - {class: henry_v, pos: {x: 4, y: 12}}
-    - {class: english_man_at_arms, pos: {x: 3, y: 12}}
-    - {class: english_man_at_arms, pos: {x: 5, y: 12}}
-    - {class: english_man_at_arms, pos: {x: 6, y: 12}}
-    - {class: english_man_at_arms, pos: {x: 4, y: 13}}
-    - {class: longbowman, pos: {x: 1, y: 11}}
-    - {class: longbowman, pos: {x: 1, y: 12}}
-    - {class: longbowman, pos: {x: 2, y: 11}}
-    - {class: longbowman, pos: {x: 2, y: 10}}
-    - {class: longbowman, pos: {x: 2, y: 12}}
-    - {class: longbowman, pos: {x: 7, y: 10}}
-    - {class: longbowman, pos: {x: 7, y: 11}}
-    - {class: longbowman, pos: {x: 7, y: 12}}
-    - {class: longbowman, pos: {x: 8, y: 11}}
-    - {class: longbowman, pos: {x: 8, y: 12}}
+    # English line at the south end (rows 8-9), between the forests.
+    # Henry in the center, Duke of York on the right, archers on
+    # the flanks behind the stake line.
+    - {class: henry_v, pos: {x: 5, y: 9}}
+    - {class: duke_of_york, pos: {x: 6, y: 9}}
+    - {class: thomas_erpingham, pos: {x: 3, y: 8}}
+    - {class: rapid_bowman, pos: {x: 8, y: 8}}
+    - {class: stakebow, pos: {x: 5, y: 8}}
+    - {class: stakebow, pos: {x: 7, y: 8}}
   red:
-    # French column at the north, knights leading.
-    - {class: french_knight, pos: {x: 3, y: 1}}
-    - {class: french_knight, pos: {x: 4, y: 1}}
-    - {class: french_knight, pos: {x: 5, y: 1}}
-    - {class: french_knight, pos: {x: 6, y: 1}}
-    - {class: french_knight, pos: {x: 3, y: 2}}
-    - {class: french_knight, pos: {x: 4, y: 2}}
-    - {class: french_knight, pos: {x: 5, y: 2}}
-    - {class: french_knight, pos: {x: 6, y: 2}}
-    - {class: french_knight, pos: {x: 4, y: 3}}
-    - {class: french_knight, pos: {x: 5, y: 3}}
-    - {class: french_man_at_arms, pos: {x: 2, y: 1}}
-    - {class: french_man_at_arms, pos: {x: 7, y: 1}}
-    - {class: french_man_at_arms, pos: {x: 2, y: 2}}
-    - {class: french_man_at_arms, pos: {x: 7, y: 2}}
-    - {class: french_man_at_arms, pos: {x: 2, y: 3}}
-    - {class: french_man_at_arms, pos: {x: 7, y: 3}}
-    - {class: french_man_at_arms, pos: {x: 3, y: 0}}
-    - {class: french_man_at_arms, pos: {x: 4, y: 0}}
-    - {class: french_man_at_arms, pos: {x: 5, y: 0}}
-    - {class: french_man_at_arms, pos: {x: 6, y: 0}}
-    - {class: french_crossbow, pos: {x: 2, y: 0}}
-    - {class: french_crossbow, pos: {x: 7, y: 0}}
-    - {class: french_crossbow, pos: {x: 1, y: 1}}
-    - {class: french_crossbow, pos: {x: 8, y: 1}}
+    # French mass at the north end (rows 0-1). Cavalry in the front,
+    # infantry behind, crossbows on the flanks.
+    - {class: constable_dalbret, pos: {x: 5, y: 1}}
+    - {class: duke_of_alencon, pos: {x: 4, y: 0}}
+    - {class: duke_of_orleans, pos: {x: 6, y: 1}}
+    - {class: count_of_nevers, pos: {x: 7, y: 0}}
+    - {class: duke_of_bar, pos: {x: 3, y: 0}}
+    - {class: lord_dampierre, pos: {x: 8, y: 1}}
+    - {class: french_men_at_arms_left, pos: {x: 3, y: 1}}
+    - {class: french_men_at_arms_right, pos: {x: 8, y: 0}}
 
 rules:
-  max_turns: 22
+  max_turns: 12
   fog_of_war: false
-  first_player: red
+  first_player: blue
 
 win_conditions:
+  # English lose instantly if Henry falls.
   - {type: protect_unit, unit_id: u_b_henry_v_1, owning_team: blue}
-  # French win by reaching Henry's camp line — y=13.
-  - {type: reach_goal_line, team: red, axis: y, value: 13}
+  # French win by reaching the English camp line (y=9).
+  - {type: reach_goal_line, team: red, axis: y, value: 9}
+  # Either side can win by destroying all enemy units.
   - {type: eliminate_all_enemy_units}
-  # Historical: if the French fail to break the English line by the
-  # turn cap, the English successfully defend and win (not a draw).
-  # Checked BEFORE max_turns_draw so this rule fires first.
+  # If Henry survives to turn 12, the English hold the field — Blue wins.
   - {type: protect_unit_survives, unit_id: u_b_henry_v_1, owning_team: blue}
   - {type: max_turns_draw}
 
 narrative:
   title: Agincourt
   description: |
-    St. Crispin's Day. English longbows on a wooded field against
-    the flower of French chivalry.
+    St. Crispin's Day. Six thousand sick Englishmen, a muddy field
+    between two forests, and the longbow against the flower of French
+    chivalry.
   intro: |
-    A cold dawn. The field between scattered trees narrows ahead.
-    Henry kneels with his archers; the French column forms up,
-    lances bright, ready to charge.
+    A cold rain fell all night. The field is a bog. Henry kneels with
+    his men in the mud, stakes driven in front, forests tight on
+    either side. Across five hundred yards of ploughed earth, the
+    French host fills the horizon — banners of every great house in
+    France, armor glinting even under grey skies. They outnumber the
+    English four to one. They are certain of victory. They begin to
+    advance.
   events:
     - trigger: on_turn_start
-      turn: 2
-      text: "The first French line advances through the trees. Arrows begin to fall."
+      turn: 1
+      text: |
+        Sir Thomas Erpingham hurls his baton into the air and roars
+        "Now strike!" Ten thousand arrows rise from behind the stakes.
     - trigger: on_turn_start
-      turn: 4
-      text: "English archers loose. Sky-darkening volleys begin."
+      turn: 3
+      text: |
+        The French vanguard is mired in the mud. Horses scream and
+        fall. Dismounted knights sink to their knees, arrows hammering
+        into them from both flanks.
     - trigger: on_turn_start
-      turn: 8
-      text: "Fallen knights litter the field. The second French line pushes forward over them."
+      turn: 6
+      text: |
+        The field is a slaughterhouse. French dead are piled so thick
+        that later ranks climb over their own fallen. Those who reach
+        the stakes cannot pass.
+    - trigger: on_turn_start
+      turn: 9
+      text: |
+        The Duke of Alen\u00e7on cuts his way toward Henry's banner.
+        The King fights hand-to-hand, a piece of his crown struck away.
     - trigger: on_unit_killed
       unit_id: u_b_henry_v_1
-      text: "Henry has fallen. The English line shudders."
+      text: |
+        Henry has fallen. The crown of England lies in the mud. The
+        English line breaks.
+    - trigger: on_unit_killed
+      unit_id: u_r_duke_of_alencon_1
+      text: |
+        Alen\u00e7on goes down, the finest sword in France silenced.
+    - trigger: on_unit_killed
+      unit_id: u_r_constable_dalbret_1
+      text: |
+        The Constable of France is dead. The French command dissolves
+        into a leaderless mass.
