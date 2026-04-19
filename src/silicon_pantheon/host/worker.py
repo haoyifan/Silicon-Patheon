@@ -282,20 +282,31 @@ class BotWorker:
 
     # ---- helpers ----
 
+    _scenario_bag: list[str] = []  # shuffle bag for uniform coverage
+
     def _pick_scenario(self) -> str:
         scenarios = self.config.scenarios
         if scenarios == ["random"] or not scenarios:
             # Use all available scenarios. List them via the
-            # games/ directory.
+            # games/ directory, excluding the tiny test scenario.
             project_root = Path(__file__).resolve().parents[3]
             games_dir = project_root / "games"
             all_scenarios = sorted(
                 d.name for d in games_dir.iterdir()
                 if d.is_dir()
                 and not d.name.startswith("_")
+                and d.name != "01_tiny_skirmish"
                 and (d / "config.yaml").exists()
             )
-            return random.choice(all_scenarios) if all_scenarios else "01_tiny_skirmish"
+            if not all_scenarios:
+                return "01_tiny_skirmish"
+            # Shuffle-bag: play through all scenarios before repeating
+            # any. This guarantees every scenario gets picked before
+            # the bag refills, giving uniform long-run coverage.
+            if not self._scenario_bag:
+                self._scenario_bag = list(all_scenarios)
+                random.shuffle(self._scenario_bag)
+            return self._scenario_bag.pop()
         return random.choice(scenarios)
 
     def _resolve_lessons(self) -> list[Path]:
