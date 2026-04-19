@@ -35,11 +35,16 @@ board:
     - {x: 1, y: 11, type: forest}
     - {x: 2, y: 11, type: forest}
     - {x: 3, y: 11, type: forest}
-    # Scattered trees center
+    # Scattered trees center-west
     - {x: 4, y: 3, type: forest}
-    - {x: 9, y: 3, type: forest}
     - {x: 4, y: 8, type: forest}
-    - {x: 9, y: 8, type: forest}
+    - {x: 3, y: 5, type: forest}
+    - {x: 3, y: 6, type: forest}
+    # Rocky ground -- mid-field cover
+    - {x: 5, y: 4, type: rocks}
+    - {x: 8, y: 7, type: rocks}
+    - {x: 3, y: 8, type: rocks}
+    - {x: 8, y: 4, type: rocks}
     # Ruins of Amon Hen -- center hilltop
     - {x: 6, y: 4, type: ruins}
     - {x: 7, y: 4, type: ruins}
@@ -52,6 +57,33 @@ board:
     - {x: 6, y: 3, type: hilltop}
     - {x: 7, y: 3, type: hilltop}
     - {x: 8, y: 3, type: hilltop}
+    # Eastern forest -- flanking corridor along the river
+    - {x: 12, y: 0, type: forest}
+    - {x: 12, y: 1, type: forest}
+    - {x: 11, y: 1, type: forest}
+    - {x: 12, y: 9, type: forest}
+    - {x: 12, y: 10, type: forest}
+    - {x: 11, y: 10, type: forest}
+    - {x: 12, y: 11, type: forest}
+    # Eastern scattered trees -- secondary theater
+    - {x: 9, y: 3, type: forest}
+    - {x: 9, y: 8, type: forest}
+    - {x: 10, y: 5, type: forest}
+    - {x: 10, y: 6, type: forest}
+    # Fallen pillars -- Numenorean watchtower ruins east of Amon Hen
+    - {x: 10, y: 3, type: pillars}
+    - {x: 11, y: 3, type: pillars}
+    - {x: 11, y: 4, type: pillars}
+    - {x: 10, y: 4, type: pillars}
+    # Southern fallen pillars -- crumbled stairway
+    - {x: 10, y: 8, type: pillars}
+    - {x: 11, y: 8, type: pillars}
+    - {x: 11, y: 7, type: pillars}
+    # Rocky shore -- narrow strip before the river
+    - {x: 12, y: 4, type: rocks}
+    - {x: 12, y: 5, type: rocks}
+    - {x: 12, y: 6, type: rocks}
+    - {x: 12, y: 7, type: rocks}
     # River on east edge
     - {x: 13, y: 0, type: river}
     - {x: 13, y: 1, type: river}
@@ -89,6 +121,20 @@ terrain_types:
     defense_bonus: 2
     glyph: "^"
     color: yellow
+  pillars:
+    display_name: Fallen Pillars
+    description: Toppled Numenorean columns, half-buried in moss. +2 DEF, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "|"
+    color: white
+  rocks:
+    display_name: Rocky Ground
+    description: Broken stone and scree. +1 DEF, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "o"
+    color: white
   river:
     display_name: River Anduin
     description: The Anduin, cold and swift. Impassable.

@@ -218,7 +218,7 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "L"
+    glyph: "M"
     color: bright_red
 
   bellatrix:
@@ -255,6 +255,66 @@ unit_classes:
     rng_max: 2
     is_magic: true
     glyph: "D"
+    color: bright_black
+
+  rookwood:
+    display_name: Augustus Rookwood
+    description: |
+      Former Unspeakable who worked in the Department of Mysteries
+      itself — he knows every room, every corridor, every trap.
+      His specialty is explosive curses hurled from a distance,
+      detonating shelves and stone alike. Fights from range and
+      punishes anyone who clusters together.
+    hp_max: 18
+    atk: 10
+    defense: 2
+    res: 6
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "K"
+    color: bright_black
+
+  nott:
+    display_name: Nott Sr.
+    description: |
+      One of the original Death Eaters — old, slow, and mean.
+      What he lacks in speed he makes up for in sheer durability
+      and dark-arts knowledge accumulated over decades. He
+      absorbs punishment that would drop a younger wizard and
+      keeps coming.
+    hp_max: 26
+    atk: 8
+    defense: 5
+    res: 6
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "O"
+    color: bright_black
+
+  jugson:
+    display_name: Jugson
+    description: |
+      A lean, vicious Death Eater who closes distance before
+      his target can blink. He fights like a duelist from the
+      old school — one devastating curse at point-blank range,
+      then gone before the counter-spell arrives. Glass-cannon
+      speed over everything.
+    hp_max: 16
+    atk: 11
+    defense: 2
+    res: 4
+    spd: 8
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    is_magic: true
+    glyph: "J"
     color: bright_black
 
   death_eater:
@@ -345,7 +405,7 @@ unit_classes:
     rng_min: 1
     rng_max: 3
     is_magic: true
-    glyph: "E"
+    glyph: "Y"
     color: bright_yellow
 
 armies:
@@ -362,11 +422,11 @@ armies:
     # Death Eaters approach from north corridor (x=4, y=0 gap)
     - {class: lucius, pos: {x: 4, y: 1}}
     - {class: dolohov, pos: {x: 4, y: 0}}
-    - {class: death_eater, pos: {x: 9, y: 0}}
-    - {class: death_eater, pos: {x: 9, y: 1}}
+    - {class: rookwood, pos: {x: 9, y: 0}}
+    - {class: nott, pos: {x: 9, y: 1}}
     # Death Eaters from east corridor
     - {class: bellatrix, pos: {x: 10, y: 3}}
-    - {class: death_eater, pos: {x: 11, y: 3}}
+    - {class: jugson, pos: {x: 11, y: 3}}
     - {class: death_eater, pos: {x: 10, y: 4}}
     - {class: death_eater, pos: {x: 11, y: 4}}
 

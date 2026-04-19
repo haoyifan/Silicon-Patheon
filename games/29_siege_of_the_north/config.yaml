@@ -46,6 +46,28 @@ board:
     # Ice towers flanking the gate
     - {x: 5, y: 7, type: ice_tower}
     - {x: 8, y: 7, type: ice_tower}
+    # Snow barricades in the approach -- cover for both sides to contest
+    - {x: 1, y: 5, type: snow_barricade}
+    - {x: 2, y: 5, type: snow_barricade}
+    - {x: 5, y: 5, type: snow_barricade}
+    - {x: 8, y: 5, type: snow_barricade}
+    - {x: 11, y: 5, type: snow_barricade}
+    - {x: 12, y: 5, type: snow_barricade}
+    # Frozen harbor ice floes at the southern edge of the approach
+    - {x: 1, y: 2, type: canal}
+    - {x: 2, y: 2, type: canal}
+    - {x: 4, y: 1, type: canal}
+    - {x: 9, y: 2, type: canal}
+    - {x: 11, y: 3, type: canal}
+    - {x: 12, y: 3, type: canal}
+    # Inner ice ramparts behind the main wall
+    - {x: 2, y: 9, type: ice_rampart}
+    - {x: 3, y: 9, type: ice_rampart}
+    - {x: 10, y: 9, type: ice_rampart}
+    - {x: 11, y: 9, type: ice_rampart}
+    # Snowdrifts along flanks
+    - {x: 0, y: 6, type: snow_barricade}
+    - {x: 13, y: 6, type: snow_barricade}
   forts: []
 
 terrain_types:
@@ -77,6 +99,20 @@ terrain_types:
     move_cost: 2
     defense_bonus: 4
     glyph: "T"
+    color: bright_blue
+  snow_barricade:
+    display_name: Snow Barricade
+    description: Packed snow fortifications in the approach zone. +2 DEF, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "="
+    color: white
+  ice_rampart:
+    display_name: Ice Rampart
+    description: Inner waterbent ramparts behind the main wall. +3 DEF.
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "^"
     color: bright_blue
 
 unit_classes:
@@ -156,13 +192,14 @@ unit_classes:
     display_name: Hahn
     description: |
       Northern Water Tribe warrior and Yue's fiance. Arrogant but
-      brave. Leads a commando squad against the Fire Nation ships.
-    hp_max: 18
-    atk: 7
-    defense: 4
-    res: 3
-    spd: 5
-    move: 3
+      brave. Leads a commando raid against the Fire Nation ships.
+      Fast and reckless -- hits hard on the charge but folds quickly.
+    hp_max: 16
+    atk: 9
+    defense: 3
+    res: 2
+    spd: 7
+    move: 4
     rng_min: 1
     rng_max: 1
     glyph: "H"
@@ -171,14 +208,15 @@ unit_classes:
   sangok:
     display_name: Sangok
     description: |
-      Young Northern Water Tribe warrior. One of Sokka's allies
-      in the defense. Fights with club and spear on the ice walls.
-    hp_max: 18
-    atk: 7
-    defense: 5
-    res: 3
-    spd: 4
-    move: 3
+      Young Northern Water Tribe warrior. Sokka's steadiest ally
+      in the defense. Fights with bone shield and war club, holding
+      the line on the ice walls. Tough and slow -- a wall, not a blade.
+    hp_max: 22
+    atk: 6
+    defense: 7
+    res: 4
+    spd: 3
+    move: 2
     rng_min: 1
     rng_max: 1
     glyph: "G"

@@ -21,43 +21,51 @@ board:
     - {x: 2, y: 0, type: castle_ruins}
     - {x: 0, y: 1, type: castle_ruins}
     - {x: 1, y: 1, type: castle_ruins}
-    - {x: 2, y: 1, type: castle_ruins}
     - {x: 0, y: 2, type: castle_ruins}
-    - {x: 1, y: 2, type: castle_ruins}
-    # Stone walls — old fortifications
+    # Stone walls — shortened, channels movement
     - {x: 3, y: 0, type: stone_wall}
     - {x: 3, y: 1, type: stone_wall}
-    - {x: 4, y: 4, type: stone_wall}
-    - {x: 5, y: 4, type: stone_wall}
-    - {x: 6, y: 4, type: stone_wall}
-    - {x: 7, y: 4, type: stone_wall}
-    - {x: 4, y: 7, type: stone_wall}
-    - {x: 5, y: 7, type: stone_wall}
-    - {x: 6, y: 7, type: stone_wall}
-    - {x: 7, y: 7, type: stone_wall}
-    # Enchanted lake — center-right
-    - {x: 8, y: 4, type: enchanted_lake}
-    - {x: 9, y: 4, type: enchanted_lake}
+    - {x: 5, y: 5, type: stone_wall}
+    - {x: 6, y: 5, type: stone_wall}
+    - {x: 5, y: 6, type: stone_wall}
+    - {x: 6, y: 6, type: stone_wall}
+    # Enchanted lake — center, smaller
     - {x: 8, y: 5, type: enchanted_lake}
     - {x: 9, y: 5, type: enchanted_lake}
     - {x: 8, y: 6, type: enchanted_lake}
     - {x: 9, y: 6, type: enchanted_lake}
-    # Camelot gate — blue fort, bottom-left
+    # Muddy ground — blood-soaked field of Camlann
+    - {x: 3, y: 4, type: muddy_ground}
+    - {x: 4, y: 4, type: muddy_ground}
+    - {x: 5, y: 4, type: muddy_ground}
+    - {x: 6, y: 4, type: muddy_ground}
+    - {x: 7, y: 4, type: muddy_ground}
+    - {x: 3, y: 7, type: muddy_ground}
+    - {x: 4, y: 7, type: muddy_ground}
+    - {x: 5, y: 7, type: muddy_ground}
+    - {x: 6, y: 7, type: muddy_ground}
+    - {x: 7, y: 7, type: muddy_ground}
+    # Fallen banners — scattered cover
+    - {x: 4, y: 3, type: fallen_banner}
+    - {x: 7, y: 3, type: fallen_banner}
+    - {x: 4, y: 8, type: fallen_banner}
+    - {x: 7, y: 8, type: fallen_banner}
+    - {x: 2, y: 6, type: fallen_banner}
+    - {x: 10, y: 5, type: fallen_banner}
+    # Camelot gate — blue fort, left side
     - {x: 0, y: 10, type: camelot_gate}
     - {x: 1, y: 10, type: camelot_gate}
     - {x: 0, y: 11, type: camelot_gate}
     - {x: 1, y: 11, type: camelot_gate}
-    # Mordred's camp — red fort, top-right
+    # Mordred's camp — red fort, right side
     - {x: 10, y: 0, type: mordred_camp}
     - {x: 11, y: 0, type: mordred_camp}
     - {x: 10, y: 1, type: mordred_camp}
     - {x: 11, y: 1, type: mordred_camp}
-    # More castle ruins scattered
-    - {x: 9, y: 9, type: castle_ruins}
-    - {x: 10, y: 9, type: castle_ruins}
-    - {x: 11, y: 9, type: castle_ruins}
+    # Castle ruins — lower right
     - {x: 10, y: 10, type: castle_ruins}
     - {x: 11, y: 10, type: castle_ruins}
+    - {x: 11, y: 9, type: castle_ruins}
   forts:
     - {x: 0, y: 10, owner: blue}
     - {x: 1, y: 10, owner: blue}
@@ -81,7 +89,7 @@ terrain_types:
       among the rubble.
   enchanted_lake:
     display_name: Enchanted Lake
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "~"
@@ -92,7 +100,7 @@ terrain_types:
       Lake watches from below.
   stone_wall:
     display_name: Stone Wall
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "#"
@@ -118,6 +126,24 @@ terrain_types:
     description: |
       Mordred's war camp, flying the black banner of rebellion.
       A fortified command post for the usurper's forces.
+  muddy_ground:
+    display_name: Muddy Ground
+    move_cost: 2
+    defense_bonus: -1
+    glyph: ","
+    color: yellow
+    description: |
+      Rain-soaked earth churned by boots and hooves. The footing
+      is treacherous and offers no shelter from attack.
+  fallen_banner:
+    display_name: Fallen Banner
+    move_cost: 1
+    defense_bonus: 1
+    glyph: ">"
+    color: dim
+    description: |
+      A tattered banner lies draped over broken weapons and the
+      fallen. Provides scant cover amid the carnage.
 
 unit_classes:
   arthur:
@@ -157,13 +183,14 @@ unit_classes:
     display_name: Sir Gawain
     description: |
       Arthur's nephew, the Knight of the Sun. His strength waxes
-      with daylight. Fierce, honourable, and relentless in battle.
-    hp_max: 26
-    atk: 11
-    defense: 5
+      with daylight. A devastating heavy hitter who shrugs off
+      punishment, but his bulk slows him.
+    hp_max: 30
+    atk: 12
+    defense: 7
     res: 3
-    spd: 6
-    move: 4
+    spd: 4
+    move: 3
     rng_min: 1
     rng_max: 1
     glyph: "G"
@@ -172,16 +199,17 @@ unit_classes:
   percival:
     display_name: Sir Percival
     description: |
-      The Grail Knight. Pure of heart and steady of arm, Percival's
-      faith shields him from dark sorcery.
-    hp_max: 24
+      The Grail Knight. Pure of heart, Percival hurls a blessed
+      javelin that blazes with holy light, striking foes at range.
+      His faith shields him from dark sorcery.
+    hp_max: 22
     atk: 9
-    defense: 6
-    res: 5
+    defense: 4
+    res: 7
     spd: 5
     move: 4
-    rng_min: 1
-    rng_max: 1
+    rng_min: 2
+    rng_max: 3
     glyph: "P"
     color: cyan
 
@@ -189,15 +217,18 @@ unit_classes:
     display_name: Sir Galahad
     description: |
       The Perfect Knight, son of Lancelot. His purity grants him
-      extraordinary resistance to magic and corruption.
+      the power to channel the Grail's healing light, mending
+      wounded allies. Resists magic and corruption.
     hp_max: 22
-    atk: 8
+    atk: 7
     defense: 5
-    res: 8
+    res: 9
     spd: 5
     move: 4
     rng_min: 1
     rng_max: 1
+    can_heal: true
+    heal_amount: 5
     glyph: "H"
     color: cyan
 
@@ -220,20 +251,21 @@ unit_classes:
     glyph: "M"
     color: bright_cyan
 
-  round_table_knight:
-    display_name: Knight of the Round Table
+  camelot_archer:
+    display_name: Camelot Archer
     description: |
-      Sworn knights of Camelot. Each has proven worthy to sit at
-      the Round Table — brave, skilled, and true.
-    hp_max: 24
-    atk: 9
-    defense: 6
-    res: 4
+      Longbowmen of Camelot, trained on the castle battlements.
+      Their arrows arc across the field with deadly precision,
+      though they are vulnerable in close quarters.
+    hp_max: 18
+    atk: 10
+    defense: 3
+    res: 3
     spd: 5
     move: 4
-    rng_min: 1
-    rng_max: 1
-    glyph: "K"
+    rng_min: 2
+    rng_max: 4
+    glyph: "B"
     color: cyan
 
   mordred:
@@ -276,32 +308,34 @@ unit_classes:
   agravaine:
     display_name: Sir Agravaine
     description: |
-      Gawain's brother, a knight turned traitor. His sword skill
-      remains sharp, but his honour is long spent.
-    hp_max: 24
+      Gawain's brother, a mounted knight turned traitor. He rides
+      hard and strikes fast, flanking the enemy before they can
+      form a line. His honour is long spent, but his lance is sharp.
+    hp_max: 22
     atk: 10
-    defense: 6
+    defense: 5
     res: 3
-    spd: 5
-    move: 4
+    spd: 7
+    move: 5
     rng_min: 1
     rng_max: 1
     glyph: "V"
     color: bright_red
 
-  saxon_warrior:
-    display_name: Saxon Warrior
+  saxon_skirmisher:
+    display_name: Saxon Skirmisher
     description: |
       Pagan warriors from across the sea, allied with Mordred for
-      plunder. Fierce axemen with little fear of death.
-    hp_max: 22
-    atk: 9
-    defense: 5
+      plunder. They hurl javelins before closing to finish with axe,
+      harassing the enemy from a distance.
+    hp_max: 20
+    atk: 8
+    defense: 3
     res: 2
     spd: 5
     move: 4
     rng_min: 1
-    rng_max: 1
+    rng_max: 3
     glyph: "S"
     color: red
 
@@ -309,12 +343,13 @@ unit_classes:
     display_name: Dark Knight
     description: |
       Knights who have forsaken their oaths and joined Mordred's
-      cause. Heavy armor and grim determination make them formidable.
-    hp_max: 22
+      cause. Encased in black plate, they are walking fortresses —
+      slow but nearly impossible to bring down.
+    hp_max: 26
     atk: 8
-    defense: 6
+    defense: 8
     res: 4
-    spd: 4
+    spd: 3
     move: 3
     rng_min: 1
     rng_max: 1
@@ -323,24 +358,24 @@ unit_classes:
 
 armies:
   blue:
-    - {class: arthur, pos: {x: 1, y: 10}}
-    - {class: lancelot, pos: {x: 2, y: 10}}
-    - {class: gawain, pos: {x: 3, y: 10}}
-    - {class: percival, pos: {x: 0, y: 9}}
-    - {class: galahad, pos: {x: 1, y: 9}}
+    - {class: arthur, pos: {x: 2, y: 9}}
+    - {class: lancelot, pos: {x: 3, y: 9}}
+    - {class: gawain, pos: {x: 1, y: 9}}
+    - {class: percival, pos: {x: 3, y: 10}}
+    - {class: galahad, pos: {x: 2, y: 10}}
     - {class: merlin, pos: {x: 0, y: 11}}
-    - {class: round_table_knight, pos: {x: 3, y: 11}}
-    - {class: round_table_knight, pos: {x: 4, y: 10}}
+    - {class: camelot_archer, pos: {x: 4, y: 9}}
+    - {class: camelot_archer, pos: {x: 4, y: 10}}
 
   red:
-    - {class: mordred, pos: {x: 10, y: 1}}
-    - {class: morgan, pos: {x: 11, y: 0}}
-    - {class: agravaine, pos: {x: 9, y: 1}}
-    - {class: saxon_warrior, pos: {x: 8, y: 0}}
-    - {class: saxon_warrior, pos: {x: 11, y: 2}}
-    - {class: dark_knight, pos: {x: 8, y: 1}}
-    - {class: dark_knight, pos: {x: 9, y: 2}}
+    - {class: mordred, pos: {x: 9, y: 2}}
+    - {class: morgan, pos: {x: 11, y: 1}}
+    - {class: agravaine, pos: {x: 8, y: 2}}
+    - {class: saxon_skirmisher, pos: {x: 7, y: 2}}
+    - {class: saxon_skirmisher, pos: {x: 8, y: 3}}
+    - {class: dark_knight, pos: {x: 9, y: 3}}
     - {class: dark_knight, pos: {x: 10, y: 2}}
+    - {class: dark_knight, pos: {x: 10, y: 3}}
 
 rules:
   max_turns: 20

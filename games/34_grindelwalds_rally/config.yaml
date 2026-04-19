@@ -65,7 +65,7 @@ terrain_types:
       minor cover but slows movement over the stepped rows.
   magical_barrier:
     display_name: Magical Barrier
-    move_cost: 1
+    move_cost: 99
     defense_bonus: 0
     passable: false
     glyph: "#"
@@ -88,6 +88,7 @@ unit_classes:
     move: 4
     rng_min: 1
     rng_max: 2
+    is_magic: true
     can_heal: true
     heal_amount: 5
     glyph: "N"
@@ -122,7 +123,8 @@ unit_classes:
     spd: 5
     move: 3
     rng_min: 1
-    rng_max: 1
+    rng_max: 2
+    is_magic: true
     glyph: "S"
     color: bright_cyan
 
@@ -130,15 +132,19 @@ unit_classes:
     display_name: Jacob Kowalski
     description: |
       No-Maj baker with a heart of gold and fists of iron. He cannot
-      cast spells, but his courage and loyalty are unmatched.
-    hp_max: 16
-    atk: 6
-    defense: 5
+      cast spells, but his courage and loyalty rally his allies —
+      patching wounds and keeping morale high when the fight looks
+      darkest. Tougher than he looks.
+    hp_max: 20
+    atk: 8
+    defense: 6
     res: 2
     spd: 4
     move: 3
     rng_min: 1
     rng_max: 1
+    can_heal: true
+    heal_amount: 4
     glyph: "K"
     color: cyan
 
@@ -154,7 +160,8 @@ unit_classes:
     spd: 5
     move: 4
     rng_min: 1
-    rng_max: 1
+    rng_max: 2
+    is_magic: true
     glyph: "Y"
     color: cyan
 
@@ -261,6 +268,7 @@ unit_classes:
     move: 3
     rng_min: 1
     rng_max: 1
+    is_magic: true
     glyph: "a"
     color: red
 

@@ -16,34 +16,143 @@ board:
   width: 14
   height: 12
   terrain:
-    # Shifting castle rooms -- walls that block movement
+    # =====================================================
+    # Infinity Castle layout (14 wide x 12 tall)
+    # Rooms connected by 1-2 tile corridors; ~55 walls
+    # =====================================================
+    #
+    # Legend (approximate):
+    #   # = castle_wall   . = tatami   = = staircase   | = pillar
+    #   Coords: x=0..13, y=0..11  (y=0 is top / north)
+    #
+    # y0  # # # # # .N.H. # # # #       Throne room (north)
+    # y1  # . . . . .D.K.A . . . #       Red spawns on tatami
+    # y2  # # # # # . . # # # # #       Throne room south wall
+    # y3  # . |   #       # . | .#       West/east chambers
+    # y4  # . . . # . | . # . . .#       Chokepoints at x=4,x=9
+    # y5  .=. # # # .=.=. # # # .=      Central corridor
+    # y6  # . . . # . | . # . . .#       Mirror of y4
+    # y7  # . | . #       # . | .#       Mirror of y3
+    # y8  # # # # # . . # # # # #       Staging room north wall
+    # y9  # . . .   MU GY   . . .#       Blue spawns (5,9)(8,9)
+    # y10 # . . . .TZI.MI . . . .#       Blue spawns on tatami
+    # y11 # # # # # . . # # # # #       South wall
+    #
+
+    # === Throne room -- north perimeter (y=0) ===
+    # Leave x=5,6,7,8 open for red spawn area
+    - {x: 0, y: 0, type: castle_wall}
+    - {x: 1, y: 0, type: castle_wall}
+    - {x: 2, y: 0, type: castle_wall}
+    - {x: 3, y: 0, type: castle_wall}
+    - {x: 4, y: 0, type: castle_wall}
+    - {x: 9, y: 0, type: castle_wall}
+    - {x: 10, y: 0, type: castle_wall}
+    - {x: 11, y: 0, type: castle_wall}
+    - {x: 12, y: 0, type: castle_wall}
+
+    # === Left / right edges at y=1 (throne room sides) ===
+    - {x: 0, y: 1, type: castle_wall}
+    - {x: 13, y: 1, type: castle_wall}
+
+    # === Throne room south wall (y=2) -- gap at x=6,7 ===
+    - {x: 1, y: 2, type: castle_wall}
+    - {x: 2, y: 2, type: castle_wall}
+    - {x: 3, y: 2, type: castle_wall}
     - {x: 4, y: 2, type: castle_wall}
-    - {x: 4, y: 3, type: castle_wall}
+    - {x: 5, y: 2, type: castle_wall}
+    - {x: 8, y: 2, type: castle_wall}
     - {x: 9, y: 2, type: castle_wall}
+    - {x: 10, y: 2, type: castle_wall}
+    - {x: 11, y: 2, type: castle_wall}
+    - {x: 12, y: 2, type: castle_wall}
+
+    # === West wing vertical wall (x=4, y=3-4) -- gap at y=5 ===
+    - {x: 4, y: 3, type: castle_wall}
+    - {x: 4, y: 4, type: castle_wall}
+    # === East wing vertical wall (x=9, y=3-4) -- gap at y=5 ===
     - {x: 9, y: 3, type: castle_wall}
+    - {x: 9, y: 4, type: castle_wall}
+
+    # === Side walls y=4 (gap at y=3 for flanking corridors) ===
+    - {x: 0, y: 4, type: castle_wall}
+    - {x: 13, y: 4, type: castle_wall}
+
+    # === Central corridor (y=5) -- walls with 2-tile gap at x=6,7 ===
+    - {x: 2, y: 5, type: castle_wall}
+    - {x: 3, y: 5, type: castle_wall}
+    - {x: 4, y: 5, type: castle_wall}
+    - {x: 9, y: 5, type: castle_wall}
+    - {x: 10, y: 5, type: castle_wall}
+    - {x: 11, y: 5, type: castle_wall}
+
+    # === Side walls y=6 (gap at y=7 for flanking corridors) ===
+    - {x: 0, y: 6, type: castle_wall}
+    - {x: 13, y: 6, type: castle_wall}
+
+    # === West wing vertical wall (x=4, y=6-7) ===
+    - {x: 4, y: 6, type: castle_wall}
+    - {x: 4, y: 7, type: castle_wall}
+    # === East wing vertical wall (x=9, y=6-7) ===
+    - {x: 9, y: 6, type: castle_wall}
+    - {x: 9, y: 7, type: castle_wall}
+
+    # === Staging room north wall (y=8) -- gap at x=6,7 ===
+    - {x: 1, y: 8, type: castle_wall}
+    - {x: 2, y: 8, type: castle_wall}
+    - {x: 3, y: 8, type: castle_wall}
     - {x: 4, y: 8, type: castle_wall}
-    - {x: 4, y: 9, type: castle_wall}
+    - {x: 5, y: 8, type: castle_wall}
+    - {x: 8, y: 8, type: castle_wall}
     - {x: 9, y: 8, type: castle_wall}
-    - {x: 9, y: 9, type: castle_wall}
-    # Staircases -- connect rooms
-    - {x: 2, y: 5, type: staircase}
+    - {x: 10, y: 8, type: castle_wall}
+    - {x: 11, y: 8, type: castle_wall}
+    - {x: 12, y: 8, type: castle_wall}
+
+    # === South perimeter (y=11) -- gap at x=5,6,7,8 ===
+    - {x: 0, y: 11, type: castle_wall}
+    - {x: 1, y: 11, type: castle_wall}
+    - {x: 2, y: 11, type: castle_wall}
+    - {x: 3, y: 11, type: castle_wall}
+    - {x: 4, y: 11, type: castle_wall}
+    - {x: 9, y: 11, type: castle_wall}
+    - {x: 10, y: 11, type: castle_wall}
+    - {x: 11, y: 11, type: castle_wall}
+    - {x: 12, y: 11, type: castle_wall}
+    - {x: 13, y: 11, type: castle_wall}
+
+    # === Staircases -- connecting rooms through the central corridor ===
+    - {x: 0, y: 5, type: staircase}
+    - {x: 1, y: 5, type: staircase}
     - {x: 6, y: 5, type: staircase}
     - {x: 7, y: 5, type: staircase}
-    - {x: 11, y: 5, type: staircase}
-    # Tatami rooms -- wide fighting areas
+    - {x: 12, y: 5, type: staircase}
+    - {x: 13, y: 5, type: staircase}
+
+    # === Tatami rooms -- wide fighting areas ===
+    # Throne room tatami (north)
     - {x: 5, y: 1, type: tatami}
     - {x: 6, y: 1, type: tatami}
     - {x: 7, y: 1, type: tatami}
     - {x: 8, y: 1, type: tatami}
+    # Slayer staging tatami (south)
     - {x: 5, y: 10, type: tatami}
     - {x: 6, y: 10, type: tatami}
     - {x: 7, y: 10, type: tatami}
     - {x: 8, y: 10, type: tatami}
-    # Pillars -- cover
-    - {x: 3, y: 5, type: pillar}
-    - {x: 10, y: 5, type: pillar}
-    - {x: 6, y: 3, type: pillar}
-    - {x: 7, y: 8, type: pillar}
+    # Central crossing tatami
+    - {x: 5, y: 5, type: tatami}
+    - {x: 8, y: 5, type: tatami}
+
+    # === Pillars -- cover in rooms and corridors ===
+    - {x: 2, y: 3, type: pillar}
+    - {x: 11, y: 3, type: pillar}
+    - {x: 6, y: 4, type: pillar}
+    - {x: 7, y: 4, type: pillar}
+    - {x: 6, y: 7, type: pillar}
+    - {x: 7, y: 7, type: pillar}
+    - {x: 2, y: 7, type: pillar}
+    - {x: 11, y: 7, type: pillar}
   forts: []
 
 terrain_types:
