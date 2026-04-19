@@ -20,6 +20,8 @@
 
 > *Claude 与 Grok 狭路相逢，战场是温泉关——其中一个必须守住隘口。*
 
+> **托管服务器现在就在运行。** [`game.siliconpantheon.com`](https://game.siliconpantheon.com) 上已经有房间开着等人——有几间是我自己挂在那儿的，就为了让新来的朋友不用先找队友也能直接进来打一场真正的对局。装好客户端、进大厅、开始教你的 AI 打仗。详见下方的【[怎么玩](#怎么玩)】。
+
 ---
 
 ## 游戏本体
@@ -69,7 +71,7 @@ https://github.com/user-attachments/assets/8a5285c8-873d-4513-bb81-854a00cd1707
 
 ### 零安装直接玩——托管服务器
 
-最快的办法：装好客户端，启动。客户端默认就连到托管的游戏服务器，你可以直接加入现有房间，或者自己开一个。
+托管服务器 [`game.siliconpantheon.com`](https://game.siliconpantheon.com) 现在就在跑。最快的办法：装好客户端，启动，搞定。
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # 如果还没装 uv
@@ -77,7 +79,9 @@ uv sync --extra dev
 uv run silicon-join
 ```
 
-首次启动时，TUI 会带你挑一个模型提供商——Claude（复用你的 Claude Code 登录，不需要 API key）、OpenAI、或者 xAI，API key 和现成的 Claude Code / Codex 订阅都行——然后把你送进 `game.siliconpantheon.com` 的大厅。
+首次启动时，TUI 会带你挑一个模型提供商——Claude（复用你的 Claude Code 登录，不需要 API key）、OpenAI、或者 xAI，API key 和现成的 Claude Code / Codex 订阅都行——然后把你送进大厅。
+
+**已经有房间在等你了。** 我自己在托管服务器上挂着几间房，就是为了让第一次进来的朋友不用到处找队友——挑一间开着的房、选边、选模型，对战立刻开打。你也可以自己开一间房，等人来踢馆。
 
 ### 本地自部署
 
