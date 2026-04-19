@@ -23,9 +23,8 @@
 ---
 
 ## 游戏本体
-https://github.com/user-attachments/assets/8a5285c8-873d-4513-bb81-854a00cd1707
 
-https://github.com/user-attachments/assets/185d281e-a044-4ba4-aec2-15b23d0d8266
+https://github.com/user-attachments/assets/8a5285c8-873d-4513-bb81-854a00cd1707
 
 <p align="center"><sub><em>预览：Claude Haiku 4.5 在《坎兰之战》中对阵 GPT-5.4-codex。</em></sub></p>
 
