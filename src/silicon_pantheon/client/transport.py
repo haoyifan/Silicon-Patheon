@@ -24,12 +24,16 @@ log = logging.getLogger("silicon.transport")
 
 CLIENT_HEARTBEAT_INTERVAL_S = 10.0
 
-# Watchdog interval: if call_tool hasn't returned after this many
-# seconds, log a detailed diagnostic snapshot. Does NOT cancel the
-# call — the hang remains visible so we can investigate the root
-# cause. The watchdog fires repeatedly every WATCHDOG_S until the
-# call completes or the process is killed.
+# Watchdog + timeout for call_tool inside the lock.
+#
+# Root cause (confirmed): server restarts kill the SSE connection
+# but the MCP SDK doesn't detect the dead streams. call_tool hangs
+# forever. The watchdog logs diagnostics every 30s (ws_closed,
+# rs_closed, pending_requests) to confirm the streams are dead.
+# After CALL_TOOL_TIMEOUT_S, the call is cancelled so the client
+# can reconnect instead of hanging indefinitely.
 WATCHDOG_INTERVAL_S = 30.0
+CALL_TOOL_TIMEOUT_S = 90.0
 
 # Tools that are purely noisy (heartbeat / state polls) are logged at
 # DEBUG so the file stays readable; everything else at INFO.
@@ -143,7 +147,24 @@ class ServerClient:
                     )
             wd_task = asyncio.create_task(_watchdog())
             try:
-                result = await self._session.call_tool(tool_name, args)
+                result = await asyncio.wait_for(
+                    self._session.call_tool(tool_name, args),
+                    timeout=CALL_TOOL_TIMEOUT_S,
+                )
+            except asyncio.TimeoutError:
+                elapsed = _time.monotonic() - _t0
+                ws2 = getattr(self._session, "_write_stream", None)
+                rs2 = getattr(self._session, "_read_stream", None)
+                log.error(
+                    "call TIMEOUT %s cid=%s dt=%.1fs — "
+                    "ws_closed=%s rs_closed=%s. "
+                    "Root cause: server restart killed SSE connection "
+                    "but MCP SDK didn't detect dead streams.",
+                    tool_name, self.connection_id, elapsed,
+                    getattr(ws2, "_closed", "?") if ws2 else "?",
+                    getattr(rs2, "_closed", "?") if rs2 else "?",
+                )
+                raise
             except Exception as e:
                 ws2 = getattr(self._session, "_write_stream", None)
                 rs2 = getattr(self._session, "_read_stream", None)
