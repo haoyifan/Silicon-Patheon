@@ -238,7 +238,23 @@ class ServerClient:
         for block in result.content:
             text = getattr(block, "text", None)
             if text is not None:
-                parsed = json.loads(text)
+                try:
+                    parsed = json.loads(text)
+                except json.JSONDecodeError as e:
+                    # Server sent a text block but it's not valid JSON.
+                    # Empty string is the most common failure mode
+                    # ("Expecting value: line 1 column 1") — dump the
+                    # raw payload so we can see what actually arrived.
+                    log.error(
+                        "call JSON_DECODE_ERROR %s cid=%s dt=%.2fs "
+                        "text_len=%d text_repr=%r err=%s full_result=%r",
+                        tool_name, self.connection_id, _dt,
+                        len(text), text[:500], e, result,
+                    )
+                    raise RemoteToolError(
+                        f"tool {tool_name} returned invalid JSON "
+                        f"(len={len(text)}): {text[:200]!r}"
+                    ) from e
                 log.log(
                     level,
                     "call <- %s ok=%s dt=%.2fs keys=%s",
