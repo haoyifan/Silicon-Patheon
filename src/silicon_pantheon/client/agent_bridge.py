@@ -14,6 +14,7 @@ its chain-of-thought across turns within a single match.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -458,6 +459,13 @@ class NetworkedAgent:
         # appear (reinforcements) or disappear (killed between turns).
         self._last_seen_unit_ids: set[str] | None = None
         self._battlefield_alerts: list[str] = []
+        # Set by _dispatch_tool when the server returns a terminal-match
+        # error ("game is already over"). Surfaced by play_turn after
+        # the adapter returns so the host worker can see it and
+        # short-circuit instead of re-entering play_turn. Adapter-
+        # agnostic: even if a future adapter forgets to break its own
+        # loop on terminal errors, this flag carries the signal up.
+        self._match_terminated: bool = False
 
     async def close(self) -> None:
         try:
@@ -501,7 +509,21 @@ class NetworkedAgent:
         if result.get("ok"):
             payload = result.get("result", result)
             return _slim_tool_response(name, payload)
-        return {"error": result.get("error", {})}
+        err_payload = {"error": result.get("error", {})}
+        # Terminal-match detection: if the server says "game is already
+        # over" on a mutating call, the adapter's LLM loop will often
+        # retry the same call. Flag it so play_turn / the worker can
+        # shortcut even if the adapter keeps iterating.
+        from silicon_pantheon.shared.match_errors import is_terminal_tool_error
+        if is_terminal_tool_error(err_payload):
+            if not self._match_terminated:
+                log.warning(
+                    "match_terminated: tool=%s returned terminal-match "
+                    "error; set _match_terminated=True (args=%s)",
+                    name, args,
+                )
+            self._match_terminated = True
+        return err_payload
 
     # ---- state helpers ----
 
@@ -825,17 +847,65 @@ class NetworkedAgent:
 
         import time as _time
         t0 = _time.time()
-        await self.adapter.play_turn(
+        # Race the adapter against the terminal-match flag. If the
+        # adapter's own loop detects ``game is already over`` and
+        # breaks (openai.py does), adapter_task completes first and
+        # we move on. If the adapter keeps iterating (older / future
+        # adapters without explicit terminal handling), the watcher
+        # fires as soon as _dispatch_tool sets self._match_terminated
+        # and we cancel the adapter — no 45-minute hang.
+        adapter_task = asyncio.create_task(self.adapter.play_turn(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             tools=GAME_TOOLS,
             tool_dispatcher=self._dispatch_tool,
             on_thought=self.thoughts_callback,
             time_budget_s=self.time_budget_s,
-        )
+        ))
+        terminal_task = asyncio.create_task(self._watch_match_terminated())
+        try:
+            done, pending = await asyncio.wait(
+                {adapter_task, terminal_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if terminal_task in done and adapter_task in pending:
+                log.warning(
+                    "play_turn: cancelling adapter — _match_terminated "
+                    "flag fired before adapter exit (adapter likely "
+                    "stuck in retry loop on game-over error)"
+                )
+                adapter_task.cancel()
+            for t in pending:
+                t.cancel()
+            # Surface any real exception from the adapter. A cancel
+            # we induced becomes CancelledError and we swallow below.
+            for t in done:
+                if t is adapter_task:
+                    exc = t.exception()
+                    if exc is not None and not isinstance(exc, asyncio.CancelledError):
+                        raise exc
+        finally:
+            # Ensure all tasks are awaited to completion so no task
+            # leaks into the next turn.
+            for t in (adapter_task, terminal_task):
+                if not t.done():
+                    try:
+                        await t
+                    except (asyncio.CancelledError, Exception):
+                        pass
         self._turn_times.append(_time.time() - t0)
 
         return await self._finalize_turn(viewer)
+
+    async def _watch_match_terminated(self) -> None:
+        """Poll self._match_terminated and return once it flips.
+
+        Used by play_turn to race against adapter.play_turn so a
+        stuck adapter loop on "game is already over" tool errors
+        can be cancelled within one poll tick instead of riding out
+        the 45-min turn deadline."""
+        while not self._match_terminated:
+            await asyncio.sleep(0.5)
 
     def get_agent_stats(self) -> dict:
         """Return accumulated agent telemetry for post-game stats."""
