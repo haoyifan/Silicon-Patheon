@@ -52,6 +52,55 @@ def _filtered_unit_dict(unit_dict: dict[str, Any]) -> dict[str, Any]:
     return unit_dict
 
 
+def _hidden_alive_enemy_ids(state: GameState, ctx: ViewerContext) -> frozenset[str]:
+    """Enemy unit-ids that are ALIVE and currently out of the viewer's sight.
+
+    These are exactly the ids the server's audit will flag as a leak
+    if they appear in a tool response. Used by ``_scrub_event_ids``
+    to replace such ids with a placeholder so we can keep the
+    event's structural info (something happened on a visible tile)
+    without exposing the id.
+    """
+    if ctx.fog_mode == "none":
+        return frozenset()
+    visible = currently_visible(state, ctx)
+    visible_enemy_ids = {
+        u.id for u in state.units_of(ctx.team.other()) if u.pos in visible
+    }
+    hidden: set[str] = set()
+    for u in state.units_of(ctx.team.other()):
+        if not u.alive:
+            continue
+        if u.id in visible_enemy_ids:
+            continue
+        hidden.add(u.id)
+    return frozenset(hidden)
+
+
+_HIDDEN_ENEMY_PLACEHOLDER = "hidden"
+
+
+def _scrub_event_ids(ev: Any, hidden_ids: frozenset[str]) -> Any:
+    """Recursively replace any hidden-enemy id string with a placeholder.
+
+    Preserves event structure (keys, list order, non-id fields) so the
+    caller can still render a best-effort description — "hidden
+    moved to (5, 3)" is more informative than dropping the event
+    entirely. Called after _action_is_visible has decided the event
+    is showable under fog; this is the second-line defense that
+    prevents target_id / unit_id from leaking when the enemy is
+    currently hidden (e.g. attacker visible but target slipped into
+    fog, or enemy moved to a visible tile then kept moving).
+    """
+    if isinstance(ev, str):
+        return _HIDDEN_ENEMY_PLACEHOLDER if ev in hidden_ids else ev
+    if isinstance(ev, dict):
+        return {k: _scrub_event_ids(v, hidden_ids) for k, v in ev.items()}
+    if isinstance(ev, list):
+        return [_scrub_event_ids(v, hidden_ids) for v in ev]
+    return ev
+
+
 def _action_is_visible(ev: dict, state: GameState, ctx: ViewerContext) -> bool:
     """Check if an action event should be visible under fog-of-war.
 
@@ -169,9 +218,17 @@ def filter_state(state: GameState, ctx: ViewerContext) -> dict[str, Any]:
     
     # Redact last_action if it references a hidden enemy.
     la = raw.get("last_action")
-    if isinstance(la, dict) and not _action_is_visible(la, state, ctx):
-        raw["last_action"] = None
-    
+    if isinstance(la, dict):
+        if not _action_is_visible(la, state, ctx):
+            raw["last_action"] = None
+        else:
+            # Scrub any hidden-enemy ids that may survive the
+            # visibility gate (e.g. an attack whose target has since
+            # slipped into fog). See _scrub_event_ids for rationale.
+            raw["last_action"] = _scrub_event_ids(
+                la, _hidden_alive_enemy_ids(state, ctx)
+            )
+
     return raw
 
 
@@ -214,13 +271,28 @@ def filter_history(
     if ctx.fog_mode == "none":
         return history_result
 
-    filtered = [ev for ev in (history_result.get("history") or []) if _action_is_visible(ev, state, ctx)]
+    hidden = _hidden_alive_enemy_ids(state, ctx)
+    filtered: list[dict[str, Any]] = []
+    for ev in (history_result.get("history") or []):
+        if not _action_is_visible(ev, state, ctx):
+            continue
+        # Second-line defense: even events that pass visibility can
+        # carry enemy ids (target_id of a friendly attack on an
+        # enemy that has since fled into fog; unit_id of an enemy
+        # move to a now-visible tile where the enemy has since moved
+        # on). Scrub them so the server audit doesn't flag the
+        # response AND the viewer can't reconstruct hidden-enemy
+        # positions from ids alone.
+        filtered.append(_scrub_event_ids(ev, hidden))
     out = dict(history_result)
     out["history"] = filtered
     # last_action: redact if not visible under the same rule.
     la = out.get("last_action")
-    if isinstance(la, dict) and not _action_is_visible(la, state, ctx):
-        out["last_action"] = None
+    if isinstance(la, dict):
+        if not _action_is_visible(la, state, ctx):
+            out["last_action"] = None
+        else:
+            out["last_action"] = _scrub_event_ids(la, hidden)
     return out
 
 

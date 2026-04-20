@@ -423,6 +423,60 @@ def test_filter_state_redacts_last_action_of_hidden_enemy() -> None:
     assert filtered["last_action"]["unit_id"] == blue.id
 
 
+def test_filter_history_scrubs_hidden_enemy_target_id() -> None:
+    """Regression (23_astronomy_tower: Evan vs Vegetable): server
+    raised ``fog leak in get_history: hidden enemy IDs in response:
+    [('history[3].unit_id', 'u_r_draco_1')]``. Root cause: the
+    visibility gate (_action_is_visible) admitted enemy actions
+    whose dest was currently visible even if the actor had since
+    moved into fog. The event then carried the hidden actor's id
+    verbatim. Fix: after the visibility gate, scrub any
+    hidden-alive-enemy id strings to the "hidden" placeholder so
+    the event still carries its structural info (something moved
+    into visible territory) without leaking the id."""
+    from silicon_pantheon.shared.viewer_filter import filter_history
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    ctx = _ctx(Team.BLUE, "classic")
+    red = next(iter(state.units_of(Team.RED)))
+    blue = next(iter(state.units_of(Team.BLUE)))
+
+    # Place red unit hidden but its dest (the tile it supposedly
+    # moved to last turn) in blue's sight cone. Using blue's own
+    # tile as dest guarantees visibility regardless of sight stat.
+    assert red.alive
+    destination = {"x": blue.pos.x, "y": blue.pos.y}
+    history = {
+        "history": [
+            {
+                "type": "move",
+                "unit_id": red.id,
+                "dest": destination,
+            },
+        ],
+        "last_action": {
+            "type": "attack",
+            "unit_id": blue.id,
+            "target_id": red.id,  # blue attacked red — red since fled into fog
+            "damage_dealt": 5,
+            "counter_damage": 0,
+        },
+    }
+
+    out = filter_history(history, state, ctx)
+    # The event should survive (dest was visible to blue), but the
+    # red id must NOT appear verbatim anywhere in the filtered
+    # history / last_action.
+    flat = str(out)
+    assert red.id not in flat, (
+        f"hidden enemy id {red.id} leaked through filter_history:\n{flat}"
+    )
+    # And placeholder should appear in each scrubbed spot so the
+    # agent sees SOMETHING happened.
+    assert "hidden" in flat
+
+
 def test_filter_state_redacts_end_turn_with_hidden_win_unit() -> None:
     """Regression (thermopylae / cannae): when a win-condition fires
     on end_turn, engine.rules._apply_end_turn splices result.details
