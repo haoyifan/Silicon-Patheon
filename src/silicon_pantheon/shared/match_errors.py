@@ -67,10 +67,10 @@ def is_terminal_tool_error(result: Any) -> bool:
     """
     if not isinstance(result, dict):
         return False
+    # Both envelope shapes — raw ``{"ok": false, "error": {...}}`` and
+    # bridge-unwrapped ``{"error": {...}}`` — keep the error dict at
+    # the top-level ``error`` key, so a single lookup covers both.
     err = result.get("error")
-    # Server-native shape: {"ok": false, "error": {...}}
-    if err is None and result.get("ok") is False:
-        err = result.get("error")
     if not isinstance(err, dict):
         return False
     code = str(err.get("code") or "").lower()

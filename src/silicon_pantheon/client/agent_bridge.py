@@ -529,9 +529,36 @@ class NetworkedAgent:
 
     async def _fetch_state(self) -> dict:
         r = await self.client.call("get_state")
-        if not r.get("ok"):
-            return {}
-        return r.get("result", {})
+        if r.get("ok"):
+            return r.get("result", {})
+        # Non-ok: distinguish transient failures (server overloaded,
+        # INTERNAL, network glitch) from terminal session-loss signals
+        # (NOT_REGISTERED, NOT_IN_ROOM, GAME_NOT_STARTED, etc). The
+        # transient case deserves a retry on the next poll, so we
+        # return {} and the worker's outer loop will see no game_over
+        # and keep polling. The terminal case has no recovery — the
+        # connection or room is gone from the server's view — so we
+        # synthesize a ``status=game_over`` state that lets the worker
+        # exit its inner loop, call leave_room, and start a fresh
+        # room. Without this synthesis, a session-loss mid-match would
+        # leave the worker tight-spinning on get_state forever until
+        # the process was killed.
+        err_payload = {"error": r.get("error", {})}
+        from silicon_pantheon.shared.match_errors import is_terminal_tool_error
+        if is_terminal_tool_error(err_payload):
+            if not self._match_terminated:
+                log.warning(
+                    "_fetch_state: terminal error on get_state; "
+                    "synthesizing game_over to unblock worker (err=%s)",
+                    r.get("error"),
+                )
+            self._match_terminated = True
+            return {
+                "status": "game_over",
+                "active_player": None,
+                "winner": None,
+            }
+        return {}
 
     def _load_lessons(self) -> list:
         """Load the lessons the caller explicitly asked for.
