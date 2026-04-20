@@ -457,59 +457,87 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         """Create a single hardcoded dev game and seat this connection
         in slot A (blue). A second connection can call `join_dev_game`
         to take slot B (red) and start the match.
+
+        ── Locking ──
+        Whole body under state_lock so two concurrent create_dev_game
+        calls can't both observe "no dev game exists" and both create.
         """
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_LOBBY:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "create_dev_game requires state=in_lobby",
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state != ConnectionState.IN_LOBBY:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "create_dev_game requires state=in_lobby",
+                )
+            if conn.player is None:
+                return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
+            if app.sessions:
+                return _error(ErrorCode.ALREADY_IN_ROOM, "a dev game already exists")
+            room, slot = app.rooms.create(
+                config=RoomConfig(scenario=scenario), host=conn.player
             )
-        if conn.player is None:
-            return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
-        if app.sessions:
-            return _error(ErrorCode.ALREADY_IN_ROOM, "a dev game already exists")
-        room, slot = app.rooms.create(
-            config=RoomConfig(scenario=scenario), host=conn.player
-        )
-        app.conn_to_room[connection_id] = (room.id, slot)
-        conn.state = ConnectionState.IN_ROOM
-        return _ok({"room_id": room.id, "slot": slot.value})
+            app.conn_to_room[connection_id] = (room.id, slot)
+            conn.state = ConnectionState.IN_ROOM
+            room_id = room.id
+            slot_value = slot.value
+        return _ok({"room_id": room_id, "slot": slot_value})
 
     @mcp.tool()
     def join_dev_game(connection_id: str) -> dict:
         """Join the single hardcoded dev game as slot B (red) and start
         the match immediately (no ready protocol yet — that's Phase 1b).
+
+        ── Locking ──
+        Validation + seat claim happen under state_lock. Scenario
+        load (I/O) is hoisted OUTSIDE state_lock to avoid holding
+        the broad lock across 10-20ms of YAML parsing. If a concurrent
+        race happens between releasing state_lock and re-acquiring,
+        we re-check room existence on re-entry.
         """
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_LOBBY:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "join_dev_game requires state=in_lobby",
-            )
-        if conn.player is None:
-            return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
-        rooms = app.rooms.list()
-        if not rooms:
-            return _error(ErrorCode.ROOM_NOT_FOUND, "no dev game to join")
-        room = rooms[0]
-        result = app.rooms.join(room.id, conn.player)
-        if result is None:
-            return _error(ErrorCode.ROOM_FULL, "dev game is full")
-        _, slot = result
-        app.conn_to_room[connection_id] = (room.id, slot)
-        # Start the game: build session, pin slot→team mapping, flip both
-        # connections' state to IN_GAME.
-        state = load_scenario(room.scenario)
-        session = new_session(state, scenario=room.scenario)
-        app.sessions[room.id] = session
-        # Hardcoded mapping for Phase 1a: slot A = blue, slot B = red.
-        app.slot_to_team[room.id] = {Slot.A: Team.BLUE, Slot.B: Team.RED}
-        for cid, (rid, _slot) in app.conn_to_room.items():
-            if rid == room.id:
-                c = app.get_connection(cid)
-                if c is not None:
-                    c.state = ConnectionState.IN_GAME
-        return _ok({"room_id": room.id, "slot": slot.value})
+        # Phase 1: validate + claim seat under state_lock.
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state != ConnectionState.IN_LOBBY:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "join_dev_game requires state=in_lobby",
+                )
+            if conn.player is None:
+                return _error(ErrorCode.BAD_INPUT, "set_player_metadata first")
+            rooms = app.rooms.list()
+            if not rooms:
+                return _error(ErrorCode.ROOM_NOT_FOUND, "no dev game to join")
+            room = rooms[0]
+            result = app.rooms.join(room.id, conn.player)
+            if result is None:
+                return _error(ErrorCode.ROOM_FULL, "dev game is full")
+            _, slot = result
+            app.conn_to_room[connection_id] = (room.id, slot)
+            scenario_name = room.scenario
+            room_id = room.id
+
+        # Phase 2: scenario load outside state_lock (slow YAML I/O).
+        state = load_scenario(scenario_name)
+        session = new_session(state, scenario=scenario_name)
+
+        # Phase 3: install session + promote both connections under
+        # state_lock. Re-check the room still exists — between Phase 1
+        # and Phase 3 a concurrent leave_room could have removed it.
+        with app.state_lock():
+            if app.rooms.get(room_id) is None:
+                return _error(
+                    ErrorCode.ROOM_NOT_FOUND, "dev game vanished during join"
+                )
+            app.sessions[room_id] = session
+            # Hardcoded mapping for Phase 1a: slot A = blue, slot B = red.
+            app.slot_to_team[room_id] = {Slot.A: Team.BLUE, Slot.B: Team.RED}
+            for cid, (rid, _slot) in app.conn_to_room.items():
+                if rid == room_id:
+                    c = app._connections.get(cid)  # noqa: SLF001
+                    if c is not None:
+                        c.state = ConnectionState.IN_GAME
+            slot_value = slot.value
+        return _ok({"room_id": room_id, "slot": slot_value})
 
     # ---- the 13 game tools, each a thin dispatch wrapper ----
 
@@ -617,24 +645,46 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         callback fires it as a side-effect of every assistant
         response. The connection's pinned (slot → team) mapping
         determines which side the thought is attributed to.
+
+        ── Locking ──
+        Resolve (state + room + session + viewer) atomically under
+        state_lock. ``session.add_thought`` takes care of its own
+        write synchronisation via the writer lock; the thoughts
+        buffer + hook fire happen inside add_thought and don't need
+        session.lock (action_hooks is a leaf append).
         """
-        conn = app.get_connection(connection_id)
-        if conn is None:
-            return _error(ErrorCode.NOT_REGISTERED, "call set_player_metadata first")
-        if conn.state != ConnectionState.IN_GAME:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "record_thought requires state=in_game",
-            )
-        resolved = _viewer_for(conn, app)
-        if resolved is None:
-            return _error(ErrorCode.GAME_NOT_STARTED, "no active game for this connection")
-        session, viewer = resolved
-        # Don't update last_game_activity_at — the heartbeat sweeper
-        # uses that to detect a wedged TUI. A reasoning push proves
-        # the agent loop is alive but doesn't prove the player can
-        # still ACT, so keep it out of the liveness signal. Bare
-        # heartbeat handles transport-level liveness already.
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None:
+                return _error(
+                    ErrorCode.NOT_REGISTERED, "call set_player_metadata first"
+                )
+            if conn.state != ConnectionState.IN_GAME:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "record_thought requires state=in_game",
+                )
+            info = app.conn_to_room.get(connection_id)
+            if info is None:
+                return _error(
+                    ErrorCode.GAME_NOT_STARTED,
+                    "no active game for this connection",
+                )
+            room_id, slot = info
+            session = app.sessions.get(room_id)
+            mapping = app.slot_to_team.get(room_id)
+            if session is None or mapping is None:
+                return _error(
+                    ErrorCode.GAME_NOT_STARTED,
+                    "no active game for this connection",
+                )
+            viewer = mapping[slot]
+            # Don't update last_game_activity_at — the heartbeat sweeper
+            # uses that to detect a wedged TUI. A reasoning push proves
+            # the agent loop is alive but doesn't prove the player can
+            # still ACT, so keep it out of the liveness signal. Bare
+            # heartbeat handles transport-level liveness already.
+
         text = sanitize_freetext(text, max_length=10_000)
         try:
             session.add_thought(viewer, text)
@@ -665,90 +715,120 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         Available while the connection is IN_GAME (including after
         the game has ended; token stays valid briefly so clients can
         download before state is purged).
+
+        ── Locking ──
+        Resolve phase under state_lock. File read happens OUTSIDE
+        state_lock (may be large). The ReplayWriter has its own
+        lock — reading the file path is a stable-after-init
+        attribute, safe to read without holding the writer lock.
         """
-        conn = app.get_connection(connection_id)
-        if conn is None:
-            log.warning(
-                "download_replay rejected: unknown cid=%s "
-                "(known_cids=%d, conn_to_room_keys=%s)",
-                connection_id, len(app._connections),
-                list(app.conn_to_room.keys())[:5],
-            )
-            return _error(ErrorCode.NOT_REGISTERED, "call set_player_metadata first")
-        if conn.state != ConnectionState.IN_GAME:
-            # Diagnostic for the "winner pressed d on post-match,
-            # got download_replay requires state=in_game" report.
-            # We need to see (a) what state the conn IS in, (b)
-            # whether it's still seated in a room, (c) whether the
-            # session still exists. Together those pin down which
-            # transition (leave_room / hard_disconnect / TUI re-
-            # connect with a fresh cid) actually happened.
-            seated = app.conn_to_room.get(connection_id)
-            sess_present = (
-                seated is not None and seated[0] in app.sessions
-            )
-            log.warning(
-                "download_replay rejected: cid=%s state=%s "
-                "(expected in_game) seated=%s session_present=%s "
-                "player=%s",
-                connection_id, conn.state.value, seated,
-                sess_present,
-                getattr(conn, "player", None),
-            )
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "download_replay requires state=in_game",
-            )
-        info = app.conn_to_room.get(connection_id)
-        if info is None:
-            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
-        room_id, _slot = info
-        session = app.sessions.get(room_id)
-        if session is None:
-            return _error(ErrorCode.GAME_NOT_STARTED, "no session for this room")
-        # Read the replay file if one was configured; otherwise we
-        # reconstruct from the session's in-memory event log (not
-        # implemented yet — Phase 1a sessions write nothing).
-        if session.replay is None:
-            return _error(
-                ErrorCode.BAD_INPUT,
-                "this match was not configured with a replay writer",
-            )
+        # Phase 1: resolve under state_lock.
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None:
+                log.warning(
+                    "download_replay rejected: unknown cid=%s "
+                    "(known_cids=%d, conn_to_room_keys=%s)",
+                    connection_id, len(app._connections),  # noqa: SLF001
+                    list(app.conn_to_room.keys())[:5],
+                )
+                return _error(
+                    ErrorCode.NOT_REGISTERED, "call set_player_metadata first"
+                )
+            if conn.state != ConnectionState.IN_GAME:
+                # Diagnostic for the "winner pressed d on post-match,
+                # got download_replay requires state=in_game" report.
+                seated = app.conn_to_room.get(connection_id)
+                sess_present = (
+                    seated is not None and seated[0] in app.sessions
+                )
+                log.warning(
+                    "download_replay rejected: cid=%s state=%s "
+                    "(expected in_game) seated=%s session_present=%s "
+                    "player=%s",
+                    connection_id, conn.state.value, seated,
+                    sess_present,
+                    getattr(conn, "player", None),
+                )
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "download_replay requires state=in_game",
+                )
+            info = app.conn_to_room.get(connection_id)
+            if info is None:
+                return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+            room_id, _slot = info
+            session = app.sessions.get(room_id)
+            if session is None:
+                return _error(
+                    ErrorCode.GAME_NOT_STARTED, "no session for this room"
+                )
+            if session.replay is None:
+                return _error(
+                    ErrorCode.BAD_INPUT,
+                    "this match was not configured with a replay writer",
+                )
+            replay_path = session.replay.path
+
+        # Phase 2: file read outside state_lock.
         try:
-            with open(session.replay.path, encoding="utf-8") as f:
+            with open(replay_path, encoding="utf-8") as f:
                 body = f.read()
         except OSError as e:
             return _error(ErrorCode.INTERNAL, f"failed to read replay: {e}")
-        return _ok({"replay_jsonl": body, "path": str(session.replay.path)})
+        return _ok({"replay_jsonl": body, "path": str(replay_path)})
 
     @mcp.tool()
     def concede(connection_id: str) -> dict:
-        """Resign the match — opponent wins immediately."""
-        conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_GAME:
-            return _error(
-                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "concede requires state=in_game",
-            )
-        info = app.conn_to_room.get(connection_id)
-        if info is None:
-            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
-        room_id, slot = info
-        session = app.sessions.get(room_id)
-        if session is None:
-            return _error(ErrorCode.GAME_NOT_STARTED, "no session")
+        """Resign the match — opponent wins immediately.
+
+        ── Locking ──
+        Three phases, honouring strict lock order
+        (state_lock > session.lock > writer locks):
+
+        1. state_lock: validate connection state, resolve
+           session + team mapping, capture room_id.
+        2. session.lock: flip GameStatus + winner, log forfeit
+           to replay (writer lock is a leaf). Idempotent re-check
+           of GAME_OVER inside the lock.
+        3. No lock: call _note_game_over_if_needed which runs its
+           own 3-phase protocol to flip room.status = FINISHED
+           and write leaderboard.
+        """
         from silicon_pantheon.server.engine.state import GameStatus
 
-        team_map = app.slot_to_team.get(room_id, {})
-        my_team = team_map.get(slot)
-        if my_team is None:
-            return _error(ErrorCode.INTERNAL, "no team mapping")
+        # Phase 1: resolve under state_lock.
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state != ConnectionState.IN_GAME:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "concede requires state=in_game",
+                )
+            info = app.conn_to_room.get(connection_id)
+            if info is None:
+                return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+            room_id, slot = info
+            session = app.sessions.get(room_id)
+            if session is None:
+                return _error(ErrorCode.GAME_NOT_STARTED, "no session")
+            team_map = app.slot_to_team.get(room_id, {})
+            my_team = team_map.get(slot)
+            if my_team is None:
+                return _error(ErrorCode.INTERNAL, "no team mapping")
+
         opponent = my_team.other()
-        session.state.status = GameStatus.GAME_OVER
-        session.state.winner = opponent
-        session.log(
-            "concede",
-            {"by": my_team.value, "winner": opponent.value},
-        )
+
+        # Phase 2: flip status under session.lock.
+        with session.lock:
+            if session.state.status != GameStatus.GAME_OVER:
+                session.state.status = GameStatus.GAME_OVER
+                session.state.winner = opponent
+                session.log(
+                    "concede",
+                    {"by": my_team.value, "winner": opponent.value},
+                )
+
+        # Phase 3: _note_game_over_if_needed with its own protocol.
         _note_game_over_if_needed(app, room_id)
         return _ok({"winner": opponent.value})

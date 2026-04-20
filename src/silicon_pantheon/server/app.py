@@ -300,20 +300,13 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         MINIMUM_CLIENT_PROTOCOL_VERSION get rejected with a clear
         upgrade prompt. See docs/VERSIONING.md.
 
-        ── Concurrency note / tripwire ──
-        This handler is `def`, not `async def`, so the asyncio
-        event loop dispatches it serially. Two back-to-back calls
-        on the same cid run to completion one after the other — no
-        interleaving, no races on `conn.player` / `.state` /
-        `.client_protocol_version`. If anyone ever converts this to
-        `async def` and `await`s something inside (e.g. a remote
-        token validation), add an explicit `asyncio.Lock` around
-        the mutations below OR stage them in a dict and swap
-        atomically. Otherwise two concurrent re-auth calls can
-        interleave and end up with T1's player name paired with
-        T2's version, silently bypassing both the MIN check and
-        the no-regress guard we added in the
-        `client_protocol_version is not None` gate.
+        ── Concurrency ──
+        The multi-field mutation (conn.player + .client_protocol_version
+        + .state + .last_heartbeat_at) happens under ``state_lock``.
+        Two concurrent re-auths on the same cid would otherwise be
+        able to interleave — e.g. T1's player name paired with T2's
+        version — silently bypassing both the MIN check and the
+        no-regress guard.
         """
         # Treat a missing client_protocol_version as v1 — that's what
         # the pre-handshake-aware clients effectively spoke. Once
@@ -361,22 +354,24 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
             conn = app.ensure_connection(connection_id)
         except ValueError as e:
             return _error(ErrorCode.BAD_INPUT, str(e))
-        conn.player = meta
-        # Only update the recorded version when the caller actually
-        # supplied one. An explicit re-call that omits the arg (e.g.
-        # a future compat shim or a re-auth path) falls to the v1
-        # baseline for the MIN check above, but mustn't REGRESS the
-        # version stamp on the connection — a handler branching on
-        # `conn.client_protocol_version >= 2` would then emit the
-        # old-shape response to a client that's actually on v2.
-        if client_protocol_version is not None:
-            conn.client_protocol_version = effective_version
-        if conn.state == ConnectionState.ANONYMOUS:
-            conn.state = ConnectionState.IN_LOBBY
-        conn.last_heartbeat_at = time.time()
+        with app.state_lock():
+            conn.player = meta
+            # Only update the recorded version when the caller actually
+            # supplied one. An explicit re-call that omits the arg (e.g.
+            # a future compat shim or a re-auth path) falls to the v1
+            # baseline for the MIN check above, but mustn't REGRESS the
+            # version stamp on the connection — a handler branching on
+            # `conn.client_protocol_version >= 2` would then emit the
+            # old-shape response to a client that's actually on v2.
+            if client_protocol_version is not None:
+                conn.client_protocol_version = effective_version
+            if conn.state == ConnectionState.ANONYMOUS:
+                conn.state = ConnectionState.IN_LOBBY
+            conn.last_heartbeat_at = time.time()
+            state_value = conn.state.value
         return _ok(
             {
-                "state": conn.state.value,
+                "state": state_value,
                 "player": meta.to_dict(),
                 "server_protocol_version": PROTOCOL_VERSION,
                 "minimum_client_protocol_version": MINIMUM_CLIENT_PROTOCOL_VERSION,
@@ -385,7 +380,15 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
 
     @mcp.tool()
     def heartbeat(connection_id: str) -> dict:
-        """Lightweight liveness ping. Returns server time in seconds."""
+        """Lightweight liveness ping. Returns server time in seconds.
+
+        ``conn.last_heartbeat_at`` is written without taking
+        state_lock — a single-float store is GIL-atomic and this
+        tool fires every ~10s per connection, so paying lock
+        contention here would dominate the sweeper's cost for no
+        correctness gain. Documented deliberate carve-out; see
+        docs/THREADING.md.
+        """
         conn = app.get_connection(connection_id)
         now = time.time()
         if conn is not None:
@@ -394,16 +397,19 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
 
     @mcp.tool()
     def whoami(connection_id: str) -> dict:
-        """Return this connection's current state + player metadata."""
-        conn = app.get_connection(connection_id)
-        if conn is None:
-            return _ok({"state": ConnectionState.ANONYMOUS.value, "player": None})
-        return _ok(
-            {
-                "state": conn.state.value,
-                "player": conn.player.to_dict() if conn.player else None,
-            }
-        )
+        """Return this connection's current state + player metadata.
+
+        Reads state + player atomically under state_lock so we can't
+        observe a torn snapshot (e.g. a concurrent set_player_metadata
+        that's partway through updating both fields).
+        """
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None:
+                return _ok({"state": ConnectionState.ANONYMOUS.value, "player": None})
+            state_value = conn.state.value
+            player_dict = conn.player.to_dict() if conn.player else None
+        return _ok({"state": state_value, "player": player_dict})
 
     # Attach the lobby tool set, then the 13 game tools. Imported locally
     # to avoid circular imports with modules that depend on this one.

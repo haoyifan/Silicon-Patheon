@@ -492,6 +492,65 @@ def test_replay_writer_concurrent_writes_are_atomic(tmp_path):
 # Token registry stress (pre-existing internal lock)
 # ──────────────────────────────────────────────────────────────
 
+def test_concurrent_concede_is_idempotent():
+    """Two players racing to concede the same match: the first flip
+    wins, the second sees state.status == GAME_OVER and must no-op
+    (not corrupt state, not double-mutate winner).
+
+    Mirrors the locking pattern in the concede tool:
+      Phase 1 (state_lock): resolve session + team.
+      Phase 2 (session.lock): flip status with idempotency re-check.
+      Phase 3 (no lock): _note_game_over_if_needed-style work.
+    """
+    from silicon_pantheon.server.engine.state import GameStatus
+
+    app = App()
+    room_id, session = _setup_in_game(app)
+
+    b = threading.Barrier(2)
+    results: list[tuple[str, Team]] = []
+
+    def concede_as(cid: str) -> None:
+        b.wait()
+        # Phase 1.
+        with app.state_lock():
+            info = app.conn_to_room.get(cid)
+            room_id_local, slot = info
+            sess = app.sessions.get(room_id_local)
+            team_map = app.slot_to_team.get(room_id_local, {})
+            my_team = team_map.get(slot)
+        opponent = my_team.other()
+        # Phase 2: idempotent flip.
+        with sess.lock:
+            if sess.state.status != GameStatus.GAME_OVER:
+                sess.state.status = GameStatus.GAME_OVER
+                sess.state.winner = opponent
+                results.append((cid, opponent))
+
+    def run() -> None:
+        t_blue = threading.Thread(target=concede_as, args=("blue",))
+        t_red = threading.Thread(target=concede_as, args=("red",))
+        t_blue.start()
+        t_red.start()
+        t_blue.join(timeout=3.0)
+        t_red.join(timeout=3.0)
+        if t_blue.is_alive() or t_red.is_alive():
+            raise AssertionError("thread deadlocked")
+        # Exactly ONE thread observed the transition.
+        assert len(results) == 1, (
+            f"expected exactly one concede to land, got {len(results)}"
+        )
+        winning_cid, observed_winner = results[0]
+        # Winner is the OPPOSITE team of whoever conceded first.
+        assert session.state.status == GameStatus.GAME_OVER
+        assert session.state.winner == observed_winner
+        # Sanity: winner is not the conceding team.
+        conceding_team = Team.BLUE if winning_cid == "blue" else Team.RED
+        assert session.state.winner != conceding_team
+
+    _deadlock_watchdog(run, timeout=5.0)
+
+
 def test_token_registry_issue_resolve_concurrency():
     """Regression guard: tokens.issue + tokens.resolve under many
     concurrent threads must not corrupt the underlying dict or
