@@ -313,6 +313,45 @@ def test_fog_audit_silent_on_clean_response() -> None:
     )
 
 
+def test_attack_log_only_mode_lets_hidden_attack_through(monkeypatch, caplog) -> None:
+    """Repro mode: SILICON_FOG_ATTACK_ENFORCE=0 turns the fog gate
+    into log-only. The attack must NOT raise, and a
+    `fog_violation_allowed` WARNING must appear so the leak is
+    visible in the log. Used by operators to reproduce reported
+    fog bugs without altering agent behaviour."""
+    import logging as _logging
+    from silicon_pantheon.server.engine.state import UnitStatus
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.tools.mutations import attack
+
+    monkeypatch.setenv("SILICON_FOG_ATTACK_ENFORCE", "0")
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    state.active_player = Team.BLUE
+    session = new_session(state, fog_of_war="classic")
+    any_red = next(iter(state.units_of(Team.RED)))
+    any_blue = next(iter(u for u in state.units_of(Team.BLUE) if u.alive))
+    any_blue.status = UnitStatus.READY
+
+    caplog.set_level(_logging.WARNING, logger="silicon.fog")
+    # Attack may still fail for unrelated reasons (out of range)
+    # but NOT with "not visible" — that check must have been bypassed.
+    from silicon_pantheon.server.tools._common import ToolError
+    try:
+        attack(session, Team.BLUE, any_blue.id, any_red.id)
+    except ToolError as e:
+        msg = str(e)
+        assert "not visible" not in msg, (
+            f"log-only mode rejected anyway: {msg}"
+        )
+    messages = [r.message for r in caplog.records if r.name == "silicon.fog"]
+    assert any("fog_violation_allowed" in m for m in messages), (
+        "log-only mode must emit fog_violation_allowed WARNING; "
+        f"saw: {messages}"
+    )
+
+
 def test_attack_allowed_under_no_fog_baseline() -> None:
     """Baseline: under fog=none, the visibility gate is a no-op and
     a valid attack proceeds (or fails only for normal rules like

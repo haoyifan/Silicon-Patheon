@@ -3,12 +3,36 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from ..engine.state import GameState, Team, UnitStatus
 from ..session import Session
 from ...shared.viewer_filter import ViewerContext, currently_visible
 
 _log = logging.getLogger("silicon.fog")
+
+
+def _fog_attack_enforce() -> bool:
+    """Whether attacks on fog-hidden enemies should be REJECTED.
+
+    When True (the default), `_require_target_visible` raises
+    `ToolError` — this is the safety-in-depth behaviour shipped
+    for production.
+
+    When False, the check is downgraded to log-only: it still
+    emits `fog_target_check` (including `visible=False` lines)
+    but lets the attack proceed. Use this to reproduce a reported
+    fog leak without altering agent behaviour — the agent sees
+    the same responses it would have pre-fix, so the sequence
+    that led to the leak repeats cleanly.
+
+    Toggle via env var: `SILICON_FOG_ATTACK_ENFORCE=0` disables
+    enforcement. Anything else (or unset) enables it.
+
+    Read on every call so operators can flip the flag live by
+    editing their systemd environment and restarting the server.
+    """
+    return os.environ.get("SILICON_FOG_ATTACK_ENFORCE", "1") != "0"
 
 
 class ToolError(Exception):
@@ -96,22 +120,35 @@ def _require_target_visible(
     # Always log, even on the happy path. Under fog this fires
     # once per attack attempt — negligible volume, invaluable
     # for debugging fog bugs.
+    enforce = _fog_attack_enforce()
     _log.info(
         "fog_target_check: viewer=%s fog=%s target=%s target_pos=(%d,%d) "
-        "visible=%s visible_enemy_ids=%s",
+        "visible=%s enforce=%s visible_enemy_ids=%s",
         viewer.value,
         session.fog_of_war,
         target_id,
         target.pos.x,
         target.pos.y,
         is_visible,
+        enforce,
         sorted(u.id for u in visible),
     )
     if not is_visible:
-        raise ToolError(
-            f"target {target_id} is not visible to your team under "
-            f"fog of war. You can only target enemies currently in "
-            f"sight."
+        if enforce:
+            raise ToolError(
+                f"target {target_id} is not visible to your team under "
+                f"fog of war. You can only target enemies currently in "
+                f"sight."
+            )
+        # Log-only mode (SILICON_FOG_ATTACK_ENFORCE=0) — emit a LOUD
+        # warning so the leak is impossible to miss in the log, but
+        # let the attack proceed so the reproduction matches the
+        # pre-fix behaviour.
+        _log.warning(
+            "fog_violation_allowed: enforce=False; letting attack through "
+            "(viewer=%s target=%s) — THIS IS REPRO MODE, not production",
+            viewer.value,
+            target_id,
         )
 
 
