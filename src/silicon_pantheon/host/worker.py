@@ -256,13 +256,21 @@ class BotWorker:
         project_root = Path(__file__).resolve().parents[3]
         lessons_dir = (project_root / "lessons") if cfg.save_lessons else None
 
+        # CRITICAL: pass the list as-is (including empty). The old
+        # ``selected_lessons or None`` turned an empty list into None,
+        # which NetworkedAgent._load_lessons treats as "legacy
+        # auto-load up to 5 saved lessons for this scenario". That
+        # silently injected saved lessons from prior runs into bot
+        # prompts even when the operator had deliberately left
+        # ``lessons = []`` in their TOML. Empty list here means
+        # empty list in the prompt.
         agent = NetworkedAgent(
             client=client,
             model=cfg.model,
             scenario=scenario,
             strategy=strategy_text,
             lessons_dir=lessons_dir,
-            selected_lessons=selected_lessons or None,
+            selected_lessons=selected_lessons,
             time_budget_s=float(cfg.turn_time_limit_s),
             locale=cfg.locale,
         )
