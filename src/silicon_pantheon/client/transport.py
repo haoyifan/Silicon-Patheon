@@ -235,35 +235,53 @@ class ServerClient:
                 "call SLOW %s cid=%s dt=%.1fs",
                 tool_name, self.connection_id, _dt,
             )
+        # FastMCP signals tool-level exceptions by returning
+        # `isError=True` with a PLAIN-TEXT error message in the text
+        # block — NOT JSON. Our envelope always uses {ok, result|error}
+        # JSON, so FastMCP's error shape only appears when our handler
+        # raised an uncaught exception (e.g. SILICON_DEBUG=1 caught a
+        # fog-leak invariant). Detect that case explicitly and raise
+        # RemoteToolError so callers get a structured failure, not
+        # a `json.loads("Error executing tool ...")` crash.
+        is_error = bool(getattr(result, "isError", False))
         for block in result.content:
             text = getattr(block, "text", None)
-            if text is not None:
-                try:
-                    parsed = json.loads(text)
-                except json.JSONDecodeError as e:
-                    # Server sent a text block but it's not valid JSON.
-                    # Empty string is the most common failure mode
-                    # ("Expecting value: line 1 column 1") — dump the
-                    # raw payload so we can see what actually arrived.
-                    log.error(
-                        "call JSON_DECODE_ERROR %s cid=%s dt=%.2fs "
-                        "text_len=%d text_repr=%r err=%s full_result=%r",
-                        tool_name, self.connection_id, _dt,
-                        len(text), text[:500], e, result,
-                    )
-                    raise RemoteToolError(
-                        f"tool {tool_name} returned invalid JSON "
-                        f"(len={len(text)}): {text[:200]!r}"
-                    ) from e
-                log.log(
-                    level,
-                    "call <- %s ok=%s dt=%.2fs keys=%s",
-                    tool_name,
-                    parsed.get("ok"),
-                    _dt,
-                    list(parsed.keys())[:8],
+            if text is None:
+                continue
+            if is_error:
+                # FastMCP error: text is a human-readable string.
+                log.error(
+                    "call REMOTE_ERROR %s cid=%s dt=%.2fs text=%r",
+                    tool_name, self.connection_id, _dt, text[:500],
                 )
-                return parsed
+                raise RemoteToolError(
+                    f"tool {tool_name} raised on the server: {text[:300]}"
+                )
+            try:
+                parsed = json.loads(text)
+            except json.JSONDecodeError as e:
+                # Non-error payload that isn't JSON — should never
+                # happen under our envelope contract. Dump the raw
+                # text so we can diagnose. isError was already False.
+                log.error(
+                    "call JSON_DECODE_ERROR %s cid=%s dt=%.2fs "
+                    "text_len=%d text_repr=%r err=%s full_result=%r",
+                    tool_name, self.connection_id, _dt,
+                    len(text), text[:500], e, result,
+                )
+                raise RemoteToolError(
+                    f"tool {tool_name} returned invalid JSON "
+                    f"(len={len(text)}): {text[:200]!r}"
+                ) from e
+            log.log(
+                level,
+                "call <- %s ok=%s dt=%.2fs keys=%s",
+                tool_name,
+                parsed.get("ok"),
+                _dt,
+                list(parsed.keys())[:8],
+            )
+            return parsed
         log.error(
             "call NO_TEXT_BLOCK %s cid=%s dt=%.1fs content=%r",
             tool_name, self.connection_id, _dt, result.content,
