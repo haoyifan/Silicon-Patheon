@@ -103,7 +103,8 @@ SYSTEM_PROMPT_TEMPLATE_ZH = """你是"SiliconPantheon"中的AI玩家，这是一
 
 **你必须全程使用中文进行思考和推理。** 所有内部推理、战略分析、
 战术规划都应使用中文。工具调用的参数（unit_id、坐标等）保持英文，
-但你的思考过程和文字输出必须是中文。"""
+但你的思考过程和文字输出必须是中文。
+{debug_notice}"""
 
 
 TURN_PROMPT_BOOTSTRAP_ZH = f"""现在是第{{turn}}回合，轮到你（{{team}}方）行动。

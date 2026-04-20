@@ -164,7 +164,82 @@ Bad pattern (most of these mutations will be dropped):
 
 When the turn is truly finished, call `end_turn`. Do NOT keep
 issuing tool calls after `end_turn` succeeds — the next user
-message will tell you when it's your turn again."""
+message will tell you when it's your turn again.
+{debug_notice}"""
+
+
+DEBUG_NOTICE_EN = """
+## 🐞 You are playtesting a pre-release build
+
+This match is being run with the server/client in **debug mode**.
+The game rules, the scenario you're playing, and the tool responses
+you receive might have bugs, inconsistencies, or unclear phrasing
+that slipped past the authors. We are specifically asking you to
+help us find them.
+
+If anything during the match feels OFF — a rule that seems to
+contradict itself, a scenario constraint that doesn't match what's
+actually on the board, a tool result that disagrees with a prior
+one, an enemy unit that vanished without your spotter moving, a win
+condition you can't make sense of, narrative text that claims
+something the state doesn't show — **do not silently assume you're
+wrong and the game is right**. Call the `report_issue` tool:
+
+  `report_issue(category, summary, details=None)`
+
+  - `category` ∈ {"bug", "confusion", "rules_unclear",
+    "scenario_issue", "suggestion"}
+  - `summary` — one sentence, <500 chars, what surprised you
+  - `details` — optional longer context (quote the relevant state /
+    tool result, give turn number and unit ids)
+
+Calling it does NOT end your turn or cost you anything. Keep playing
+your best game after you file it; the match continues normally. You
+can file multiple reports per turn if you find multiple issues —
+each call is independent.
+
+A human will read these reports after the match. Please speak up.
+"""
+
+DEBUG_NOTICE_ZH = """
+## 🐞 你正在参与测试一个预发布版本
+
+本局比赛的服务器/客户端以**调试模式**运行。游戏规则、你当前的剧本、
+甚至你收到的工具返回结果，都可能存在bug、不一致或描述不清之处。
+我们希望你帮我们找到它们。
+
+如果比赛中有任何感觉不对的地方——规则自相矛盾、剧本设定与棋盘实际
+不符、工具结果与之前的不一致、敌方单位在你没有移走观察者的情况下
+消失、胜利条件让你困惑、叙述文本声称的事情在状态中看不到——
+**不要默认自己错了、游戏对了**。调用`report_issue`工具：
+
+  `report_issue(category, summary, details=None)`
+
+  - `category` ∈ {"bug", "confusion", "rules_unclear",
+    "scenario_issue", "suggestion"}
+  - `summary` —— 一句话，<500字符，令你惊讶的是什么
+  - `details` —— 可选的详细上下文（引用相关状态/工具结果，
+    给出回合号与单位id）
+
+调用它不会结束你的回合，也不会有任何代价。记录之后继续全力以赴;
+比赛正常进行。一回合内发现多个问题可以多次记录，每次独立。
+
+人会在比赛结束后查看这些报告。请说出来。
+"""
+
+
+def _debug_notice(locale: str = "en") -> str:
+    """Return the debug-mode testing notice, or empty string in production.
+
+    Gated on ``SILICON_DEBUG`` on the CLIENT / harness process (the
+    one building this prompt). Reading the env var on every call
+    (via ``is_debug()``) lets operators flip the flag without a
+    rebuild — set ``SILICON_DEBUG=1`` before running the harness.
+    """
+    from silicon_pantheon.shared.debug import is_debug
+    if not is_debug():
+        return ""
+    return DEBUG_NOTICE_ZH if locale == "zh" else DEBUG_NOTICE_EN
 
 
 FOG_BLOCK_NONE = (
@@ -547,6 +622,7 @@ def build_system_prompt(
         strategy_section=strategy_section,
         lessons_section=lessons_section,
         fog_section=_fog_section(fog_mode, locale),
+        debug_notice=_debug_notice(locale),
     )
 
 
