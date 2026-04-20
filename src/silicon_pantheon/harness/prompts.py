@@ -242,6 +242,31 @@ def _debug_notice(locale: str = "en") -> str:
     return DEBUG_NOTICE_ZH if locale == "zh" else DEBUG_NOTICE_EN
 
 
+def _debug_turn_reminder(locale: str = "en") -> str:
+    """One-line reminder appended to every turn prompt in debug mode.
+
+    The system prompt's DEBUG_NOTICE block explains the full
+    report_issue contract; this just keeps it top-of-mind each turn
+    so a confused agent is reminded to speak up instead of silently
+    power-through. Empty string when SILICON_DEBUG is unset, so prod
+    prompts are untouched.
+    """
+    from silicon_pantheon.shared.debug import is_debug
+    if not is_debug():
+        return ""
+    if locale == "zh":
+        return (
+            "\n\n🐞 （调试模式）本回合如发现规则/剧本/工具返回中有任何"
+            "不对劲的地方，请调用 `report_issue(category, summary)` 记录，"
+            "然后继续正常游戏。"
+        )
+    return (
+        "\n\n🐞 (debug mode) If anything this turn looks wrong — rules, "
+        "scenario, tool results — call `report_issue(category, summary)` "
+        "to flag it, then keep playing normally."
+    )
+
+
 FOG_BLOCK_NONE = (
     "- **Fog of war**: mode `none`. Both teams see the entire board and\n"
     "  all units at all times. No sight cones, no hidden enemies."
@@ -993,7 +1018,7 @@ def build_turn_prompt_from_state_dict(
                 + "\n"
                 + prompt
             )
-        return prompt
+        return prompt + _debug_turn_reminder(locale)
 
     if is_first_turn:
         snapshot = {
@@ -1053,7 +1078,7 @@ def build_turn_prompt_from_state_dict(
             + "\n"
             + prompt
         )
-    return prompt
+    return prompt + _debug_turn_reminder(locale)
 
 
 def load_strategy(path: str | Path | None) -> str | None:
