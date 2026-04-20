@@ -50,6 +50,27 @@ _FILTERED_THREAT_TOOLS = frozenset({"get_threat_map"})
 _FILTERED_HISTORY_TOOLS = frozenset({"get_history"})
 
 
+def _append_agent_report_jsonl(event: dict) -> None:
+    """Append an ``agent_report`` event to today's jsonl file.
+
+    The file lives at ``~/.silicon-pantheon/debug-reports/YYYYMMDD.jsonl``.
+    One jsonl entry per call — easy to grep/cat/jq after a session.
+    Creates the directory lazily on first write. All exceptions bubble
+    out; the tool caller decides whether to swallow (production) or
+    re-raise (debug) via ``reraise_in_debug``.
+    """
+    import datetime as _dt
+    import json as _json
+    from pathlib import Path as _Path
+
+    day = _dt.datetime.fromtimestamp(event["timestamp"]).strftime("%Y%m%d")
+    out_dir = _Path.home() / ".silicon-pantheon" / "debug-reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{day}.jsonl"
+    with out_path.open("a", encoding="utf-8") as f:
+        f.write(_json.dumps(event, ensure_ascii=False) + "\n")
+
+
 def _viewer_context(session: Session, viewer: Team) -> ViewerContext:
     return ViewerContext(
         team=viewer,
@@ -718,6 +739,125 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
             log.exception("record_thought add_thought raised")
             return _error(ErrorCode.INTERNAL, str(e))
         return _ok({})
+
+    @mcp.tool()
+    def report_issue(
+        connection_id: str,
+        category: str,
+        summary: str,
+        details: str | None = None,
+    ) -> dict:
+        """Record an agent-observed problem (bug / confusion / suggestion).
+
+        Called by the agent when something during play doesn't match
+        what it expected — rules that seem broken, a scenario that
+        feels inconsistent, tool results that contradict each other,
+        or just "I'm confused about X". The server persists the
+        report to three sinks so it's easy to review later:
+
+          1. Match replay (as an ``agent_report`` event, turn-tagged).
+          2. Server log, logger ``silicon.agent_report`` at INFO.
+          3. Per-day jsonl file at
+             ``~/.silicon-pantheon/debug-reports/YYYYMMDD.jsonl``.
+
+        `category` must be one of: bug, confusion, rules_unclear,
+        scenario_issue, suggestion. Any other value is rejected so
+        `grep -c` on the file gives meaningful counts.
+
+        Always available (no SILICON_DEBUG gate) — whether a player
+        reports depends on whether the prompt tells them to, which IS
+        debug-gated in the client. This keeps the tool usable for
+        anyone who wants to flag something regardless of mode.
+
+        ── Locking ──
+        Resolve (state + room + session + viewer) atomically under
+        state_lock; the three sink writes happen OUTSIDE the lock
+        (they do I/O — file append, logger write).
+        """
+        allowed = (
+            "bug", "confusion", "rules_unclear",
+            "scenario_issue", "suggestion",
+        )
+        if category not in allowed:
+            return _error(
+                ErrorCode.INVALID_ARGUMENT,
+                f"category must be one of {allowed}, got {category!r}",
+            )
+        summary = sanitize_freetext(summary, max_length=500)
+        if not summary:
+            return _error(ErrorCode.INVALID_ARGUMENT, "summary must be non-empty")
+        details_clean = (
+            sanitize_freetext(details, max_length=10_000) if details else None
+        )
+
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None:
+                return _error(
+                    ErrorCode.NOT_REGISTERED, "call set_player_metadata first"
+                )
+            if conn.state != ConnectionState.IN_GAME:
+                return _error(
+                    ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                    "report_issue requires state=in_game",
+                )
+            info = app.conn_to_room.get(connection_id)
+            if info is None:
+                return _error(
+                    ErrorCode.GAME_NOT_STARTED,
+                    "no active game for this connection",
+                )
+            room_id, slot = info
+            session = app.sessions.get(room_id)
+            mapping = app.slot_to_team.get(room_id)
+            if session is None or mapping is None:
+                return _error(
+                    ErrorCode.GAME_NOT_STARTED,
+                    "no active game for this connection",
+                )
+            viewer = mapping[slot]
+            player = conn.player
+            player_info = {
+                "display_name": player.display_name if player else None,
+                "provider": getattr(player, "provider", None) if player else None,
+                "model": getattr(player, "model", None) if player else None,
+            }
+
+        # Build the event once; reused across all three sinks.
+        import time as _time
+        ts = _time.time()
+        event = {
+            "timestamp": ts,
+            "room_id": room_id,
+            "turn": session.state.turn,
+            "team": viewer.value,
+            "player": player_info,
+            "category": category,
+            "summary": summary,
+            "details": details_clean,
+        }
+
+        # Sink 1: match replay.
+        session.log("agent_report", {k: v for k, v in event.items() if k != "room_id"})
+
+        # Sink 2: dedicated logger (lands in server log).
+        _report_log = logging.getLogger("silicon.agent_report")
+        _report_log.info(
+            "agent_report room=%s turn=%d team=%s player=%s category=%s "
+            "summary=%r details=%r",
+            room_id, event["turn"], viewer.value,
+            player_info.get("display_name"), category, summary, details_clean,
+        )
+
+        # Sink 3: per-day jsonl in ~/.silicon-pantheon/debug-reports/.
+        try:
+            _append_agent_report_jsonl(event)
+        except Exception:
+            from silicon_pantheon.shared.debug import reraise_in_debug
+            reraise_in_debug(log, "report_issue: jsonl append failed")
+            log.exception("report_issue: jsonl append failed (ignored)")
+
+        return _ok({"recorded": True})
 
     @mcp.tool()
     def report_tokens(connection_id: str, tokens: int) -> dict:
