@@ -144,11 +144,11 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         """
         import time as _time
 
-        now = _time.monotonic()
+        _t0 = _time.monotonic()
         # Cache is read/written without state_lock; the lookup is an
         # atomic dict op and the cached result is a fully-built dict
         # that's safe to share by reference (consumers don't mutate).
-        if _list_rooms_cache["result"] is not None and now - _list_rooms_cache["at"] < 1.0:
+        if _list_rooms_cache["result"] is not None and _t0 - _list_rooms_cache["at"] < 1.0:
             return _list_rooms_cache["result"]
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
@@ -164,7 +164,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             ]
         result = _ok({"rooms": rooms})
         _list_rooms_cache["result"] = result
-        _list_rooms_cache["at"] = now
+        _list_rooms_cache["at"] = _t0
+        _dt = _time.monotonic() - _t0
+        if _dt > 0.2:
+            log.warning(
+                "list_rooms SLOW cid=%s dt=%.2fs rooms=%d",
+                connection_id[:8], _dt, len(rooms),
+            )
         return result
 
     @mcp.tool()
@@ -477,7 +483,14 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         Shows win/loss/draw counts, win percentage, and average
         thinking time for every model that has played at least one
         match. Sorted by win rate descending.
+
+        Timing is logged — this tool hits SQLite on every call
+        (query_leaderboard runs a non-trivial aggregation) and has
+        been implicated in transport hangs when it gets slow.
         """
+        import time as _time
+
+        _t0 = _time.monotonic()
         conn = app.get_connection(connection_id)
         if conn is None or conn.state == ConnectionState.ANONYMOUS:
             return _error(
@@ -486,7 +499,19 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             )
         from silicon_pantheon.server.leaderboard import query_leaderboard
 
-        return _ok({"leaderboard": query_leaderboard()})
+        result = query_leaderboard()
+        _dt = _time.monotonic() - _t0
+        if _dt > 0.2:
+            log.warning(
+                "get_leaderboard SLOW cid=%s dt=%.2fs rows=%d",
+                connection_id[:8], _dt, len(result),
+            )
+        else:
+            log.debug(
+                "get_leaderboard cid=%s dt=%.3fs rows=%d",
+                connection_id[:8], _dt, len(result),
+            )
+        return _ok({"leaderboard": result})
 
     @mcp.tool()
     def get_model_details(

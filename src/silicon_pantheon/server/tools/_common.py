@@ -120,10 +120,16 @@ def _require_target_visible(
     # Always log, even on the happy path. Under fog this fires
     # once per attack attempt — negligible volume, invaluable
     # for debugging fog bugs.
+    from silicon_pantheon.shared.debug import (
+        InvariantViolation,
+        is_debug,
+    )
+
     enforce = _fog_attack_enforce()
+    debug = is_debug()
     _log.info(
         "fog_target_check: viewer=%s fog=%s target=%s target_pos=(%d,%d) "
-        "visible=%s enforce=%s visible_enemy_ids=%s",
+        "visible=%s enforce=%s debug=%s visible_enemy_ids=%s",
         viewer.value,
         session.fog_of_war,
         target_id,
@@ -131,9 +137,20 @@ def _require_target_visible(
         target.pos.y,
         is_visible,
         enforce,
+        debug,
         sorted(u.id for u in visible),
     )
     if not is_visible:
+        # Debug mode supersedes the enforce-flag: a fog violation is
+        # always an invariant bug. Crash loudly so the repro surfaces
+        # at the exact attack site, not buried in the log.
+        if debug:
+            raise InvariantViolation(
+                f"fog violation: viewer={viewer.value} attacked "
+                f"hidden target {target_id} at ({target.pos.x},"
+                f"{target.pos.y}); visible enemies were "
+                f"{sorted(u.id for u in visible)}"
+            )
         if enforce:
             raise ToolError(
                 f"target {target_id} is not visible to your team under "
@@ -206,3 +223,14 @@ def audit_response_for_fog_leaks(
             "(hidden enemy IDs appeared in response)",
             tool_name, viewer.value, session.fog_of_war, leaked,
         )
+        # In debug mode, a leak IS the bug — crash so the stack
+        # trace points at the exact tool whose response contained
+        # the hidden ID. The response has already been built; we
+        # raise after the log line so operators see BOTH the
+        # leak description and the stack.
+        from silicon_pantheon.shared.debug import InvariantViolation, is_debug
+        if is_debug():
+            raise InvariantViolation(
+                f"fog leak in {tool_name}: hidden enemy IDs in response: "
+                f"{leaked}"
+            )

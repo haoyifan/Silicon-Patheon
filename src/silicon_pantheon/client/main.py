@@ -168,7 +168,24 @@ def main() -> int:
         action="store_true",
         help="skip the TUI and run a non-interactive connectivity probe",
     )
+    p.add_argument(
+        "--debug",
+        action="store_true",
+        help=(
+            "Debug mode: invariant violations crash instead of being "
+            "swallowed. Equivalent to SILICON_DEBUG=1. Useful for "
+            "reproducing reported bugs; do not use as a default."
+        ),
+    )
     args = p.parse_args()
+
+    if args.debug:
+        import os as _os
+        _os.environ["SILICON_DEBUG"] = "1"
+        print(
+            "DEBUG MODE: invariant violations will crash the client.",
+            file=sys.stderr,
+        )
 
     if args.smoke:
         if not args.name:

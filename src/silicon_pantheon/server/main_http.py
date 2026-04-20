@@ -116,10 +116,33 @@ def main() -> int:
             "127.0.0.1 / localhost / [::1] are always allowed."
         ),
     )
+    p.add_argument(
+        "--debug",
+        action="store_true",
+        help=(
+            "Debug mode: invariant violations (fog leaks, hook "
+            "failures, plugin exceptions, etc.) crash immediately "
+            "instead of being logged and swallowed. Equivalent to "
+            "setting env var SILICON_DEBUG=1. Do NOT use in "
+            "production — a single bad scenario plugin will kill "
+            "live matches."
+        ),
+    )
     args = p.parse_args()
+
+    if args.debug:
+        # The shared.debug module reads SILICON_DEBUG on every call,
+        # so setting it here is enough to flip every invariant check
+        # in this process to crash-mode.
+        os.environ["SILICON_DEBUG"] = "1"
 
     log_file = _configure_server_logging(args.log_level, args.log_file)
     log = logging.getLogger("silicon-serve")
+    if args.debug:
+        log.warning(
+            "DEBUG MODE ENABLED — invariant violations will crash "
+            "the server. Do not use in production."
+        )
     log.info("server log file: %s", log_file)
     # Keep a single stderr line identical to the old UX for quick discovery.
     print(f"server log: {log_file}", flush=True)

@@ -152,12 +152,19 @@ class Session:
         self.log("match_end", payload)
 
     def notify_action(self, result: dict) -> None:
+        from silicon_pantheon.shared.debug import reraise_in_debug
+        import logging as _logging
+        _log = _logging.getLogger("silicon.engine")
         for hook in self.action_hooks:
             try:
                 hook(self, result)
             except Exception:
-                # Never let a hook break the game loop.
-                pass
+                # In production: swallow — a misbehaving hook must
+                # never break the game loop. In debug mode
+                # (SILICON_DEBUG=1): re-raise so the hook bug
+                # surfaces at the exact site instead of being
+                # silently ignored.
+                reraise_in_debug(_log, f"action hook raised: {hook}")
 
     def add_thought(self, team: Team, text: str, *, turn: int | None = None) -> None:
         """Append an agent-thought event to the session log.
@@ -195,8 +202,16 @@ class Session:
                 try:
                     self.thoughts_log.write(thought)
                 except Exception:
-                    # Never let a log failure break the match loop.
-                    pass
+                    # Production: swallow — a disk-full / permissions
+                    # error on the thoughts log mustn't break the match.
+                    # Debug: re-raise so the repro surfaces the
+                    # underlying I/O issue immediately.
+                    from silicon_pantheon.shared.debug import reraise_in_debug
+                    import logging as _logging
+                    reraise_in_debug(
+                        _logging.getLogger("silicon.engine"),
+                        "thoughts_log.write raised",
+                    )
             # Fire action hooks so the TUI refreshes as reasoning
             # arrives, not only on tool calls. Per THREADING.md, hooks
             # fire under session.lock — consistent with _record_action

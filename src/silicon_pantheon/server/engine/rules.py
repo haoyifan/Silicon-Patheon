@@ -319,10 +319,12 @@ def _apply_end_turn(state: GameState) -> dict:
                     out = fn(state, u, tile, "end_turn") or {}
                     delta = int(out.get("hp_delta", 0))
                 except Exception:
+                    from silicon_pantheon.shared.debug import reraise_in_debug
                     import logging as _logging
-                    _logging.getLogger("silicon.engine").exception(
-                        "terrain effects_plugin %r raised on tile %s",
-                        tile.effects_plugin, u.pos,
+                    reraise_in_debug(
+                        _logging.getLogger("silicon.engine"),
+                        f"terrain effects_plugin {tile.effects_plugin!r} "
+                        f"raised on tile {u.pos}",
                     )
                     delta = 0
                 if delta:
@@ -359,9 +361,11 @@ def _apply_end_turn(state: GameState) -> dict:
             try:
                 fn(state, turn=state.turn, team=state.active_player.value)
             except Exception:
+                from silicon_pantheon.shared.debug import reraise_in_debug
                 import logging as _logging
-                _logging.getLogger("silicon.engine").exception(
-                    "plugin on_turn_start hook %r raised", fn_name,
+                reraise_in_debug(
+                    _logging.getLogger("silicon.engine"),
+                    f"plugin on_turn_start hook {fn_name!r} raised",
                 )
 
     # 4. Start-of-turn effects for the incoming player:
@@ -407,11 +411,15 @@ def _apply_end_turn(state: GameState) -> dict:
                     result = rule.check(state, "end_turn")
                     state.active_player = active
             except Exception:
-                # A misbehaving plugin rule must not crash the game.
+                # A misbehaving plugin rule must not crash the game in
+                # production. In debug mode, re-raise so the scenario
+                # author sees their bug immediately.
+                from silicon_pantheon.shared.debug import reraise_in_debug
                 import logging as _logging
-                _logging.getLogger("silicon.engine").exception(
-                    "win-condition rule %r raised; treating as no-result",
-                    type(rule).__name__,
+                reraise_in_debug(
+                    _logging.getLogger("silicon.engine"),
+                    f"win-condition rule {type(rule).__name__!r} raised; "
+                    f"treating as no-result",
                 )
                 # Make sure active_player is in the post-handover state
                 # before the next iteration.

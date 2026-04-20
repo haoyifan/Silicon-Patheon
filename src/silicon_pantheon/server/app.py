@@ -388,11 +388,28 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         contention here would dominate the sweeper's cost for no
         correctness gain. Documented deliberate carve-out; see
         docs/THREADING.md.
+
+        Timed: if the server can't even respond to a heartbeat in
+        <200ms, something is blocking the event loop and we want
+        a log line to pin down when it started.
         """
+        import time as _time
+        _t0 = _time.monotonic()
         conn = app.get_connection(connection_id)
         now = time.time()
         if conn is not None:
             conn.last_heartbeat_at = now
+        _dt = _time.monotonic() - _t0
+        if _dt > 0.2:
+            # Only logs if the server-side handler itself was slow
+            # — which means the event loop was blocked for >200ms
+            # by another coroutine. Exactly the signal we want to
+            # catch "transport hang" investigations early.
+            import logging as _logging
+            _logging.getLogger("silicon").warning(
+                "heartbeat SLOW cid=%s dt=%.2fs — event loop blocked?",
+                connection_id[:8], _dt,
+            )
         return _ok({"server_time": now})
 
     @mcp.tool()

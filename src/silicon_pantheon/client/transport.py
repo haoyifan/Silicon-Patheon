@@ -73,10 +73,28 @@ class ServerClient:
         """Open an MCP+SSE connection to the server and initialize it.
 
         Yields a ServerClient ready for tool calls.
+
+        ── Instrumentation ──
+        Enables DEBUG-level logging on ``httpx`` and ``httpcore`` and
+        ``mcp`` so the per-request pool / connection / stream lifecycle
+        is visible in the log. This is how we diagnose "hung call_tool
+        with no httpx POST log" scenarios — root cause of those is
+        usually an httpx pool or connect/write timeout, and the debug
+        lines show exactly which phase stalled.
+
+        The log volume is substantial (tens of lines per tool call),
+        but these logs are critical for reproducing intermittent
+        transport hangs. See docs/THREADING.md for the corresponding
+        server-side instrumentation.
         """
+        _configure_transport_diagnostics()
         cid = connection_id or secrets.token_hex(8)
         # Strip trailing slash to avoid 307 redirects on every call.
         url = url.rstrip("/")
+        log.info(
+            "transport connecting: url=%s cid=%s httpx_defaults=%s",
+            url, cid, _describe_httpx_defaults(),
+        )
         async with streamablehttp_client(url) as (read, write, _get_session_id):
             async with ClientSession(read, write) as session:
                 await session.initialize()
@@ -273,3 +291,39 @@ class ServerClient:
             except asyncio.CancelledError:
                 pass
         self._heartbeat_task = None
+
+
+# ---- transport diagnostics ----
+
+def _configure_transport_diagnostics() -> None:
+    """Crank transport loggers to DEBUG so we capture httpx pool +
+    connect + write + read lifecycle per request.
+
+    Called once by ``ServerClient.connect``. Idempotent — re-running
+    is a no-op because handlers are already attached by the CLI's
+    logging setup (which inherits our log file by propagation).
+    """
+    import logging as _logging
+    # We want DEBUG lines from httpx, httpcore, and the MCP SDK
+    # itself — they reveal exactly where a hung POST is stalled.
+    # Keep uvicorn/asyncio at INFO — those are high-volume and noisy.
+    for name in ("httpx", "httpcore", "mcp", "mcp.client.streamable_http"):
+        _logging.getLogger(name).setLevel(_logging.DEBUG)
+
+
+def _describe_httpx_defaults() -> str:
+    """Return a short string describing the httpx.Timeout + Limits
+    the MCP SDK applies by default. Used in the connect log line so
+    operators see what timeouts are in effect.
+    """
+    try:
+        from mcp.shared._httpx_utils import (
+            MCP_DEFAULT_SSE_READ_TIMEOUT,
+            MCP_DEFAULT_TIMEOUT,
+        )
+        return (
+            f"connect/write/pool={MCP_DEFAULT_TIMEOUT}s "
+            f"read={MCP_DEFAULT_SSE_READ_TIMEOUT}s"
+        )
+    except Exception:  # noqa: BLE001 — diagnostic must never crash
+        return "unknown"
