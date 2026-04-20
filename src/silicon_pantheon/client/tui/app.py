@@ -96,6 +96,14 @@ class SharedState:
     last_rooms: list[dict[str, Any]] = field(default_factory=list)
     last_room_state: dict[str, Any] | None = None
     last_game_state: dict[str, Any] | None = None
+    # Wall-clock timestamp (time.time()) the current game started from
+    # this client's perspective, or None if no game in progress. Set
+    # when the first get_state with status="in_progress" arrives,
+    # cleared on GameScreen exit. The PlayerPanel renders an elapsed
+    # timer off this so operators can see "this match has been
+    # running for Xm Ys". Local clock — accurate to within network
+    # latency of the actual server-side start.
+    game_started_at: float | None = None
     status_message: str = ""
     error_message: str = ""
     # Optional path to a pre-written STRATEGY.md; read at game start.

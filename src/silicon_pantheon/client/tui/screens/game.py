@@ -201,9 +201,27 @@ class PlayerPanel(Panel):
         lc = self.screen.app.state.locale
 
         rows: list[RenderableType] = []
+        header_main = (
+            f"{t('status.you', lc)}: {my_team}   "
+            f"{t('status.turn', lc)} {turn}/{max_turns}"
+        )
+        # Wall-clock elapsed since this match started (set in
+        # GameScreen._refresh_state on first in_progress observation,
+        # cleared on screen exit). Human-friendly Hh:Mm:Ss if over
+        # an hour, else Mm:Ss — keeps the common case compact.
+        started_at = self.screen.app.state.game_started_at
+        if started_at is not None:
+            import time as _time
+            elapsed = max(0, int(_time.time() - started_at))
+            hh, mm = divmod(elapsed, 3600)
+            mm, ss = divmod(mm, 60)
+            elapsed_str = (
+                f"{hh}:{mm:02d}:{ss:02d}" if hh else f"{mm}:{ss:02d}"
+            )
+            header_main += f"   ⏱ {elapsed_str}"
         rows.append(
             Text(
-                f"{t('status.you', lc)}: {my_team}   {t('status.turn', lc)} {turn}/{max_turns}",
+                header_main,
                 style="bold cyan" if my_team == "blue" else "bold red",
             )
         )
@@ -1032,6 +1050,11 @@ class GameScreen(Screen):
         if app.state.agent_task is not None and not app.state.agent_task.done():
             app.state.agent_task.cancel()
         app.state.agent_task = None
+        # Clear the elapsed-timer anchor so the NEXT match doesn't
+        # inherit the stale start time. PostMatchScreen will show the
+        # final duration via a separate path; the anchor's lifetime
+        # is "one live GameScreen session".
+        app.state.game_started_at = None
         # Intentionally do NOT close app.state.agent — PostMatchScreen
         # needs the live session for summarize_match.
 
@@ -1497,6 +1520,16 @@ class GameScreen(Screen):
         self.app.state.error_message = ""
         self.state = r.get("result", {})
         self.app.state.last_game_state = self.state
+        # Mark the game's client-observed start the first time we
+        # see it as in_progress. PlayerPanel renders an "elapsed"
+        # timer from this. Don't re-set after game_over — the final
+        # state should still show the total match duration.
+        if (
+            self.app.state.game_started_at is None
+            and self.state.get("status") == "in_progress"
+        ):
+            import time as _time
+            self.app.state.game_started_at = _time.time()
         log.debug(
             "refresh_state: active=%s turn=%s status=%s",
             self.state.get("active_player"),
