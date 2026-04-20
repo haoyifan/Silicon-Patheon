@@ -95,6 +95,39 @@ def run_sweep_once(app: App, now: float | None = None) -> None:
         for room_id, session in app.sessions.items():
             session_snaps.append((room_id, session))
 
+    # Sweep summary: once per tick, log the total conns, sessions,
+    # and — critically — the MOST IDLE connection. If a cid sits
+    # over HEARTBEAT_DEAD_S without getting evicted, the row will
+    # show it every tick until something changes. Debug-level so
+    # normal sweeps don't spam; WARNING-level if any conn is past
+    # the dead threshold without having been flagged (means the
+    # eviction logic below isn't firing for some reason).
+    if conn_snaps:
+        oldest_cid, oldest_state, oldest_hb = max(
+            conn_snaps, key=lambda t: now - t[2]
+        )
+        oldest_idle = now - oldest_hb
+        if oldest_idle >= HEARTBEAT_DEAD_S:
+            log.warning(
+                "sweep tick: conns=%d sessions=%d OLDEST_IDLE cid=%s "
+                "state=%s idle=%.1fs (>=%.0fs threshold — eviction "
+                "should fire this tick)",
+                len(conn_snaps), len(session_snaps),
+                oldest_cid[:8], oldest_state.value,
+                oldest_idle, HEARTBEAT_DEAD_S,
+            )
+        else:
+            # Log at INFO every 10 ticks (~10s) so we have a
+            # continuous trace of sweep health without drowning the
+            # log. Normal idle should be <10s between ticks.
+            if int(now) % 10 == 0:
+                log.info(
+                    "sweep tick: conns=%d sessions=%d oldest_idle cid=%s "
+                    "state=%s idle=%.1fs",
+                    len(conn_snaps), len(session_snaps),
+                    oldest_cid[:8], oldest_state.value, oldest_idle,
+                )
+
     # ── Phase 2: per-connection liveness (Rule 1 + Rule 2) ──
     for cid, state, last_hb in conn_snaps:
         idle = now - last_hb
@@ -230,10 +263,14 @@ def _vacate_room(app: App, cid: str) -> None:
     ``rooms.leave``) deletes the room if it's empty + pre-game /
     FINISHED. ``task.cancel()`` is deferred outside the lock.
     """
+    log.info("_vacate_room: ENTER cid=%s", cid[:8])
     cancelled_task = None
     with app.state_lock():
         info = app.conn_to_room.pop(cid, None)
         if info is None:
+            log.info(
+                "_vacate_room: cid=%s not seated (no-op)", cid[:8],
+            )
             return
         room_id, slot = info
         # Inline countdown cancellation (no nested _cancel_countdown
@@ -241,6 +278,10 @@ def _vacate_room(app: App, cid: str) -> None:
         cancelled_task = app.autostart_tasks.pop(room_id, None)
         app.autostart_deadlines.pop(room_id, None)
         app.rooms.leave(room_id, slot)
+        log.info(
+            "_vacate_room: EXIT cid=%s room=%s slot=%s",
+            cid[:8], room_id, slot.value,
+        )
     if cancelled_task is not None and not cancelled_task.done():
         cancelled_task.cancel()
 
@@ -269,16 +310,27 @@ def _auto_concede(app: App, cid: str) -> None:
     """
     from silicon_pantheon.server.engine.state import GameStatus
 
+    log.info("_auto_concede: ENTER cid=%s", cid[:8])
+
     # Phase 1: resolve team mapping under state_lock.
     with app.state_lock():
         info = app.conn_to_room.get(cid)
         if info is None:
             # No room to concede from; just drop the conn.
+            log.info(
+                "_auto_concede: cid=%s not seated — just dropping conn",
+                cid[:8],
+            )
             app._connections.pop(cid, None)  # noqa: SLF001
             return
         room_id, slot = info
         session = app.sessions.get(room_id)
         team_map = dict(app.slot_to_team.get(room_id, {}))
+        log.info(
+            "_auto_concede: cid=%s room=%s slot=%s session=%s",
+            cid[:8], room_id, slot.value,
+            "present" if session is not None else "missing",
+        )
 
     my_team = team_map.get(slot)
     opponent = my_team.other() if my_team else None
