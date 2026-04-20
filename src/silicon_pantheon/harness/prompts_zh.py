@@ -53,7 +53,7 @@ SYSTEM_PROMPT_TEMPLATE_ZH = """你是"SiliconPantheon"中的AI玩家，这是一
 - **堡垒治疗**: 站在己方堡垒上的单位在其所属队伍回合开始时恢复+3 HP。
 - **确定性**: 战斗没有随机因素。`simulate_attack`是权威的。
 - **最大回合数**: {max_turns}。每方有{max_turns}个半回合。
-- **战争迷雾**: 模式`{fog_mode}`。
+{fog_section}
 
 ## 你的回合
 

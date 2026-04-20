@@ -61,26 +61,7 @@ always has the authoritative values.
 - **Max turns**: {max_turns}. Each side gets {max_turns} half-turns; after
   both sides act on turn {max_turns} with no win-condition fired, the match
   ends in a draw.
-- **Fog of war**: mode `{fog_mode}`. "none" = full visibility.
-  "classic" and "line_of_sight" both restrict what you can see to
-  your living units' current sight cones (Chebyshev distance; default
-  sight = 3 unless a class overrides it). The only difference between
-  them is terrain memory:
-    - "classic" remembers TERRAIN of tiles you've ever seen (revealed
-      with their last-known type).
-    - "line_of_sight" shows terrain only for currently-visible tiles.
-  Either way, **enemy units have NO memory**: an enemy is listed in
-  `units` only if it's in the sight cone of at least one of your
-  alive units RIGHT NOW. If your spotter moves away, the enemy
-  disappears from the units array even though it's still there on
-  the server. A stationary enemy vanishing from your view between
-  turns almost always means you (or a death) removed its last
-  spotter — it did NOT teleport; look where you last saw it.
-  Dead enemies remain visible regardless of fog (known history).
-  Move results carry a `revealed_enemies` list for enemies that
-  entered sight because of the move, and a `hidden_enemies` list
-  for enemies that dropped out of sight because of the move (with
-  `last_known_pos` so you can reason about where they were).
+{fog_section}
 
 ## Your turn
 
@@ -184,6 +165,99 @@ Bad pattern (most of these mutations will be dropped):
 When the turn is truly finished, call `end_turn`. Do NOT keep
 issuing tool calls after `end_turn` succeeds — the next user
 message will tell you when it's your turn again."""
+
+
+FOG_BLOCK_NONE = (
+    "- **Fog of war**: mode `none`. Both teams see the entire board and\n"
+    "  all units at all times. No sight cones, no hidden enemies."
+)
+
+FOG_BLOCK_CLASSIC = (
+    "- **Fog of war**: mode `classic`. You only see tiles within the\n"
+    "  sight cone (Chebyshev distance, default sight = 3 unless a class\n"
+    "  overrides) of at least one of your ALIVE units. Terrain of tiles\n"
+    "  you have ever seen stays on the map with its last-known type —\n"
+    "  but **enemy units have NO memory**. An enemy is listed in `units`\n"
+    "  ONLY if some alive unit of yours can see it RIGHT NOW. If your\n"
+    "  last spotter moves away or dies, the enemy drops out of the\n"
+    "  `units` array even though it's still there on the server. A\n"
+    "  stationary enemy vanishing between turns almost always means\n"
+    "  YOU removed its last spotter — it did not teleport; look where\n"
+    "  you last saw it. Dead enemies remain visible regardless of fog\n"
+    "  (known history). Move results carry `revealed_enemies` (entered\n"
+    "  sight because of the move) and `hidden_enemies` (dropped out of\n"
+    "  sight because of the move, with `last_known_pos`)."
+)
+
+FOG_BLOCK_LOS = (
+    "- **Fog of war**: mode `line_of_sight`. You only see tiles within\n"
+    "  the sight cone (Chebyshev distance, default sight = 3 unless a\n"
+    "  class overrides) of at least one of your ALIVE units, AND only\n"
+    "  those tiles' terrain is shown — unlike `classic`, there is no\n"
+    "  persistent terrain memory; every turn the map re-masks to\n"
+    "  currently-visible tiles only. **Enemy units have no memory\n"
+    "  either**: an enemy is listed in `units` ONLY if an alive unit of\n"
+    "  yours can see it right now. If your last spotter moves away or\n"
+    "  dies, the enemy drops out even though it's still there on the\n"
+    "  server. A stationary enemy vanishing between turns almost always\n"
+    "  means YOU removed its last spotter — it did not teleport; look\n"
+    "  where you last saw it. Dead enemies remain visible regardless of\n"
+    "  fog (known history). Move results carry `revealed_enemies`\n"
+    "  (entered sight) and `hidden_enemies` (dropped out of sight, with\n"
+    "  `last_known_pos`)."
+)
+
+
+def _fog_section(mode: str, locale: str = "en") -> str:
+    """Return the active fog mode's rules block.
+
+    Only the rules for the mode actually in play land in the system
+    prompt — describing the two unused modes wastes context and can
+    confuse the model about which semantics apply. Unknown modes fall
+    back to `none` so a misconfigured scenario still boots with a
+    sensible block.
+    """
+    if locale == "zh":
+        return {
+            "none": FOG_BLOCK_NONE_ZH,
+            "classic": FOG_BLOCK_CLASSIC_ZH,
+            "line_of_sight": FOG_BLOCK_LOS_ZH,
+        }.get(mode, FOG_BLOCK_NONE_ZH)
+    return {
+        "none": FOG_BLOCK_NONE,
+        "classic": FOG_BLOCK_CLASSIC,
+        "line_of_sight": FOG_BLOCK_LOS,
+    }.get(mode, FOG_BLOCK_NONE)
+
+
+FOG_BLOCK_NONE_ZH = (
+    "- **战争迷雾**: 模式`none`。双方始终看到整张地图和所有单位，\n"
+    "  没有视野锥，没有隐藏单位。"
+)
+
+FOG_BLOCK_CLASSIC_ZH = (
+    "- **战争迷雾**: 模式`classic`。你只能看到至少一个己方存活单位\n"
+    "  视野锥内的格子（切比雪夫距离，默认sight=3，除非兵种覆盖）。\n"
+    "  曾经见过的格子保留最后一次看到的地形类型——但**敌方单位没有\n"
+    "  记忆**。`units`列表只会列出你的某个存活单位当前正能看到的敌人;\n"
+    "  如果你最后一个观察者移开或阵亡，即使敌人仍在服务器上，也会从\n"
+    "  `units`消失。两回合间一个静止敌人消失，几乎一定是你撤掉了最后\n"
+    "  的观察者——它没有瞬移；去它最后出现的位置看看。死亡敌人不受\n"
+    "  迷雾影响始终可见（历史记录）。移动结果中会带`revealed_enemies`\n"
+    "  （因这次移动进入视野）和`hidden_enemies`（因这次移动离开视野，\n"
+    "  附`last_known_pos`）。"
+)
+
+FOG_BLOCK_LOS_ZH = (
+    "- **战争迷雾**: 模式`line_of_sight`。你只能看到至少一个己方存活\n"
+    "  单位视野锥内的格子（切比雪夫距离，默认sight=3）。与`classic`不同,\n"
+    "  不保留地形记忆——每回合地图都重新只显示当前可见格子。**敌方\n"
+    "  单位同样没有记忆**：`units`只列出当前某个存活己方单位可看见的\n"
+    "  敌人。最后一个观察者移开/阵亡后，敌人即使仍在，也会从`units`\n"
+    "  消失。两回合间静止敌人消失几乎一定是你撤掉了最后的观察者。\n"
+    "  死亡敌人始终可见（历史记录）。移动结果中会带`revealed_enemies`\n"
+    "  和`hidden_enemies`（附`last_known_pos`）。"
+)
 
 
 STRATEGY_SECTION_TEMPLATE = """## Your coach's strategy playbook
@@ -472,7 +546,7 @@ def build_system_prompt(
         map_grid=map_grid,
         strategy_section=strategy_section,
         lessons_section=lessons_section,
-        fog_mode=fog_mode,
+        fog_section=_fog_section(fog_mode, locale),
     )
 
 
