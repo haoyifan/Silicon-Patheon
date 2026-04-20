@@ -165,12 +165,20 @@ class TUIApp:
         self._help_visible = False
         self._help_scroll = 0
         self._help_gg = False
+        # Render signalling. _refresh() sets _render_event; a dedicated
+        # render-worker task (_render_loop) consumes it and calls
+        # Rich's Live.update() off-thread via asyncio.to_thread. That
+        # way a backpressured pty (tmux pane in a frozen/throttled
+        # terminal, etc.) blocks a worker thread, not the event loop —
+        # so heartbeats, polls, and key-handling keep running.
+        self._render_event: asyncio.Event | None = None
 
     # ---- lifecycle ----
 
     async def run(self) -> int:
         self._screen = self._initial_factory(self)
         await self._screen.on_enter(self)
+        self._render_event = asyncio.Event()
         # refresh_per_second caps Live's *background* repaint thread
         # when nothing has explicitly asked for a refresh. We pass
         # refresh=True on every update() below so the screen paints
@@ -199,6 +207,7 @@ class TUIApp:
                     asyncio.create_task(self._key_reader()),
                     asyncio.create_task(self._ticker()),
                     asyncio.create_task(self._dispatcher()),
+                    asyncio.create_task(self._render_loop()),
                 ]
                 try:
                     while not self._should_exit:
@@ -279,21 +288,62 @@ class TUIApp:
         return _HelpOverlay(self._help_scroll, self.state.locale).render()
 
     def _refresh(self) -> None:
-        """Repaint the screen immediately.
+        """Mark the screen dirty; the render worker repaints off-thread.
 
-        Rich's Live.update() defaults to refresh=False — it just sets
-        the next renderable and lets the background thread paint at
-        refresh_per_second. With our default 4 Hz that meant ~250 ms
-        of input-to-screen lag, which felt awful when holding down an
-        arrow key. Forcing refresh=True paints right now; we cap rate
-        ourselves by coalescing key events in _dispatcher.
-        """
-        if self._live is not None and self._screen is not None:
-            try:
-                self._live.update(self._render_with_overlay(), refresh=True)
-            except Exception as e:
-                _log.exception("render raised")
-                self.state.error_message = f"render error: {e}"
+        Rich's Live.update(refresh=True) calls os.write on stdout from
+        whatever thread invokes it. When the downstream pty is
+        backpressured (tmux pane whose terminal emulator has been
+        frozen / throttled by the compositor, etc.), that write blocks
+        indefinitely. If we do it on the asyncio thread, the entire
+        event loop freezes — no heartbeat, no polls, zombie client on
+        the server until it times out.
+
+        Instead: set an Event and return immediately. `_render_loop`
+        consumes it on a worker and issues the blocking write there.
+        Multiple _refresh() calls while a render is in flight coalesce
+        to a single follow-up render."""
+        if self._render_event is not None:
+            self._render_event.set()
+
+    async def _render_loop(self) -> None:
+        """Worker that repaints off the event-loop thread.
+
+        Waits for _render_event, clears it, renders the current
+        screen, then calls Live.update via asyncio.to_thread so a
+        blocked pty blocks only this thread. The event loop keeps
+        running — heartbeat, polls, key handling all continue — and
+        when the terminal unblocks the next render goes through
+        automatically."""
+        import time as _time
+
+        assert self._render_event is not None
+        try:
+            while not self._should_exit:
+                await self._render_event.wait()
+                self._render_event.clear()
+                if self._live is None or self._screen is None:
+                    continue
+                renderable = self._render_with_overlay()
+                t0 = _time.time()
+                try:
+                    await asyncio.to_thread(
+                        self._live.update, renderable, refresh=True
+                    )
+                except Exception as e:
+                    _log.exception("render raised")
+                    self.state.error_message = f"render error: {e}"
+                dt = _time.time() - t0
+                # A render that takes several seconds almost certainly
+                # means the pty is backpressured (tmux / terminal
+                # frozen). Log it so a repro has a breadcrumb; do NOT
+                # bail — the event loop is still alive and the user
+                # may unblock the terminal momentarily.
+                if dt > 5.0:
+                    _log.warning(
+                        "slow render: dt=%.1fs (pty backpressured?)", dt
+                    )
+        except asyncio.CancelledError:
+            return
 
     # ---- input ----
 
