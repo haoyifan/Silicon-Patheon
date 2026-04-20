@@ -61,11 +61,26 @@ always has the authoritative values.
 - **Max turns**: {max_turns}. Each side gets {max_turns} half-turns; after
   both sides act on turn {max_turns} with no win-condition fired, the match
   ends in a draw.
-- **Fog of war**: mode `{fog_mode}`. "none" = full visibility. "classic" =
-  enemies outside your sight radius are hidden, tiles ever-seen stay
-  revealed with last-known terrain. "line_of_sight" = only currently
-  visible tiles/enemies. Dead enemies remain visible regardless of fog —
-  they're a known historical record.
+- **Fog of war**: mode `{fog_mode}`. "none" = full visibility.
+  "classic" and "line_of_sight" both restrict what you can see to
+  your living units' current sight cones (Chebyshev distance; default
+  sight = 3 unless a class overrides it). The only difference between
+  them is terrain memory:
+    - "classic" remembers TERRAIN of tiles you've ever seen (revealed
+      with their last-known type).
+    - "line_of_sight" shows terrain only for currently-visible tiles.
+  Either way, **enemy units have NO memory**: an enemy is listed in
+  `units` only if it's in the sight cone of at least one of your
+  alive units RIGHT NOW. If your spotter moves away, the enemy
+  disappears from the units array even though it's still there on
+  the server. A stationary enemy vanishing from your view between
+  turns almost always means you (or a death) removed its last
+  spotter — it did NOT teleport; look where you last saw it.
+  Dead enemies remain visible regardless of fog (known history).
+  Move results carry a `revealed_enemies` list for enemies that
+  entered sight because of the move, and a `hidden_enemies` list
+  for enemies that dropped out of sight because of the move (with
+  `last_known_pos` so you can reason about where they were).
 
 ## Your turn
 
@@ -598,7 +613,25 @@ def _format_action_event(ev: dict) -> str:
     t = ev.get("type")
     if t == "move":
         dest = ev.get("dest") or {}
-        return f"- {ev.get('unit_id')} moved to ({dest.get('x')}, {dest.get('y')})"
+        parts = [f"- {ev.get('unit_id')} moved to ({dest.get('x')}, {dest.get('y')})"]
+        rev = ev.get("revealed_enemies") or []
+        if rev:
+            ids = ", ".join(
+                f"{u.get('id')} ({u.get('class')}) @({u.get('pos', {}).get('x')},"
+                f"{u.get('pos', {}).get('y')}) hp={u.get('hp')}/{u.get('hp_max')}"
+                for u in rev
+            )
+            parts.append(f"  · came into sight: {ids}")
+        hid = ev.get("hidden_enemies") or []
+        if hid:
+            ids = ", ".join(
+                f"{u.get('id')} ({u.get('class')}, last seen @("
+                f"{u.get('last_known_pos', {}).get('x')},"
+                f"{u.get('last_known_pos', {}).get('y')}))"
+                for u in hid
+            )
+            parts.append(f"  · dropped out of sight: {ids}")
+        return "\n".join(parts)
     if t == "attack":
         dmg = ev.get("damage_dealt")
         ctr = ev.get("counter_damage")

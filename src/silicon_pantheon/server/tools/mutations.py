@@ -42,10 +42,16 @@ def move(session: Session, viewer: Team, unit_id: str, dest: dict) -> dict:
     _require_active(session, viewer)
     _require_own_unit(session.state, unit_id, viewer)
 
-    # Pre-move visibility snapshot for fog-of-war reveal detection.
+    # Pre-move visibility snapshot for fog-of-war delta detection.
     # Under fog=none this is a no-op set comparison (everything is
-    # always visible), so the cost is negligible.
-    pre_visible_enemies = set(u.id for u in _visible_enemies(session, viewer))
+    # always visible), so the cost is negligible. Capture the full
+    # enemy objects (not just ids) so we can report last-known
+    # position on newly-hidden enemies without a second lookup.
+    pre_visible_enemy_objs = list(_visible_enemies(session, viewer))
+    pre_visible_pos = {
+        u.id: {"x": u.pos.x, "y": u.pos.y} for u in pre_visible_enemy_objs
+    }
+    pre_visible_ids = set(pre_visible_pos.keys())
 
     try:
         result = apply(session.state, MoveAction(unit_id=unit_id, dest=Pos.from_dict(dest)))
@@ -61,8 +67,9 @@ def move(session: Session, viewer: Team, unit_id: str, dest: dict) -> dict:
     # "revealed" -- the agent should know immediately so it can react
     # without a follow-up get_state call.
     post_visible_enemies = _visible_enemies(session, viewer)
+    post_visible_ids = {u.id for u in post_visible_enemies}
     newly_revealed = [
-        u for u in post_visible_enemies if u.id not in pre_visible_enemies
+        u for u in post_visible_enemies if u.id not in pre_visible_ids
     ]
     if newly_revealed:
         result["revealed_enemies"] = [
@@ -74,6 +81,26 @@ def move(session: Session, viewer: Team, unit_id: str, dest: dict) -> dict:
                 "hp_max": u.stats.hp_max,
             }
             for u in newly_revealed
+        ]
+
+    # Fog-of-war hide: which enemy units dropped out of sight because
+    # of this move? Symmetric to revealed_enemies; surfacing the delta
+    # so the agent isn't surprised when the next get_state is missing
+    # an enemy it could previously see. Includes last_known_pos
+    # (captured pre-move) — not a fog leak because the agent already
+    # saw the enemy at that position on its last view.
+    newly_hidden = [
+        u for u in pre_visible_enemy_objs
+        if u.id not in post_visible_ids and u.alive
+    ]
+    if newly_hidden:
+        result["hidden_enemies"] = [
+            {
+                "id": u.id,
+                "class": u.class_,
+                "last_known_pos": pre_visible_pos[u.id],
+            }
+            for u in newly_hidden
         ]
 
     _record_action(session, result)
