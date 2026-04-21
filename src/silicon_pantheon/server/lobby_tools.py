@@ -956,7 +956,6 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         locking protocol.
         """
         from silicon_pantheon.server.engine.state import GameStatus as _GS
-        from silicon_pantheon.server.engine.state import Team as _Team  # noqa: F401
 
         # ── Phase 1: pre-check under state_lock ──
         concede_plan: tuple[str, Any] | None = None  # (room_id, team) or None
