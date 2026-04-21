@@ -1183,6 +1183,11 @@ class GameScreen(Screen):
             scenario_description=self._localized_scenario(app),
             time_budget_s=time_budget_s,
             locale=app.state.locale,
+            # Effective fog comes from the room, not the scenario
+            # default — the host may have overridden it at create
+            # time. Agent bridge uses it to correct the scenario
+            # bundle's fog_of_war before building the system prompt.
+            fog_of_war=room_state.get("fog_of_war"),
         )
         # Start the serialized thought-drain task.
         if _drain_box[0] is None or _drain_box[0].done():

@@ -53,3 +53,42 @@ def test_lessons_dont_suppress_strategy() -> None:
     )
     assert "rush the right flank" in out
     assert "Prior lessons from this scenario" in out
+
+
+def test_prompt_reflects_scenario_fog_mode() -> None:
+    """Regression: the prompt's fog section must reflect the scenario
+    bundle's declared fog_of_war. On 08_kadesh the scenario ships with
+    rules.fog_of_war=false (legacy boolean coerced to "none") but the
+    worker created the room with classic fog — the agent's prompt
+    then said fog=none while the server ran classic, and the agent
+    reported "战争迷雾意外激活". The fix pushes the session's effective
+    fog into the bundle's rules before building the prompt; this test
+    asserts the builder honours whatever rules value it gets."""
+    bundle_classic = {
+        "name": "t",
+        "description": "t",
+        "rules": {"fog_of_war": "classic"},
+    }
+    bundle_none = {
+        "name": "t",
+        "description": "t",
+        "rules": {"fog_of_war": "none"},
+    }
+    out_classic = build_system_prompt(
+        Team.BLUE, max_turns=20, strategy=None, lessons=None,
+        scenario_description=bundle_classic,
+    )
+    out_none = build_system_prompt(
+        Team.BLUE, max_turns=20, strategy=None, lessons=None,
+        scenario_description=bundle_none,
+    )
+    # The two modes have different fog rules blocks — exact copy
+    # is in harness.prompts but we just look for distinctive
+    # phrasing from each.
+    assert out_classic != out_none
+    # Classic-fog block mentions that units in fog drop out of
+    # the state; none-fog block says full visibility.
+    assert (
+        "classic" in out_classic.lower()
+        or "fog" in out_classic.lower()
+    )

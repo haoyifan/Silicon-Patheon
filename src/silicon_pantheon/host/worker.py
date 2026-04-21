@@ -282,6 +282,17 @@ class BotWorker:
         # prompts even when the operator had deliberately left
         # ``lessons = []`` in their TOML. Empty list here means
         # empty list in the prompt.
+        # Fetch max_turns + effective fog mode from room state. The
+        # room's fog_of_war may differ from cfg.fog_of_war if the
+        # opponent reconfigured the room at join time, so we read
+        # the server's view of truth rather than trusting the local
+        # config. Used to override the scenario's declared fog
+        # in the system prompt.
+        r = await client.call("get_room_state")
+        room = r.get("room", {}) if r.get("ok") else {}
+        max_turns = int(room.get("max_turns", 20))
+        effective_fog = room.get("fog_of_war") or cfg.fog_of_war
+
         agent = NetworkedAgent(
             client=client,
             model=cfg.model,
@@ -291,16 +302,12 @@ class BotWorker:
             selected_lessons=selected_lessons,
             time_budget_s=float(cfg.turn_time_limit_s),
             locale=cfg.locale,
+            fog_of_war=effective_fog,
         )
         # Expose so the runner's status line can read the current
         # LLM-wait elapsed time. Cleared in the finally below when
         # the match ends.
         self.agent = agent
-
-        # Fetch max_turns from room state.
-        r = await client.call("get_room_state")
-        room = r.get("room", {}) if r.get("ok") else {}
-        max_turns = int(room.get("max_turns", 20))
 
         try:
             while True:

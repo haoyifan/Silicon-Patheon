@@ -414,6 +414,7 @@ class NetworkedAgent:
         adapter: ProviderAdapter | None = None,
         scenario_description: dict | None = None,
         locale: str = "en",
+        fog_of_war: str | None = None,
     ):
         self.client = client
         self.model = model
@@ -431,6 +432,16 @@ class NetworkedAgent:
         # used both in the system prompt and to serve `describe_class`
         # tool calls without round-tripping the server.
         self._scenario_bundle: dict | None = scenario_description
+        # Effective session fog mode ("none" | "classic" | "line_of_sight").
+        # The scenario bundle's rules.fog_of_war is the scenario's default,
+        # but the room host can override it at create_room time — and the
+        # worker normally does (auto_host.toml ships classic fog even for
+        # scenarios authored with fog_of_war=false). The prompt builder
+        # has no way to know which is in effect without this hint, so it
+        # would tell the agent fog=none while classic was running. Caller
+        # (host worker / TUI game launch) should pass the room's effective
+        # value from get_room_state.
+        self._fog_of_war: str | None = fog_of_war
         # Lazily built once per session.
         self._system_prompt_cached: str | None = None
         self._prompt_log = logging.getLogger("silicon.agent.prompts")
@@ -852,12 +863,30 @@ class NetworkedAgent:
             except Exception:
                 log.exception("describe_scenario failed; system prompt will lack scenario data")
         if self._system_prompt_cached is None:
+            # Override the scenario's declared fog_of_war with the
+            # room's effective value so the prompt's fog section
+            # matches the server's behaviour. Without this the agent
+            # sees fog=none in its system prompt but the session runs
+            # classic — observed on 08_kadesh 2026-04-20 where the
+            # agent reported "战争迷雾意外激活" because muwatalli was
+            # invisible under classic fog while the prompt claimed
+            # fog=none. We copy rules so we don't mutate the bundle
+            # shared with get_state / describe_scenario callers.
+            bundle_for_prompt = self._scenario_bundle
+            if (
+                bundle_for_prompt is not None
+                and self._fog_of_war is not None
+            ):
+                bundle_for_prompt = dict(bundle_for_prompt)
+                rules = dict(bundle_for_prompt.get("rules") or {})
+                rules["fog_of_war"] = self._fog_of_war
+                bundle_for_prompt["rules"] = rules
             self._system_prompt_cached = build_system_prompt(
                 team=viewer,
                 max_turns=max_turns,
                 strategy=self.strategy,
                 lessons=self._load_lessons(),
-                scenario_description=self._scenario_bundle,
+                scenario_description=bundle_for_prompt,
                 locale=self.locale,
             )
             # Log the system prompt once, in full, so operators can
