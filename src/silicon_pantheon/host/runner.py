@@ -141,10 +141,25 @@ def main() -> None:
     log_file = args.log or config.log_file
     _setup_logging(log_file)
 
+    # ── SIGUSR1 → thread-stack dump ──
+    # Same rationale as silicon-serve: when a worker silently stops
+    # making tool calls (the Vegetable-stuck-forever pattern from
+    # 2026-04-20), the operator can:
+    #
+    #     kill -USR1 $(pidof silicon-host)
+    #
+    # to dump every Python thread's stack trace, revealing where each
+    # worker task is parked. No restart needed to collect evidence.
+    import faulthandler
+    import os as _os
+    import signal
+    faulthandler.register(signal.SIGUSR1)
+
     print(
         f"SiliconPantheon auto-host: {len(config.workers)} workers, "
         f"server={config.server_url}, log={log_file}"
     )
+    print(f"pid={_os.getpid()} — `kill -USR1 {_os.getpid()}` for a thread dump")
     print("Press Ctrl+C to stop.\n")
 
     try:

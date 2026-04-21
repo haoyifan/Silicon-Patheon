@@ -147,6 +147,29 @@ def main() -> int:
     # Keep a single stderr line identical to the old UX for quick discovery.
     print(f"server log: {log_file}", flush=True)
 
+    # ── SIGUSR1 → thread-stack dump ──
+    # Operator workflow when the server appears hung (tool handlers
+    # silently stop completing, clients see HUNG heartbeats, etc.):
+    #
+    #     kill -USR1 $(pidof silicon-serve)
+    #
+    # dumps every Python thread's current stack trace to stderr, which
+    # uvicorn + our logging redirects to the server log file. Pinpoints
+    # exactly where each async task is parked (which lock, which
+    # await, which library call) without needing to attach py-spy or
+    # restart the process.
+    #
+    # Zero runtime cost: the signal handler is only installed; nothing
+    # runs until SIGUSR1 fires.
+    import faulthandler
+    import signal
+    faulthandler.register(signal.SIGUSR1)
+    log.info(
+        "SIGUSR1 handler installed — `kill -USR1 %d` to dump "
+        "all thread stacks to stderr/log",
+        os.getpid(),
+    )
+
     app = App()
     mcp = build_mcp_server(app)
 
