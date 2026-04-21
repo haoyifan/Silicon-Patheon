@@ -35,6 +35,7 @@ from silicon_pantheon.shared.protocol import ConnectionState, ErrorCode
 from silicon_pantheon.shared.viewer_filter import (
     ViewerContext,
     filter_history,
+    filter_legal_actions,
     filter_state,
     filter_threat_map,
     filter_unit,
@@ -48,6 +49,7 @@ _FILTERED_STATE_TOOLS = frozenset({"get_state"})
 _FILTERED_UNIT_TOOLS = frozenset({"get_unit"})
 _FILTERED_THREAT_TOOLS = frozenset({"get_threat_map"})
 _FILTERED_HISTORY_TOOLS = frozenset({"get_history"})
+_FILTERED_LEGAL_ACTIONS_TOOLS = frozenset({"get_legal_actions"})
 
 
 def _append_agent_report_jsonl(event: dict) -> None:
@@ -100,6 +102,8 @@ def _apply_filter(
         return filter_threat_map(result, session.state, ctx)
     if tool_name in _FILTERED_HISTORY_TOOLS:
         return filter_history(result, session.state, ctx)
+    if tool_name in _FILTERED_LEGAL_ACTIONS_TOOLS:
+        return filter_legal_actions(result, session.state, ctx)
     return result
 
 

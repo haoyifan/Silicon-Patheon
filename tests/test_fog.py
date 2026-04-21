@@ -423,6 +423,64 @@ def test_filter_state_redacts_last_action_of_hidden_enemy() -> None:
     assert filtered["last_action"]["unit_id"] == blue.id
 
 
+def test_filter_legal_actions_drops_hidden_enemy_targets() -> None:
+    """Regression (client-what-the-fucker 20260420 00:18+):
+    server debug audit flagged get_legal_actions as leaking
+    ``attacks[N].target_id = u_r_*``. Root cause:
+    ``legal_actions_for_unit`` enumerates every in-range enemy as a
+    legal attack target without consulting fog. Fix:
+    ``filter_legal_actions`` drops attack/heal entries whose
+    ``target_id`` is an enemy not currently visible."""
+    from silicon_pantheon.shared.viewer_filter import filter_legal_actions
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    ctx = _ctx(Team.BLUE, "classic")
+    red = next(iter(state.units_of(Team.RED)))
+    blue = next(iter(state.units_of(Team.BLUE)))
+    assert red.alive
+    # Raw legal_actions enumerates the red unit as a legal attack
+    # target even though it's currently out of sight.
+    raw_legal = {
+        "unit_id": blue.id,
+        "status": "ready",
+        "moves": [{"dest": {"x": blue.pos.x + 1, "y": blue.pos.y}, "cost": 1}],
+        "attacks": [
+            {"target_id": red.id, "from": {"x": 0, "y": 0},
+             "damage": 5, "will_counter": False, "counter_damage": 0,
+             "kills": False, "counter_kills": False},
+        ],
+        "heals": [],
+        "can_wait": True,
+    }
+    out = filter_legal_actions(raw_legal, state, ctx)
+    assert out["attacks"] == [], (
+        f"hidden enemy {red.id} remained as a legal attack target: "
+        f"{out['attacks']}"
+    )
+    # Other fields passed through untouched.
+    assert out["moves"] == raw_legal["moves"]
+    assert out["can_wait"] is True
+
+
+def test_filter_legal_actions_passes_through_when_fog_none() -> None:
+    from silicon_pantheon.shared.viewer_filter import filter_legal_actions
+
+    state = load_scenario("01_tiny_skirmish")
+    ctx = _ctx(Team.BLUE, "none")
+    red = next(iter(state.units_of(Team.RED)))
+    blue = next(iter(state.units_of(Team.BLUE)))
+    raw_legal = {
+        "unit_id": blue.id,
+        "attacks": [{"target_id": red.id}],
+        "heals": [],
+        "moves": [],
+        "can_wait": True,
+    }
+    out = filter_legal_actions(raw_legal, state, ctx)
+    assert out == raw_legal  # no filtering under fog=none
+
+
 def test_filter_history_scrubs_hidden_enemy_target_id() -> None:
     """Regression (23_astronomy_tower: Evan vs Vegetable): server
     raised ``fog leak in get_history: hidden enemy IDs in response:

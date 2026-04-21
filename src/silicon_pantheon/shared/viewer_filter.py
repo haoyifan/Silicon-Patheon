@@ -296,6 +296,61 @@ def filter_history(
     return out
 
 
+def filter_legal_actions(
+    legal: dict[str, Any], state: GameState, ctx: ViewerContext
+) -> dict[str, Any]:
+    """Filter get_legal_actions' attack/heal lists for fog.
+
+    ``legal_actions_for_unit`` enumerates every in-range enemy as a
+    legal attack target without consulting fog; the raw response
+    therefore lists ``attacks[N].target_id`` for enemies the viewer
+    can't actually see. The server audit flags this as a leak —
+    observed on client-what-the-fucker's log (20260420 00:18+) with
+    ``hidden enemy IDs in response: [('attacks[N].target_id', ...)]``.
+
+    Filter rule: drop any attack / heal entry whose target id is an
+    enemy not currently in sight. Own-team heal targets always pass
+    (they're own units). Dead targets pass too (their id is known
+    history). The `moves` and `can_wait` fields don't reference unit
+    ids so they go through unchanged.
+    """
+    if ctx.fog_mode == "none":
+        return legal
+    visible = currently_visible(state, ctx)
+    visible_enemy_ids = {
+        u.id for u in state.units_of(ctx.team.other()) if u.pos in visible
+    }
+    own_team_ids = {u.id for u in state.units_of(ctx.team)}
+    # Dead units (own or enemy) are history — always OK to reference.
+    dead_ids = set()
+    for uid, u in getattr(state, "fallen_units", {}).items():
+        dead_ids.add(uid)
+
+    def _target_ok(target_id: Any) -> bool:
+        if not isinstance(target_id, str):
+            return True  # nothing to leak
+        if target_id in own_team_ids:
+            return True
+        if target_id in visible_enemy_ids:
+            return True
+        if target_id in dead_ids:
+            return True
+        return False
+
+    out = dict(legal)
+    for key in ("attacks", "heals"):
+        raw_list = legal.get(key)
+        if not isinstance(raw_list, list):
+            continue
+        out[key] = [
+            entry for entry in raw_list
+            if _target_ok(
+                entry.get("target_id") if isinstance(entry, dict) else None
+            )
+        ]
+    return out
+
+
 def filter_threat_map(
     threats: dict[str, Any], state: GameState, ctx: ViewerContext
 ) -> dict[str, Any]:
