@@ -383,6 +383,42 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
     The handler is sync ``def``, so it cannot await anyway; this is
     guaranteed by construction.
     """
+    import threading as _threading
+    import time as _time
+
+    # Stuck-dispatch watchdog: if the body of _dispatch doesn't
+    # complete within DISPATCH_STUCK_THRESHOLD_S, log a WARNING from
+    # a side thread. Catches the class of bug we saw 2026-04-20
+    # 05:15:00 UTC where "Processing request of type CallToolRequest"
+    # kept arriving but "tool dispatch:" lines stopped firing — i.e.
+    # the state_lock acquire or some later line blocked for 30+ s.
+    # threading.Timer is cheap (~microseconds to create) and cancel
+    # releases it immediately on normal exit, so zero overhead for
+    # fast-path calls.
+    DISPATCH_STUCK_THRESHOLD_S = 10.0
+    _t0_monotonic = _time.monotonic()
+
+    def _warn_stuck() -> None:
+        elapsed = _time.monotonic() - _t0_monotonic
+        log.warning(
+            "tool handler STUCK: tool=%s cid=%s elapsed=%.1fs — "
+            "dispatch has not completed (possible lock contention, "
+            "deadlock, or blocked I/O). Send SIGUSR1 to dump stacks.",
+            tool_name, connection_id[:8], elapsed,
+        )
+
+    _watchdog = _threading.Timer(DISPATCH_STUCK_THRESHOLD_S, _warn_stuck)
+    _watchdog.daemon = True
+    _watchdog.start()
+
+    try:
+        return _dispatch_inner(app, connection_id, tool_name, args)
+    finally:
+        _watchdog.cancel()
+
+
+def _dispatch_inner(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
+    """The actual dispatch body — wrapped by _dispatch's watchdog."""
     import time as _time
 
     # ── Phase 1: resolve under state_lock ────────────────────────
