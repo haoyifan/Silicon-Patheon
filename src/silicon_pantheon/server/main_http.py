@@ -142,6 +142,19 @@ def main() -> int:
             "dispatched but never reached the client' hangs."
         ),
     )
+    p.add_argument(
+        "--diagnose-sse",
+        action="store_true",
+        help=(
+            "TEMPORARY: enable the bundled SSE-drop diagnostic — "
+            "(1) log EventSourceResponse lifecycle, (2) log every "
+            "MCP per-request stream cleanup with caller stack, "
+            "(3) spawn tcpdump on loopback with a rolling pcap "
+            "buffer in /tmp/silicon-sse-diag/. Requires passwordless "
+            "sudo for tcpdump. Remove once the 'SSE closes after "
+            "3-25 ms' bug is root-caused."
+        ),
+    )
     args = p.parse_args()
 
     if args.debug:
@@ -179,6 +192,20 @@ def main() -> int:
     log.info("server log file: %s", log_file)
     # Keep a single stderr line identical to the old UX for quick discovery.
     print(f"server log: {log_file}", flush=True)
+
+    # DIAG(sse) — temporary bundled diagnostic for the "SSE TCP closes
+    # after 3-25 ms" bug. Must run AFTER logging is wired so the patch
+    # logs land in our log file, and BEFORE mcp is built so the
+    # EventSourceResponse patch is picked up.
+    if args.diagnose_sse:
+        from silicon_pantheon.server import sse_diagnostic
+        # Register an extra logger for the diag namespace using the
+        # same file handler everyone else got.
+        for h in logging.getLogger("silicon-serve").handlers:
+            logging.getLogger("silicon.diag.sse").addHandler(h)
+        logging.getLogger("silicon.diag.sse").setLevel(logging.INFO)
+        logging.getLogger("silicon.diag.sse").propagate = False
+        sse_diagnostic.enable(args.port)
 
     # ── SIGUSR1 → thread-stack dump ──
     # Operator workflow when the server appears hung (tool handlers
