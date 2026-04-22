@@ -231,6 +231,16 @@ def main() -> int:
         os.getpid(),
     )
 
+    # Route sync @mcp.tool() handlers through the anyio thread pool
+    # so they don't block the event loop. Patch the MCP SDK's
+    # dispatch function before building the server (FastMCP captures
+    # the function reference during tool registration, so the patch
+    # must land first). See server/async_tools_patch.py for details.
+    from silicon_pantheon.server.async_tools_patch import (
+        install as install_async_tools_patch,
+    )
+    install_async_tools_patch()
+
     app = App()
     mcp = build_mcp_server(app)
 
@@ -341,10 +351,36 @@ def main() -> int:
 
     import asyncio  # for the reattach sleep
 
+    # Supervisor wrappers for sibling tasks in _serve's task group.
+    # anyio cancels the whole group on any one task's exception, which
+    # would take the MCP server down with it. The sweeper and
+    # reattach-handlers are auxiliary — a bug in either should not
+    # kill live matches. Log and return instead. mcp.run_streamable_http_async
+    # is NOT wrapped: if the main server crashes, that's a real
+    # outage and should propagate so systemd restarts us.
+    async def _supervised_sweeper() -> None:
+        try:
+            await run_sweep_loop(app)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            log.exception("heartbeat sweeper crashed: %s — the MCP "
+                          "server will continue but evictions are now "
+                          "disabled until restart", e)
+
+    async def _supervised_reattach() -> None:
+        try:
+            await _reattach_handlers()
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            log.exception("log reattach crashed: %s — logging may be "
+                          "partial but the server continues", e)
+
     async def _serve() -> None:
         async with anyio.create_task_group() as tg:
-            tg.start_soon(run_sweep_loop, app)
-            tg.start_soon(_reattach_handlers)
+            tg.start_soon(_supervised_sweeper)
+            tg.start_soon(_supervised_reattach)
             tg.start_soon(mcp.run_streamable_http_async)
 
     anyio.run(_serve)
