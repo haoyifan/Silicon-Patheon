@@ -60,12 +60,22 @@ class BotWorker:
     # ---- public interface ----
 
     async def run_forever(self) -> None:
-        """Main loop — never returns unless cancelled."""
+        """Main loop — never returns unless cancelled.
+
+        Layer 3 of transport-resilience (see
+        ~/dev/transport-resilience-plan.md): the game loop races
+        against the transport-dead event the client sets on
+        Layer 1/2 detection. Whichever completes first triggers
+        reconnect. This replaces the previous behaviour where a
+        wedged MCP call could leave the worker permanently stuck
+        because the un-cancellable await never returned and no
+        exception path ever fired.
+        """
         try:
             while True:
                 try:
                     await self._ensure_connected()
-                    await self._game_loop()
+                    await self._run_game_loop_with_transport_watch()
                 except asyncio.CancelledError:
                     raise
                 except Exception as e:
@@ -75,6 +85,58 @@ class BotWorker:
                     await asyncio.sleep(TRANSPORT_RETRY_S)
         finally:
             await self._disconnect()
+
+    async def _run_game_loop_with_transport_watch(self) -> None:
+        """Run _game_loop but bail early if the transport dies.
+
+        The game loop can park indefinitely inside
+        ``session.call_tool`` when the MCP SDK's anyio streams go
+        closed silently (zombie-worker bug). The transport-dead
+        event, set by Layer 1 stream monitor OR Layer 2 heartbeat
+        escalation, is our one signal that we need to tear down
+        and reconnect rather than keep waiting.
+        """
+        assert self._client is not None
+        dead_event = self._client.transport_dead
+
+        game_task = asyncio.create_task(self._game_loop())
+        dead_task = asyncio.create_task(dead_event.wait())
+        try:
+            done, _ = await asyncio.wait(
+                {game_task, dead_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+        finally:
+            for t in (game_task, dead_task):
+                if not t.done():
+                    t.cancel()
+            # Drain cancellations so the task group teardown is
+            # clean. Swallow CancelledError; a real exception from
+            # game_task re-raises below.
+            for t in (game_task, dead_task):
+                try:
+                    await t
+                except asyncio.CancelledError:
+                    pass
+                except Exception:
+                    pass
+
+        if dead_task in done:
+            log.warning(
+                "worker %s transport-dead event fired — "
+                "forcing reconnect", self.config.name,
+            )
+            self.status = "transport dead, reconnecting"
+            # Raise so the outer try/except in run_forever routes us
+            # through _disconnect + sleep + loop (same path as any
+            # other fatal error).
+            raise RuntimeError("transport dead")
+        # Otherwise game_task finished on its own — re-raise any
+        # exception it stored.
+        if game_task in done:
+            exc = game_task.exception()
+            if exc is not None:
+                raise exc
 
     # ---- connection ----
 
