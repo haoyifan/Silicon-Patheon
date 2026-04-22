@@ -192,10 +192,24 @@ def _start_tcpdump(port: int) -> None:  # DIAG(sse)
     # stomp on each other.
     out_dir = _PCAP_DIR / f"pid{os.getpid()}"
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Ubuntu's tcpdump auto-drops to the `tcpdump` system user (uid 105)
+    # after opening the raw socket. That user can't write inside
+    # silicon's home, so mark this dir world-writable as a fallback.
+    # It's a diagnostic-only dir; widen-perm risk is acceptable.
+    try:
+        os.chmod(out_dir, 0o777)
+    except PermissionError:
+        pass
     # Use strftime %H%M%S in the filename template so rotations are
     # human-readable.
     template = str(out_dir / "capture-%H%M%S.pcap")
 
+    # -Z <user> tells tcpdump which user to drop privs to after opening
+    # the raw socket. Without it, Ubuntu's build auto-drops to the
+    # `tcpdump` system user (uid 105), which can't write inside silicon's
+    # home. Passing the current user makes it a no-op setuid that stays
+    # as us, so pcap writes succeed.
+    current_user = os.environ.get("USER") or "silicon"
     cmd = [
         "tcpdump",
         "-i", "lo",
@@ -203,6 +217,7 @@ def _start_tcpdump(port: int) -> None:  # DIAG(sse)
         "-w", template,
         "-G", "60",                 # rotate every 60 s
         "-W", "10",                 # keep 10 rotations (10 min window)
+        "-Z", current_user,         # stay as current user, not `tcpdump`
         "-n",
         f"port {port}",
     ]
