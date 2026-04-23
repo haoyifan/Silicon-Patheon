@@ -50,6 +50,12 @@ class BotWorker:
         self.turn_info: str = ""
         self._client = None
         self._transport_ctx = None
+        # Preserved across reconnects so the server can rebind us to
+        # existing state (seated room, in-progress match, etc.) via
+        # set_player_metadata with the same cid. Populated on the
+        # first _disconnect, reused by every subsequent
+        # _ensure_connected.
+        self._last_cid: str | None = None
         self._scenario: str = ""
         # Currently-running NetworkedAgent, if a match is in progress.
         # The runner reads ``agent.adapter_elapsed_s()`` off this to
@@ -171,6 +177,13 @@ class BotWorker:
 
     async def _disconnect(self) -> None:
         """Clean up transport context and client."""
+        # Remember our cid so the NEXT _ensure_connected can rebind
+        # to the same server-side state (room seat, in-flight
+        # session, etc.) instead of starting fresh. The server keys
+        # every Connection by this cid; calling set_player_metadata
+        # with the SAME cid re-attaches to existing state.
+        if self._client is not None and self._last_cid is None:
+            self._last_cid = self._client.connection_id
         if self._client is not None:
             # Leave room so the server cleans up immediately.
             try:
@@ -211,7 +224,11 @@ class BotWorker:
         self.status = "connecting"
         from silicon_pantheon.client.transport import ServerClient
 
-        ctx = ServerClient.connect(self.server_url)
+        # Pass our previous cid (if any) so the server rebinds to
+        # existing state — see __init__ comment for ``_last_cid``.
+        ctx = ServerClient.connect(
+            self.server_url, connection_id=self._last_cid,
+        )
         client = await ctx.__aenter__()
         self._client = client
         # Store the context for cleanup.
