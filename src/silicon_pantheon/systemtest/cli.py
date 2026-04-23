@@ -60,6 +60,25 @@ def main() -> int:
             "spawn anything. Useful for validating a TOML file."
         ),
     )
+    p.add_argument(
+        "--keep-remote-alive",
+        action="store_true",
+        help=(
+            "Remote mode only: leave silicon-serve running on the VPS "
+            "after the run finishes, so you can SSH in and poke at it. "
+            "You're responsible for killing it later. No-op in local mode."
+        ),
+    )
+    p.add_argument(
+        "--no-pull",
+        action="store_true",
+        help=(
+            "Remote mode only: skip the `git pull` + `uv sync` step on "
+            "the VPS. Use when iterating quickly on a remote branch "
+            "that you've already pushed + synced manually. No-op in "
+            "local mode."
+        ),
+    )
     args = p.parse_args()
 
     if not args.config.is_file():
@@ -101,7 +120,11 @@ def main() -> int:
     from silicon_pantheon.systemtest.orchestrator import orchestrate
 
     try:
-        result = orchestrate(cfg, bundle_dir)
+        result = orchestrate(
+            cfg, bundle_dir,
+            keep_remote_alive=args.keep_remote_alive,
+            no_pull=args.no_pull,
+        )
     except KeyboardInterrupt:
         sys.stderr.write("\ninterrupted; bundle may be incomplete\n")
         return 130

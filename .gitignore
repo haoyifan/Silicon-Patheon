@@ -28,6 +28,15 @@ lessons/
 # Personal deployment notes — keep real IPs / domains / hostnames OUT of repo.
 # See docs/DEPLOY_HETZNER.md for the generic guide.
 Silicon-Pantheon-Deployment.md
+
+# System-test runtime configs — hold real IPs / domains / SSH targets.
+# Only the *.example.toml files (with placeholder values) are tracked.
+system_test*.toml
+!system_test.example.toml
+!system_test.remote.example.toml
+
+# System-test run bundles — large, per-run, not worth tracking.
+silicon-system-test-results/
 *-Deployment.md
 .silicon-pantheon/
 

@@ -53,10 +53,22 @@ class ServerSpec:
     ip: str = "127.0.0.1"
     port: int = 8090
     ssh_user: str = "silicon"
+    # ── Remote mode fields ────────────────────────────────────────
+    # When ``ssh`` is non-empty, the orchestrator bootstraps
+    # silicon-serve on that host instead of spawning it as a local
+    # subprocess. ``remote_repo`` is an already-existing clone of
+    # this repo on the VPS; the orchestrator runs `git pull` +
+    # `uv sync` there each run (unless --no-pull). ``url`` is the
+    # public hostname that agents connect to — in production
+    # deployments this is usually fronted by a reverse proxy whose
+    # cert covers that hostname. Local mode ignores all three.
+    ssh: str = ""                    # "<user>@<host>" — see your TOML
+    remote_repo: str = ""            # absolute path to a clone on the VPS
+    url: str = ""                    # public https URL the proxy serves
 
     @property
     def is_local(self) -> bool:
-        return self.ip in ("127.0.0.1", "localhost", "::1")
+        return not self.ssh
 
 
 @dataclass
@@ -128,7 +140,16 @@ def load_config(path: Path) -> SystemTestConfig:
         ip=str(srv.get("ip", "127.0.0.1")),
         port=int(srv.get("port", 8090)),
         ssh_user=str(srv.get("ssh_user", "silicon")),
+        ssh=str(srv.get("ssh", "")),
+        remote_repo=str(srv.get("remote_repo", "")),
+        url=str(srv.get("url", "")),
     )
+    # If ssh is set, the other remote fields must be too.
+    if server.ssh and not (server.remote_repo and server.url):
+        raise ValueError(
+            "server.ssh is set but server.remote_repo and server.url "
+            "are required too in remote mode"
+        )
 
     cli = raw.get("client", {}) or {}
     client = ClientSpec(

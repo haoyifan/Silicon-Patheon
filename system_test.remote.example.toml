@@ -1,0 +1,65 @@
+# silicon-system-test — REMOTE mode example.
+#
+# This file is a TEMPLATE with placeholder values. To actually run,
+# copy it to `system_test.remote.toml` (gitignored) and fill in the
+# placeholders below with your VPS-specific values. Never check in a
+# config that has real SSH targets / hostnames / paths.
+#
+#   cp system_test.remote.example.toml system_test.remote.toml
+#   $EDITOR system_test.remote.toml
+#   uv run silicon-system-test --config system_test.remote.toml
+#
+# See docs/SYSTEM_TEST.md for the full remote-mode setup guide
+# (DNS, Caddy, remote repo clone).
+
+[server]
+# SSH destination for the VPS. Must allow passwordless key-based
+# login from this machine. Example form: "user@host-or-ip".
+ssh = "<YOUR_SSH_USER>@<YOUR_VPS_IP_OR_HOST>"
+
+# Absolute path to an already-cloned silicon-pantheon on the VPS.
+# Must be a SEPARATE clone from whatever your production systemd
+# unit runs against — the framework does `git pull` + `uv sync`
+# here every run (unless --no-pull).
+remote_repo = "<YOUR_REMOTE_REPO_PATH>"
+
+# Port on the VPS to bind the test silicon-serve. Must differ from
+# the production port (usually 8080) so production traffic is
+# untouched. The Caddy site block must forward to this port.
+port = 8091
+
+# Public URL the agents connect to. Caddy-fronted; TLS must work.
+# The URL's hostname is extracted and passed to silicon-serve as
+# --allowed-host, so the Host header from the proxy has to match.
+url = "https://<YOUR_TEST_HOSTNAME>/mcp/"
+
+[client]
+# Agents always spawn on this machine (the orchestrator host).
+# Remote-client mode isn't supported.
+ip = "127.0.0.1"
+
+[run]
+num_matches = 3         # N — keep small while shaking out the remote path
+timeout_s = 3600        # 1 hour global wall clock
+seed = 42
+
+[defaults]
+# Real LLM agents — the whole point of remote mode is to exercise
+# real failure modes under real WAN + TLS + proxy + LLM latency.
+mode = "llm"
+provider = "anthropic"
+model = "claude-haiku-4-5"    # cheap; switch to sonnet/opus only when warranted
+locale = "en"
+
+[randomize]
+# Keep scenarios small during LLM runs so a pathological prompt
+# loop can't burn the full timeout on a single match.
+scenarios = ["01_tiny_skirmish", "03_thermopylae", "04_cannae"]
+fog_modes = ["none", "classic"]
+team_assignments = ["fixed"]
+locales = ["en"]
+
+# Optional: mix in a random-action agent as a control / load generator.
+# [[agent]]
+# slot = 0
+# mode = "random"

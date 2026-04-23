@@ -72,12 +72,31 @@ class RunResult:
     timed_out: bool
 
 
-def orchestrate(cfg: SystemTestConfig, bundle_dir: Path) -> RunResult:
-    """Entry point: synchronous wrapper that drives the asyncio run."""
-    return asyncio.run(_run(cfg, bundle_dir))
+def orchestrate(
+    cfg: SystemTestConfig,
+    bundle_dir: Path,
+    *,
+    keep_remote_alive: bool = False,
+    no_pull: bool = False,
+) -> RunResult:
+    """Entry point: synchronous wrapper that drives the asyncio run.
+
+    ``keep_remote_alive`` and ``no_pull`` are remote-mode knobs; in
+    local mode they're no-ops.
+    """
+    return asyncio.run(_run(
+        cfg, bundle_dir,
+        keep_remote_alive=keep_remote_alive, no_pull=no_pull,
+    ))
 
 
-async def _run(cfg: SystemTestConfig, bundle_dir: Path) -> RunResult:
+async def _run(
+    cfg: SystemTestConfig,
+    bundle_dir: Path,
+    *,
+    keep_remote_alive: bool = False,
+    no_pull: bool = False,
+) -> RunResult:
     start = time.monotonic()
     bundle_dir.mkdir(parents=True, exist_ok=True)
     (bundle_dir / "server").mkdir(exist_ok=True)
@@ -86,39 +105,25 @@ async def _run(cfg: SystemTestConfig, bundle_dir: Path) -> RunResult:
     _configure_orchestrator_logging(bundle_dir / "orchestrator.log")
     log.info("systemtest starting: bundle=%s", bundle_dir)
 
-    if not cfg.server.is_local or not cfg.client.is_local:
+    if not cfg.client.is_local:
         raise NotImplementedError(
-            "remote SSH mode is not yet implemented; use server.ip = "
-            "127.0.0.1 and client.ip = 127.0.0.1 for now"
+            "remote client mode is not supported; agents always spawn "
+            "locally. Set client.ip = 127.0.0.1."
         )
 
     rng = random.Random(cfg.run.seed)
     incidents: list[str] = []
 
-    # ---- throwaway HOME for silicon-serve ----
-    # Overriding HOME puts ~/.silicon-pantheon/{logs,replays,leaderboard.db}
-    # inside the bundle dir, isolated from the real user's data.
-    server_home = bundle_dir / "server" / "home"
-    (server_home / ".silicon-pantheon" / "logs").mkdir(
-        parents=True, exist_ok=True
-    )
-    (server_home / ".silicon-pantheon" / "replays").mkdir(exist_ok=True)
-
-    # Preflight: nothing on server port.
-    if _port_in_use(cfg.server.port):
-        raise RuntimeError(
-            f"port {cfg.server.port} is already in use on this host; "
-            f"kill whatever's listening or pick a different server.port"
-        )
-
-    # ---- spawn silicon-serve ----
-    server_log = bundle_dir / "server" / "silicon-serve.stdout.log"
-    server_proc = _spawn_server(cfg, server_home, server_log)
-    log.info("silicon-serve spawned pid=%d port=%d", server_proc.pid, cfg.server.port)
+    # ---- bring up the server (local or remote) ----
+    # ``server_handle`` is the opaque state needed by the matching
+    # teardown + log-collection helpers; its shape differs between
+    # modes but callers don't care.
+    if cfg.server.is_local:
+        server_handle = _bringup_local(cfg, bundle_dir)
+    else:
+        server_handle = _bringup_remote(cfg, bundle_dir, no_pull=no_pull)
 
     try:
-        _wait_healthy(cfg.server.port, HEALTH_TIMEOUT_S)
-        log.info("silicon-serve healthy")
 
         # ---- generate agent TOMLs ----
         scenarios = _resolve_scenarios(cfg.randomize)
@@ -197,13 +202,26 @@ async def _run(cfg: SystemTestConfig, bundle_dir: Path) -> RunResult:
                 all_procs.pop(name, None)
 
     finally:
-        # Kill anything still running (server + stragglers).
-        _safe_terminate(server_proc)
-        log.info("silicon-serve terminated rc=%s", server_proc.returncode)
-        # Copy server logs into the bundle (already inside fake HOME).
-
-    # ---- final collection ----
-    _collect_server_logs(server_home, bundle_dir / "server")
+        # Kill server + pull logs into the bundle. Local and remote
+        # use different plumbing under the hood but the same shape:
+        # first teardown (so no more writes land on disk), then
+        # collect. Skipped entirely on --keep-remote-alive so you
+        # can SSH in and poke at the server post-run.
+        if cfg.server.is_local:
+            _teardown_local(server_handle)
+            _collect_local(server_handle, bundle_dir / "server")
+        else:
+            if keep_remote_alive:
+                log.warning(
+                    "--keep-remote-alive set; server still running at "
+                    "%s (pid %s on %s). Remember to kill it yourself.",
+                    cfg.server.url,
+                    server_handle.pid, server_handle.ssh_dest,
+                )
+                _collect_remote(server_handle, bundle_dir / "server")
+            else:
+                _teardown_remote(server_handle)
+                _collect_remote(server_handle, bundle_dir / "server")
 
     wall_clock = time.monotonic() - start
     n_crashed = sum(1 for a in agents if a.returncode not in (0, None))
@@ -253,6 +271,290 @@ def _configure_orchestrator_logging(path: Path) -> None:
     root.addHandler(fh)
     root.addHandler(stream)
     root.propagate = False
+
+
+# ────────────────────────── Server lifecycle ──────────────────────────
+#
+# Two implementations — local subprocess and remote-via-SSH — share a
+# common ServerHandle shape. Each mode has three methods: bringup
+# (start + health-check), teardown (stop), collect (pull logs into
+# the bundle). The top-level _run orchestrator just calls the right
+# trio based on cfg.server.is_local.
+
+
+@dataclass
+class LocalServer:
+    """Handle for a silicon-serve subprocess we spawned on this host."""
+    proc: "subprocess.Popen"
+    home: Path           # the throwaway HOME (lives under bundle_dir/server/)
+    stdout_log: Path     # the subprocess's stdout+stderr capture
+
+
+@dataclass
+class RemoteServer:
+    """Handle for a silicon-serve process running on the VPS over SSH."""
+    ssh_dest: str        # "<user>@<host>" — from cfg.server.ssh
+    remote_home: str     # throwaway dir on the VPS (mktemp under /tmp)
+    pid: str             # server PID as a string (read back via ssh cat)
+    url: str             # public URL — from cfg.server.url
+
+
+def _bringup_local(cfg: SystemTestConfig, bundle_dir: Path) -> LocalServer:
+    """Spawn silicon-serve as a local subprocess + wait for health."""
+    server_home = bundle_dir / "server" / "home"
+    (server_home / ".silicon-pantheon" / "logs").mkdir(
+        parents=True, exist_ok=True
+    )
+    (server_home / ".silicon-pantheon" / "replays").mkdir(exist_ok=True)
+
+    if _port_in_use(cfg.server.port):
+        raise RuntimeError(
+            f"port {cfg.server.port} is already in use on this host; "
+            f"kill whatever's listening or pick a different server.port"
+        )
+
+    stdout_log = bundle_dir / "server" / "silicon-serve.stdout.log"
+    proc = _spawn_server(cfg, server_home, stdout_log)
+    log.info("silicon-serve spawned pid=%d port=%d", proc.pid, cfg.server.port)
+    _wait_healthy(cfg.server.port, HEALTH_TIMEOUT_S)
+    log.info("silicon-serve healthy")
+    return LocalServer(proc=proc, home=server_home, stdout_log=stdout_log)
+
+
+def _teardown_local(h: LocalServer) -> None:
+    _safe_terminate(h.proc)
+    log.info("silicon-serve terminated rc=%s", h.proc.returncode)
+
+
+def _collect_local(h: LocalServer, server_bundle: Path) -> None:
+    """Copy silicon-serve log + replays + leaderboard into bundle."""
+    _collect_server_logs(h.home, server_bundle)
+
+
+def _bringup_remote(
+    cfg: SystemTestConfig, bundle_dir: Path, *, no_pull: bool,
+) -> RemoteServer:
+    """Start silicon-serve on the configured VPS + wait for public URL.
+
+    Assumes the operator has already:
+      - set up passwordless SSH from this host to cfg.server.ssh
+      - ensured cfg.server.url's hostname resolves to the VPS
+      - configured a reverse proxy (e.g. Caddy) fronting cfg.server.port
+      - cloned this repo at cfg.server.remote_repo on the VPS
+
+    See docs/SYSTEM_TEST.md for the one-time VPS setup.
+    """
+    from silicon_pantheon.systemtest import ssh as _ssh
+
+    ssh_dest = cfg.server.ssh
+    repo = cfg.server.remote_repo
+    port = cfg.server.port
+    url = cfg.server.url
+
+    # Extract the hostname from the URL for silicon-serve's
+    # --allowed-host flag. FastMCP rejects requests whose Host
+    # header isn't in this list, so the hostname must match what
+    # the reverse proxy forwards.
+    from urllib.parse import urlparse
+    hostname = urlparse(url).hostname
+    if not hostname:
+        raise RuntimeError(
+            f"could not parse hostname from server.url={url!r}"
+        )
+
+    # 1. SSH reachable?
+    pre = _ssh.preflight(ssh_dest)
+    if not pre.ok:
+        raise RuntimeError(
+            f"SSH preflight failed for {ssh_dest}: {pre.stderr.strip()}"
+        )
+    log.info("remote SSH reachable: %s", ssh_dest)
+
+    # 2. Public URL resolves + TLS + reverse proxy are wired?
+    # A 502 is the "healthy" answer here — nothing's on :port yet.
+    # Anything else (DNS failure, TLS error, 4xx) is a config bug.
+    import urllib.request
+    try:
+        with urllib.request.urlopen(url.rstrip("/"), timeout=10.0) as resp:
+            _ = resp.status
+    except urllib.error.HTTPError as e:
+        if e.code not in (502, 404):
+            log.warning(
+                "public URL returned unexpected %d — continuing but "
+                "this suggests a proxy misconfig", e.code,
+            )
+    except Exception as e:
+        raise RuntimeError(
+            f"public URL {url} not reachable — check DNS + reverse "
+            f"proxy: {e}"
+        )
+
+    # 3. Confirm the target port is free on the VPS.
+    port_check = _ssh.run(
+        ssh_dest, f"ss -tln | grep -c ':{port}\\b' || true", timeout_s=10.0,
+    )
+    if port_check.ok and port_check.stdout.strip() != "0":
+        raise RuntimeError(
+            f"port {port} already has a listener on {ssh_dest}; "
+            f"pick a different server.port or clean up the stale server"
+        )
+
+    # 4. Prepare the clone: fetch latest + sync venv.
+    if not no_pull:
+        log.info("remote: git pull + uv sync on %s", repo)
+        sync = _ssh.run(
+            ssh_dest,
+            f"cd {_ssh.quote(repo)} && git pull --ff-only && "
+            f"~/.local/bin/uv sync",
+            timeout_s=300.0,
+        )
+        if not sync.ok:
+            raise RuntimeError(
+                f"remote git pull / uv sync failed:\n{sync.stderr[:2000]}"
+            )
+
+    # 5. Create a throwaway HOME on the VPS so server logs + replays
+    # + leaderboard land somewhere we can scp back and then delete.
+    mktemp = _ssh.run(
+        ssh_dest, "mktemp -d /tmp/sst-XXXXXXXX", timeout_s=10.0, check=True,
+    )
+    remote_home = mktemp.stdout.strip()
+    _ssh.run(
+        ssh_dest,
+        f"mkdir -p {_ssh.quote(remote_home)}/.silicon-pantheon/logs "
+        f"{_ssh.quote(remote_home)}/.silicon-pantheon/replays",
+        timeout_s=10.0, check=True,
+    )
+    log.info("remote throwaway HOME: %s:%s", ssh_dest, remote_home)
+
+    # 6. Launch silicon-serve via nohup, capture PID.
+    # Sensible defaults for a system-test run: full debug logging
+    # (--log-level DEBUG, --log-debug-mcp-http), SILICON_DEBUG=1 so
+    # invariants crash loudly and get captured. --diagnose-sse is
+    # omitted: it spawns tcpdump, which needs CAP_NET_RAW that a
+    # plain nohup launch won't inherit. Operators who want pcaps
+    # can grant the capability to the remote silicon-serve binary
+    # out-of-band (setcap) and we'll pick it up.
+    launch_script = f"""\
+set -e
+cd {_ssh.quote(repo)}
+export HOME={_ssh.quote(remote_home)}
+export SILICON_DEBUG=1
+nohup .venv/bin/silicon-serve \\
+    --host 127.0.0.1 \\
+    --port {port} \\
+    --allowed-host {_ssh.quote(hostname)} \\
+    --log-level DEBUG \\
+    --log-debug-mcp-http \\
+    > {_ssh.quote(remote_home)}/server.stdout.log 2>&1 &
+echo $! > {_ssh.quote(remote_home)}/server.pid
+disown
+"""
+    launch = _ssh.run(
+        ssh_dest, "bash -s", stdin=launch_script, timeout_s=30.0,
+    )
+    if not launch.ok:
+        raise RuntimeError(
+            f"remote silicon-serve launch failed:\n{launch.stderr[:2000]}"
+        )
+
+    pid_read = _ssh.run(
+        ssh_dest, f"cat {_ssh.quote(remote_home)}/server.pid",
+        timeout_s=10.0, check=True,
+    )
+    pid = pid_read.stdout.strip()
+    log.info("remote silicon-serve spawned pid=%s at %s", pid, url)
+
+    handle = RemoteServer(
+        ssh_dest=ssh_dest, remote_home=remote_home, pid=pid, url=url,
+    )
+    # atexit safety net: if the orchestrator dies mid-run, try to
+    # kill the remote server so it doesn't linger on the VPS. Best-
+    # effort; swallow every error since atexit can't do much.
+    import atexit
+    def _cleanup_on_exit() -> None:
+        try:
+            _ssh.run(
+                ssh_dest,
+                f"kill {pid} 2>/dev/null; sleep 1; "
+                f"kill -9 {pid} 2>/dev/null; "
+                f"rm -rf {_ssh.quote(remote_home)}",
+                timeout_s=15.0,
+            )
+        except Exception:
+            pass
+    atexit.register(_cleanup_on_exit)
+
+    # 7. Wait for the public URL's /health to return 200 — TLS +
+    # reverse proxy + MCP server all verified at once.
+    _wait_healthy_url(f"{url.rstrip('/')}/health", HEALTH_TIMEOUT_S)
+    log.info("remote silicon-serve healthy at %s", url)
+    return handle
+
+
+def _teardown_remote(h: RemoteServer) -> None:
+    from silicon_pantheon.systemtest import ssh as _ssh
+    # SIGTERM → wait 2s → SIGKILL. Then rm the scratch dir after we
+    # pull logs (caller invokes _collect_remote first).
+    log.info("remote: stopping silicon-serve pid=%s on %s", h.pid, h.ssh_dest)
+    _ssh.run(
+        h.ssh_dest,
+        f"kill {h.pid}; sleep 2; kill -9 {h.pid} 2>/dev/null; true",
+        timeout_s=15.0,
+    )
+
+
+def _collect_remote(h: RemoteServer, server_bundle: Path) -> None:
+    """SCP the remote HOME's ~/.silicon-pantheon data into the bundle."""
+    from silicon_pantheon.systemtest import ssh as _ssh
+    server_bundle.mkdir(parents=True, exist_ok=True)
+    remote_sp = f"{h.remote_home}/.silicon-pantheon"
+    targets = [
+        (f"{remote_sp}/logs", server_bundle / "logs", True),
+        (f"{remote_sp}/replays", server_bundle / "replays", True),
+        (f"{remote_sp}/leaderboard.db", server_bundle / "leaderboard.db", False),
+        (f"{h.remote_home}/server.stdout.log",
+         server_bundle / "silicon-serve.stdout.log", False),
+        # pcaps if --diagnose-sse was on; fine if missing
+        (f"{remote_sp}/sse-diag", server_bundle / "sse-diag", True),
+    ]
+    for remote, local, recursive in targets:
+        r = _ssh.scp_pull(
+            h.ssh_dest, remote, local,
+            recursive=recursive, timeout_s=300.0,
+        )
+        if r.ok:
+            log.info("pulled %s -> %s", remote, local)
+        else:
+            # Missing dir / file is OK (replays/ may be empty, sse-diag
+            # only exists with --diagnose-sse). Log but don't raise.
+            log.info(
+                "skipped %s (rc=%d): %s", remote, r.returncode,
+                r.stderr.strip()[:200] if r.stderr else "",
+            )
+    # Finally remove the scratch dir so the VPS doesn't accumulate
+    # pcaps + logs on every run.
+    _ssh.run(
+        h.ssh_dest, f"rm -rf {_ssh.quote(h.remote_home)}", timeout_s=30.0,
+    )
+
+
+def _wait_healthy_url(url: str, timeout_s: float) -> None:
+    """Poll any URL until it returns 200 or timeout."""
+    import urllib.request
+    deadline = time.monotonic() + timeout_s
+    last_exc: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=2.0) as resp:
+                if resp.status == 200:
+                    return
+        except Exception as e:
+            last_exc = e
+        time.sleep(0.5)
+    raise RuntimeError(
+        f"URL {url} did not return 200 in {timeout_s}s: {last_exc}"
+    )
 
 
 def _port_in_use(port: int) -> bool:

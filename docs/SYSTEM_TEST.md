@@ -31,6 +31,7 @@ Sections:
 - [Quick start](#quick-start)
 - [How it works](#how-it-works)
 - [Config reference](#config-reference)
+- [Remote mode](#remote-mode)
 - [CLI](#cli)
 - [Bundle layout](#bundle-layout)
 - [Reviewing a bundle](#reviewing-a-bundle)
@@ -86,9 +87,11 @@ Each agent is its own subprocess so a crash in one doesn't take the
 others down. The orchestrator watches every subprocess's return
 code; a non-zero exit becomes an incident in the manifest.
 
-The framework is **local-mode only** today — both `server.ip` and
-`client.ip` must be `127.0.0.1` / `localhost`. Remote SSH is planned
-but not implemented.
+The framework supports **local mode** (server spawned as a
+subprocess on this machine) and **remote mode** (server bootstrapped
+over SSH on a VPS, fronted by a reverse proxy with real TLS). Agents
+always spawn locally in both modes. See
+[Remote mode](#remote-mode) for the setup.
 
 ---
 
@@ -100,11 +103,16 @@ repo root. Schema:
 
 ```toml
 [server]
-ip = "127.0.0.1"       # only 127.0.0.1 / localhost supported today
+ip = "127.0.0.1"       # local-mode only; ignored when [server].ssh is set
 port = 8090            # throwaway port; nothing should be listening here
+# Remote-mode fields — see "Remote mode" section below. Leave empty
+# for local mode.
+# ssh         = "<user>@<host>"
+# remote_repo = "/absolute/path/on/vps"
+# url         = "https://<test-host>/mcp/"
 
 [client]
-ip = "127.0.0.1"
+ip = "127.0.0.1"       # agents always spawn locally; remote client unsupported
 
 [run]
 num_matches = 10       # N: the test spawns 2N agents (N hosts + N joiners)
@@ -164,11 +172,138 @@ nondeterminism in tool-call ordering).
 
 ---
 
+## Remote mode
+
+Local mode exercises the server + agents as subprocesses of the
+orchestrator. It's fast, cheap, and catches most regressions — but
+it leaves three layers *untested*:
+
+- **WAN + TLS.** Request + SSE streams go through loopback, not
+  through a real TCP connection that a reverse proxy terminates
+  with a real Let's Encrypt cert. SSE bugs that only show up over
+  chunked TLS (proxy buffering, keepalive, chunk boundaries) are
+  invisible in local mode.
+- **Reverse proxy.** If the production topology is
+  `client → Caddy → silicon-serve`, local mode bypasses Caddy
+  entirely. Host-header rejection, proxy timeouts, Caddy's SSE
+  flushing — none of it exercised.
+- **Real LLM provider paths.** Not strictly a remote-mode thing, but
+  the only reason to pay for real LLM inference in a test run is to
+  catch provider-specific failure modes; doing that against a
+  loopback server tells you less than doing it against a realistic
+  deployment.
+
+Remote mode fixes all three: it bootstraps `silicon-serve` on an
+already-configured VPS via SSH, points the agents at the public
+URL (TLS + reverse proxy + all), and pulls the server-side bundle
+back via `scp` when the run finishes.
+
+### One-time VPS setup
+
+Before the first remote run you need, on the VPS:
+
+1. **A separate clone of this repo.** NOT the one your production
+   systemd unit runs against. The framework does `git pull` +
+   `uv sync` in this clone on every run.
+2. **`uv` installed** for the SSH user (typically at
+   `~/.local/bin/uv`).
+3. **A reverse-proxy site block** forwarding a hostname dedicated
+   to testing (e.g. one you treat as throwaway) to the test port
+   on loopback. The hostname must have DNS pointing at the VPS and
+   a valid TLS cert. Example Caddyfile fragment:
+   ```caddy
+   test.example.com {
+       reverse_proxy 127.0.0.1:8091
+       flush_interval -1   # critical for SSE
+   }
+   ```
+   The test port MUST differ from your production port so a
+   half-broken test doesn't interfere with real traffic.
+4. **Passwordless SSH** from the orchestrator host to the VPS SSH
+   user. No password prompts are tolerated (`BatchMode=yes`). Use
+   `ssh-copy-id` and verify with `ssh <user>@<host> true`.
+
+Personal VPS specifics (IP, hostname, absolute repo path) belong in
+your local `system_test.remote.toml` — which is gitignored — not in
+this doc.
+
+### Remote TOML
+
+Start from
+[`system_test.remote.example.toml`](../system_test.remote.example.toml):
+
+```bash
+cp system_test.remote.example.toml system_test.remote.toml
+$EDITOR system_test.remote.toml       # fill in the <PLACEHOLDERS>
+```
+
+Remote-specific fields under `[server]`:
+
+```toml
+[server]
+ssh         = "<user>@<host-or-ip>"    # triggers remote mode
+remote_repo = "/absolute/path/on/vps"  # a separate clone
+port        = 8091                     # test port, NOT production
+url         = "https://<test-host>/mcp/"
+```
+
+When `[server].ssh` is set, the other two are required — the config
+loader rejects a half-specified remote config. When it's empty, the
+framework runs in local mode and these fields are ignored.
+
+### Running it
+
+```bash
+# Real LLM agents against the deployed server
+uv run silicon-system-test --config system_test.remote.toml
+```
+
+The orchestrator:
+
+1. SSH preflights the VPS (no password prompt allowed).
+2. HTTPS-probes the public URL so a broken DNS / cert / proxy fails
+   fast, before anything runs on the VPS.
+3. Checks the test port is free on the VPS.
+4. Does `git pull` + `uv sync` in `remote_repo` (skip with
+   `--no-pull`).
+5. `mktemp`s a throwaway `HOME` on the VPS so the server's
+   `~/.silicon-pantheon/...` data lands somewhere we can scp back
+   and then delete.
+6. `nohup`-launches `silicon-serve` against that HOME, with
+   `--log-level DEBUG --log-debug-mcp-http` and `SILICON_DEBUG=1`.
+7. Polls `<url>/health` until it returns 200.
+8. Runs the 2N agents locally exactly like local mode.
+9. SIGTERMs the remote server, scps logs/replays/leaderboard/stdout
+   into `<bundle>/server/`, and rm-rfs the remote scratch dir.
+
+If the orchestrator crashes mid-run, an `atexit` hook best-efforts
+the remote cleanup so you don't leak a `silicon-serve` on the VPS.
+If the best-effort fails, SSH in and `pkill -f silicon-serve`
+yourself.
+
+### Post-mortem access
+
+When something goes wrong and you want to poke at the running
+server, re-run with `--keep-remote-alive`:
+
+```bash
+uv run silicon-system-test --config system_test.remote.toml \
+    --keep-remote-alive
+```
+
+The server stays up after agents exit, and the orchestrator prints
+the PID + SSH target + throwaway HOME in the log so you can
+`ssh <target>; tail -f <HOME>/server.stdout.log`. Kill it manually
+when you're done.
+
+---
+
 ## CLI
 
 ```
 silicon-system-test [-h] --config CONFIG [--out-dir OUT_DIR]
                     [-N NUM_MATCHES] [--seed SEED] [--dry-run]
+                    [--keep-remote-alive] [--no-pull]
 ```
 
 - `--config PATH` (required) — TOML file as above.
@@ -180,6 +315,13 @@ silicon-system-test [-h] --config CONFIG [--out-dir OUT_DIR]
   `~/silicon-system-test-results/`.
 - `--dry-run` — parse config, compute the bundle path, print the
   plan, exit. Does NOT spawn anything. Use to validate a TOML.
+- `--keep-remote-alive` — remote mode only. Leave `silicon-serve`
+  running on the VPS after the run. You're responsible for killing
+  it. Handy when a run surfaces something you want to poke at
+  interactively. No-op in local mode.
+- `--no-pull` — remote mode only. Skip the remote `git pull` +
+  `uv sync` step. Use when iterating fast against a branch you've
+  already synced by hand. No-op in local mode.
 
 **Exit codes:**
 
@@ -319,9 +461,28 @@ credential is in `~/.silicon-pantheon/credentials.json`.
 published one, it fails. Usually means the host crashed earlier;
 look at its `.stdout.log`.
 
-**"remote SSH mode is not yet implemented"** — set both
-`[server].ip` and `[client].ip` to `127.0.0.1` or `localhost`. The
-framework runs locally only for now.
+**"remote client mode is not supported"** — remote mode sends the
+*server* over SSH; the agents still spawn on the orchestrator host.
+Set `[client].ip = "127.0.0.1"` and leave `[client].ssh_user`
+unused.
+
+**"SSH preflight failed for …"** — passwordless SSH from this
+machine to `[server].ssh` isn't working. Remote mode refuses to
+prompt for a password (`BatchMode=yes`). Fix your SSH key / agent
+setup and re-run. See [Remote mode](#remote-mode).
+
+**"public URL … not reachable"** — DNS doesn't resolve, TLS cert
+is invalid, or the reverse proxy is down. The orchestrator probes
+the URL *before* starting anything on the VPS so you get a clean
+error instead of a half-started server. Fix DNS / TLS / proxy and
+retry.
+
+**"port N already has a listener on …"** — something's on the test
+port on the VPS. Either another test-server didn't shut down cleanly
+(was the last run `Ctrl-C`'d mid-run? check `atexit` log), production
+is accidentally using the test port (fix `[server].port`), or a
+left-over `silicon-serve` from `--keep-remote-alive` is still there.
+SSH in and `pkill -f silicon-serve`.
 
 ---
 
