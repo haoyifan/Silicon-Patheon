@@ -485,9 +485,14 @@ disown
             pass
     atexit.register(_cleanup_on_exit)
 
-    # 7. Wait for the public URL's /health to return 200 — TLS +
-    # reverse proxy + MCP server all verified at once.
-    _wait_healthy_url(f"{url.rstrip('/')}/health", HEALTH_TIMEOUT_S)
+    # 7. Wait for silicon-serve's /health to return 200 by curling
+    # 127.0.0.1:{port} on the VPS itself. We deliberately DON'T go
+    # through the public URL here — that would force the operator
+    # to expose /health via Caddy just for our probe, when in
+    # production Caddy typically only routes /mcp/*. The pre-launch
+    # HTTPS probe (step 2) already verified the Caddy + TLS layer;
+    # this step verifies the Python process is answering.
+    _wait_healthy_remote(ssh_dest, port, HEALTH_TIMEOUT_S)
     log.info("remote silicon-serve healthy at %s", url)
     return handle
 
@@ -539,21 +544,32 @@ def _collect_remote(h: RemoteServer, server_bundle: Path) -> None:
     )
 
 
-def _wait_healthy_url(url: str, timeout_s: float) -> None:
-    """Poll any URL until it returns 200 or timeout."""
-    import urllib.request
+def _wait_healthy_remote(
+    ssh_dest: str, port: int, timeout_s: float,
+) -> None:
+    """Poll silicon-serve's /health via curl on the VPS itself.
+
+    Goes through loopback on the remote, so it's independent of
+    Caddy's routing rules — we only need the Python process to be
+    answering, not for /health to be publicly exposed.
+    """
+    from silicon_pantheon.systemtest import ssh as _ssh
     deadline = time.monotonic() + timeout_s
-    last_exc: Exception | None = None
+    last_stderr = ""
     while time.monotonic() < deadline:
-        try:
-            with urllib.request.urlopen(url, timeout=2.0) as resp:
-                if resp.status == 200:
-                    return
-        except Exception as e:
-            last_exc = e
+        r = _ssh.run(
+            ssh_dest,
+            f"curl -sf -o /dev/null -w '%{{http_code}}' "
+            f"http://127.0.0.1:{port}/health",
+            timeout_s=5.0,
+        )
+        if r.ok and r.stdout.strip() == "200":
+            return
+        last_stderr = r.stderr.strip() or r.stdout.strip()
         time.sleep(0.5)
     raise RuntimeError(
-        f"URL {url} did not return 200 in {timeout_s}s: {last_exc}"
+        f"silicon-serve on {ssh_dest}:{port} did not return 200 at "
+        f"/health in {timeout_s}s: {last_stderr}"
     )
 
 
