@@ -56,29 +56,62 @@ class RemoteToolError(RuntimeError):
 
 class ServerClient:
     """Connected MCP client. Use via `ServerClient.connect(url)` as an
-    async context manager."""
+    async context manager.
 
-    def __init__(self, session: ClientSession, *, connection_id: str):
+    ── Two MCP sessions, one cid ──
+    The client holds **two** MCP sessions to the same server, both
+    bound to a single ``connection_id``. ``_session`` carries normal
+    tool calls (``get_state``, ``move``, ``end_turn``, …);
+    ``_heartbeat_session`` is used exclusively by the heartbeat
+    loop. Each session has its own HTTP connection, SSE stream, and
+    ``_call_lock``. The MCP SDK's SSE demuxer can't tolerate
+    concurrent requests on ONE session (documented below), so the
+    lock is non-negotiable per session — but splitting heartbeat
+    onto its own session means a 30-second ``get_state`` can't block
+    a 10-second heartbeat any more. This directly addresses the
+    "silent eviction" failure mode documented in
+    ~/dev/heartbeat-resilience-plan.md.
+    """
+
+    def __init__(
+        self,
+        session: ClientSession,
+        *,
+        heartbeat_session: ClientSession,
+        connection_id: str,
+    ):
         self._session = session
+        self._heartbeat_session = heartbeat_session
         self.connection_id = connection_id
         self._heartbeat_task: asyncio.Task | None = None
-        # Serialize all call_tool requests on this session. The MCP
+        # Serialize all call_tool requests on each session. The MCP
         # SDK demuxes SSE responses by JSON-RPC ID — concurrent
-        # requests cause responses to get lost/misrouted and one or
-        # more call_tool futures hang forever. Even 2 concurrent
-        # calls (TUI poll + agent tool) can trigger this.
+        # requests on ONE session cause responses to get lost /
+        # misrouted and one or more call_tool futures hang forever.
+        # Even 2 concurrent calls (TUI poll + agent tool) can trigger
+        # this. We keep a separate lock per session so the heartbeat
+        # session's fast heartbeat calls never wait on the main
+        # session's slow tool calls.
         self._call_lock = asyncio.Lock()
+        self._heartbeat_call_lock = asyncio.Lock()
         # Layer 1 of transport-resilience (see
         # ~/dev/transport-resilience-plan.md): when the MCP SDK's
         # internal anyio streams go closed (observed as ws_closed=True
         # / rs_closed=True on tool calls after a silent network blip),
         # any in-flight session.call_tool parks forever because
         # nothing wakes the awaiter. This event fires as soon as we
-        # detect stream death; the worker's run_forever races its
-        # game loop against this event so it can force a reconnect
-        # instead of staying wedged for 90s+ behind wait_for.
+        # detect stream death on EITHER session; the worker's
+        # run_forever races its game loop against this event so it
+        # can force a full reconnect instead of staying wedged.
         self._transport_dead_event = asyncio.Event()
         self._stream_monitor_task: asyncio.Task | None = None
+        self._heartbeat_stream_monitor_task: asyncio.Task | None = None
+        # Cached args from the most recent set_player_metadata call,
+        # used for auto-recovery when the server has evicted this cid
+        # (server returns NOT_REGISTERED; we transparently re-register
+        # with the same cid and retry the original call). Populated
+        # lazily by ``call()`` itself — callers don't need to plumb it.
+        self._last_register_kwargs: dict | None = None
 
     @classmethod
     @asynccontextmanager
@@ -118,18 +151,111 @@ class ServerClient:
             "transport connecting: url=%s cid=%s httpx_defaults=%s",
             url, cid, _describe_httpx_defaults(),
         )
-        async with streamablehttp_client(url) as (read, write, _get_session_id):
-            async with ClientSession(read, write) as session:
+        # Two sessions, same server. The first is for tool calls; the
+        # second is dedicated to the heartbeat loop. Nested async-with
+        # ensures both sessions are torn down cleanly in reverse
+        # order if anything inside fails.
+        async with streamablehttp_client(url) as (read1, write1, _get_sess_id_1):
+            async with ClientSession(read1, write1) as session:
                 await session.initialize()
-                client = cls(session, connection_id=cid)
-                client._start_stream_monitor()
-                try:
-                    yield client
-                finally:
-                    await client._stop_stream_monitor()
+                async with streamablehttp_client(url) as (
+                    read2, write2, _get_sess_id_2,
+                ):
+                    async with ClientSession(read2, write2) as heartbeat_session:
+                        await heartbeat_session.initialize()
+                        log.info(
+                            "transport: both sessions initialized "
+                            "(main_sess=%s heartbeat_sess=%s cid=%s)",
+                            id(session), id(heartbeat_session), cid,
+                        )
+                        client = cls(
+                            session,
+                            heartbeat_session=heartbeat_session,
+                            connection_id=cid,
+                        )
+                        client._start_stream_monitor()
+                        try:
+                            yield client
+                        finally:
+                            await client._stop_stream_monitor()
 
     async def call(self, tool_name: str, **kwargs: Any) -> dict:
         """Call a server tool, returning the structured response dict.
+
+        Uses the main session. Also:
+
+        1. Caches ``set_player_metadata`` args so we can silently
+           re-register if the server forgets us later.
+        2. Detects the ``not_registered`` error code on the response
+           (server evicted us — most likely because an earlier heartbeat
+           gap blew through HEARTBEAT_DEAD_S) and transparently
+           re-registers with the SAME cid, then retries the original
+           call once. This turns a previously fatal "call
+           set_player_metadata first" error into a hiccup the caller
+           doesn't have to care about.
+
+        Transient transport errors (ClosedResourceError etc.) are
+        NOT retried here — a closed stream on the same session can't
+        be resurrected by a retry on that same session. Those errors
+        trigger ``_transport_dead_event`` which the outer worker races
+        against to force a full reconnect.
+        """
+        # Cache registration args on the way in so we have them later
+        # if recovery fires.
+        if tool_name == "set_player_metadata":
+            self._last_register_kwargs = dict(kwargs)
+
+        result = await self._call_on_session(
+            self._session, self._call_lock, tool_name, **kwargs,
+        )
+
+        # Auto-recover if the server returned NOT_REGISTERED. We skip
+        # the recovery path when the caller IS the set_player_metadata
+        # call (would loop) and when we have no cached registration
+        # args (nothing to recover to — user must call
+        # set_player_metadata themselves first).
+        if (
+            tool_name != "set_player_metadata"
+            and isinstance(result, dict)
+            and result.get("ok") is False
+            and isinstance(result.get("error"), dict)
+            and result["error"].get("code") == "not_registered"
+            and self._last_register_kwargs is not None
+        ):
+            log.warning(
+                "call %s returned NOT_REGISTERED for cid=%s — server "
+                "forgot us (likely heartbeat-dead eviction). "
+                "Re-registering with cached metadata and retrying.",
+                tool_name, self.connection_id,
+            )
+            reregister = await self._call_on_session(
+                self._session, self._call_lock,
+                "set_player_metadata", **self._last_register_kwargs,
+            )
+            if not (isinstance(reregister, dict) and reregister.get("ok")):
+                log.error(
+                    "auto re-register FAILED for cid=%s: %s",
+                    self.connection_id, reregister,
+                )
+                return result  # surface the original error to caller
+            log.info(
+                "auto re-register succeeded for cid=%s; retrying %s",
+                self.connection_id, tool_name,
+            )
+            result = await self._call_on_session(
+                self._session, self._call_lock, tool_name, **kwargs,
+            )
+        return result
+
+    async def _call_on_session(
+        self,
+        session: ClientSession,
+        lock: asyncio.Lock,
+        tool_name: str,
+        **kwargs: Any,
+    ) -> dict:
+        """Generic call-tool wrapper parameterized by which session
+        (and matching lock) to use.
 
         The server always returns JSON wrapped in a TextContent block;
         this helper parses that back out. `connection_id` is injected
@@ -147,12 +273,15 @@ class ServerClient:
         import time as _time
 
         # Acquire the call lock to ensure only one call_tool is in
-        # flight at a time. The MCP SDK's SSE response demuxer loses
-        # responses under concurrent requests, causing permanent hangs.
-        async with self._call_lock:
-            sess_id = id(self._session)
-            ws = getattr(self._session, "_write_stream", None)
-            rs = getattr(self._session, "_read_stream", None)
+        # flight at a time on THIS session. The MCP SDK's SSE response
+        # demuxer loses responses under concurrent requests on one
+        # session, causing permanent hangs. Heartbeat runs on its own
+        # session with its own lock so normal tool-call slowness
+        # can't starve it.
+        async with lock:
+            sess_id = id(session)
+            ws = getattr(session, "_write_stream", None)
+            rs = getattr(session, "_read_stream", None)
             ws_id = id(ws) if ws is not None else None
             rs_id = id(rs) if rs is not None else None
             ws_closed = getattr(ws, "_closed", "?") if ws is not None else "?"
@@ -170,8 +299,8 @@ class ServerClient:
                 while True:
                     await asyncio.sleep(WATCHDOG_INTERVAL_S)
                     elapsed = _time.monotonic() - _t0
-                    ws2 = getattr(self._session, "_write_stream", None)
-                    rs2 = getattr(self._session, "_read_stream", None)
+                    ws2 = getattr(session, "_write_stream", None)
+                    rs2 = getattr(session, "_read_stream", None)
                     ws2_closed = getattr(ws2, "_closed", "?") if ws2 is not None else "?"
                     rs2_closed = getattr(rs2, "_closed", "?") if rs2 is not None else "?"
                     # Try to inspect MCP SDK internal state.
@@ -179,7 +308,7 @@ class ServerClient:
                     try:
                         # ClientSession tracks pending requests internally.
                         pending_requests = str(len(getattr(
-                            self._session, "_response_streams", {}
+                            session, "_response_streams", {}
                         )))
                     except Exception:
                         pass
@@ -189,7 +318,7 @@ class ServerClient:
                         "sess=%s ws=%s rs=%s",
                         tool_name, self.connection_id, elapsed, _phase,
                         ws2_closed, rs2_closed, pending_requests,
-                        id(self._session),
+                        id(session),
                         id(ws2) if ws2 else None,
                         id(rs2) if rs2 else None,
                     )
@@ -209,10 +338,10 @@ class ServerClient:
                         _phase, tool_name, self.connection_id,
                     )
                     # Inspect the write stream state right before we use it
-                    _ws = getattr(self._session, "_write_stream", None)
+                    _ws = getattr(session, "_write_stream", None)
                     _ws_closed = getattr(_ws, "_closed", "?") if _ws else "?"
-                    _req_id = getattr(self._session, "_request_id", "?")
-                    _resp_count = len(getattr(self._session, "_response_streams", {}))
+                    _req_id = getattr(session, "_request_id", "?")
+                    _resp_count = len(getattr(session, "_response_streams", {}))
                     log.log(
                         level,
                         "call PHASE pre-send %s cid=%s req_id=%s "
@@ -221,7 +350,7 @@ class ServerClient:
                         _req_id, _resp_count, _ws_closed,
                     )
                     _phase = "call_tool:sending"
-                    result = await self._session.call_tool(tool_name, args)
+                    result = await session.call_tool(tool_name, args)
                     _phase = "call_tool:done"
                     return result
 
@@ -231,8 +360,8 @@ class ServerClient:
                 )
             except asyncio.TimeoutError:
                 elapsed = _time.monotonic() - _t0
-                ws2 = getattr(self._session, "_write_stream", None)
-                rs2 = getattr(self._session, "_read_stream", None)
+                ws2 = getattr(session, "_write_stream", None)
+                rs2 = getattr(session, "_read_stream", None)
                 log.error(
                     "call TIMEOUT %s cid=%s dt=%.1fs phase=%s — "
                     "ws_closed=%s rs_closed=%s.",
@@ -242,14 +371,14 @@ class ServerClient:
                 )
                 raise
             except Exception as e:
-                ws2 = getattr(self._session, "_write_stream", None)
-                rs2 = getattr(self._session, "_read_stream", None)
+                ws2 = getattr(session, "_write_stream", None)
+                rs2 = getattr(session, "_read_stream", None)
                 log.error(
                     "call !! %s cid=%s exc_type=%s exc=%r dt=%.1fs "
                     "sess_now=%s ws_now=%s ws_closed_now=%s rs_now=%s",
                     tool_name, self.connection_id, type(e).__name__, e,
                     _time.monotonic() - _t0,
-                    id(self._session),
+                    id(session),
                     id(ws2) if ws2 is not None else None,
                     getattr(ws2, "_closed", "?") if ws2 is not None else "?",
                     id(rs2) if rs2 is not None else None,
@@ -369,19 +498,26 @@ class ServerClient:
         if self._stream_monitor_task is not None and not self._stream_monitor_task.done():
             return
 
-        async def _monitor() -> None:
+        async def _monitor_one(session: ClientSession, label: str) -> None:
+            """Poll one session's streams; fire transport_dead when either goes closed.
+
+            Runs once per session — we have a main session and a
+            heartbeat session; either going dead means the transport
+            as a whole is dead and a full reconnect is needed, so we
+            share the same ``_transport_dead_event``.
+            """
             try:
                 while not self._transport_dead_event.is_set():
                     await asyncio.sleep(1.0)
-                    ws = getattr(self._session, "_write_stream", None)
-                    rs = getattr(self._session, "_read_stream", None)
+                    ws = getattr(session, "_write_stream", None)
+                    rs = getattr(session, "_read_stream", None)
                     ws_closed = getattr(ws, "_closed", False) if ws is not None else True
                     rs_closed = getattr(rs, "_closed", False) if rs is not None else True
                     if ws_closed or rs_closed:
                         log.error(
-                            "transport DEAD detected: cid=%s ws_closed=%s "
-                            "rs_closed=%s — signalling reconnect",
-                            self.connection_id, ws_closed, rs_closed,
+                            "transport DEAD detected (%s session): cid=%s "
+                            "ws_closed=%s rs_closed=%s — signalling reconnect",
+                            label, self.connection_id, ws_closed, rs_closed,
                         )
                         self._transport_dead_event.set()
                         # Best-effort close of the other side too, so
@@ -399,14 +535,19 @@ class ServerClient:
             except asyncio.CancelledError:
                 return
 
-        self._stream_monitor_task = asyncio.create_task(_monitor())
+        self._stream_monitor_task = asyncio.create_task(
+            _monitor_one(self._session, "main"),
+        )
+        self._heartbeat_stream_monitor_task = asyncio.create_task(
+            _monitor_one(self._heartbeat_session, "heartbeat"),
+        )
 
     async def _stop_stream_monitor(self) -> None:
-        if self._stream_monitor_task is None:
-            return
-        task = self._stream_monitor_task
-        self._stream_monitor_task = None
-        if not task.done():
+        for attr in ("_stream_monitor_task", "_heartbeat_stream_monitor_task"):
+            task = getattr(self, attr, None)
+            setattr(self, attr, None)
+            if task is None or task.done():
+                continue
             task.cancel()
             try:
                 await task
@@ -475,9 +616,16 @@ class ServerClient:
                     if _DEBUG and _lag_s > 2.0:
                         log.warning(
                             "heartbeat self-lag: wake-up was %.1fs late "
-                            "(cid=%s). Event loop was blocked — any other "
-                            "async task on this loop was starved too. "
-                            "Look for DIAG loop-stall around this time.",
+                            "(cid=%s). The previous iteration's "
+                            "call_tool took longer than expected — "
+                            "either the event loop was blocked (check "
+                            "silicon.diag.loop + asyncio slow-callback "
+                            "warnings) or the heartbeat session was "
+                            "itself slow on the wire. Since this "
+                            "heartbeat runs on its OWN session + lock "
+                            "as of the 2026-04-23 change, lock-wait "
+                            "behind a slow main-session tool call is "
+                            "no longer a cause.",
                             _lag_s, self.connection_id,
                         )
                     # Advance the schedule. If we're more than one
@@ -496,7 +644,14 @@ class ServerClient:
                             )
                         _next_tick = _now + interval_s
                     try:
-                        await self.call("heartbeat")
+                        # Use the DEDICATED heartbeat channel so the
+                        # main session's slow tool calls can't block
+                        # us (see class docstring).
+                        await self._call_on_session(
+                            self._heartbeat_session,
+                            self._heartbeat_call_lock,
+                            "heartbeat",
+                        )
                         consecutive_failures = 0
                     except ClosedResourceError:
                         consecutive_failures += 1
