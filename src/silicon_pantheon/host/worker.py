@@ -110,23 +110,43 @@ class BotWorker:
 
         game_task = asyncio.create_task(self._game_loop())
         dead_task = asyncio.create_task(dead_event.wait())
+        done: set[asyncio.Task] = set()
         try:
             done, _ = await asyncio.wait(
                 {game_task, dead_task},
                 return_when=asyncio.FIRST_COMPLETED,
             )
         finally:
+            # Cancel whichever task(s) are still pending. Crucially
+            # we do NOT `await t` unbounded here: if the game task
+            # is parked inside ``session.call_tool`` on a dead MCP
+            # stream, cancellation may never propagate (observed
+            # 2026-04-22 20:49:21: Layer 1 fired, dead_task returned,
+            # but `await game_task` then hung forever in the finally,
+            # preventing RuntimeError("transport dead") from ever
+            # being raised and the worker from reconnecting). Give
+            # each task 2s to acknowledge the cancel; anything still
+            # stuck gets abandoned — the outer run_forever will
+            # _disconnect() the whole client next, which tears down
+            # the underlying transport and GCs the orphaned task.
+            CANCEL_TIMEOUT_S = 2.0
             for t in (game_task, dead_task):
                 if not t.done():
                     t.cancel()
-            # Drain cancellations so the task group teardown is
-            # clean. Swallow CancelledError; a real exception from
-            # game_task re-raises below.
             for t in (game_task, dead_task):
+                if t.done():
+                    continue
                 try:
-                    await t
+                    await asyncio.wait_for(t, timeout=CANCEL_TIMEOUT_S)
                 except asyncio.CancelledError:
                     pass
+                except asyncio.TimeoutError:
+                    log.warning(
+                        "worker %s: task %r did not cancel within %.0fs "
+                        "after transport-dead; abandoning to let "
+                        "_disconnect tear down the transport",
+                        self.config.name, t, CANCEL_TIMEOUT_S,
+                    )
                 except Exception:
                     pass
 
@@ -165,7 +185,21 @@ class BotWorker:
                 pass
         if self._transport_ctx is not None:
             try:
-                await self._transport_ctx.__aexit__(None, None, None)
+                # Time-bound: if the transport is already dead (the
+                # very scenario that drove us here), __aexit__ can
+                # hang waiting for child tasks to finish. 5s is more
+                # than enough for a live transport to shut down
+                # cleanly; a dead one gets abandoned.
+                await asyncio.wait_for(
+                    self._transport_ctx.__aexit__(None, None, None),
+                    timeout=5.0,
+                )
+            except asyncio.TimeoutError:
+                log.warning(
+                    "worker %s: transport __aexit__ timed out; "
+                    "abandoning context (orphaned stream will be GCd)",
+                    self.config.name,
+                )
             except Exception:
                 pass
             self._transport_ctx = None

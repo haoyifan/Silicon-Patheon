@@ -10,7 +10,7 @@
 # Local subprocess (current only supported mode). Remote SSH is on
 # the roadmap — see ~/dev/system-test-plan.md.
 ip = "127.0.0.1"
-port = 8090
+port = 9000
 
 [client]
 ip = "127.0.0.1"
