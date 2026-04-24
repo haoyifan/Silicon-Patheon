@@ -26,5 +26,4 @@ armies:
 
 rules:
   max_turns: 20
-  fog_of_war: false
   first_player: blue

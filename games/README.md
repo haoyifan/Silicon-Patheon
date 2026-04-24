@@ -28,10 +28,11 @@ armies:
 
 rules:
   max_turns: 30
-  fog_of_war: false                 # currently ignored; Phase 8
   first_player: blue
 ```
 
 Class stats and terrain effects are fixed in
 `src/silicon_pantheon/server/engine/units.py` and `state.py`. Scenarios only
-define *composition*, not unit rules.
+define *composition*, not unit rules. Fog of war is set per-room when the
+room is created — it is NOT a scenario-level property (the scenario author
+doesn't control whether the match is played with fog; the room host does).

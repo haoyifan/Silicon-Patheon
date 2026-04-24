@@ -581,7 +581,6 @@ armies:
 
 rules:
   max_turns: 12
-  fog_of_war: classic
   first_player: blue
 
 win_conditions:

@@ -543,7 +543,6 @@ armies:
 
 rules:
   max_turns: 25
-  fog_of_war: false
   first_player: blue
 
 plugin_hooks:

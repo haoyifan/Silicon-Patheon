@@ -414,7 +414,6 @@ armies:
 
 rules:
   max_turns: 40
-  fog_of_war: false
   first_player: blue
 
 win_conditions:
