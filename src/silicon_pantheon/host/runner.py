@@ -107,8 +107,11 @@ def _setup_logging(log_file: str) -> None:
     root = logging.getLogger()
     root.setLevel(logging.INFO)
     root.addHandler(handler)
-    # Suppress noisy httpx INFO lines.
+    # Suppress noisy httpx / httpcore INFO lines. httpcore at DEBUG
+    # emits ~50 lines/s across 10 workers, producing multi-GB logs
+    # over a few days.
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 def _status_line(workers: list[BotWorker]) -> str:
