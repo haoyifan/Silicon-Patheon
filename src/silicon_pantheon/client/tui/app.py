@@ -151,6 +151,12 @@ class SharedState:
     # snapping back to row 0. Clamped to ``len(last_rooms) - 1`` on
     # render — safe even if rooms close while the user is away.
     lobby_rooms_selected: int = 0
+    # Whether we've shown the one-off "models can think for a while,
+    # be patient" notice this app launch. The message is informational
+    # (easy to miss otherwise — users watching a long grok-3 chain of
+    # thought wonder if the bot is stuck) and not worth re-showing on
+    # every lobby round-trip. Reset to False on process restart.
+    reasoning_notice_shown: bool = False
     # Tutorial completion state — loaded from disk on startup.
     tutorial_state: Any = None  # TutorialState, lazy-loaded
     # Eviction-class alert overlay. Set by any screen / background
@@ -348,6 +354,35 @@ class TUIApp:
                 )
                 return LobbyScreen(app)
             self.state.pending_screen_factory = _factory
+        self._refresh()
+        return True
+
+    def show_info_alert(self, title: str, body: str) -> bool:
+        """Install a pending informational alert (no forced routing).
+
+        Lighter-weight cousin of ``show_eviction_alert`` — severity
+        is "info" (cyan border, not red/yellow), there is no
+        ``pending_screen_factory`` so dismissing the alert just
+        returns the user to whatever screen they were on. Use for
+        one-off notices that need the user's attention but aren't
+        eviction-class.
+
+        First-write-wins like ``show_eviction_alert`` — a second
+        info alert while one is already pending is dropped.
+        """
+        if self.state.pending_alert is not None:
+            return False
+        from silicon_pantheon.client.tui.widgets import AlertModal
+
+        self.state.pending_alert = AlertModal(
+            title=title,
+            body=body,
+            severity="info",
+            locale=self.state.locale,
+        )
+        # Deliberately leave ``pending_screen_factory`` as None — on
+        # dismiss the dispatcher just clears the alert and we stay
+        # on the current screen.
         self._refresh()
         return True
 

@@ -120,6 +120,8 @@ provider:
   keep: "Keep"
   reauth: "Re-authenticate"
   rotate_key: "[r] rotate key"
+  reasoning_notice_title: "Heads up"
+  reasoning_notice_body: "The model you picked can take a while to think, depending on its size and quality. Be patient with your silicon warrior :)"
 
 # Login screen
 login_screen:

@@ -756,6 +756,20 @@ class ProviderAuthScreen(Screen):
             except Exception:
                 pass  # non-fatal; lobby still works
 
+        # One-off heads-up about LLM reasoning latency — some users
+        # watching a long grok-3 / claude-opus chain of thought wonder
+        # if the bot is stuck. Installed as an info-alert overlay on
+        # top of the lobby screen the user is about to land on; the
+        # first-write-wins guard makes this a no-op on subsequent
+        # lobby entries in the same session.
+        if not self.app.state.reasoning_notice_shown:
+            lc = self.app.state.locale
+            self.app.show_info_alert(
+                t("provider.reasoning_notice_title", lc),
+                t("provider.reasoning_notice_body", lc),
+            )
+            self.app.state.reasoning_notice_shown = True
+
         from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
 
         return LobbyScreen(self.app)
