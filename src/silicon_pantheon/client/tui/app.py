@@ -145,6 +145,12 @@ class SharedState:
     lobby_ranking_selected: int = 0
     lobby_rooms_scroll: int = 0
     lobby_ranking_scroll: int = 0
+    # Selected room row in the lobby. Persisted across screen
+    # round-trips (room-preview, scenario picker, model details) so
+    # the cursor returns to the row the user was on instead of
+    # snapping back to row 0. Clamped to ``len(last_rooms) - 1`` on
+    # render — safe even if rooms close while the user is away.
+    lobby_rooms_selected: int = 0
     # Tutorial completion state — loaded from disk on startup.
     tutorial_state: Any = None  # TutorialState, lazy-loaded
     # Eviction-class alert overlay. Set by any screen / background

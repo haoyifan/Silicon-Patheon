@@ -43,15 +43,16 @@ LEADERBOARD_VISIBLE_ROWS = 5
 class LobbyScreen(Screen):
     def __init__(self, app: TUIApp):
         self.app = app
-        self._selected = 0
         self._last_poll = 0.0
         self._tutorial = None  # TutorialOverlay | None
         self._confirm = None  # ConfirmModal | None
 
-    # View state is stored on SharedState so model-details round-trips
-    # preserve which panel the user was focused on + which row was
-    # selected. Bare attribute access would re-init per LobbyScreen
-    # construction, wiping the selection.
+    # View state is stored on SharedState so model-details /
+    # room-preview / scenario-picker round-trips preserve which panel
+    # the user was focused on + which row was selected. Bare attribute
+    # access would re-init per LobbyScreen construction, wiping the
+    # selection — users would come back from a preview and find the
+    # cursor jumped to row 0.
     @property
     def _active_view(self) -> str:
         return self.app.state.lobby_active_view
@@ -67,6 +68,14 @@ class LobbyScreen(Screen):
     @_ranking_selected.setter
     def _ranking_selected(self, value: int) -> None:
         self.app.state.lobby_ranking_selected = value
+
+    @property
+    def _selected(self) -> int:
+        return self.app.state.lobby_rooms_selected
+
+    @_selected.setter
+    def _selected(self, value: int) -> None:
+        self.app.state.lobby_rooms_selected = value
 
     @property
     def _rooms_scroll(self) -> int:
