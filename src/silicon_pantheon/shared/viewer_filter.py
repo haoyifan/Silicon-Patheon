@@ -162,7 +162,9 @@ def _action_is_visible(ev: dict, state: GameState, ctx: ViewerContext) -> bool:
 
 def filter_state(state: GameState, ctx: ViewerContext) -> dict[str, Any]:
     """Return state_to_dict filtered for `ctx.team` under `ctx.fog_mode`."""
-    raw = state_to_dict(state, viewer=ctx.team)
+    # Forward fog_mode into state_to_dict so the response's top-level
+    # ``fog_of_war`` field matches what actually filtered the payload.
+    raw = state_to_dict(state, viewer=ctx.team, fog_of_war=ctx.fog_mode)
     if ctx.fog_mode == "none":
         return raw
     visible = currently_visible(state, ctx)

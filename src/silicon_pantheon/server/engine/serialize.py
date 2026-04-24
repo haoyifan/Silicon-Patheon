@@ -5,11 +5,28 @@ from __future__ import annotations
 from .state import GameState, Pos, Team
 
 
-def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
+def state_to_dict(
+    state: GameState,
+    viewer: Team | None = None,
+    *,
+    fog_of_war: str | None = None,
+) -> dict:
     """Serialize state to the dict shape documented in GAME_DESIGN.md.
 
-    `viewer` is reserved for future fog-of-war support; currently ignored
-    (full state is returned regardless).
+    ``viewer`` is reserved for future fog-of-war support at this
+    layer; today the raw dict returned here is the FULL state and
+    fog filtering is applied separately by ``filter_state`` in the
+    dispatch layer (see ``server/game_tools.py::_apply_filter``).
+
+    ``fog_of_war`` is passed through to the response so agents can
+    read the effective fog mode from any ``get_state`` call and
+    reason correctly about what ``units`` does or doesn't contain.
+    Previously agents had no way to tell whether the unit list was
+    fog-filtered — they'd look at their scenario config (which no
+    longer records fog mode), guess wrong, and file state-
+    inconsistency bug reports when ``get_state``'s filtered unit
+    count disagreed with ``win_progress``'s unfiltered one. Room is
+    the single source of truth.
     """
     # Flat list of {x, y, type} — matches what the viewer-filter
     # writes when masking for fog, and what the TUI expects. Earlier
@@ -91,6 +108,9 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
         "first_player": state.first_player.value,
         "status": state.status.value,
         "winner": state.winner.value if state.winner else None,
+        # Effective fog mode for this match (read from the session,
+        # not from the scenario). See docstring.
+        "fog_of_war": fog_of_war,
         "board": {
             "width": state.board.width,
             "height": state.board.height,

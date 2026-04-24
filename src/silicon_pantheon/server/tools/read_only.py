@@ -12,7 +12,12 @@ from ._common import ToolError, _require_active, _require_own_unit, _visible_ene
 
 
 def get_state(session: Session, viewer: Team) -> dict:
-    return state_to_dict(session.state, viewer=viewer)
+    # Surface the session's fog mode so agents reading the response
+    # know whether the ``units`` list is fog-filtered. See
+    # ``state_to_dict`` docstring.
+    return state_to_dict(
+        session.state, viewer=viewer, fog_of_war=session.fog_of_war,
+    )
 
 
 def get_unit_range(session: Session, viewer: Team, unit_id: str) -> dict:
@@ -260,12 +265,35 @@ def get_tactical_summary(session: Session, viewer: Team) -> dict:
     # engine/win_conditions/rules.py for per-type formatters.
     win_progress: list[str] = []
     conds = getattr(state, "_win_conditions", None) or []
+    # Precompute the visible-enemy count for the fog annotation
+    # below. Under fog=none this is just `len(all alive enemies)`
+    # and matches what EliminateAllEnemyUnits.describe_progress
+    # already prints — so no annotation is needed.
+    _visible_enemy_count = len(enemy_units)  # enemy_units is already _visible_enemies
+    _fog_on = session.fog_of_war != "none"
+    from ..engine.win_conditions.rules import EliminateAllEnemyUnits
     for wc in conds:
         describe = getattr(wc, "describe_progress", None)
         if not callable(describe):
             continue
         try:
             line = describe(state, viewer)
+            # When fog is active, the raw EliminateAll counter uses
+            # the server's full-state view (N enemies still alive
+            # anywhere on the map) — which disagrees with get_state's
+            # filtered unit list (only visible enemies). Previously
+            # this showed up as a "bug" in player reports (see
+            # 2026-04-20 22_loot_train_attack cluster). Append the
+            # visible count so the model sees both numbers and can
+            # reason about how many of the live enemies are hidden.
+            if (
+                _fog_on and isinstance(line, str) and line
+                and isinstance(wc, EliminateAllEnemyUnits)
+            ):
+                line = (
+                    f"{line.rstrip('.')} "
+                    f"(you currently see {_visible_enemy_count})."
+                )
         except Exception:
             # Don't let one misbehaving rule take down the whole
             # tactical summary -- skip it and log so we know.

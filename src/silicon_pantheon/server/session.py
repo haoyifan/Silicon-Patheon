@@ -247,6 +247,15 @@ def new_session(
             "scenario": scenario,
             "max_turns": state.max_turns,
             "first_player": state.first_player.value,
+            # Record the effective fog mode the room was launched with
+            # so the replay is self-describing. Previously missing
+            # from the payload — players hitting a fog-related bug
+            # had to guess the fog mode (and often guessed wrong by
+            # reading the old scenario config hint). Source of truth
+            # is now the room config at match_start time, not the
+            # scenario yaml. See 2026-04-20 22_loot_train_attack
+            # golden-retriever debug-report cluster.
+            "fog_of_war": fog_of_war,
             "started_at": _time.time(),
         }
         # Player info is injected by start_game_for_room after
