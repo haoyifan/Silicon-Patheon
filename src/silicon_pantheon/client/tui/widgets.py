@@ -72,12 +72,16 @@ class Dropdown:
             if len(label) > max_label:
                 label = label[:max_label - 1] + "…"
             lines.append(Text(f"{marker}{label}", style=style, no_wrap=True, overflow="ellipsis"))
+        while len(lines) < max_vis:
+            lines.append(Text(""))
         if total > max_vis:
             shown_end = min(self._list_scroll + max_vis, total)
             lines.append(Text(
                 f"  [{self._list_scroll + 1}–{shown_end} of {total}]",
                 style="dim",
             ))
+        else:
+            lines.append(Text(""))
         list_border = "bright_cyan" if self._focus == "list" else "dim"
         list_panel = RichPanel(
             Group(*lines), border_style=list_border, padding=(0, 1),
@@ -102,7 +106,10 @@ class Dropdown:
             max_visible = 12
             start = min(self._desc_scroll, max(0, total_lines - max_visible))
             end = min(start + max_visible, total_lines)
-            visible = "\n".join(desc_lines[start:end])
+            padded = desc_lines[start:end]
+            while len(padded) < max_visible:
+                padded.append("")
+            visible = "\n".join(padded)
             scroll_hint = ""
             if total_lines > max_visible:
                 scroll_hint = f" [{start + 1}-{end}/{total_lines}]"
