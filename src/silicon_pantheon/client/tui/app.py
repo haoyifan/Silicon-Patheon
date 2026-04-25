@@ -207,10 +207,18 @@ class TUIApp:
         # terminal, etc.) blocks a worker thread, not the event loop —
         # so heartbeats, polls, and key-handling keep running.
         self._render_event: asyncio.Event | None = None
+        self._key_reader_task: asyncio.Task | None = None
 
     # ---- lifecycle ----
 
     async def run(self) -> int:
+        import faulthandler
+        import signal
+        try:
+            faulthandler.register(signal.SIGUSR1)
+        except Exception:
+            pass
+
         self._screen = self._initial_factory(self)
         await self._screen.on_enter(self)
         self._render_event = asyncio.Event()
@@ -238,8 +246,9 @@ class TUIApp:
             ) as live:
                 self.console.show_cursor(False)
                 self._live = live
+                self._key_reader_task = asyncio.create_task(self._key_reader())
                 tasks = [
-                    asyncio.create_task(self._key_reader()),
+                    self._key_reader_task,
                     asyncio.create_task(self._ticker()),
                     asyncio.create_task(self._dispatcher()),
                     asyncio.create_task(self._render_loop()),
@@ -647,13 +656,25 @@ class TUIApp:
 
     async def _key_reader(self) -> None:
         """Read single keys in cbreak mode and push onto the queue."""
+        _log.info("key_reader START")
         try:
             while not self._should_exit:
-                key = await asyncio.to_thread(_read_key_blocking)
+                try:
+                    key = await asyncio.to_thread(_read_key_blocking)
+                except asyncio.CancelledError:
+                    return
+                except Exception:
+                    _log.exception("key_reader: _read_key_blocking crashed")
+                    await asyncio.sleep(0.5)
+                    continue
                 if key:
                     await self._key_queue.put(key)
         except asyncio.CancelledError:
             return
+        except Exception:
+            _log.exception("key_reader DIED — keyboard input will stop")
+        finally:
+            _log.warning("key_reader EXIT")
 
     async def _dispatcher(self) -> None:
         """Apply key events; coalesce bursts so we render at most once
@@ -864,10 +885,19 @@ class TUIApp:
                 _tick_n += 1
                 now = _time.time()
                 if now - _last_pulse >= 30.0:
+                    kr = getattr(self, "_key_reader_task", None)
+                    kr_status = "?"
+                    if kr is not None:
+                        if kr.done():
+                            exc = kr.exception() if not kr.cancelled() else None
+                            kr_status = f"DEAD(exc={exc})" if exc else "DEAD"
+                        else:
+                            kr_status = "alive"
                     _log.info(
-                        "ticker pulse: tick_n=%d screen=%s should_exit=%s",
+                        "ticker pulse: tick_n=%d screen=%s should_exit=%s "
+                        "key_reader=%s",
                         _tick_n, type(self._screen).__name__,
-                        self._should_exit,
+                        self._should_exit, kr_status,
                     )
                     _last_pulse = now
                 t0 = _time.time()
@@ -1011,7 +1041,10 @@ def _read_key_blocking() -> str:
         return b.decode("utf-8", errors="replace")
 
     def _peek(timeout: float) -> str:
-        r, _, _ = select.select([fd], [], [], timeout)
+        try:
+            r, _, _ = select.select([fd], [], [], timeout)
+        except (OSError, ValueError):
+            return ""
         return _read_char() if r else ""
 
     # Set cbreak once, not every call. tty.setcbreak uses TCSAFLUSH
