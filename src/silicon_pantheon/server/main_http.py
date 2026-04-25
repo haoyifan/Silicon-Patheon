@@ -297,6 +297,72 @@ def main() -> int:
             "status": "ok",
         })
 
+    @mcp.custom_route("/api/leaderboard", methods=["GET"])
+    async def _api_leaderboard(request):
+        from silicon_pantheon.server.leaderboard import query_leaderboard
+
+        # Maps provider IDs to landing page fighter names.
+        _FIGHTER_NAMES = {
+            "anthropic": "Claude",
+            "openai": "GPT-5",
+            "openai-codex": "GPT-5",
+            "xai": "Grok",
+            "google": "Gemini",
+            "qwen": "Qwen",
+            "deepseek": "DeepSeek",
+            "mistral": "Mistral",
+            "groq": "Groq",
+        }
+
+        rows = query_leaderboard()
+
+        buckets: dict[str, dict] = {}
+        for r in rows:
+            family = _FIGHTER_NAMES.get(r["provider"], r["provider"])
+            if family not in buckets:
+                buckets[family] = {
+                    "wins": 0, "losses": 0, "draws": 0, "games": 0,
+                    "think_sum": 0.0, "think_count": 0,
+                }
+            b = buckets[family]
+            b["wins"] += r["wins"]
+            b["losses"] += r["losses"]
+            b["draws"] += r["draws"]
+            b["games"] += r["games"]
+            if r["avg_think_time_s"]:
+                b["think_sum"] += r["avg_think_time_s"] * r["games"]
+                b["think_count"] += r["games"]
+
+        total_matches = sum(b["games"] for b in buckets.values()) // 2
+        models = []
+        for name, b in buckets.items():
+            games = b["games"]
+            win_rate = b["wins"] / games if games else 0.0
+            avg_think_ms = round(
+                b["think_sum"] / b["think_count"] * 1000
+            ) if b["think_count"] else 0
+            models.append({
+                "id": name.lower().replace(" ", "-"),
+                "name": name,
+                "class": "",
+                "wins": b["wins"],
+                "losses": b["losses"],
+                "draws": b["draws"],
+                "games": games,
+                "win_rate": round(win_rate, 4),
+                "avg_think_ms": avg_think_ms,
+            })
+        models.sort(key=lambda m: (-m["win_rate"], -m["games"]))
+
+        resp = JSONResponse({
+            "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+            "total_matches": total_matches,
+            "models": models,
+        })
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Cache-Control"] = "public, max-age=15"
+        return resp
+
     log.info("silicon-serve starting on http://%s:%d", args.host, args.port)
 
     # Launch the heartbeat sweeper as a background task on the same
