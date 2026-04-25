@@ -169,9 +169,16 @@ class LobbyScreen(Screen):
                 else:
                     scenario_display = scenario_raw.replace("_", " ").lstrip("0123456789_")
                 # Host and joiner as separate columns
+                host_player = seats.get("a", {}).get("player") or {}
                 host_name = r.get("host_name", "")
+                host_model = host_player.get("model") or ""
+                if host_model:
+                    host_name = f"{host_name} ({host_model})"
                 joiner_player = seats.get("b", {}).get("player") or {}
                 joiner_name = joiner_player.get("display_name", "") if joiner_player else ""
+                joiner_model = joiner_player.get("model") or ""
+                if joiner_name and joiner_model:
+                    joiner_name = f"{joiner_name} ({joiner_model})"
                 # Status with color coding
                 status_raw = r.get("status", "unknown")
                 status_text = t(f"lobby_val.status_{status_raw}", lc)
