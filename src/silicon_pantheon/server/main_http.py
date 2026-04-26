@@ -291,6 +291,7 @@ def main() -> int:
     from starlette.responses import JSONResponse
 
     @mcp.custom_route("/health", methods=["GET"])
+    @mcp.custom_route("/ping", methods=["GET"])
     async def _health(request):
         return JSONResponse({
             "server": "silicon-pantheon",
