@@ -175,6 +175,8 @@ async def _run(config: HostConfig) -> None:
     except asyncio.CancelledError:
         pass
     finally:
+        for w in workers:
+            w._shutting_down = True
         for t in tasks:
             t.cancel()
         for t in tasks:

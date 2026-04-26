@@ -62,6 +62,9 @@ class BotWorker:
         # surface the "llm Xs" elapsed-timer in the terminal status
         # line. Cleared between matches.
         self.agent = None
+        # Set by the runner before task.cancel() to distinguish genuine
+        # shutdown from spurious anyio cancel-scope CancelledErrors.
+        self._shutting_down = False
 
     # ---- public interface ----
 
@@ -92,12 +95,32 @@ class BotWorker:
                     if self.config.one_shot:
                         return
                 except asyncio.CancelledError:
-                    raise
+                    if self._shutting_down:
+                        raise
+                    # Spurious CancelledError from anyio cancel scope
+                    # leaked through the MCP SDK (e.g. httpcore
+                    # receive_response_body.failed). Absorb all pending
+                    # cancellations so subsequent awaits don't re-raise,
+                    # then reconnect.
+                    task = asyncio.current_task()
+                    if task is not None:
+                        while task.cancelling() > 0:
+                            task.uncancel()
+                    log.warning(
+                        "worker %s caught spurious CancelledError "
+                        "(anyio cancel scope) — reconnecting",
+                        self.config.name,
+                    )
+                    self.status = "cancel-scope crash, reconnecting"
+                    await self._disconnect()
+                    await asyncio.sleep(TRANSPORT_RETRY_S)
                 except Exception as e:
                     log.exception("worker %s crashed: %s", self.config.name, e)
                     self.status = f"error: {e}"
                     await self._disconnect()
                     await asyncio.sleep(TRANSPORT_RETRY_S)
+        except asyncio.CancelledError:
+            log.info("worker %s shutting down (cancelled)", self.config.name)
         finally:
             await self._disconnect()
 
