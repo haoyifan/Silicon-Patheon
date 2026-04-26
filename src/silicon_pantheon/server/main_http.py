@@ -325,7 +325,7 @@ def main() -> int:
             ) if r["avg_think_time_s"] else 0
             fighter = _FIGHTER_NAMES.get(r["provider"], r["provider"])
             models.append({
-                "id": r["model"],
+                "id": f"{r['provider']}:{r['model']}",
                 "name": r["model"],
                 "provider": fighter,
                 "wins": r["wins"],
