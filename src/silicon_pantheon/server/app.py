@@ -383,6 +383,17 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
                 conn.client_protocol_version = effective_version
             if conn.state == ConnectionState.ANONYMOUS:
                 conn.state = ConnectionState.IN_LOBBY
+            elif conn.state in (
+                ConnectionState.IN_GAME,
+                ConnectionState.IN_ROOM,
+            ) and connection_id not in app.conn_to_room:
+                # Orphaned: the connection thinks it's in a game/room
+                # but there's no room mapping (room was cleaned up by
+                # the heartbeat sweeper or a prior disconnect where
+                # leave_room failed on a dead transport). Reset so the
+                # client can create/join again instead of being stuck
+                # in an unrecoverable state.
+                conn.state = ConnectionState.IN_LOBBY
             conn.last_heartbeat_at = time.time()
             state_value = conn.state.value
         return _ok(

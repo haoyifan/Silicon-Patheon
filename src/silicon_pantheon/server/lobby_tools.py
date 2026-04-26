@@ -971,7 +971,18 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 )
             info = app.conn_to_room.get(connection_id)
             if info is None:
-                return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+                # Orphaned state: connection claims IN_GAME/IN_ROOM but
+                # has no room mapping (room was cleaned up by heartbeat
+                # sweeper or a prior leave_room on a dead transport).
+                # Reset to IN_LOBBY so the client can create/join again.
+                stale_state = conn.state.value
+                conn.state = ConnectionState.IN_LOBBY
+                log.warning(
+                    "leave_room: cid=%s was %s with no room mapping — "
+                    "reset to in_lobby (orphaned state)",
+                    connection_id[:8], stale_state,
+                )
+                return _ok({})
             room_id_peek, slot_peek = info
             # Auto-concede trigger: connection is IN_GAME AND a live
             # session exists for the room. conn.state is the authoritative

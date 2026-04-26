@@ -246,6 +246,22 @@ class BotWorker:
         )
         if not r.get("ok"):
             raise RuntimeError(f"set_player_metadata failed: {r}")
+        # If the connection is stuck in a stale state (IN_GAME/IN_ROOM
+        # from a prior run where leave_room failed on a dead transport),
+        # force leave_room to reset to IN_LOBBY. The server-side fix
+        # in set_player_metadata handles the orphaned-mapping case, but
+        # a belt-and-suspenders leave_room covers the case where the
+        # room mapping still exists (e.g. sweeper hasn't run yet).
+        returned_state = r.get("state", "")
+        if returned_state not in ("in_lobby", "anonymous"):
+            log.warning(
+                "worker %s reconnected in stale state=%s — forcing leave_room",
+                self.config.name, returned_state,
+            )
+            try:
+                await client.call("leave_room")
+            except Exception:
+                pass
         await client.start_heartbeat()
         log.info("worker %s connected cid=%s", self.config.name, client.connection_id)
 
