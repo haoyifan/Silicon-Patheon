@@ -105,6 +105,9 @@ def _apply_filter(
     """
     if session.fog_of_war == "none":
         return result
+    from silicon_pantheon.server.engine.state import GameStatus
+    if session.state.status == GameStatus.GAME_OVER:
+        return result
     ctx = _viewer_context(session, viewer)
     if tool_name in _FILTERED_STATE_TOOLS:
         return filter_state(session.state, ctx)

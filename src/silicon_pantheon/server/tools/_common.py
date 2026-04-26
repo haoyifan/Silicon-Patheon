@@ -215,6 +215,9 @@ def audit_response_for_fog_leaks(
     """
     if session.fog_of_war == "none":
         return
+    from silicon_pantheon.server.engine.state import GameStatus
+    if session.state.status == GameStatus.GAME_OVER:
+        return
     visible_ids = {u.id for u in _visible_enemies(session, viewer)}
     # Add own-team ids — those are always OK to appear.
     for u in session.state.units_of(viewer):
