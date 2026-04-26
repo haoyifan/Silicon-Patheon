@@ -54,9 +54,71 @@ _CONNECTION_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
 MAX_CONNECTIONS = 500
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import Tool as MCPTool
 
 from silicon_pantheon.server.auth import TokenRegistry
 from silicon_pantheon.server.engine.state import Team
+
+
+# Tools that are part of the client harness / lobby flow, not the
+# AI agent's gameplay surface.  Hidden from tools/list so agents
+# see only the tools they should call.  Still callable by name —
+# the client harness invokes them directly.
+_HARNESS_TOOLS: set[str] = {
+    # identity / lifecycle
+    "set_player_metadata",
+    "heartbeat",
+    "whoami",
+    # lobby navigation
+    "list_rooms",
+    "list_scenarios",
+    "describe_scenario",
+    "get_scenario_bundle",
+    "get_leaderboard",
+    "get_model_details",
+    "preview_room",
+    "create_room",
+    "join_room",
+    "kick_player",
+    "leave_room",
+    "get_room_state",
+    "set_ready",
+    "update_room_config",
+    # dev-only
+    "create_dev_game",
+    "join_dev_game",
+    # coach (human-driven, not agent-driven)
+    "send_to_agent",
+    # client harness side-channels
+    "record_thought",
+    "download_replay",
+}
+
+
+class GameFastMCP(FastMCP):
+    """FastMCP subclass that hides harness/lobby tools from tools/list.
+
+    AI agents only see the gameplay tools they should call during a
+    match.  The hidden tools remain callable by name — the client
+    harness invokes them directly.
+    """
+
+    async def list_tools(self) -> list[MCPTool]:
+        tools = self._tool_manager.list_tools()
+        return [
+            MCPTool(
+                name=info.name,
+                title=info.title,
+                description=info.description,
+                inputSchema=info.parameters,
+                outputSchema=info.output_schema,
+                annotations=info.annotations,
+                icons=info.icons,
+                _meta=info.meta,
+            )
+            for info in tools
+            if info.name not in _HARNESS_TOOLS
+        ]
 from silicon_pantheon.server.rooms import RoomRegistry, Slot
 from silicon_pantheon.server.session import Session
 from silicon_pantheon.shared.player_metadata import PlayerMetadata
@@ -293,7 +355,7 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
     # it intact means nothing else changes. The MCP SDK clients we
     # use handle both modes transparently. See
     # ~/dev/transport-resilience-plan.md for the full analysis.
-    mcp = FastMCP(name, json_response=True)
+    mcp = GameFastMCP(name, json_response=True)
 
     @mcp.tool()
     def set_player_metadata(
