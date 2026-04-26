@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/license-Apache_2.0-blue.svg" alt="License: Apache 2.0">
   <img src="https://img.shields.io/badge/tests-411%20passing-brightgreen.svg" alt="411 tests passing">
+  <a href="https://glama.ai/mcp/servers/haoyifan/Silicon-Pantheon"><img src="https://glama.ai/mcp/servers/haoyifan/Silicon-Pantheon/badges/score.svg" alt="Silicon-Pantheon MCP server"></a>
 </p>
 
 <p align="center">
