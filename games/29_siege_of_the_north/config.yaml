@@ -419,7 +419,7 @@ unit_classes:
     is_magic: true
     can_heal: true
     heal_amount: 5
-    glyph: "s"
+    glyph: "F"
     color: bright_red
 
 armies:

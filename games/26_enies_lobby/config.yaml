@@ -671,7 +671,7 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     tags: [vip]
-    glyph: "X"
+    glyph: "P"
     color: bright_red
 
   kaku:
@@ -772,7 +772,7 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "O"
+    glyph: "W"
     color: red
 
 armies:

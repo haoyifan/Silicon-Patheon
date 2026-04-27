@@ -301,7 +301,7 @@ unit_classes:
     is_magic: true
     can_heal: true
     heal_amount: 7
-    glyph: "T"
+    glyph: "H"
     color: bright_cyan
 
   minato:
@@ -359,7 +359,7 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "O"
+    glyph: "P"
     color: bright_red
 
   tentails_head:

@@ -383,7 +383,7 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     is_magic: true
-    glyph: "a"
+    glyph: "D"
     color: red
 
 # ─────────────────────────────────────────────────────────────────

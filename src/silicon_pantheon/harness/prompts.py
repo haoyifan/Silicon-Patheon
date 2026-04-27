@@ -539,10 +539,12 @@ def _default_terrain_glyph(name: str) -> str:
 def _format_map_grid(
     board: dict, tiles_by_pos: dict[tuple[int, int], str], forts: list[dict],
     terrain_types: dict, armies: dict, unit_classes: dict,
+    locale: str = "en",
 ) -> str:
     """ASCII representation of the starting board: terrain + forts +
     initial unit positions. Classes use their scenario glyph; empty
-    plain cells render as '.'."""
+    plain cells render as '.'. Appends a legend mapping glyphs to
+    unit names so the agent can distinguish units from terrain."""
     w = int(board.get("width", 0))
     h = int(board.get("height", 0))
     if w == 0 or h == 0:
@@ -583,6 +585,46 @@ def _format_map_grid(
             glyph = spec.get("glyph") or _default_terrain_glyph(ttype)
             cells.append(f" {glyph[:1]}")
         rows.append(" ".join(cells))
+
+    # ── Map legend: unit glyphs per team ──
+    unit_legend: dict[str, list[str]] = {"blue": [], "red": []}
+    for team_name in ("blue", "red"):
+        seen: set[str] = set()
+        for u in (armies or {}).get(team_name) or []:
+            c = u.get("class")
+            if c and c not in seen:
+                spec = unit_classes.get(c) or {}
+                g = spec.get("glyph") or (c[:1] or "?")
+                g_display = g.upper() if team_name == "blue" else g.lower()
+                display = spec.get("display_name") or c
+                unit_legend[team_name].append(f"{g_display}={display}")
+                seen.add(c)
+
+    rows.append("")
+    if locale == "zh":
+        rows.append(
+            "图例：大写字母 = 蓝方单位，小写字母 = 红方单位。"
+            "单位符号会覆盖地形——地图上该位置显示的是单位字母，"
+            "不是下方的地形符号。如需查看某位置的实际地形，"
+            "请参考上方地形列表或调用 get_state。"
+        )
+        if unit_legend["blue"]:
+            rows.append(f"  蓝方: {', '.join(unit_legend['blue'])}")
+        if unit_legend["red"]:
+            rows.append(f"  红方: {', '.join(unit_legend['red'])}")
+    else:
+        rows.append(
+            "Legend: UPPERCASE = blue unit, lowercase = red unit. "
+            "Unit glyphs overlay terrain — the map shows the unit's "
+            "letter, not the terrain underneath. Check the terrain "
+            "section above or call get_state for actual terrain at "
+            "any position."
+        )
+        if unit_legend["blue"]:
+            rows.append(f"  Blue: {', '.join(unit_legend['blue'])}")
+        if unit_legend["red"]:
+            rows.append(f"  Red:  {', '.join(unit_legend['red'])}")
+
     return "\n".join(rows)
 
 
@@ -639,7 +681,7 @@ def build_system_prompt(
     terrain_catalog = _format_terrain_catalog(terrain_types)
     map_grid = _format_map_grid(
         board, tiles_by_pos, board.get("forts") or [],
-        terrain_types, armies, unit_classes,
+        terrain_types, armies, unit_classes, locale=locale,
     )
 
     # Select template by locale. Chinese templates are in prompts_zh.py;

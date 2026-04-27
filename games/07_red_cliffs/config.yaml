@@ -300,7 +300,7 @@ terrain_types:
       rearguard shelters behind these walls. +2 DEF.
     move_cost: 2
     defense_bonus: 2
-    glyph: "#"
+    glyph: "%"
     color: bright_white
 
   command_tent:
@@ -310,7 +310,7 @@ terrain_types:
       fly overhead. +1 DEF from the barricades around it.
     move_cost: 1
     defense_bonus: 1
-    glyph: "T"
+    glyph: "+"
     color: magenta
 
   altar:
@@ -580,7 +580,7 @@ unit_classes:
     move: 3
     tags: [archer]
     sight: 4
-    glyph: A
+    glyph: "N"
     color: red
 
 armies:

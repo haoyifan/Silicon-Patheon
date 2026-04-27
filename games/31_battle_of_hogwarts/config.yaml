@@ -248,7 +248,7 @@ terrain_types:
     display_name: Covered Bridge
     move_cost: 1
     defense_bonus: 1
-    glyph: "="
+    glyph: "-"
     color: yellow
     description: |
       The covered wooden bridge leading to the castle grounds.
@@ -404,7 +404,7 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "W"
+    glyph: "O"
     color: bright_red
 
   voldemort:

@@ -157,7 +157,7 @@ terrain_types:
       mid-ford fights at a disadvantage.
     move_cost: 3
     defense_bonus: -1
-    glyph: "="
+    glyph: "%"
     color: blue
   high_ground:
     display_name: Abbey Craig

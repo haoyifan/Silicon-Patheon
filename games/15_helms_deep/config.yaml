@@ -474,7 +474,7 @@ unit_classes:
     move: 4
     tags: [berserker, uruk, siege]
     sight: 3
-    glyph: B
+    glyph: "U"
     color: bright_red
 
   siege_captain:

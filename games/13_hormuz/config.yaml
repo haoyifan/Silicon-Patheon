@@ -629,7 +629,7 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     tags: [naval, boat]
-    glyph: "s"
+    glyph: "G"
     color: red
 
   shahed_drone:
@@ -648,7 +648,7 @@ unit_classes:
     rng_max: 4
     is_magic: true
     tags: [flying, drone]
-    glyph: "d"
+    glyph: "V"
     color: red
 
   basij:
@@ -666,7 +666,7 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     tags: [infantry, militia]
-    glyph: "b"
+    glyph: "I"
     color: red
 
 armies:

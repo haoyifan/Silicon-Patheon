@@ -367,7 +367,7 @@ unit_classes:
     move: 4
     rng_min: 1
     rng_max: 2
-    glyph: "A"
+    glyph: "X"
     color: bright_red
 
   sentinel_bomber:

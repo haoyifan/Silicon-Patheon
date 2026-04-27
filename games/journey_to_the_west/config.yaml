@@ -213,7 +213,7 @@ unit_classes:
     move: 3
     tags: [vip, monk, human]
     sight: 3
-    glyph: T
+    glyph: "M"
     color: bright_cyan      # Tang Monk: the VIP, distinct shade from his disciples
   sun_wukong:
     display_name: Sun Wukong (Monkey King)

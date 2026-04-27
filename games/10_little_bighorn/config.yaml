@@ -252,7 +252,7 @@ unit_classes:
     move: 6
     tags: [chief, warrior]
     sight: 4
-    glyph: H
+    glyph: "Q"
     color: bright_red
 
   gall:

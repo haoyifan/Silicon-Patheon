@@ -294,7 +294,7 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     is_magic: true
-    glyph: "M"
+    glyph: "J"
     color: red
 
   preta:

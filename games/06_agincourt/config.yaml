@@ -274,7 +274,7 @@ terrain_types:
       line has been routed entirely.
     move_cost: 1
     defense_bonus: 1
-    glyph: "T"
+    glyph: "+"
     color: bright_yellow
 
 unit_classes:

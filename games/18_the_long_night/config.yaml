@@ -436,7 +436,7 @@ unit_classes:
     rng_max: 4
     is_magic: true
     tags: [dragon, flying]
-    glyph: "V"
+    glyph: "U"
     color: bright_blue
 
   frostfang:

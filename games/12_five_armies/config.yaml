@@ -392,7 +392,7 @@ unit_classes:
     move: 4
     tags: [orc, archer, ranged]
     sight: 5
-    glyph: F
+    glyph: "K"
     color: bright_red
 
   yazneg:
@@ -457,7 +457,7 @@ unit_classes:
     move: 4
     tags: [goblin, healer, support]
     sight: 3
-    glyph: g
+    glyph: "J"
     color: red
     aura:
       type: heal
@@ -481,7 +481,7 @@ unit_classes:
     move: 6
     tags: [bat, flying, disruptor]
     sight: 5
-    glyph: w
+    glyph: "Z"
     color: red
 
   gundabad_berserker:

@@ -35,7 +35,11 @@ For each scenario, read the full `config.yaml` and the `locale/zh.yaml` (if it e
 - No unit has ATK 0 or HP 0
 
 ### 3. Glyph & ID Consistency
-- No two `unit_classes` share the same `glyph` within a scenario
+- **No glyph collisions of any kind** (HIGH severity). The map renders blue units UPPERCASE, red units lowercase, and terrain glyphs as-is. Three collision types to check:
+  1. **Terrain-terrain**: No two `terrain_types` may share the same `glyph` — they are visually identical on the map.
+  2. **Unit-terrain (rendered form)**: A blue unit's `glyph.upper()` must not equal any terrain glyph. A red unit's `glyph.lower()` must not equal any terrain glyph. These produce identical characters on the map and the agent cannot distinguish unit from terrain.
+  3. **Cross-team unit-unit**: No blue unit's `glyph.upper()` should equal any red unit's `glyph.lower()` (i.e., no two units across teams should share the same base letter). While case-distinguishable, this forces the agent to rely on case alone to tell units apart, which wastes reasoning tokens.
+  Fix by changing the conflicting unit glyph to an unused letter. Prefer meaningful mnemonics (first letter of name/role).
 - No `color` is shared between any `unit_classes` entry and any `terrain_types` entry (MEDIUM severity when violated) — otherwise a unit parked on a same-color tile becomes visually indistinguishable from the terrain. Units should use team colors (`red`/`bright_red`, `cyan`/`bright_cyan`, `magenta` for accents); terrain should use environmental colors (`green`, `blue`, `yellow`, `white`, `bright_black`, `dim`). Fix by changing the terrain color to a nearby unused shade.
 - Win condition `unit_id` values must match actual units (format: `u_{b|r}_{class}_{N}`)
 - `reach_tile` positions must be within bounds and NOT on impassable tiles

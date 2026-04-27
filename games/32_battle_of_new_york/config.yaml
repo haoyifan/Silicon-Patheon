@@ -241,7 +241,7 @@ unit_classes:
     move: 5
     rng_min: 1
     rng_max: 1
-    glyph: "W"
+    glyph: "A"
     color: bright_cyan
 
   hawkeye:
@@ -325,7 +325,7 @@ unit_classes:
     move: 4
     rng_min: 1
     rng_max: 1
-    glyph: "c"
+    glyph: "z"
     color: red
 
   chitauri_chariot:
@@ -397,7 +397,7 @@ unit_classes:
     can_heal: true
     heal_amount: 6
     tags: [support, hivemind]
-    glyph: "b"
+    glyph: "+"
     color: red
 
 armies:

@@ -150,7 +150,7 @@ terrain_types:
     move_cost: 99
     defense_bonus: 0
     passable: false
-    glyph: "#"
+    glyph: "="
     color: bright_black
     description: |
       The outer wall of the Pelennor — the Rammas Echor. Crumbling
@@ -440,7 +440,7 @@ unit_classes:
     move: 4
     rng_min: 1
     rng_max: 1
-    glyph: "g"
+    glyph: "J"
     color: red
 
   shagrat:

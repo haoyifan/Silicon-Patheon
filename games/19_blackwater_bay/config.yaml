@@ -409,7 +409,7 @@ unit_classes:
     heal_amount: 5
     tags: [support]
     sight: 3
-    glyph: "p"
+    glyph: "K"
     color: red
 
   cersei:
