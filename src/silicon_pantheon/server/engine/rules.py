@@ -347,8 +347,12 @@ def _apply_end_turn(state: GameState) -> dict:
             del state.units[uid]
 
     # 1b. Rotate turn action log so clients see the full previous turn.
-    state.prev_turn_actions = list(state.turn_actions)
-    state.turn_actions.clear()
+    turn_actions = getattr(state, "turn_actions", None)
+    if turn_actions is not None:
+        state.prev_turn_actions = list(turn_actions)
+        turn_actions.clear()
+    else:
+        state.prev_turn_actions = []
 
     # 2. Hand over to opponent.
     state.active_player = enemy
