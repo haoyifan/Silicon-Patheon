@@ -392,7 +392,7 @@ class ReplayScreen(Screen):
             f"{t('replay.nav_hints', lc)}   "
             f"Enter {t('replay.unit_card', lc)}   "
             f"{t('keys.tab_next', lc)}   "
-            f"{t('keys.leave', lc)}   "
+            f"{t('keys.leave_esc', lc)}   "
             f"{t('keys.quit', lc)}",
             style="dim",
         )
@@ -464,7 +464,7 @@ class ReplayScreen(Screen):
             self._focus_idx = (self._focus_idx + 1) % len(self._panels)
             return None
 
-        # q = quit client, l/Esc = back to lobby.
+        # q = quit client, Esc = back to lobby (with confirmation).
         if key == "q":
             from silicon_pantheon.client.tui.widgets import ConfirmModal
             async def _quit(yes: bool) -> None:
@@ -476,9 +476,18 @@ class ReplayScreen(Screen):
                 locale=self.app.state.locale,
             )
             return None
-        if key in ("l", "esc"):
-            from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
-            return LobbyScreen(self.app)
+        if key == "esc":
+            from silicon_pantheon.client.tui.widgets import ConfirmModal
+            async def _leave(yes: bool) -> None:
+                if yes:
+                    from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
+                    await self.app.transition(LobbyScreen(self.app))
+            self._quit_confirm = ConfirmModal(
+                prompt=t("room_buttons.leave_confirm", self.app.state.locale),
+                on_confirm=_leave,
+                locale=self.app.state.locale,
+            )
+            return None
 
         # Global step navigation — works regardless of focused panel.
         total = len(self._timeline)
