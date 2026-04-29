@@ -763,6 +763,8 @@ class RoomScreen(Screen):
         self.scenario_preview: dict[str, Any] | None = None
         self.scenarios: list[str] = []
         self._last_poll = 0.0
+        self._countdown_value: float | None = None
+        self._countdown_updated_at: float = 0.0
         # Dropdowns (change scenario / fog / teams / host_team) still
         # render full-screen — they're modal single-select lists that
         # make no sense to scope to one panel. UnitCard is different:
@@ -819,7 +821,7 @@ class RoomScreen(Screen):
         if self._random_scenario_pool:
             scenario = "🎲 " + t("room_buttons.random_scenario", self.app.state.locale)
         status = rs.get("status", "?")
-        countdown = rs.get("autostart_in_s")
+        countdown = self._countdown_value
 
         header_line = Text()
         # Room id + scenario header are neutral chrome — use yellow so
@@ -829,7 +831,7 @@ class RoomScreen(Screen):
         header_line.append(scenario, style="yellow")
         header_line.append(f"   {t('room_status.fog_label', lc)}={rs.get('fog_of_war', '?')}", style="dim")
         header_line.append(f"   {t('room_status.teams_label', lc)}={rs.get('team_assignment', '?')}", style="dim")
-        if countdown is not None:
+        if countdown is not None and countdown > 0:
             header_line.append(
                 f"   {t('room_status.match_starting', lc).replace('{s}', f'{countdown:.1f}')}", style="bold yellow"
             )
@@ -1325,6 +1327,10 @@ class RoomScreen(Screen):
         now = _time.time()
         if now - self._last_poll >= POLL_INTERVAL_S:
             await self._refresh_state()
+        if self._countdown_value is not None and self._countdown_updated_at > 0:
+            elapsed = now - self._countdown_updated_at
+            self._countdown_value = max(0.0, self._countdown_value - elapsed)
+            self._countdown_updated_at = now
         if self._scenario_picker is not None:
             await self._scenario_picker.tick()
 
@@ -1442,6 +1448,13 @@ class RoomScreen(Screen):
         self.app.state.error_message = ""
         room = r.get("room", {})
         status = room.get("status")
+        server_countdown = room.get("autostart_in_s")
+        if server_countdown is not None:
+            self._countdown_value = float(server_countdown)
+            self._countdown_updated_at = _time.time()
+        else:
+            self._countdown_value = None
+            self._countdown_updated_at = 0.0
         prior_scenario = (self.app.state.last_room_state or {}).get("scenario")
         self.app.state.last_room_state = room
         log.debug(
