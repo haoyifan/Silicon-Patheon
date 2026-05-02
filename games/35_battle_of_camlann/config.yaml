@@ -118,17 +118,11 @@ board:
     - {x: 19, y: 13, type: castle_ruins}
     - {x: 19, y: 14, type: castle_ruins}
   forts:
-    - {x: 0, y: 13, owner: blue}
-    - {x: 1, y: 13, owner: blue}
     - {x: 0, y: 14, owner: blue}
-    - {x: 1, y: 14, owner: blue}
     - {x: 0, y: 15, owner: blue}
     - {x: 1, y: 15, owner: blue}
-    - {x: 17, y: 0, owner: red}
     - {x: 18, y: 0, owner: red}
     - {x: 19, y: 0, owner: red}
-    - {x: 17, y: 1, owner: red}
-    - {x: 18, y: 1, owner: red}
     - {x: 19, y: 1, owner: red}
 
 terrain_types:
@@ -440,7 +434,7 @@ armies:
 
 rules:
   max_turns: 20
-  first_player: blue
+  first_player: red
 
 win_conditions:
   - {type: protect_unit, unit_id: u_b_arthur_1, owning_team: blue}
