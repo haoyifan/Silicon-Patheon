@@ -485,6 +485,7 @@ def _force_end_turn(
         if turn_actions is not None:
             turn_actions.append(result)
         session.state.history.append(result)
+        session.log("action", result)
         # Drain narrative events emitted by apply() (terrain deaths,
         # on_turn_start hooks) so they land in the replay instead of
         # accumulating silently on the state until the next cooperative
